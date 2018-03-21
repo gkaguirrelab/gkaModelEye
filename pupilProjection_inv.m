@@ -246,7 +246,7 @@ if isempty(p.Results.x0)
     % If the absolute value of an estimated angle is less than 2 degrees,
     % set the value to close to zero. This is done as fmincon seems to
     % avoid solutions exactly at zero, and this kludge fixes that behavior.
-    x0(abs(x0)<2) = 1e-6;
+    x0(abs(x0(1:3))<2) = 1e-6;
     
     % Ensure that x0 lies within the bounds with a bit of headroom so that
     % the solver does not get stuck up against a bound.
