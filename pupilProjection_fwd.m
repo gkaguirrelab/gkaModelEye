@@ -6,7 +6,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
 %
 % Description:
 %   Given the sceneGeometry--and optionaly ray tracing functions through
-%   the cornea--this routine simulates a circular pupil on a spherical eye
+%   the cornea--this routine simulates a circular pupil on a rotating eye
 %   and then measures the parameters of the ellipse (in transparent format)
 %   of the projection of the pupil to the image plane.
 %
