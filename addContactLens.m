@@ -46,7 +46,7 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
     %   "Optical phenomena of contact lenses", WJ Benjamin. p130
     eye = modelEyeParameters();
     eye.corneaFrontSurfaceR = 7.8;
-    cornealThickness = eye.corneaBackSurfaceCenter(1) - eye.corneaFrontSurfaceCenter(1);
+    cornealThickness = -sceneGeometry.eye.corneaBackSurfaceCenter(1)-sceneGeometry.eye.corneaBackSurfaceRadii(1);
     opticalSystem = [nan, nan, eye.aqueousRefractiveIndex; ...
         -eye.corneaBackSurfaceR-cornealThickness, -eye.corneaBackSurfaceR, eye.corneaRefractiveIndex; ...
         -eye.corneaFrontSurfaceR, -eye.corneaFrontSurfaceR, 1.0];
@@ -64,7 +64,7 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
     % surface curvature.
     eye = modelEyeParameters();
     eye.corneaRefractiveIndex = 1.376;
-    cornealThickness = eye.corneaBackSurfaceCenter(1) - eye.corneaFrontSurfaceCenter(1);
+    cornealThickness = -sceneGeometry.eye.corneaBackSurfaceCenter(1)-sceneGeometry.eye.corneaBackSurfaceRadii(1);
     opticalSystem = [nan, nan, eye.aqueousRefractiveIndex; ...
         -eye.corneaBackSurfaceR-cornealThickness, -eye.corneaBackSurfaceR, eye.corneaRefractiveIndex; ...
         -eye.corneaFrontSurfaceR, -eye.corneaFrontSurfaceR, 1.0];
@@ -77,7 +77,7 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
     % Obtain the eye parameters from the modelEyeParameters() function
     eye = modelEyeParameters('sphericalAmetropia',2);
     % Define an optical system
-    cornealThickness = eye.corneaBackSurfaceCenter(1) - eye.corneaFrontSurfaceCenter(1);
+    cornealThickness = -sceneGeometry.eye.corneaBackSurfaceCenter(1)-sceneGeometry.eye.corneaBackSurfaceRadii(1);
     opticalSystem = [nan, nan, eye.aqueousRefractiveIndex; ...
         -eye.corneaBackSurfaceR-cornealThickness, -eye.corneaBackSurfaceR, eye.corneaRefractiveIndex; ...
         -eye.corneaFrontSurfaceR, -eye.corneaFrontSurfaceR, 1.0];

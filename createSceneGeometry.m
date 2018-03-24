@@ -194,7 +194,7 @@ mediumRefractiveIndex = returnRefractiveIndex( p.Results.medium, p.Results.spect
 % radius of curvature, thus placing the apex of the front corneal surface
 % at a z position of zero. The back surface is shifted back to produce
 % the appropriate corneal thickness.
-cornealThickness = sceneGeometry.eye.corneaBackSurfaceCenter(1) - sceneGeometry.eye.corneaFrontSurfaceCenter(1);
+cornealThickness = -sceneGeometry.eye.corneaBackSurfaceCenter(1)-sceneGeometry.eye.corneaBackSurfaceRadii(1);
 opticalSystem = [nan, nan, sceneGeometry.eye.aqueousRefractiveIndex; ...
     -sceneGeometry.eye.corneaBackSurfaceR-cornealThickness, -sceneGeometry.eye.corneaBackSurfaceR, sceneGeometry.eye.corneaRefractiveIndex; ...
     -sceneGeometry.eye.corneaFrontSurfaceR, -sceneGeometry.eye.corneaFrontSurfaceR, mediumRefractiveIndex];
