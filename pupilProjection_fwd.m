@@ -198,6 +198,23 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     withRayTraceTimeMsec = toc / nPoses * 1000;
     fprintf('Forward model calculation time is %4.2f msecs without ray tracing and %4.2f with ray tracing.\n',noRayTraceTimeMsec,withRayTraceTimeMsec);
 %}
+%{
+    %% Calculate the time required when the ray trace funcs are cached
+    % Obtain a default sceneGeometry structure
+    sceneGeometry=createSceneGeometry();
+    % Define the ray tracing functions (slow; only need to do once)
+    rayTraceFuncs = assembleRayTraceFuncs(sceneGeometry,'compiledFunctionPath','/tmp/rayTraceFuncs');
+    % Perform 100 forward projections with randomly selected eye poses
+    % with ray tracing
+    nPoses = 100;
+    eyePoses=[(rand(nPoses,1)-0.5)*20, (rand(nPoses,1)-0.5)*10, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
+    tic
+    for pp = 1:nPoses
+    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,rayTraceFuncs);
+    end
+    withCachedRayTraceTimeMsec = toc / nPoses * 1000;
+    fprintf('Forward model calculation time is %4.2f msecs with cached ray trace functions.\n',withCachedRayTraceTimeMsec);
+%}
 
 
 
