@@ -1,8 +1,8 @@
-function virtualEyeWorldPoint = refractPointCompileFunc( eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters)
+function virtualEyeWorldPoint = virtualImageFuncPreCompile( eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters)
 % Calculate coord of virtual image of eyeWorldPoint
 %
 % Syntax:
-%  virtualEyeWorldPoint = refractPointCompileFunc( eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters)
+%  virtualEyeWorldPoint = virtualImageFuncPreCompile( eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters)
 %
 % Description:
 %   This routine calculates refraction through the optical
