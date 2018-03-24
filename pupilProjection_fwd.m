@@ -55,9 +55,9 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
 %  'anteriorChamberEllipsoidPoints' - The number of points that are on
 %                           each longitude line of the anterior chamber
 %                           ellipsoid. About 30 makes a nice image.
-%  'removeObscuredPoints' - Logical. If set to true (default) the set of 
+%  'removeObscuredPoints' - Logical. If set to true (default) the set of
 %                           modeled points will be restricted to only those
-%                           that are anterior to the center of rotation of 
+%                           that are anterior to the center of rotation of
 %                           the eye following rotation of the eye.
 %  'calcNodalIntersectError' - Logical. Controls if the nodal point
 %                           intersection error is calculated. Set to false
@@ -224,7 +224,7 @@ p = inputParser; p.KeepUnmatched = true;
 % Required
 p.addRequired('eyePose',@isnumeric);
 p.addRequired('sceneGeometry',@(x)(isempty(x) || isstruct(x)));
-p.addRequired('rayTraceFuncs',@(x)(isempty(x) || isstruct(x)));
+p.addRequired('rayTraceFuncs',@(x)( isempty(x) || isstruct(x) || isa(x, 'function_handle') ));
 
 % Optional
 p.addParameter('fullEyeModelFlag',false,@islogical);
@@ -439,6 +439,7 @@ R.azi = [cosd(eyeAzimuth) -sind(eyeAzimuth) 0; sind(eyeAzimuth) cosd(eyeAzimuth)
 R.ele = [cosd(eyeElevation) 0 sind(eyeElevation); 0 1 0; -sind(eyeElevation) 0 cosd(eyeElevation)];
 R.tor = [1 0 0; 0 cosd(eyeTorsion) -sind(eyeTorsion); 0 sind(eyeTorsion) cosd(eyeTorsion)];
 
+
 %% Obtain the virtual image for the eyeWorld points
 % This steps accounts for the effect of corneal and corrective lens
 % refraction upon the appearance of points from the eye
@@ -453,59 +454,21 @@ if ~isempty(rayTraceFuncs)
     for ii=1:length(refractPointsIdx)
         % Grab this eyeWorld point
         eyeWorldPoint=eyeWorldPoints(refractPointsIdx(ii),:);
-        % Define an error function which is the distance between the nodal
-        % point of the camera and the point at which a ray impacts the
-        % plane that contains the camera, with the ray departing from the
-        % eyeWorld point at angle theta in the p1p2 plane. NOTE: The order
-        % of variables here is determined by the function that is called.
-        % To check:
-        %{
-        rayTraceFuncs = assembleRayTraceFuncs(createSceneGeometry());
-        rayTraceFuncs.cameraNodeDistanceError2D.varNames
-        %}
-        errorFunc = @(theta) rayTraceFuncs.cameraNodeDistanceError2D.p1p2(...
-            eyeWorldPoint, sceneGeometry.extrinsicTranslationVector, ...
-            [deg2rad(eyeAzimuth), deg2rad(eyeElevation), deg2rad(eyeTorsion)], ...
-            sceneGeometry.eye.rotationCenters.azi([1 2]),...
-            sceneGeometry.eye.rotationCenters.ele([1 3]),...
-            sceneGeometry.eye.rotationCenters.tor([2 3]),...
-            theta);
-        % Conduct an fminsearch to find the p1p2 theta that results in a
-        % ray that strikes as close as possible to the camera nodal point.
-        % Because the errorFunc returns nan for values very close to zero,
-        % we initialize the search with a slightly non-zero value (1e-4)
-        theta_p1p2=fminsearch(errorFunc,1e-4);
-        % Now repeat this process for a ray that varies in theta in the
-        % p1p3 plane
-        errorFunc = @(theta) rayTraceFuncs.cameraNodeDistanceError2D.p1p3(...
-            eyeWorldPoint, sceneGeometry.extrinsicTranslationVector, ...
-            [deg2rad(eyeAzimuth), deg2rad(eyeElevation), deg2rad(eyeTorsion)], ...
-            sceneGeometry.eye.rotationCenters.azi([1 2]),...
-            sceneGeometry.eye.rotationCenters.ele([1 3]),...
-            sceneGeometry.eye.rotationCenters.tor([2 3]),...
-            theta);
-        theta_p1p3=fminsearch(errorFunc,1e-4);
-        % With both theta values calculated, now obtain the virtual image
-        % ray arising from the pupil plane that reflects the corneal optics
-        virtualImageRay = rayTraceFuncs.virtualImageRay(eyeWorldPoint(1), eyeWorldPoint(2), eyeWorldPoint(3), theta_p1p2, theta_p1p3);
-        % Replace the original eyeWorld point with the virtual image
-        % eyeWorld point
-        eyeWorldPoints(refractPointsIdx(ii),:) = virtualImageRay(1,:);
-        % The code below may be used to calculate the total error (in mm)
-        % in both dimensions for intersecting the nodal point of the
-        % camera. Error values on the order of 0.01 - 0.02 are found across
-        % pupil points and for a range of eye rotations. By default, the
-        % flag that controls this calculation is set to false, as the
-        % computation is lengthy and is not otherwise used.
-        if p.Results.calcNodalIntersectError
-            nodalPointIntersectError(refractPointsIdx(ii)) = ...
-                rayTraceFuncs.cameraNodeDistanceError3D(...
+        % Use a compiled mex virtual image function if available
+        if isa(rayTraceFuncs, 'function_handle')
+            virtualEyeWorldPoint = rayTraceFuncs(...
                 eyeWorldPoint, sceneGeometry.extrinsicTranslationVector, ...
-                [deg2rad(eyeAzimuth), deg2rad(eyeElevation), deg2rad(eyeTorsion)], ...
-                sceneGeometry.eye.rotationCenters.azi([1 2]),...
-                sceneGeometry.eye.rotationCenters.ele([1 3]),...
-                sceneGeometry.eye.rotationCenters.tor([2 3]),...
-                theta_p1p2, theta_p1p3);
+                eyeAzimuth, eyeElevation, eyeTorsion, ...
+                sceneGeometry.eye.rotationCenters);
+            eyeWorldPoints(refractPointsIdx(ii),:) = virtualEyeWorldPoint;
+        else
+        % Use the slower matlab code
+            [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc(...
+                eyeWorldPoint, sceneGeometry.extrinsicTranslationVector, ...
+                eyeAzimuth, eyeElevation, eyeTorsion, ...
+                sceneGeometry.eye.rotationCenters, rayTraceFuncs);
+            eyeWorldPoints(refractPointsIdx(ii),:) = virtualEyeWorldPoint;
+            nodalPointIntersectError(refractPointsIdx(ii)) = nodalPointIntersectError;
         end
     end
 end

@@ -21,12 +21,17 @@ function rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry, varargin )
 %                           includes the eye field.
 %
 % Optional key-value pairs:
-%  'compiledFunctionPath' - Character string, defaults to empty. If set,
-%                           the ray trace functions are saved in files as
-%                           matlab functions. These paths are returned in
-%                           the rayTraceFuncs structure, as opposed to
-%                           function handles. This allows for subsequent
-%                           C-code compilation of the forward eye model.
+%  'compiledFunctionStemName' - Character string, defaults to empty. If
+%                           set, a single mex function with the passed name
+%                           is created and added to the path. This function
+%                           returns the coordinates of virtual image point
+%                           following the passage of a ray through the
+%                           optical system, given the eyeWorldPoint, the
+%                           camera translation, the eye rotation, and the
+%                           eye rotation centers.
+%  'cleanUpCompileDir'    - Logical. If a mex file compilation is
+%                           performed, this flag determines if the
+%                           intermediate compilation products are retained.
 %
 % Outputs:
 %   rayTraceFuncs         - A structure that contains fields that in turn
@@ -41,7 +46,7 @@ function rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry, varargin )
 %{
     % Basic example with file caching of the functions
     sceneGeometry = createSceneGeometry();
-    rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry, 'compiledFunctionPath', '/tmp/rayTraceFuncs' );
+    rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry, 'compiledFunctionName', '/tmp/rayTraceFuncs' );
 %}
 %{
     % Demonstrate how the time it takes to perform the symbolic variable
@@ -83,17 +88,21 @@ p = inputParser;
 p.addRequired('sceneGeometry',@isstruct);
 
 % Optional
-p.addParameter('compiledFunctionPath',[],@ischar);
+p.addParameter('compiledFunctionStemName',[],@ischar);
+p.addParameter('cleanUpCompileDir',false,@islogical);
 
 % parse
 p.parse(sceneGeometry, varargin{:})
 
 
 %% Create a directory for the compiled functions
-if ~isempty(p.Results.compiledFunctionPath)
-    if ~exist(p.Results.compiledFunctionPath,'dir')
-        mkdir(p.Results.compiledFunctionPath)
+if ~isempty(p.Results.compiledFunctionStemName)
+    compileDir = [p.Results.compiledFunctionStemName '_virtualImageFuncMex'];
+    if ~exist(compileDir,'dir')
+        mkdir(compileDir)
     end
+else
+    compileDir = [];
 end
 
 
@@ -147,10 +156,10 @@ end
 %
 
 % Create the function
-rayTraceFuncs.traceOpticalSystem = traceOpticalSystem(sceneGeometry.opticalSystem, p.Results.compiledFunctionPath);
+rayTraceFuncs.traceOpticalSystem = traceOpticalSystem(sceneGeometry.opticalSystem, compileDir);
 % Add saved function files to path
-if ~isempty(p.Results.compiledFunctionPath)
-    addpath(p.Results.compiledFunctionPath,'-end');
+if ~isempty(p.Results.compiledFunctionStemName)
+    addpath(compileDir,'-end');
 end
 
 
@@ -227,11 +236,11 @@ end
 
 % Create the function
 [rayTraceFuncs.cameraNodeDistanceError2D.p1p2, rayTraceFuncs.cameraNodeDistanceError2D.p1p3] = ...
-    cameraNodeDistanceError2D(rayTraceFuncs.traceOpticalSystem, p.Results.compiledFunctionPath);
+    cameraNodeDistanceError2D(rayTraceFuncs.traceOpticalSystem, compileDir);
 rayTraceFuncs.cameraNodeDistanceError2D.argumentNames = {'eyeWorldPoint','extrinsicTranslationVector','[eyeAzimuthRads, eyeElevationRads, eyeTorsionRads]','aziRotCenter_p1p2','eleRotCenter_p1p3','torRotCenter_p2p3','theta'};
 % Add saved function files to path
-if ~isempty(p.Results.compiledFunctionPath)
-    addpath(p.Results.compiledFunctionPath,'-end');
+if ~isempty(p.Results.compiledFunctionStemName)
+    addpath(compileDir,'-end');
 end
 
 
@@ -251,10 +260,10 @@ end
 
 % Create the function
 rayTraceFuncs.cameraNodeDistanceError3D = ...
-     cameraNodeDistanceError3D(rayTraceFuncs.traceOpticalSystem, p.Results.compiledFunctionPath);
+     cameraNodeDistanceError3D(rayTraceFuncs.traceOpticalSystem, compileDir);
 % Add saved function files to path
-if ~isempty(p.Results.compiledFunctionPath)
-    addpath(p.Results.compiledFunctionPath,'-end');
+if ~isempty(p.Results.compiledFunctionStemName)
+    addpath(compileDir,'-end');
 end
 
 
@@ -292,10 +301,33 @@ end
 %
 
 % Create the function
-rayTraceFuncs.virtualImageRay = virtualImageRay(rayTraceFuncs.traceOpticalSystem, p.Results.compiledFunctionPath);
+rayTraceFuncs.virtualImageRay = virtualImageRay(rayTraceFuncs.traceOpticalSystem, compileDir);
 % Add saved function files to path
-if ~isempty(p.Results.compiledFunctionPath)
-    addpath(p.Results.compiledFunctionPath,'-end');
+if ~isempty(p.Results.compiledFunctionStemName)
+    addpath(compileDir,'-end');
+end
+
+
+%% Compile the virtual image function
+
+if ~isempty(p.Results.compiledFunctionStemName)
+    % Define the args so that the compiler can deduce the nature of the input
+    % arguements
+    args = {[-3 0 0], sceneGeometry.extrinsicTranslationVector, 0, 0, 0, sceneGeometry.eye.rotationCenters};
+    % Change to the compile directory
+    initialDir = cd(compileDir);
+    % Compile the mex file
+    codegen -o virtualImageFuncMex virtualImageFuncPreCompile -args args
+    % Delete the intermediate files, if requested
+    if p.Results.cleanUpCompileDir
+        rmdir('codegen', 's')
+    end
+    % Change back to the initial directory
+    cd(initialDir);
+    % Add the directory holding the compiled function to the path
+    addpath(compileDir,'-end');
+    % Return the path to the function as the output
+    rayTraceFuncs = @refractPointFunc;
 end
 
 
@@ -311,7 +343,7 @@ end % assembleRayTraceFuncs -- MAIN
 
 
 %% traceOpticalSystem
-function rayTraceFunc = traceOpticalSystem(opticalSystem, compiledFunctionPath)
+function rayTraceFunc = traceOpticalSystem(opticalSystem, compileDir)
 % 2D ray tracing through the cornea and any corrective lenses
 
 
@@ -323,10 +355,10 @@ outputRay2D = rayTraceCenteredSphericalSurfaces([z h], theta, opticalSystem);
 
 % Convert the equation with symbolic variables into a function and either
 % return a function handle or save the function to a file
-if isempty(compiledFunctionPath)
+if isempty(compileDir)
     rayTraceFunc = matlabFunction(outputRay2D);
 else
-    functionFileName = fullfile(compiledFunctionPath,'calcTraceOpticalSystem');
+    functionFileName = fullfile(compileDir,'calcTraceOpticalSystem');
     rayTraceFunc = matlabFunction(outputRay2D,'File',functionFileName);    
 end
 
@@ -334,7 +366,7 @@ end % traceOpticalSystem
 
 
 %% cameraNodeDistanceError2D
-function [p1p2Func, p1p3Func] = cameraNodeDistanceError2D(rayTraceFunc, compiledFunctionPath)
+function [p1p2Func, p1p3Func] = cameraNodeDistanceError2D(rayTraceFunc, compileDir)
 % 2D distance of ray intersection on camera plane from camera node
 
 
@@ -469,7 +501,7 @@ cameraPlaneY = outputRaySceneWorld_p1p2(1,2)+((cameraTranslationZ-outputRayScene
 
 % Convert the equation with symbolic variables into a function and either
 % return a function handle or save the function to a file
-if isempty(compiledFunctionPath)
+if isempty(compileDir)
     p1p2Func = matlabFunction(...
         sqrt((cameraTranslationX-cameraPlaneX)^2 + ...
         (cameraTranslationY-cameraPlaneY)^2 ), ...
@@ -481,7 +513,7 @@ if isempty(compiledFunctionPath)
             [torRotCent_p2, torRotCent_p3],...
             theta_p1p2});
 else
-    functionFileName = fullfile(compiledFunctionPath,'calcCameraNodeDistanceError2D_p1p2');
+    functionFileName = fullfile(compileDir,'calcCameraNodeDistanceError2D_p1p2');
     p1p2Func = matlabFunction(...
         sqrt((cameraTranslationX-cameraPlaneX)^2 + ...
         (cameraTranslationY-cameraPlaneY)^2 ), ...
@@ -503,7 +535,7 @@ cameraPlaneY = outputRaySceneWorld_p1p3(1,2)+((cameraTranslationZ-outputRayScene
 
 % Convert the equation with symbolic variables into a function and either
 % return a function handle or save the function to a file
-if isempty(compiledFunctionPath)
+if isempty(compileDir)
     p1p3Func = matlabFunction(...
         sqrt((cameraTranslationX-cameraPlaneX)^2 + ...
         (cameraTranslationY-cameraPlaneY)^2 ), ...
@@ -515,7 +547,7 @@ if isempty(compiledFunctionPath)
             [torRotCent_p2, torRotCent_p3],...
             theta_p1p3});
 else
-    functionFileName = fullfile(compiledFunctionPath,'calcCameraNodeDistanceError2D_p1p3');
+    functionFileName = fullfile(compileDir,'calcCameraNodeDistanceError2D_p1p3');
     p1p3Func = matlabFunction(...
         sqrt((cameraTranslationX-cameraPlaneX)^2 + ...
         (cameraTranslationY-cameraPlaneY)^2 ), ...
@@ -534,7 +566,7 @@ end % cameraNodeDistanceError2D
 
 
 %% cameraNodeDistanceError3D
-function p1p2p3Func = cameraNodeDistanceError3D(rayTraceFunc, compiledFunctionPath)
+function p1p2p3Func = cameraNodeDistanceError3D(rayTraceFunc, compileDir)
 % 3D distance of ray intersection on camera plane from camera node
 
 
@@ -641,7 +673,7 @@ cameraPlaneY = outputRaySceneWorld3D(1,2)+((cameraTranslationZ-outputRaySceneWor
 
 % Convert the equation with symbolic variables into a function and either
 % return a function handle or save the function to a file
-if isempty(compiledFunctionPath)
+if isempty(compileDir)
     p1p2p3Func = matlabFunction(...
         sqrt((cameraTranslationX-cameraPlaneX)^2 + ...
         (cameraTranslationY-cameraPlaneY)^2 ), ...
@@ -653,7 +685,7 @@ if isempty(compiledFunctionPath)
             [torRotCent_p2, torRotCent_p3],...
             theta_p1p2, theta_p1p3});
 else
-    functionFileName = fullfile(compiledFunctionPath,'calcCameraNodeDistanceError3D');
+    functionFileName = fullfile(compileDir,'calcCameraNodeDistanceError3D');
     p1p2p3Func = matlabFunction(...
         sqrt((cameraTranslationX-cameraPlaneX)^2 + ...
         (cameraTranslationY-cameraPlaneY)^2 ), ...
@@ -671,7 +703,7 @@ end % cameraNodeDistanceError3D
 
 
 %% virtualImageRay
-function [virtualImageRayFunc] = virtualImageRay(rayTraceFunc, compiledFunctionPath)
+function [virtualImageRayFunc] = virtualImageRay(rayTraceFunc, compileDir)
 % Returns the unit vector virtual image ray for the initial depth position
 
 
@@ -701,11 +733,11 @@ outputRayEyeWorld(2,:) = [outputRayEyeWorld_p1p2(2,1) outputRayEyeWorld_p1p2(2,2
 
 % Convert the equation with symbolic variables into a function and either
 % return a function handle or save the function to a file
-if isempty(compiledFunctionPath)
+if isempty(compileDir)
     virtualImageRayFunc = matlabFunction(outputRayEyeWorld,...
         'Vars',{p1,p2,p3,theta_p1p2,theta_p1p3});
 else
-    functionFileName = fullfile(compiledFunctionPath,'calcVirtualImageRay');
+    functionFileName = fullfile(compileDir,'calcVirtualImageRay');
     virtualImageRayFunc = matlabFunction(outputRayEyeWorld,...
         'Vars',{p1,p2,p3,theta_p1p2,theta_p1p3},...
         'File',functionFileName);
