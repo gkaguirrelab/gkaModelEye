@@ -99,6 +99,11 @@ function sceneGeometry = createSceneGeometry(varargin)
 %   m surfaces of the cornea and any corrective lenses into a format needed
 %   for ray tracing.
 %
+%   useRayTracing - A boolean flag that sets if ray tracing should be used
+%   when computing the forward and inverse model. Set to true by this
+%   function. Subsequent functions may modify the setting of this flag to
+%   control the behavior of model fitting.
+%
 % Inputs:
 %   none
 %
@@ -162,7 +167,7 @@ p.addParameter('radialDistortionVector',[0 0],@isnumeric);
 p.addParameter('extrinsicTranslationVector',[0; 0; 120],@isnumeric);
 p.addParameter('extrinsicRotationMatrix',[1 0 0; 0 1 0; 0 0 1],@isnumeric);
 p.addParameter('primaryPosition',[0 0 0],@isnumeric);
-p.addParameter('constraintTolerance',0.02,@isnumeric);
+p.addParameter('constraintTolerance',0.02,@isscalar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('medium','air',@ischar);
@@ -231,6 +236,7 @@ end
 
 % Store the optical system
 sceneGeometry.opticalSystem = opticalSystem;
+sceneGeometry.useRayTracing = true;
 
 % Save the meta data
 sceneGeometry.meta.createSceneGeometry = p.Results;
