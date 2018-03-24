@@ -241,6 +241,7 @@ sceneGeometry.useRayTracing = true;
 % Save the meta data
 sceneGeometry.meta.createSceneGeometry = p.Results;
 
+
 %% Save the sceneGeometry file
 if ~isempty(p.Results.sceneGeometryFileName)
     save(p.Results.sceneGeometryFileName,'sceneGeometry');
