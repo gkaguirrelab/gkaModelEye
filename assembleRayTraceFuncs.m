@@ -146,7 +146,12 @@ end
 %                           vector.
 %
 
+% Create the function
 rayTraceFuncs.traceOpticalSystem = traceOpticalSystem(sceneGeometry.opticalSystem, p.Results.compiledFunctionPath);
+% Add saved function files to path
+if ~isempty(p.Results.compiledFunctionPath)
+    addpath(p.Results.compiledFunctionPath,'-end');
+end
 
 
 %% cameraNodeDistanceError2D
@@ -220,9 +225,14 @@ rayTraceFuncs.traceOpticalSystem = traceOpticalSystem(sceneGeometry.opticalSyste
 %                           Z camera plane from the nodal point of the
 %                           camera.
 
+% Create the function
 [rayTraceFuncs.cameraNodeDistanceError2D.p1p2, rayTraceFuncs.cameraNodeDistanceError2D.p1p3] = ...
     cameraNodeDistanceError2D(rayTraceFuncs.traceOpticalSystem, p.Results.compiledFunctionPath);
 rayTraceFuncs.cameraNodeDistanceError2D.argumentNames = {'eyeWorldPoint','extrinsicTranslationVector','[eyeAzimuthRads, eyeElevationRads, eyeTorsionRads]','aziRotCenter_p1p2','eleRotCenter_p1p3','torRotCenter_p2p3','theta'};
+% Add saved function files to path
+if ~isempty(p.Results.compiledFunctionPath)
+    addpath(p.Results.compiledFunctionPath,'-end');
+end
 
 
 %% cameraNodeDistanceError3D
@@ -239,8 +249,13 @@ rayTraceFuncs.cameraNodeDistanceError2D.argumentNames = {'eyeWorldPoint','extrin
 %   nodal point of the camera.
 %
 
- rayTraceFuncs.cameraNodeDistanceError3D = ...
+% Create the function
+rayTraceFuncs.cameraNodeDistanceError3D = ...
      cameraNodeDistanceError3D(rayTraceFuncs.traceOpticalSystem, p.Results.compiledFunctionPath);
+% Add saved function files to path
+if ~isempty(p.Results.compiledFunctionPath)
+    addpath(p.Results.compiledFunctionPath,'-end');
+end
 
 
 %% virtualImageRay
@@ -276,13 +291,13 @@ rayTraceFuncs.cameraNodeDistanceError2D.argumentNames = {'eyeWorldPoint','extrin
 %                           of the unit vector.
 %
 
+% Create the function
 rayTraceFuncs.virtualImageRay = virtualImageRay(rayTraceFuncs.traceOpticalSystem, p.Results.compiledFunctionPath);
-
-
-%% Add saved function files to path
+% Add saved function files to path
 if ~isempty(p.Results.compiledFunctionPath)
     addpath(p.Results.compiledFunctionPath,'-end');
 end
+
 
 end % assembleRayTraceFuncs -- MAIN
 
