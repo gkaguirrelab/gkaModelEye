@@ -199,11 +199,11 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     fprintf('Forward model calculation time is %4.2f msecs without ray tracing and %4.2f with ray tracing.\n',noRayTraceTimeMsec,withRayTraceTimeMsec);
 %}
 %{
-    %% Calculate the time required when the ray trace funcs are cached
+    %% Calculate the time required when the ray trace func is pre-compiled
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
-    % Define the ray tracing functions (slow; only need to do once)
-    rayTraceFuncs = assembleRayTraceFuncs(sceneGeometry,'compiledFunctionPath','/tmp/rayTraceFuncs');
+    % Save a pre-compiled ray trace function
+    rayTraceFuncs = assembleRayTraceFuncs(sceneGeometry,'compiledFunctionStemName','/tmp/demoRayTrace');
     % Perform 100 forward projections with randomly selected eye poses
     % with ray tracing
     nPoses = 100;
