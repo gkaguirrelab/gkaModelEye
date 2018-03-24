@@ -5,9 +5,9 @@ function eye = modelEyeParameters( varargin )
 %  eye = modelEyeParameters()
 %
 % Description:
-%   This routine returns the parameters that define a model eye that is
-%   used in the sceneGeometry routines. We make use of values derived by
-%   Atchison for human eyes:
+%   This routine returns the parameters of a model eye used in the
+%   sceneGeometry routines. We make use of values derived by Atchison for
+%   human eyes:
 %
 %       Atchison, David A. "Optical models for human myopic eyes." Vision
 %       research 46.14 (2006): 2236-2250.
@@ -57,9 +57,9 @@ function eye = modelEyeParameters( varargin )
 %                           modeled. Supported values (in any case) are
 %                           {'human'}
 %  'spectralDomain'       - String, options include {'vis','nir'}.
-%                           This is the light domain within which imaging
-%                           is being performed. The refractive indices vary
-%                           based upon this choice.
+%                           This is the wavelength domain within which
+%                           imaging is being performed. The refractive
+%                           indices vary based upon this choice.
 %
 % Outputs:
 %   eye                   - A structure with fields that contain the values
@@ -80,8 +80,8 @@ function eye = modelEyeParameters( varargin )
 p = inputParser; p.KeepUnmatched = true;
 
 % Optional
-p.addParameter('sphericalAmetropia',0,@isnumeric);
-p.addParameter('axialLength',[],@(x)(isempty(x) || isnumeric(x)));
+p.addParameter('sphericalAmetropia',0,@isscalar);
+p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('kappaAngle',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
@@ -102,9 +102,10 @@ end
 
 % Switch parameters at the top level by species
 switch p.Results.species
+
+    %% Human eye
     case {'human','Human','HUMAN'}
-        
-        
+                
         %% Cornea front surface
         % The properties of the cornea are typically described by the
         % radius of curvature (R) at the vertex and its asphericity (Q).
@@ -132,8 +133,7 @@ switch p.Results.species
             solution = solve([eqn1, eqn2]);
             solution.a
             solution.b
-        %}
-        
+        %}        
         a = eye.corneaFrontSurfaceR / ( eye.corneaFrontSurfaceQ + 1 );
         b = eye.corneaFrontSurfaceR * sqrt(1/(eye.corneaFrontSurfaceQ+1)) ;
         eye.corneaFrontSurfaceRadii(1) = a;
@@ -202,8 +202,9 @@ switch p.Results.species
         %}
         eye.irisRadius = 5.92;
         
-        % The iris center is shifted slightly temporally and upward with
-        % respect to the pupil center:
+        % We align the iris center withi the optical axis, although we note
+        % that there are some reporst that the iris is shifted slightly
+        % temporally and upward with respect to the pupil center:
         %
         %   ...the typical entrance pupil is decentered
         %   approximately 0.15 mm nasally and 0.1 mm inferior to the
@@ -216,9 +217,9 @@ switch p.Results.species
         % the iris plane equal to the pupil plane.
         switch eyeLaterality
             case 'Right'
-                eye.irisCenter = [-3.7 -0.15 -0.1];
+                eye.irisCenter = [-3.7 0 0];
             case 'Left'
-                eye.irisCenter = [-3.7 0.15 -0.1];
+                eye.irisCenter = [-3.7 0 0];
         end
         
         
@@ -477,8 +478,7 @@ switch p.Results.species
         % We note that there is evidence that the vertical kappa value can
         % vary based upon the subject being in a sittng or supine position.
         % Until better evidene is available, we adopt a vertical kappa of
-        % -2 degrees for the emmetropic model eye.
-        
+        % -2 degrees for the emmetropic model eye.        
         if isempty(p.Results.kappaAngle)
             switch eyeLaterality
                 case 'Right'
@@ -498,6 +498,7 @@ switch p.Results.species
         eye.aqueousRefractiveIndex = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
         eye.lensRefractiveIndex = returnRefractiveIndex( 'lens', p.Results.spectralDomain );
 
+    %% Dog eye
     case {'dog','Dog','canine','Canine'}
         
         % Unless othewise stated, values taken from:
@@ -549,6 +550,7 @@ switch p.Results.species
         % the front and back surface of the cornea at the apex. 
         eye.corneaBackSurfaceCenter = [-0.587-eye.corneaBackSurfaceRadii(1) 0 0];
         
+
         %% Pupil
         % We position the pupil plane at the depth of the anterior point of
         % the lens. Table 3 of:
@@ -569,6 +571,7 @@ switch p.Results.species
         % needed.
         eye.irisRadius = 7;
        	eye.irisCenter = [-4.877 0 0];
+
 
         %% Posterior chamber
         eye.posteriorChamberRadii = [ 8.25 8.25 8.25];
