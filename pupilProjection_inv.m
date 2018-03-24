@@ -196,16 +196,16 @@ CoP(1:2)=CoP(1:2)./CoP(3);
 CoP=CoP(1:2);
 
 % Set the bounds on the eyePose based upon the quadrant of the ellipse
-% center. We provide half a degree of wiggle in the fit around zero.
+% center. We provide 5 degrees of wiggle in the fit around zero.
 if pupilEllipseOnImagePlane(1) < CoP(1)
-    eyePoseUB(1) = .5;
+    eyePoseUB(1) = 5;
 else
-    eyePoseLB(1) = -.5;
+    eyePoseLB(1) = -5;
 end
 if pupilEllipseOnImagePlane(2) > CoP(2)
-    eyePoseUB(2) = .5;
+    eyePoseUB(2) = 5;
 else
-    eyePoseLB(2) = -.5;
+    eyePoseLB(2) = -5;
 end
 
 % If x0 is undefined, we make a guess based upon the location and size of
@@ -256,6 +256,7 @@ if isempty(p.Results.x0)
 else
     x0 = p.Results.x0;
 end
+
 
 %% Perform the search
 % We use nested functions for the objective and constraint so that the
@@ -322,8 +323,10 @@ options = optimoptions(@fmincon,...
         % the theta value is doubled prior to conversion to Cartesian
         % coordinates so that the space wraps at the 0 - pi transition
         % point. Eccentricity has a value ranging from zero (circular) to 1
-        % (a fully flattened ellipse). The ceq value is divided by 2, so
-        % that the largest possible error is unity.
+        % (a fully flattened ellipse). We linearize the eccentricity value
+        % so that the error metric is sensitive to small differences in
+        % eccentricity. The ceq value is divided by 2, so that the largest
+        % possible error is unity.
         
         thetaT = targetEllipse(5)*2;
         thetaC = ellipseAtLast(5)*2;
