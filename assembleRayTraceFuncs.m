@@ -1,4 +1,4 @@
-function rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry )
+function rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry, varargin )
 % Function handles to ray tracing equations
 %
 % Syntax:
@@ -20,6 +20,14 @@ function rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry )
 %   sceneGeometry         - A sceneGeometry structure. Critically, this
 %                           includes the eye field.
 %
+% Optional key-value pairs:
+%  'compiledFunctionPath' - Character string, defaults to empty. If set,
+%                           the ray trace functions are saved in files as
+%                           matlab functions. These paths are returned in
+%                           the rayTraceFuncs structure, as opposed to
+%                           function handles. This allows for subsequent
+%                           C-code compilation of the forward eye model.
+%
 % Outputs:
 %   rayTraceFuncs         - A structure that contains fields that in turn
 %                           contain handles to functions.
@@ -29,6 +37,11 @@ function rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry )
     % Basic example
     sceneGeometry = createSceneGeometry();
     rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry );
+%}
+%{
+    % Basic example with file caching of the functions
+    sceneGeometry = createSceneGeometry();
+    rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry, 'compiledFunctionPath', '/tmp/rayTraceFuncs' );
 %}
 %{
     % Demonstrate how the time it takes to perform the symbolic variable
@@ -61,6 +74,28 @@ function rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry )
     xlabel('# of surfaces in optical model');
     ylabel('time to assemble ray tracing funcs [secs]');
 %}
+
+
+%% input parser
+p = inputParser;
+
+% Required
+p.addRequired('sceneGeometry',@isstruct);
+
+% Optional
+p.addParameter('compiledFunctionPath',[],@ischar);
+
+% parse
+p.parse(sceneGeometry, varargin{:})
+
+
+%% Create a directory for the compiled functions
+if ~isempty(p.Results.compiledFunctionPath)
+    if ~exist(p.Results.compiledFunctionPath,'dir')
+        mkdir(p.Results.compiledFunctionPath)
+    end
+end
+
 
 %% traceOpticalSystem
 % 2D ray tracing through the cornea and any corrective lenses
@@ -111,7 +146,7 @@ function rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry )
 %                           vector.
 %
 
-rayTraceFuncs.traceOpticalSystem = traceOpticalSystem(sceneGeometry.opticalSystem);
+rayTraceFuncs.traceOpticalSystem = traceOpticalSystem(sceneGeometry.opticalSystem, p.Results.compiledFunctionPath);
 
 
 %% cameraNodeDistanceError2D
@@ -186,7 +221,7 @@ rayTraceFuncs.traceOpticalSystem = traceOpticalSystem(sceneGeometry.opticalSyste
 %                           camera.
 
 [rayTraceFuncs.cameraNodeDistanceError2D.p1p2, rayTraceFuncs.cameraNodeDistanceError2D.p1p3] = ...
-    cameraNodeDistanceError2D(rayTraceFuncs.traceOpticalSystem);
+    cameraNodeDistanceError2D(rayTraceFuncs.traceOpticalSystem, p.Results.compiledFunctionPath);
 rayTraceFuncs.cameraNodeDistanceError2D.argumentNames = {'eyeWorldPoint','extrinsicTranslationVector','[eyeAzimuthRads, eyeElevationRads, eyeTorsionRads]','aziRotCenter_p1p2','eleRotCenter_p1p3','torRotCenter_p2p3','theta'};
 
 
@@ -205,7 +240,7 @@ rayTraceFuncs.cameraNodeDistanceError2D.argumentNames = {'eyeWorldPoint','extrin
 %
 
  rayTraceFuncs.cameraNodeDistanceError3D = ...
-     cameraNodeDistanceError3D(rayTraceFuncs.traceOpticalSystem);
+     cameraNodeDistanceError3D(rayTraceFuncs.traceOpticalSystem, p.Results.compiledFunctionPath);
 
 
 %% virtualImageRay
@@ -241,10 +276,15 @@ rayTraceFuncs.cameraNodeDistanceError2D.argumentNames = {'eyeWorldPoint','extrin
 %                           of the unit vector.
 %
 
-rayTraceFuncs.virtualImageRay = virtualImageRay(rayTraceFuncs.traceOpticalSystem);
+rayTraceFuncs.virtualImageRay = virtualImageRay(rayTraceFuncs.traceOpticalSystem, p.Results.compiledFunctionPath);
 
 
+%% Add saved function files to path
+if ~isempty(p.Results.compiledFunctionPath)
+    addpath(p.Results.compiledFunctionPath,'-end');
 end
+
+end % assembleRayTraceFuncs -- MAIN
 
 
 
@@ -256,7 +296,7 @@ end
 
 
 %% traceOpticalSystem
-function rayTraceFunc = traceOpticalSystem(opticalSystem)
+function rayTraceFunc = traceOpticalSystem(opticalSystem, compiledFunctionPath)
 % 2D ray tracing through the cornea and any corrective lenses
 
 
@@ -266,13 +306,20 @@ syms z h theta
 % Pass the optical system and the symbolic variables to the ray tracer
 outputRay2D = rayTraceCenteredSphericalSurfaces([z h], theta, opticalSystem);
 
-% Convert the equation with symbolic variables into a function
-rayTraceFunc = matlabFunction(outputRay2D);
+% Convert the equation with symbolic variables into a function and either
+% return a function handle or save the function to a file
+if isempty(compiledFunctionPath)
+    rayTraceFunc = matlabFunction(outputRay2D);
+else
+    functionFileName = fullfile(compiledFunctionPath,'traceOpticalSystem');
+    rayTraceFunc = matlabFunction(outputRay2D,'File',functionFileName);    
 end
+
+end % traceOpticalSystem
 
 
 %% cameraNodeDistanceError2D
-function [p1p2Func, p1p3Func] = cameraNodeDistanceError2D(rayTraceFunc)
+function [p1p2Func, p1p3Func] = cameraNodeDistanceError2D(rayTraceFunc, compiledFunctionPath)
 % 2D distance of ray intersection on camera plane from camera node
 
 
@@ -404,37 +451,75 @@ slope_xZ =(outputRaySceneWorld_p1p2(2,1)-outputRaySceneWorld_p1p2(1,1))/(outputR
 slope_yZ =(outputRaySceneWorld_p1p2(2,2)-outputRaySceneWorld_p1p2(1,2))/(outputRaySceneWorld_p1p2(2,3)-outputRaySceneWorld_p1p2(1,3));
 cameraPlaneX = outputRaySceneWorld_p1p2(1,1)+((cameraTranslationZ-outputRaySceneWorld_p1p2(1,3))*slope_xZ);
 cameraPlaneY = outputRaySceneWorld_p1p2(1,2)+((cameraTranslationZ-outputRaySceneWorld_p1p2(1,3))*slope_yZ);
-p1p2Func = matlabFunction(...
-    sqrt((cameraTranslationX-cameraPlaneX)^2 + ...
-    (cameraTranslationY-cameraPlaneY)^2 ), ...
-    'Vars',{[p1 p2 p3],...
-        [cameraTranslationX; cameraTranslationY; cameraTranslationZ],...
-        [eyeAzimuthRads, eyeElevationRads, eyeTorsionRads],...
-        [aziRotCent_p1, aziRotCent_p2],...
-        [eleRotCent_p1, eleRotCent_p3],...
-        [torRotCent_p2, torRotCent_p3],...
-        theta_p1p2});
+
+% Convert the equation with symbolic variables into a function and either
+% return a function handle or save the function to a file
+if isempty(compiledFunctionPath)
+    p1p2Func = matlabFunction(...
+        sqrt((cameraTranslationX-cameraPlaneX)^2 + ...
+        (cameraTranslationY-cameraPlaneY)^2 ), ...
+        'Vars',{[p1 p2 p3],...
+            [cameraTranslationX; cameraTranslationY; cameraTranslationZ],...
+            [eyeAzimuthRads, eyeElevationRads, eyeTorsionRads],...
+            [aziRotCent_p1, aziRotCent_p2],...
+            [eleRotCent_p1, eleRotCent_p3],...
+            [torRotCent_p2, torRotCent_p3],...
+            theta_p1p2});
+else
+    functionFileName = fullfile(compiledFunctionPath,'cameraNodeDistanceError2D_p1p2');
+    p1p2Func = matlabFunction(...
+        sqrt((cameraTranslationX-cameraPlaneX)^2 + ...
+        (cameraTranslationY-cameraPlaneY)^2 ), ...
+        'Vars',{[p1 p2 p3],...
+            [cameraTranslationX; cameraTranslationY; cameraTranslationZ],...
+            [eyeAzimuthRads, eyeElevationRads, eyeTorsionRads],...
+            [aziRotCent_p1, aziRotCent_p2],...
+            [eleRotCent_p1, eleRotCent_p3],...
+            [torRotCent_p2, torRotCent_p3],...
+            theta_p1p2},...
+        'File',functionFileName);
+end
+
 
 slope_xZ =(outputRaySceneWorld_p1p3(2,1)-outputRaySceneWorld_p1p3(1,1))/(outputRaySceneWorld_p1p3(2,3)-outputRaySceneWorld_p1p3(1,3));
 slope_yZ =(outputRaySceneWorld_p1p3(2,2)-outputRaySceneWorld_p1p3(1,2))/(outputRaySceneWorld_p1p3(2,3)-outputRaySceneWorld_p1p3(1,3));
 cameraPlaneX = outputRaySceneWorld_p1p3(1,1)+((cameraTranslationZ-outputRaySceneWorld_p1p3(1,3))*slope_xZ);
 cameraPlaneY = outputRaySceneWorld_p1p3(1,2)+((cameraTranslationZ-outputRaySceneWorld_p1p3(1,3))*slope_yZ);
-p1p3Func = matlabFunction(...
-    sqrt((cameraTranslationX-cameraPlaneX)^2 + ...
-    (cameraTranslationY-cameraPlaneY)^2 ), ...
-    'Vars',{[p1 p2 p3],...
-        [cameraTranslationX; cameraTranslationY; cameraTranslationZ],...
-        [eyeAzimuthRads, eyeElevationRads, eyeTorsionRads],...
-        [aziRotCent_p1, aziRotCent_p2],...
-        [eleRotCent_p1, eleRotCent_p3],...
-        [torRotCent_p2, torRotCent_p3],...
-        theta_p1p3});
 
+% Convert the equation with symbolic variables into a function and either
+% return a function handle or save the function to a file
+if isempty(compiledFunctionPath)
+    p1p3Func = matlabFunction(...
+        sqrt((cameraTranslationX-cameraPlaneX)^2 + ...
+        (cameraTranslationY-cameraPlaneY)^2 ), ...
+        'Vars',{[p1 p2 p3],...
+            [cameraTranslationX; cameraTranslationY; cameraTranslationZ],...
+            [eyeAzimuthRads, eyeElevationRads, eyeTorsionRads],...
+            [aziRotCent_p1, aziRotCent_p2],...
+            [eleRotCent_p1, eleRotCent_p3],...
+            [torRotCent_p2, torRotCent_p3],...
+            theta_p1p3});
+else
+    functionFileName = fullfile(compiledFunctionPath,'cameraNodeDistanceError2D_p1p3');
+    p1p3Func = matlabFunction(...
+        sqrt((cameraTranslationX-cameraPlaneX)^2 + ...
+        (cameraTranslationY-cameraPlaneY)^2 ), ...
+        'Vars',{[p1 p2 p3],...
+            [cameraTranslationX; cameraTranslationY; cameraTranslationZ],...
+            [eyeAzimuthRads, eyeElevationRads, eyeTorsionRads],...
+            [aziRotCent_p1, aziRotCent_p2],...
+            [eleRotCent_p1, eleRotCent_p3],...
+            [torRotCent_p2, torRotCent_p3],...
+            theta_p1p3},...
+            'File',functionFileName);
 end
 
 
+end % cameraNodeDistanceError2D
+
+
 %% cameraNodeDistanceError3D
-function p1p2p3Func = cameraNodeDistanceError3D(rayTraceFunc)
+function p1p2p3Func = cameraNodeDistanceError3D(rayTraceFunc, compiledFunctionPath)
 % 3D distance of ray intersection on camera plane from camera node
 
 
@@ -531,29 +616,47 @@ outputRaySceneWorld3D = outputRayHeadWorld3D(:,[2 3 1]);
 % eye corresponds to a movement of the pupil upward in the image
 outputRaySceneWorld3D(:,2) = outputRaySceneWorld3D(:,2)*(-1);
 
-% Obtain an expression for X and Y distances between the nodal point of the camera in the sceneWorld plane and the
-% point at which the ray will strike the plane that contains the camera
+% Obtain an expression for X and Y distances between the nodal point of the
+% camera in the sceneWorld plane and the point at which the ray will strike
+% the plane that contains the camera
 slope_xZ =(outputRaySceneWorld3D(2,1)-outputRaySceneWorld3D(1,1))/(outputRaySceneWorld3D(2,3)-outputRaySceneWorld3D(1,3));
 slope_yZ =(outputRaySceneWorld3D(2,2)-outputRaySceneWorld3D(1,2))/(outputRaySceneWorld3D(2,3)-outputRaySceneWorld3D(1,3));
 cameraPlaneX = outputRaySceneWorld3D(1,1)+((cameraTranslationZ-outputRaySceneWorld3D(1,3))*slope_xZ);
 cameraPlaneY = outputRaySceneWorld3D(1,2)+((cameraTranslationZ-outputRaySceneWorld3D(1,3))*slope_yZ);
-p1p2p3Func = matlabFunction(...
-    sqrt((cameraTranslationX-cameraPlaneX)^2 + ...
-    (cameraTranslationY-cameraPlaneY)^2 ), ...
-    'Vars',{[p1 p2 p3],...
-        [cameraTranslationX; cameraTranslationY; cameraTranslationZ],...
-        [eyeAzimuthRads, eyeElevationRads, eyeTorsionRads],...
-        [aziRotCent_p1, aziRotCent_p2],...
-        [eleRotCent_p1, eleRotCent_p3],...
-        [torRotCent_p2, torRotCent_p3],...
-        theta_p1p2, theta_p1p3});
 
-
+% Convert the equation with symbolic variables into a function and either
+% return a function handle or save the function to a file
+if isempty(compiledFunctionPath)
+    p1p2p3Func = matlabFunction(...
+        sqrt((cameraTranslationX-cameraPlaneX)^2 + ...
+        (cameraTranslationY-cameraPlaneY)^2 ), ...
+        'Vars',{[p1 p2 p3],...
+            [cameraTranslationX; cameraTranslationY; cameraTranslationZ],...
+            [eyeAzimuthRads, eyeElevationRads, eyeTorsionRads],...
+            [aziRotCent_p1, aziRotCent_p2],...
+            [eleRotCent_p1, eleRotCent_p3],...
+            [torRotCent_p2, torRotCent_p3],...
+            theta_p1p2, theta_p1p3});
+else
+    functionFileName = fullfile(compiledFunctionPath,'cameraNodeDistanceError3D');
+    p1p2p3Func = matlabFunction(...
+        sqrt((cameraTranslationX-cameraPlaneX)^2 + ...
+        (cameraTranslationY-cameraPlaneY)^2 ), ...
+        'Vars',{[p1 p2 p3],...
+            [cameraTranslationX; cameraTranslationY; cameraTranslationZ],...
+            [eyeAzimuthRads, eyeElevationRads, eyeTorsionRads],...
+            [aziRotCent_p1, aziRotCent_p2],...
+            [eleRotCent_p1, eleRotCent_p3],...
+            [torRotCent_p2, torRotCent_p3],...
+            theta_p1p2, theta_p1p3},...
+        'File',functionFileName);
 end
+
+end % cameraNodeDistanceError3D
 
 
 %% virtualImageRay
-function [virtualImageRayFunc] = virtualImageRay(rayTraceFunc)
+function [virtualImageRayFunc] = virtualImageRay(rayTraceFunc, compiledFunctionPath)
 % Returns the unit vector virtual image ray for the initial depth position
 
 
@@ -581,6 +684,16 @@ outputRayEyeWorld_p1p3(:,2)=outputRayEyeWorld_p1p3(:,2)-(zOffset*slope);
 outputRayEyeWorld(1,:) = [outputRayEyeWorld_p1p2(1,1) outputRayEyeWorld_p1p2(1,2) outputRayEyeWorld_p1p3(1,2)];
 outputRayEyeWorld(2,:) = [outputRayEyeWorld_p1p2(2,1) outputRayEyeWorld_p1p2(2,2) outputRayEyeWorld_p1p3(2,2)];
 
-% Convert the equation with symbolic variables into a function
-virtualImageRayFunc = matlabFunction(outputRayEyeWorld);
+% Convert the equation with symbolic variables into a function and either
+% return a function handle or save the function to a file
+if isempty(compiledFunctionPath)
+    virtualImageRayFunc = matlabFunction(outputRayEyeWorld,...
+        'Vars',{p1,p2,p3,theta_p1p2,theta_p1p3});
+else
+    functionFileName = fullfile(compiledFunctionPath,'virtualImageRay');
+    virtualImageRayFunc = matlabFunction(outputRayEyeWorld,...
+        'Vars',{p1,p2,p3,theta_p1p2,theta_p1p3},...
+        'File',functionFileName);
 end
+
+end % virtualImageRay
