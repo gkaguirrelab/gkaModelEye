@@ -2,8 +2,8 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 % Returns the position and angle of a resultant ray WRT optical axis
 %
 % Syntax:
-%   [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCenteredSphericalSurfaces(coordsInitial, thetaInitial, opticalSystemIn)
-
+%  [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCenteredSphericalSurfaces(coordsInitial, thetaInitial, opticalSystemIn)
+%
 % Description:
 %   This routine implements the 2D generalized ray tracing equations of:
 %
@@ -26,15 +26,15 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %   the routine is the position and angle at which the ray (or its reverse
 %   projection) intersects the optical axis.
 %
-%   The routine is able to take symbolic variables for some or all of the
-%   input components. When the input contains a symbolic variable:
+%   The will accept symbolic variables for some or all of the input
+%   components. When the input contains one or more symbolic variables:
 %     - plotting is disabled
 %     - intersectionCoords are not calculated and instead returned as empty
 %     - checks for incidence angles above the critical angle or rays that
 %       miss an optical surface are not conducted
 %
 % Inputs:
-%   coordsInitial         - a 2x1 matrix, with the values corresponding to
+%   coordsInitial         - A 2x1 matrix, with the values corresponding to
 %                           the z-position and height of the initial
 %                           position of the ray.
 %   thetaInitial          - A scalar in radians. A value of zero is aligned
