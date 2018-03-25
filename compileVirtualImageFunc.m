@@ -393,7 +393,7 @@ if ~isempty(p.Results.functionPathStem)
     virtualImageFuncPointer.opticalSystem = sceneGeometry.opticalSystem;
     % Save a copy of this variable in the function directory. The saved
     % variable may be used to re-instantiate the function at a later point.
-    filePath = fullfil(fileLocation.folder,'virtualImageFuncPointer');
+    filePath = fullfile(fileLocation.folder,'virtualImageFuncPointer');
     save(filePath,'virtualImageFuncPointer');
 else
     % Create the function in memory only
