@@ -55,14 +55,10 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
 %  'anteriorChamberEllipsoidPoints' - The number of points that are on
 %                           each longitude line of the anterior chamber
 %                           ellipsoid. About 30 makes a nice image.
-%  'removeObscuredPoints' - Logical. If set to true (default) the set of
+%  'removeOccultedPoints' - Logical. If set to true (default) the set of
 %                           modeled points will be restricted to only those
 %                           that are anterior to the center of rotation of
 %                           the eye following rotation of the eye.
-%  'calcNodalIntersectError' - Logical. Controls if the nodal point
-%                           intersection error is calculated. Set to false
-%                           by default as this adds time to the forward
-%                           model.
 %
 % Outputs:
 %   pupilEllipseOnImagePlane - A 1x5 vector with the parameters of the
@@ -92,8 +88,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
 %                           the intersection of a ray on the camera plane.
 %                           The value is nan for points not subject to
 %                           refraction by the cornea. All values will be
-%                           nan if the key value calcNodalIntersectError is
-%                           set to false.
+%                           nan virtualImageFuncPointer is empty.
 %
 % Examples:
 %{
@@ -142,7 +137,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     % Define an eyePose with azimuth, elevation, torsion, and pupil radius
     eyePose = [-10 5 0 3];
     % Perform the projection and request the full eye model
-    [~, ~, sceneWorldPoints, ~, pointLabels] = pupilProjection_fwd(eyePose,sceneGeometry,[],'fullEyeModelFlag',true,'removeObscuredPoints',false);
+    [~, ~, sceneWorldPoints, ~, pointLabels] = pupilProjection_fwd(eyePose,sceneGeometry,[],'fullEyeModelFlag',true,'removeOccultedPoints',false);
     % Define some settings for display
     eyePartLabels = {'aziRotationCenter', 'eleRotationCenter', 'posteriorChamber' 'irisPerimeter' 'pupilPerimeter' 'anteriorChamber' 'cornealApex'};
     plotColors = {'>r' '^m' '.k' '*b' '*g' '.y' '*y'};
@@ -167,7 +162,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     nPoses = 100;
     eyePoses=[(rand(nPoses,1)-0.5)*30, (rand(nPoses,1)-0.5)*20, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
     for pp = 1:nPoses
-    	[~,~,~,~,~,rayTraceError(:,pp)]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,virtualImageFuncPointer,'calcNodalIntersectError',true);
+    	[~,~,~,~,~,rayTraceError(:,pp)]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,virtualImageFuncPointer);
     end
     % Observe that the ray trace nodal error, while small, grows as a
     % function of the rotation of the eye.
@@ -203,7 +198,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Save a pre-compiled ray trace function
-    virtualImageFuncPointer = compileVirtualImageFunc(sceneGeometry,'functionPathStem','/tmp/demoRayTrace');
+    virtualImageFuncPointer = compileVirtualImageFunc(sceneGeometry,'functionPathStem','/tmp/example');
     % Perform forward projections with randomly selected eye poses
     % With ray tracing, using compiled mex file
     nPoses = 1000;
@@ -232,8 +227,7 @@ p.addParameter('nPupilPerimPoints',5,@(x)(isnumeric(x) && x>4));
 p.addParameter('nIrisPerimPoints',5,@(x)(isnumeric(x) && x>4));
 p.addParameter('posteriorChamberEllipsoidPoints',30,@isnumeric);
 p.addParameter('anteriorChamberEllipsoidPoints',30,@isnumeric);
-p.addParameter('removeObscuredPoints',true,@islogical);
-p.addParameter('calcNodalIntersectError',false,@islogical);
+p.addParameter('removeOccultedPoints',true,@islogical);
 
 % parse
 p.parse(eyePose, sceneGeometry, virtualImageFuncPointer, varargin{:})
@@ -481,11 +475,11 @@ for rr=1:3
         (R.(rotOrder{rr})*(headWorldPoints(rotatePointsIdx,:)-sceneGeometry.eye.rotationCenters.(rotOrder{rr}))')'+sceneGeometry.eye.rotationCenters.(rotOrder{rr});
 end
 
-% If we are projecting a full eye model, and the 'removeObscuredPoints' is
+% If we are projecting a full eye model, and the 'removeOccultedPoints' is
 % set to true, then remove those points that are posterior to the most
 % posterior of the centers of rotation of the eye, and thus would not be
 % visible to the camera.
-if p.Results.fullEyeModelFlag && p.Results.removeObscuredPoints
+if p.Results.fullEyeModelFlag && p.Results.removeOccultedPoints
     retainIdx = headWorldPoints(:,1) >= min([sceneGeometry.eye.rotationCenters.azi(1) sceneGeometry.eye.rotationCenters.ele(1)]);
     eyeWorldPoints = eyeWorldPoints(retainIdx,:);
     headWorldPoints = headWorldPoints(retainIdx,:);

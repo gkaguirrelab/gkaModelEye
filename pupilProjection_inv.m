@@ -1,8 +1,8 @@
-function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaError, exitFlag] = pupilProjection_inv(pupilEllipseOnImagePlane, sceneGeometry, rayTraceFuncs, varargin)
+function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaError, exitFlag] = pupilProjection_inv(pupilEllipseOnImagePlane, sceneGeometry, virtualImageFuncPointer, varargin)
 % Project an ellipse on the image plane to a pupil circle in the scene
 %
 % Syntax:
-%  [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaError] = pupilProjection_inv(pupilEllipseOnImagePlane, sceneGeometry, rayTraceFuncs)
+%  [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaError] = pupilProjection_inv(pupilEllipseOnImagePlane, sceneGeometry, virtualImageFuncPointer)
 %
 % Description:
 %	Given the sceneGeometry and an ellipse on the image plane, this routine
@@ -39,10 +39,8 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
 %   pupilEllipseOnImagePlane - A 1x5 vector that contains the parameters of
 %                           pupil ellipse on the image plane cast in
 %                           transparent form
-%   sceneGeometry         - The sceneGeometry structure. Defined in
-%                           createSceneGeometry()
-%   rayTraceFuncs         - A structure of function handles. Defined in
-%                           assembleRayTraceFuncs().
+%   sceneGeometry         - Structure. SEE: createSceneGeometry
+%   virtualImageFuncPointer - Structure. SEE: compileVirtualImageFunc
 %
 % Optional key/value pairs:
 %  'x0'                   - Starting point of the search for the eyePose.
@@ -97,14 +95,14 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Define the ray tracing functions
-    rayTraceFuncs = assembleRayTraceFuncs(sceneGeometry);
+    virtualImageFuncPointer = compileVirtualImageFunc(sceneGeometry);
     % Define in eyePoses the azimuth, elevation, torsion, and pupil radius
     eyePose = [10 10 0 2];
     % Obtain the pupil ellipse parameters in transparent format
-    pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry,rayTraceFuncs);
+    pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry,virtualImageFuncPointer);
     % Recover the eye pose from the ellipse
     tic
-    inverseEyePose = pupilProjection_inv(pupilEllipseOnImagePlane, sceneGeometry, rayTraceFuncs);
+    inverseEyePose = pupilProjection_inv(pupilEllipseOnImagePlane, sceneGeometry, virtualImageFuncPointer);
     toc
     % Report the difference between the input and recovered eyePose
     fprintf('Error in the recovered eye pose (deg azimuth, deg elevation, deg torsion, mm pupil radius) is: \n');
@@ -115,7 +113,7 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Define the ray tracing functions (slow; only need to do once)
-    rayTraceFuncs = assembleRayTraceFuncs(sceneGeometry);
+    virtualImageFuncPointer = compileVirtualImageFunc(sceneGeometry,'functionPathStem','/tmp/example');
     % Perform 100 forward projections with randomly selected eye poses
     % without ray tracing
     nPoses = 100;
@@ -133,7 +131,7 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
     % and with ray tracing
     tic
     for pp = 1:nPoses
-    	pupilProjection_inv(ellipseParams(pp,:),sceneGeometry,rayTraceFuncs);
+    	pupilProjection_inv(ellipseParams(pp,:),sceneGeometry,virtualImageFuncPointer);
     end
     withRayTraceTimeMsec = toc / nPoses * 1000;
     fprintf('Inverse projection time is %4.2f msecs with ray tracing.\n',withRayTraceTimeMsec);
@@ -146,7 +144,7 @@ p = inputParser;
 % Required input
 p.addRequired('pupilEllipseOnImagePlane',@isnumeric);
 p.addRequired('sceneGeometry',@isstruct);
-p.addRequired('rayTraceFuncs',@(x)(isempty(x) | isstruct(x)));
+p.addRequired('virtualImageFuncPointer',@(x)(isempty(x) | isstruct(x)));
 
 % Optional params
 p.addParameter('x0',[],@(x)(isempty(x) | isnumeric(x)));
@@ -156,7 +154,7 @@ p.addParameter('centerErrorThreshold',1e-4,@isnumeric);
 p.addParameter('constraintTolerance',[],@(x)(isempty(x) | isnumeric(x)));
 
 % Parse and check the parameters
-p.parse(pupilEllipseOnImagePlane, sceneGeometry, rayTraceFuncs, varargin{:});
+p.parse(pupilEllipseOnImagePlane, sceneGeometry, virtualImageFuncPointer, varargin{:});
 
 
 %% Check inputs
@@ -237,7 +235,7 @@ if isempty(p.Results.x0)
     % Probe the forward model at the estimated pose angles to
     % estimate the pupil radius. Here we do need ray tracing as it
     % has a substantial influence upon the area of the ellipse.
-    probeEllipse=pupilProjection_fwd([x0(1) x0(2) x0(3) 2], sceneGeometry, rayTraceFuncs);
+    probeEllipse=pupilProjection_fwd([x0(1) x0(2) x0(3) 2], sceneGeometry, virtualImageFuncPointer);
     pixelsPerMM = sqrt(probeEllipse(3)/pi)/2;
     
     % Set the initial value for pupil radius in mm
@@ -299,7 +297,7 @@ options = optimoptions(@fmincon,...
 
     function fval = objfun(x)
         if ~isequal(x,xLast) % Check if computation is necessary
-            ellipseAtLast = pupilProjection_fwd(x, sceneGeometry, rayTraceFuncs);
+            ellipseAtLast = pupilProjection_fwd(x, sceneGeometry, virtualImageFuncPointer);
             xLast = x;
         end
         % Compute objective function as Euclidean distance in the target
@@ -310,7 +308,7 @@ options = optimoptions(@fmincon,...
 
     function [c,ceq] = constr(x)
         if ~isequal(x,xLast) % Check if computation is necessary
-            ellipseAtLast = pupilProjection_fwd(x, sceneGeometry, rayTraceFuncs);
+            ellipseAtLast = pupilProjection_fwd(x, sceneGeometry, virtualImageFuncPointer);
             xLast = x;
         end
         % c:
