@@ -484,7 +484,7 @@ headWorldPoints=eyeWorldPoints;
 rotOrder = {'tor','ele','azi'};
 
 % We shift the headWorld points to this rotation center, rotate, shift
-% back, and repeat. Omit the eye rotation centers from this process
+% back, and repeat. Omit the eye rotation centers from this process.
 rotatePointsIdx = ~contains(pointLabels,'Rotation');
 for rr=1:3
     headWorldPoints(rotatePointsIdx,:) = ...
@@ -604,9 +604,10 @@ pupilPerimIdx = find(strcmp(pointLabels,'pupilPerimeter'));
 if eyePose(4)==0 || ~isreal(imagePoints(pupilPerimIdx,:)) || length(pupilPerimIdx)<5
     pupilEllipseOnImagePlane=nan(1,5);
 else
-    % We place the ellipse fit in a try-catch block, as the fit can
-    % fail when the ellipse is so eccentric that it approaches a line
+    % We place the ellipse fit in a try-catch block, as the fit can fail
+    % when the ellipse is so eccentric that it approaches a line
     try
+        % Ellipse fitting with routine from the quadfit toolbox
         implicitEllipseParams = ellipsefit_direct( imagePoints(pupilPerimIdx,1), imagePoints(pupilPerimIdx,2));
         % Convert the ellipse from implicit to transparent form
         pupilEllipseOnImagePlane = ellipse_ex2transparent(ellipse_im2ex(implicitEllipseParams));
