@@ -56,7 +56,7 @@ function [virtualImageFuncPointer] = compileVirtualImageFunc( sceneGeometry, var
 %{
     % Basic example with file caching of the functions
     sceneGeometry = createSceneGeometry();
-    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, 'functionPathStem', '/tmp/rayTraceFuncs' );
+    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, 'functionPathStem', '/tmp/example' );
 %}
 %{
     % Demonstrate how the time it takes to perform the symbolic variable
@@ -382,12 +382,17 @@ if ~isempty(p.Results.functionPathStem)
     % Return the path to the function as the output
     virtualImageFuncPointer.handle = @virtualImageFuncMex;
     virtualImageFuncPointer.path = which('virtualImageFuncMex');
+    virtualImageFuncPointer.opticalSystem = sceneGeometry.opticalSystem;
+    % Save a copy of this variable in the function directory. The saved
+    % variable may be used to re-instantiate the function at a later point.
+    filePath = fullfile(compileDir,'virtualImageFuncPointer');
+    save(filePath,'virtualImageFuncPointer');
 else
     virtualImageFuncPointer.handle = @(eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters) virtualImageFunc( eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters, rayTraceFuncs);
     virtualImageFuncPointer.path = [];
+    virtualImageFuncPointer.opticalSystem = sceneGeometry.opticalSystem;
 end
 
-virtualImageFuncPointer.opticalSystem = sceneGeometry.opticalSystem;
 
 end % compileVirtualImageFunc -- MAIN
 
