@@ -393,9 +393,10 @@ if ~isempty(p.Results.functionPathStem)
     virtualImageFuncPointer.opticalSystem = sceneGeometry.opticalSystem;
     % Save a copy of this variable in the function directory. The saved
     % variable may be used to re-instantiate the function at a later point.
-    filePath = [p.Results.functionPathStem 'virtualImageFuncPointer'];
+    filePath = fullfil(fileLocation.folder,'virtualImageFuncPointer');
     save(filePath,'virtualImageFuncPointer');
 else
+    % Create the function in memory only
     virtualImageFuncPointer.handle = @(eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters) virtualImageFunc( eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters, rayTraceFuncs);
     virtualImageFuncPointer.path = [];
     virtualImageFuncPointer.opticalSystem = sceneGeometry.opticalSystem;
