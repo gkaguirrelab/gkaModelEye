@@ -85,7 +85,7 @@ function rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry, varargin )
 p = inputParser;
 
 % Required
-p.addRequired('sceneGeometry',@isstruct);
+p.addRequired('sceneGeometry',@(x)(isstruct(x) || ischar(x)));
 
 % Optional
 p.addParameter('compiledFunctionStemName',[],@ischar);
@@ -95,7 +95,14 @@ p.addParameter('cleanUpCompileDir',false,@islogical);
 p.parse(sceneGeometry, varargin{:})
 
 
-%% Create a directory for the compiled functions
+%% Variable and path setup
+% if the sceneGeometry variable is a character vector, then assume it is
+% the path to a sceneGeometry file.
+if ischar(sceneGeometry)
+    load(sceneGeometry)
+end
+
+% Create a directory for the compiled functions
 if ~isempty(p.Results.compiledFunctionStemName)
     compileDir = [p.Results.compiledFunctionStemName '_virtualImageFuncMex'];
     if ~exist(compileDir,'dir')
