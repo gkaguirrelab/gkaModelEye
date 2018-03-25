@@ -1,52 +1,62 @@
-function rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry, varargin )
+function [virtualImageFuncPointer] = compileVirtualImageFunc( sceneGeometry, varargin )
 % Function handles to ray tracing equations
 %
 % Syntax:
-%  rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry )
+%  virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry )
 %
 % Description:
-%   This routine creates a structure of handles to functions that implement
-%   inverse ray-tracing of points through the cornea and corrective lenses.
-%   The returned functions are:
+%   This routine returns a handle to a function that is used to calculate
+%   the location of a virtual image point that has passed through an
+%   optical system. If the key-value 'functionPathStem' is set, then the
+%   handle will be to a compiled mex function that has been written to
+%   disk, otherwise, the handle will be to a matlab function in memory.
+%   The former executes ~100x faster.
 %
-%       traceOpticalSystem
-%       cameraNodeDistanceError2D
-%       cameraNodeDistanceError3D
-%       virtualImageRay
-%
-%   A description of each function is given in the body of the routine.
+%   The virtualImageFunc is assembled step-wise from more elementary
+%   algorithms:
+%       traceOpticalSystem - 2D ray tracing through the cornea and any
+%           corrective lenses
+%       calcCameraNodeDistanceError2D - 2D distance of ray intersection on 
+%           camera plane from camera node
+%       calcVirtualImageRay - Returns the unit vector virtual image ray for
+%           the initial depth position
+%   This main routine calls out to local functions that assemble these
+%   elementary components. Each elementary component is either saved as a
+%   file at the specified location, or maintained as a function in memory.
+%   Once these components are assembled, a handle is made to the function
+%   virtualImageFunc, which uses these elementary components.
 %
 % Inputs:
 %   sceneGeometry         - A sceneGeometry structure. Critically, this
-%                           includes the eye field.
+%                           includes an optical system.
 %
 % Optional key-value pairs:
-%  'compiledFunctionStemName' - Character string, defaults to empty. If
-%                           set, a single mex function with the passed name
-%                           is created and added to the path. This function
-%                           returns the coordinates of virtual image point
-%                           following the passage of a ray through the
-%                           optical system, given the eyeWorldPoint, the
-%                           camera translation, the eye rotation, and the
-%                           eye rotation centers.
-%  'cleanUpCompileDir'    - Logical. If a mex file compilation is
-%                           performed, this flag determines if the
-%                           intermediate compilation products are retained.
+%  'functionPathStem'     - Character string, default empty. If set this
+%                           defines the location in which the compiled
+%                           function is writen.
+%  'cleanUpCompileDir'    - Logical, default true. If file path is
+%                           provided, this flag determines if the
+%                           intermediate compilation products are deleted.
 %
 % Outputs:
-%   rayTraceFuncs         - A structure that contains fields that in turn
-%                           contain handles to functions.
+%   virtualImageFuncPointer - Structure. Includes the fields:
+%                           'handle' - handle for the function.
+%                           'path' -  full path to the stored mex file; set
+%                               to empty if stored only in memory.
+%                           'opticalSystem' - the optical system used to
+%                               generate the function.
+%                           'header' - text field for 
 %
 % Examples:
 %{
-    % Basic example
+    % Basic example, placing the function in memory
     sceneGeometry = createSceneGeometry();
-    rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry );
+    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry );
 %}
 %{
     % Basic example with file caching of the functions
     sceneGeometry = createSceneGeometry();
-    rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry, 'compiledFunctionName', '/tmp/rayTraceFuncs' );
+    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, 'functionPathStem', '/tmp/rayTraceFuncs' );
 %}
 %{
     % Demonstrate how the time it takes to perform the symbolic variable
@@ -55,23 +65,23 @@ function rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry, varargin )
 
     % Obtain a default sceneGeometry. 
     sceneGeometry = createSceneGeometry();
-    % Define the ray tracing functions 
+    % Define the virtual image function
     tic
-    rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry );
+    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry );
     t(1)=toc;
     n(1)=size(sceneGeometry.opticalSystem,1);
     % Add a contact lens (one additional surface)
-    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'contactLens',-2);
+    virtualImageFuncPointer = createSceneGeometry('sphericalAmetropia',-2,'contactLens',-2);
     % Define the ray tracing functions 
     tic
-    rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry );
+    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry );
     t(2)=toc;
     n(2)=size(sceneGeometry.opticalSystem,1);
     % Add a spectacle lens (two additional surfaces)
-    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',2);
+    virtualImageFuncPointer = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',2);
     % Define the ray tracing functions 
     tic
-    rayTraceFuncs = assembleRayTraceFuncs( sceneGeometry );
+    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry );
     t(3)=toc;
     n(3)=size(sceneGeometry.opticalSystem,1);
     % Plot the timing results
@@ -88,8 +98,8 @@ p = inputParser;
 p.addRequired('sceneGeometry',@(x)(isstruct(x) || ischar(x)));
 
 % Optional
-p.addParameter('compiledFunctionStemName',[],@ischar);
-p.addParameter('cleanUpCompileDir',false,@islogical);
+p.addParameter('functionPathStem',[],@ischar);
+p.addParameter('cleanUpCompileDir',true,@islogical);
 
 % parse
 p.parse(sceneGeometry, varargin{:})
@@ -103,8 +113,8 @@ if ischar(sceneGeometry)
 end
 
 % Create a directory for the compiled functions
-if ~isempty(p.Results.compiledFunctionStemName)
-    compileDir = [p.Results.compiledFunctionStemName '_virtualImageFuncMex'];
+if ~isempty(p.Results.functionPathStem)
+    compileDir = [p.Results.functionPathStem '_virtualImageFuncMex'];
     if ~exist(compileDir,'dir')
         mkdir(compileDir)
     end
@@ -165,17 +175,17 @@ end
 % Create the function
 rayTraceFuncs.traceOpticalSystem = traceOpticalSystem(sceneGeometry.opticalSystem, compileDir);
 % Add saved function files to path
-if ~isempty(p.Results.compiledFunctionStemName)
+if ~isempty(p.Results.functionPathStem)
     addpath(compileDir,'-end');
 end
 
 
-%% cameraNodeDistanceError2D
+%% calcCameraNodeDistanceError2D
 % 2D distance of ray intersection on camera plane from camera node
 %
 % Syntax:
-%  distance = rayTraceFuncs.cameraNodeDistanceError2D.p1p2(cameraTranslationX, cameraTranslationY, cameraTranslationZ, eyeAzimuthRads, eyeElevationRads, eyeTorsionRads, p1, p2, p3, rotationCenterDepth, theta_p1p2)
-%  distance = rayTraceFuncs.cameraNodeDistanceError2D.p1p3(cameraTranslationX, cameraTranslationY, cameraTranslationZ, eyeAzimuthRads, eyeElevationRads, eyeTorsionRads, p1, p2, p3, rotationCenterDepth, theta_p1p3)
+%  distance = rayTraceFuncs.calcCameraNodeDistanceError2D.p1p2(cameraTranslationX, cameraTranslationY, cameraTranslationZ, eyeAzimuthRads, eyeElevationRads, eyeTorsionRads, p1, p2, p3, rotationCenterDepth, theta_p1p2)
+%  distance = rayTraceFuncs.calcCameraNodeDistanceError2D.p1p3(cameraTranslationX, cameraTranslationY, cameraTranslationZ, eyeAzimuthRads, eyeElevationRads, eyeTorsionRads, p1, p2, p3, rotationCenterDepth, theta_p1p3)
 %
 % Description:
 %   This function returns the distance between the nodal point of the
@@ -242,23 +252,23 @@ end
 %                           camera.
 
 % Create the function
-[rayTraceFuncs.cameraNodeDistanceError2D.p1p2, rayTraceFuncs.cameraNodeDistanceError2D.p1p3] = ...
-    cameraNodeDistanceError2D(rayTraceFuncs.traceOpticalSystem, compileDir);
-rayTraceFuncs.cameraNodeDistanceError2D.argumentNames = {'eyeWorldPoint','extrinsicTranslationVector','[eyeAzimuthRads, eyeElevationRads, eyeTorsionRads]','aziRotCenter_p1p2','eleRotCenter_p1p3','torRotCenter_p2p3','theta'};
+[rayTraceFuncs.calcCameraNodeDistanceError2D.p1p2, rayTraceFuncs.calcCameraNodeDistanceError2D.p1p3] = ...
+    calcCameraNodeDistanceError2D(rayTraceFuncs.traceOpticalSystem, compileDir);
+rayTraceFuncs.calcCameraNodeDistanceError2D.argumentNames = {'eyeWorldPoint','extrinsicTranslationVector','[eyeAzimuthRads, eyeElevationRads, eyeTorsionRads]','aziRotCenter_p1p2','eleRotCenter_p1p3','torRotCenter_p2p3','theta'};
 % Add saved function files to path
-if ~isempty(p.Results.compiledFunctionStemName)
+if ~isempty(p.Results.functionPathStem)
     addpath(compileDir,'-end');
 end
 
 
-%% cameraNodeDistanceError3D
+%% calcCameraNodeDistanceError3D
 % 3D distance of ray intersection on camera plane from camera node
 %
 % Syntax:
-%  distance = rayTraceFuncs.cameraNodeDistanceError3D(cameraTranslationX, cameraTranslationY, cameraTranslationZ, eyeAzimuthRads, eyeElevationRads, eyeTorsionRads, p1, p2, p3, rotationCenterDepth, theta_p1p2, theta_p1p3)
+%  distance = rayTraceFuncs.calcCameraNodeDistanceError3D(cameraTranslationX, cameraTranslationY, cameraTranslationZ, eyeAzimuthRads, eyeElevationRads, eyeTorsionRads, p1, p2, p3, rotationCenterDepth, theta_p1p2, theta_p1p3)
 %
 % Description:
-%   This function is similar to the cameraNodeDistanceError2D, except that
+%   This function is similar to the calcCameraNodeDistanceError2D, except that
 %   it takes as input theta in both the p1p2 and p1p3 planes. The distance
 %   value that is returned is still the Euclidean distance between the
 %   intersection point of the output ray on the Z camera plane and the 
@@ -266,19 +276,19 @@ end
 %
 
 % Create the function
-rayTraceFuncs.cameraNodeDistanceError3D = ...
-     cameraNodeDistanceError3D(rayTraceFuncs.traceOpticalSystem, compileDir);
+rayTraceFuncs.calcCameraNodeDistanceError3D = ...
+     calcCameraNodeDistanceError3D(rayTraceFuncs.traceOpticalSystem, compileDir);
 % Add saved function files to path
-if ~isempty(p.Results.compiledFunctionStemName)
+if ~isempty(p.Results.functionPathStem)
     addpath(compileDir,'-end');
 end
 
 
-%% virtualImageRay
+%% calcVirtualImageRay
 % Returns the unit vector virtual image ray for the initial depth position
 %
 % Syntax:
-%  outputRay = rayTraceFuncs.virtualImageRay(p1, p2, p3, theta_p1p2, theta_p1p3)
+%  outputRay = rayTraceFuncs.calcVirtualImageRay(p1, p2, p3, theta_p1p2, theta_p1p3)
 %
 % Description:
 %   For a given point in eyeWorld coordinates, and for a given pair of
@@ -295,7 +305,7 @@ end
 %
 % Inputs:
 %   p1, p2, p3, theta_p1p2, theta_p1p3 - Interpretation as above for
-%                           cameraNodeDistanceError2D
+%                           calcCameraNodeDistanceError2D
 %
 % Outputs:
 %   outputRay             - A 2x3 matrix that is the unit vector of a ray
@@ -308,18 +318,54 @@ end
 %
 
 % Create the function
-rayTraceFuncs.virtualImageRay = virtualImageRay(rayTraceFuncs.traceOpticalSystem, compileDir);
+rayTraceFuncs.calcVirtualImageRay = calcVirtualImageRay(rayTraceFuncs.traceOpticalSystem, compileDir);
 % Add saved function files to path
-if ~isempty(p.Results.compiledFunctionStemName)
+if ~isempty(p.Results.functionPathStem)
     addpath(compileDir,'-end');
 end
 
 
-%% Compile the virtual image function
+%% virtualImageFunc
+% Returns the virtual image coordinates for a point in eyeWorld space
+%
+% Syntax:
+%  [virtualImagePoint, nodalPointIntersectError] = virtualImageFunc(eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters)
+%
+% Description:
+%   Given a point in eyeWorld space, along with the extrinsic translation
+%   vector of the camera, the rotational pose of the eye (in degrees), and
+%   the rotation centers of the eye, the routine will return the
+%   coordinates in eyeWorld space of the virtual image of the supplied
+%   point, at a depth equal to the input point depth.
+%
+%   This function is either compiled and saved as a mex file, or assembled
+%   in memory.
+%
+% Inputs:
+%   eyeWorldPoint         - 1x3 vector, with the axes [p1,p2,p3].
+%   extrinsicTranslationVector - 3x1 vector, in mm
+%   eyeAzimuth            - Scalar, in degrees
+%   eyeElevation          - Scalar, in degrees
+%   eyeTorsion            - Scalar, in degrees
+%   rotationCenters       - Structure, with the fields azi, ele, tor, each
+%                           of which contains a 1x3 vector. This is the
+%                           field sceneGeometry.eye.rotationCenters.
+%
+% Outputs:
+%   virtualImagePoint     - 1x3 vector, with the axes [p1,p2,p3], with the
+%                           p1 value set equal to the p1 value in the input
+%                           eyeWorldPoint.
+%   nodalPointIntersectError - Scalar. Distance in mm on the plane of the
+%                           nodal point of the camera between the nodal
+%                           point at the point of intersection of the
+%                           virtual ray from the eyeWorld point.
+%
 
-if ~isempty(p.Results.compiledFunctionStemName)
-    % Define the args so that the compiler can deduce the nature of the input
-    % arguements
+% A functionPathStem has been defined, so we will compile the function as a
+% mex file and place it on the path
+if ~isempty(p.Results.functionPathStem)
+    % Define some argument variables so that the compiler can deduce
+    % variable types
     args = {[-3 0 0], sceneGeometry.extrinsicTranslationVector, 0, 0, 0, sceneGeometry.eye.rotationCenters};
     % Change to the compile directory
     initialDir = cd(compileDir);
@@ -334,19 +380,24 @@ if ~isempty(p.Results.compiledFunctionStemName)
     % Add the directory holding the compiled function to the path
     addpath(compileDir,'-end');
     % Return the path to the function as the output
-    rayTraceFuncs = @refractPointFunc;
+    virtualImageFuncPointer.handle = @virtualImageFuncMex;
+    virtualImageFuncPointer.path = which('virtualImageFuncMex');
+else
+    virtualImageFuncPointer.handle = @(eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters) virtualImageFunc( eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters, rayTraceFuncs);
+    virtualImageFuncPointer.path = [];
 end
 
+virtualImageFuncPointer.opticalSystem = sceneGeometry.opticalSystem;
 
-end % assembleRayTraceFuncs -- MAIN
+end % compileVirtualImageFunc -- MAIN
 
 
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
 %% LOCAL FUNCTIONS
-% This is where the computations are actually performed
-
-
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 %% traceOpticalSystem
@@ -372,8 +423,8 @@ end
 end % traceOpticalSystem
 
 
-%% cameraNodeDistanceError2D
-function [p1p2Func, p1p3Func] = cameraNodeDistanceError2D(rayTraceFunc, compileDir)
+%% calcCameraNodeDistanceError2D
+function [p1p2Func, p1p3Func] = calcCameraNodeDistanceError2D(rayTraceFunc, compileDir)
 % 2D distance of ray intersection on camera plane from camera node
 
 
@@ -467,7 +518,7 @@ for coord = 1:2
 end
 
 
-%% Azimith
+%% Azimuth
 % p1p2
 for coord = 1:2
     for dim = 1:3
@@ -492,7 +543,6 @@ for coord = 1:2
         outputRayHeadWorld_p1p3(coord,dim)=outputRayHeadWorld_p1p3(coord,dim)+rotationCenterAzi(dim);
     end
 end
-
 
 % Re-arrange the head world coordinate frame to transform to the scene
 % world coordinate frame
@@ -534,7 +584,6 @@ else
         'File',functionFileName);
 end
 
-
 slope_xZ =(outputRaySceneWorld_p1p3(2,1)-outputRaySceneWorld_p1p3(1,1))/(outputRaySceneWorld_p1p3(2,3)-outputRaySceneWorld_p1p3(1,3));
 slope_yZ =(outputRaySceneWorld_p1p3(2,2)-outputRaySceneWorld_p1p3(1,2))/(outputRaySceneWorld_p1p3(2,3)-outputRaySceneWorld_p1p3(1,3));
 cameraPlaneX = outputRaySceneWorld_p1p3(1,1)+((cameraTranslationZ-outputRaySceneWorld_p1p3(1,3))*slope_xZ);
@@ -569,11 +618,11 @@ else
 end
 
 
-end % cameraNodeDistanceError2D
+end % calcCameraNodeDistanceError2D
 
 
-%% cameraNodeDistanceError3D
-function p1p2p3Func = cameraNodeDistanceError3D(rayTraceFunc, compileDir)
+%% calcCameraNodeDistanceError3D
+function p1p2p3Func = calcCameraNodeDistanceError3D(rayTraceFunc, compileDir)
 % 3D distance of ray intersection on camera plane from camera node
 
 
@@ -648,7 +697,7 @@ for coord = 1:2
 end
 
 
-%% Azimith
+%% Azimuth
 % p1p2
 for coord = 1:2
     for dim = 1:3
@@ -706,11 +755,11 @@ else
         'File',functionFileName);
 end
 
-end % cameraNodeDistanceError3D
+end % calcCameraNodeDistanceError3D
 
 
-%% virtualImageRay
-function [virtualImageRayFunc] = virtualImageRay(rayTraceFunc, compileDir)
+%% calcVirtualImageRay
+function [virtualImageRayFunc] = calcVirtualImageRay(rayTraceFunc, compileDir)
 % Returns the unit vector virtual image ray for the initial depth position
 
 
@@ -750,4 +799,62 @@ else
         'File',functionFileName);
 end
 
-end % virtualImageRay
+end % calcVirtualImageRay
+
+
+%% virtualImageFunc
+function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters, rayTraceFuncs)
+% Returns the virtual image coordinates for a point in eyeWorld space
+
+
+% Define an error function which is the distance between the nodal
+% point of the camera and the point at which a ray impacts the
+% plane that contains the camera, with the ray departing from the
+% eyeWorld point at angle theta in the p1p2 plane. NOTE: The order
+% of variables here is determined by the function that is called.
+% To check:
+%{
+	rayTraceFuncs = compileVirtualImageFunc(createSceneGeometry());
+    rayTraceFuncs.calcCameraNodeDistanceError2D.varNames
+%}
+errorFunc = @(theta) rayTraceFuncs.calcCameraNodeDistanceError2D.p1p2(...
+    eyeWorldPoint, extrinsicTranslationVector, ...
+    [deg2rad(eyeAzimuth), deg2rad(eyeElevation), deg2rad(eyeTorsion)], ...
+    rotationCenters.azi([1 2]),...
+    rotationCenters.ele([1 3]),...
+    rotationCenters.tor([2 3]),...
+    theta);
+% Conduct an fminsearch to find the p1p2 theta that results in a
+% ray that strikes as close as possible to the camera nodal point.
+% Because the errorFunc returns nan for values very close to zero,
+% we initialize the search with a slightly non-zero value (1e-4)
+theta_p1p2=fminsearch(errorFunc,1e-4);
+% Now repeat this process for a ray that varies in theta in the
+% p1p3 plane
+errorFunc = @(theta) rayTraceFuncs.calcCameraNodeDistanceError2D.p1p3(...
+    eyeWorldPoint, extrinsicTranslationVector, ...
+    [deg2rad(eyeAzimuth), deg2rad(eyeElevation), deg2rad(eyeTorsion)], ...
+    rotationCenters.azi([1 2]),...
+    rotationCenters.ele([1 3]),...
+    rotationCenters.tor([2 3]),...
+    theta);
+theta_p1p3=fminsearch(errorFunc,1e-4);
+% With both theta values calculated, now obtain the virtual image
+% ray arising from the pupil plane that reflects the corneal optics
+calcVirtualImageRay = rayTraceFuncs.calcVirtualImageRay(eyeWorldPoint(1), eyeWorldPoint(2), eyeWorldPoint(3), theta_p1p2, theta_p1p3);
+% Extract the origin of the ray, which is the virtual image eyeWorld point
+virtualEyeWorldPoint = calcVirtualImageRay(1,:);
+% Calculate the total error (in mm) in both dimensions for intersecting the
+% nodal point of the camera. Error values on the order of 0.01 - 0.02 are
+% found across pupil points and for a range of eye rotations.
+nodalPointIntersectError = ...
+    rayTraceFuncs.calcCameraNodeDistanceError3D(...
+    eyeWorldPoint, extrinsicTranslationVector, ...
+    [deg2rad(eyeAzimuth), deg2rad(eyeElevation), deg2rad(eyeTorsion)], ...
+    rotationCenters.azi([1 2]),...
+    rotationCenters.ele([1 3]),...
+    rotationCenters.tor([2 3]),...
+    theta_p1p2, theta_p1p3);
+
+end % virtualImageFunc
+
