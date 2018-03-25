@@ -1,15 +1,16 @@
-function virtualEyeWorldPoint = virtualImageFuncPreCompile( eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters)
+function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFuncPreCompile( eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters)
 % Calculate coord of virtual image of eyeWorldPoint
 %
 % Syntax:
 %  virtualEyeWorldPoint = virtualImageFuncPreCompile( eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters)
 %
 % Description:
-%   This routine calculates refraction through the optical
-%   system. In application, it is never called. Instead, it is the code that is used to generate a stand-alone
-%   mex file for the refraction after generating stand-alone ray-tracing
-%   functions. Prior to calling this routine, individual .m files must be
-%   placed on the path for each of the ray tracing functions:
+%   This routine calculates refraction through the optical system. In
+%   application, it is never called. Instead, it is the code that is used
+%   to generate a stand-alone mex file for the refraction after generating
+%   stand-alone ray-tracing functions. Prior to calling this routine,
+%   individual .m files must be placed on the path for each of the ray
+%   tracing functions:
 %   	calcCameraNodeDistanceError2D_p1p2
 %       calcCameraNodeDistanceError2D_p1p3
 %       calcVirtualImageRay)
@@ -48,6 +49,16 @@ virtualImageRay = calcVirtualImageRay(eyeWorldPoint(1), eyeWorldPoint(2), eyeWor
 % Replace the original eyeWorld point with the virtual image
 % eyeWorld point
 virtualEyeWorldPoint = virtualImageRay(1,:);
-
+% Calculate the total error (in mm) in both dimensions for intersecting the
+% nodal point of the camera. Error values on the order of 0.01 - 0.02 are
+% found across pupil points and for a range of eye rotations.
+nodalPointIntersectError = ...
+    calcCameraNodeDistanceError3D(...
+    eyeWorldPoint, extrinsicTranslationVector, ...
+    [deg2rad(eyeAzimuth), deg2rad(eyeElevation), deg2rad(eyeTorsion)], ...
+    rotationCenters.azi([1 2]),...
+    rotationCenters.ele([1 3]),...
+    rotationCenters.tor([2 3]),...
+    theta_p1p2, theta_p1p3);
 end
 
