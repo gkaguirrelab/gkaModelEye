@@ -13,7 +13,10 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFuncPreC
 %   tracing functions:
 %   	calcCameraNodeDistanceError2D_p1p2
 %       calcCameraNodeDistanceError2D_p1p3
-%       calcVirtualImageRay)
+%       calcCameraNodeDistanceError3D
+%       calcVirtualImageRay
+%
+% SEE: compileVirtualImageFunc for details.
 %
 
 % Define an error function which is the distance between the nodal
