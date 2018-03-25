@@ -56,7 +56,7 @@ function [virtualImageFuncPointer] = compileVirtualImageFunc( sceneGeometry, var
 %{
     % Basic example with file caching of the functions
     sceneGeometry = createSceneGeometry();
-    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, 'functionPathStem', '/tmp/example' );
+    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, 'functionPathStem', '/tmp/demo_' );
 %}
 %{
     % Demonstrate how the time it takes to perform the symbolic variable
@@ -114,7 +114,7 @@ end
 
 % Create a directory for the compiled functions
 if ~isempty(p.Results.functionPathStem)
-    compileDir = [p.Results.functionPathStem '_virtualImageFuncMex'];
+    compileDir = [p.Results.functionPathStem 'virtualImageFunc'];
     if ~exist(compileDir,'dir')
         mkdir(compileDir)
     end
@@ -371,21 +371,29 @@ if ~isempty(p.Results.functionPathStem)
     initialDir = cd(compileDir);
     % Compile the mex file
     codegen -o virtualImageFuncMex virtualImageFuncPreCompile -args args
-    % Delete the intermediate files, if requested
+    % Identify the compiled mex file, the suffix of which will vary
+    % depending upon the operating system
+    fileLocation = dir('virtualImageFuncMex.*');
+    % Clean up the compile dir, if requested
     if p.Results.cleanUpCompileDir
-        rmdir('codegen', 's')
+        rmdir('codegen', 's');
+        delete('calcTraceOpticalSystem.m');
+        delete('calcCameraNodeDistanceError2D_p1p2.m');
+        delete('calcCameraNodeDistanceError2D_p1p3.m');
+        delete('calcCameraNodeDistanceError3D.m');
+        delete('calcVirtualImageRay.m');
     end
+    % Refresh the path to add the compiled function
+    addpath(compileDir,'-end');
     % Change back to the initial directory
     cd(initialDir);
-    % Add the directory holding the compiled function to the path
-    addpath(compileDir,'-end');
     % Return the path to the function as the output
     virtualImageFuncPointer.handle = @virtualImageFuncMex;
-    virtualImageFuncPointer.path = which('virtualImageFuncMex');
+    virtualImageFuncPointer.path = fullfile(fileLocation.folder,fileLocation.name);
     virtualImageFuncPointer.opticalSystem = sceneGeometry.opticalSystem;
     % Save a copy of this variable in the function directory. The saved
     % variable may be used to re-instantiate the function at a later point.
-    filePath = fullfile(compileDir,'virtualImageFuncPointer');
+    filePath = [p.Results.functionPathStem 'virtualImageFuncPointer'];
     save(filePath,'virtualImageFuncPointer');
 else
     virtualImageFuncPointer.handle = @(eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters) virtualImageFunc( eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters, rayTraceFuncs);
