@@ -1,11 +1,11 @@
-function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoints, pointLabels, nodalPointIntersectError] = pupilProjection_fwd(eyePose, sceneGeometry, rayTraceFuncs, varargin)
+function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoints, pointLabels, nodalPointIntersectError] = pupilProjection_fwd(eyePose, sceneGeometry, virtualImageFuncPointer, varargin)
 % Project the pupil circle to an ellipse on the image plane
 %
 % Syntax:
-%  [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoints, pointLabels] = pupilProjection_fwd(eyePoses, sceneGeometry, rayTraceFuncs)
+%  [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoints, pointLabels] = pupilProjection_fwd(eyePoses, sceneGeometry, virtualImageFuncPointer)
 %
 % Description:
-%   Given the sceneGeometry--and optionaly ray tracing functions through
+%   Given the sceneGeometry--and optionally a ray tracing functions through
 %   the cornea--this routine simulates a circular pupil on a rotating eye
 %   and then measures the parameters of the ellipse (in transparent format)
 %   of the projection of the pupil to the image plane.
@@ -37,8 +37,8 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
 %                           Azimuth, elevation, and torsion are in units of
 %                           head-centered (extrinsic) degrees, and pupil
 %                           radius in mm.
-%   sceneGeometry         - A structure; described in createSceneGeometry
-%   rayTraceFuncs         - A structure; described in assembleRayTraceFuncs
+%   sceneGeometry         - Structure. SEE: createSceneGeometry
+%   virtualImageFuncPointer - Structure; SEE: compileVirtualImageFunc.
 %
 % Optional key/value pairs:
 %  'fullEyeModelFlag'     - Logical. Determines if the full posterior and
@@ -101,22 +101,22 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Define the ray tracing functions (slow; only need to do once)
-    rayTraceFuncs = assembleRayTraceFuncs(sceneGeometry);
+    virtualImageFuncPointer = compileVirtualImageFunc(sceneGeometry);
     % Define in eyePoses the azimuth, elevation, torsion, and pupil radius
     eyePose = [-10 5 0 3];
     % Obtain the pupil ellipse parameters in transparent format
-    pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry,rayTraceFuncs);
+    pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry,virtualImageFuncPointer);
 %}
 %{
     %% Display a 2D image of a slightly myopic left eye wearing a contact
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry('eyeLaterality','left','sphericalAmetropia',-2,'contactLens',-2);
     % Define the ray tracing functions
-    rayTraceFuncs = assembleRayTraceFuncs(sceneGeometry);
+    virtualImageFuncPointer = compileVirtualImageFunc(sceneGeometry);
     % Define an eyePose with azimuth, elevation, torsion, and pupil radius
     eyePose = [-10 -5 0 3];
     % Perform the projection and request the full eye model
-    [~, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose,sceneGeometry,rayTraceFuncs,'fullEyeModelFlag',true);
+    [~, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose,sceneGeometry,virtualImageFuncPointer,'fullEyeModelFlag',true);
     % Define some settings for display
     eyePartLabels = {'posteriorChamber' 'irisPerimeter' 'pupilPerimeter' 'anteriorChamber'};
     plotColors = {'.w' '.b' '*g' '.y'};
@@ -162,12 +162,12 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Define the ray tracing functions (slow; only need to do once)
-    rayTraceFuncs = assembleRayTraceFuncs(sceneGeometry);
+    virtualImageFuncPointer = compileVirtualImageFunc(sceneGeometry);
     % Perform 100 forward projections with randomly selected eye poses
     nPoses = 100;
     eyePoses=[(rand(nPoses,1)-0.5)*30, (rand(nPoses,1)-0.5)*20, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
     for pp = 1:nPoses
-    	[~,~,~,~,~,rayTraceError(:,pp)]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,rayTraceFuncs,'calcNodalIntersectError',true);
+    	[~,~,~,~,~,rayTraceError(:,pp)]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,virtualImageFuncPointer,'calcNodalIntersectError',true);
     end
     % Observe that the ray trace nodal error, while small, grows as a
     % function of the rotation of the eye.
@@ -180,20 +180,20 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Define the ray tracing functions (slow; only need to do once)
-    rayTraceFuncs = assembleRayTraceFuncs(sceneGeometry);
-    % Perform 100 forward projections with randomly selected eye poses
-    % without ray tracing
-    nPoses = 100;
+    virtualImageFuncPointer = compileVirtualImageFunc(sceneGeometry);
+    % Perform forward projections with randomly selected eye poses
+    % Without ray tracing
+    nPoses = 1000;
     eyePoses=[(rand(nPoses,1)-0.5)*20, (rand(nPoses,1)-0.5)*10, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
     tic
     for pp = 1:nPoses
     	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,[]);
     end
     noRayTraceTimeMsec = toc / nPoses * 1000;
-    % Now with ray tracing
+    % With ray tracing, using matlab function in memory
     tic
     for pp = 1:nPoses
-    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,rayTraceFuncs);
+    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,virtualImageFuncPointer);
     end
     withRayTraceTimeMsec = toc / nPoses * 1000;
     fprintf('Forward model calculation time is %4.2f msecs without ray tracing and %4.2f with ray tracing.\n',noRayTraceTimeMsec,withRayTraceTimeMsec);
@@ -203,14 +203,14 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Save a pre-compiled ray trace function
-    rayTraceFuncs = assembleRayTraceFuncs(sceneGeometry,'compiledFunctionStemName','/tmp/demoRayTrace');
-    % Perform 100 forward projections with randomly selected eye poses
-    % with ray tracing
-    nPoses = 100;
+    virtualImageFuncPointer = compileVirtualImageFunc(sceneGeometry,'functionPathStem','/tmp/demoRayTrace');
+    % Perform forward projections with randomly selected eye poses
+    % With ray tracing, using compiled mex file
+    nPoses = 1000;
     eyePoses=[(rand(nPoses,1)-0.5)*20, (rand(nPoses,1)-0.5)*10, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
     tic
     for pp = 1:nPoses
-    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,rayTraceFuncs);
+    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,virtualImageFuncPointer);
     end
     withCachedRayTraceTimeMsec = toc / nPoses * 1000;
     fprintf('Forward model calculation time is %4.2f msecs with cached ray trace functions.\n',withCachedRayTraceTimeMsec);
@@ -223,8 +223,8 @@ p = inputParser; p.KeepUnmatched = true;
 
 % Required
 p.addRequired('eyePose',@isnumeric);
-p.addRequired('sceneGeometry',@(x)(isempty(x) || isstruct(x)));
-p.addRequired('rayTraceFuncs',@(x)( isempty(x) || isstruct(x) || isa(x, 'function_handle') ));
+p.addRequired('sceneGeometry',@isstruct);
+p.addRequired('virtualImageFuncPointer',@(x)(isempty(x) | isstruct(x)));
 
 % Optional
 p.addParameter('fullEyeModelFlag',false,@islogical);
@@ -236,15 +236,7 @@ p.addParameter('removeObscuredPoints',true,@islogical);
 p.addParameter('calcNodalIntersectError',false,@islogical);
 
 % parse
-p.parse(eyePose, sceneGeometry, rayTraceFuncs, varargin{:})
-
-
-%% Check the input
-
-if isempty(sceneGeometry)
-    % No sceneGeometry was provided. Use the default settings
-    sceneGeometry = createSceneGeometry();
-end
+p.parse(eyePose, sceneGeometry, virtualImageFuncPointer, varargin{:})
 
 
 %% Prepare variables
@@ -253,6 +245,7 @@ eyeAzimuth = eyePose(1);
 eyeElevation = eyePose(2);
 eyeTorsion = eyePose(3);
 pupilRadius = eyePose(4);
+% how many pupil points?
 nPupilPerimPoints = p.Results.nPupilPerimPoints;
 
 
@@ -442,34 +435,31 @@ R.tor = [1 0 0; 0 cosd(eyeTorsion) -sind(eyeTorsion); 0 sind(eyeTorsion) cosd(ey
 
 %% Obtain the virtual image for the eyeWorld points
 % This steps accounts for the effect of corneal and corrective lens
-% refraction upon the appearance of points from the eye
-if ~isempty(rayTraceFuncs)
-    % Identify the eyeWorldPoints that are subject to refraction by the
-    % cornea
+% refraction upon the appearance of points from the eye.
+
+% Define a variable to hold the calculated ray tracing errors
+nodalPointIntersectError = nan(length(pointLabels),1);
+% If we have a handle to a virtual image function, proceed
+if ~isempty(virtualImageFuncPointer)
+    % Check that the optical system in the function is the same as that in
+    % the passed sceneGeometry
+    if ~(sceneGeometry.opticalSystem==virtualImageFuncPointer.opticalSystem)
+        warning('The optical system used to build the virtual image function does not match that in the sceneGeometry');
+    end
+    % Identify the eyeWorldPoints subject to refraction by the cornea
     refractPointsIdx = find(strcmp(pointLabels,'pupilPerimeter')+...
         strcmp(pointLabels,'pupilCenter')+...
         strcmp(pointLabels,'irisCenter'));
     % Loop through the eyeWorldPoints that are to be refracted
-    nodalPointIntersectError = nan(length(pointLabels),1);
     for ii=1:length(refractPointsIdx)
         % Grab this eyeWorld point
         eyeWorldPoint=eyeWorldPoints(refractPointsIdx(ii),:);
-        % Use a compiled mex virtual image function if available
-        if isa(rayTraceFuncs, 'function_handle')
-            virtualEyeWorldPoint = rayTraceFuncs(...
+        % Perform the computation using the passed function handle
+        [eyeWorldPoints(refractPointsIdx(ii),:), nodalPointIntersectError(refractPointsIdx(ii))] = ...
+            virtualImageFuncPointer.handle(...
                 eyeWorldPoint, sceneGeometry.extrinsicTranslationVector, ...
                 eyeAzimuth, eyeElevation, eyeTorsion, ...
                 sceneGeometry.eye.rotationCenters);
-            eyeWorldPoints(refractPointsIdx(ii),:) = virtualEyeWorldPoint;
-        else
-        % Use the slower matlab code
-            [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc(...
-                eyeWorldPoint, sceneGeometry.extrinsicTranslationVector, ...
-                eyeAzimuth, eyeElevation, eyeTorsion, ...
-                sceneGeometry.eye.rotationCenters, rayTraceFuncs);
-            eyeWorldPoints(refractPointsIdx(ii),:) = virtualEyeWorldPoint;
-            nodalPointIntersectError(refractPointsIdx(ii)) = nodalPointIntersectError;
-        end
     end
 end
 
