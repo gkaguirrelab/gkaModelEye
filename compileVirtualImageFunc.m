@@ -1,4 +1,4 @@
-function [virtualImageFuncPointer] = compileVirtualImageFunc( sceneGeometry, varargin )
+function virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, varargin )
 % Function handles to ray tracing equations
 %
 % Syntax:
@@ -7,7 +7,7 @@ function [virtualImageFuncPointer] = compileVirtualImageFunc( sceneGeometry, var
 % Description:
 %   This routine returns a handle to a function that is used to calculate
 %   the location of a virtual image point that has passed through an
-%   optical system. If the key-value 'functionPathStem' is set, then the
+%   optical system. If the key-value 'functionDirPath' is set, then the
 %   handle will be to a compiled mex function that has been written to
 %   disk, otherwise, the handle will be to a matlab function in memory.
 %   The former executes ~100x faster.
@@ -31,7 +31,7 @@ function [virtualImageFuncPointer] = compileVirtualImageFunc( sceneGeometry, var
 %                           includes an optical system.
 %
 % Optional key-value pairs:
-%  'functionPathStem'     - Character string, default empty. If set this
+%  'functionDirPath'     - Character string, default empty. If set this
 %                           defines the location in which the compiled
 %                           function is writen.
 %  'cleanUpCompileDir'    - Logical, default true. If file path is
@@ -56,7 +56,7 @@ function [virtualImageFuncPointer] = compileVirtualImageFunc( sceneGeometry, var
 %{
     % Basic example with file caching of the functions
     sceneGeometry = createSceneGeometry();
-    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, 'functionPathStem', '/tmp/demo_' );
+    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, 'functionDirPath', '/tmp/demo_virtualImageFunc' );
 %}
 %{
     % Demonstrate how the time it takes to perform the symbolic variable
@@ -98,7 +98,7 @@ p = inputParser;
 p.addRequired('sceneGeometry',@(x)(isstruct(x) || ischar(x)));
 
 % Optional
-p.addParameter('functionPathStem',[],@ischar);
+p.addParameter('functionDirPath',[],@ischar);
 p.addParameter('cleanUpCompileDir',true,@islogical);
 
 % parse
@@ -113,8 +113,8 @@ if ischar(sceneGeometry)
 end
 
 % Create a directory for the compiled functions
-if ~isempty(p.Results.functionPathStem)
-    compileDir = [p.Results.functionPathStem 'virtualImageFunc'];
+if ~isempty(p.Results.functionDirPath)
+    compileDir = p.Results.functionDirPath;
     if ~exist(compileDir,'dir')
         mkdir(compileDir)
     end
@@ -175,7 +175,7 @@ end
 % Create the function
 rayTraceFuncs.traceOpticalSystem = traceOpticalSystem(sceneGeometry.opticalSystem, compileDir);
 % Add saved function files to path
-if ~isempty(p.Results.functionPathStem)
+if ~isempty(p.Results.functionDirPath)
     addpath(compileDir,'-end');
 end
 
@@ -256,7 +256,7 @@ end
     calcCameraNodeDistanceError2D(rayTraceFuncs.traceOpticalSystem, compileDir);
 rayTraceFuncs.calcCameraNodeDistanceError2D.argumentNames = {'eyeWorldPoint','extrinsicTranslationVector','[eyeAzimuthRads, eyeElevationRads, eyeTorsionRads]','aziRotCenter_p1p2','eleRotCenter_p1p3','torRotCenter_p2p3','theta'};
 % Add saved function files to path
-if ~isempty(p.Results.functionPathStem)
+if ~isempty(p.Results.functionDirPath)
     addpath(compileDir,'-end');
 end
 
@@ -279,7 +279,7 @@ end
 rayTraceFuncs.calcCameraNodeDistanceError3D = ...
      calcCameraNodeDistanceError3D(rayTraceFuncs.traceOpticalSystem, compileDir);
 % Add saved function files to path
-if ~isempty(p.Results.functionPathStem)
+if ~isempty(p.Results.functionDirPath)
     addpath(compileDir,'-end');
 end
 
@@ -320,7 +320,7 @@ end
 % Create the function
 rayTraceFuncs.calcVirtualImageRay = calcVirtualImageRay(rayTraceFuncs.traceOpticalSystem, compileDir);
 % Add saved function files to path
-if ~isempty(p.Results.functionPathStem)
+if ~isempty(p.Results.functionDirPath)
     addpath(compileDir,'-end');
 end
 
@@ -361,9 +361,9 @@ end
 %                           virtual ray from the eyeWorld point.
 %
 
-% A functionPathStem has been defined, so we will compile the function as a
+% A functionDirPath has been defined, so we will compile the function as a
 % mex file and place it on the path
-if ~isempty(p.Results.functionPathStem)
+if ~isempty(p.Results.functionDirPath)
     % Define some argument variables so that the compiler can deduce
     % variable types
     args = {[-3 0 0], sceneGeometry.extrinsicTranslationVector, 0, 0, 0, sceneGeometry.eye.rotationCenters};
