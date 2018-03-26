@@ -113,7 +113,7 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Define the ray tracing functions (slow; only need to do once)
-    virtualImageFuncPointer = compileVirtualImageFunc(sceneGeometry,'functionPathStem','/tmp/example');
+    virtualImageFuncPointer = compileVirtualImageFunc(sceneGeometry,'functionDirPath','/tmp/demo_virtualImageFunc');
     % Perform 100 forward projections with randomly selected eye poses
     % without ray tracing
     nPoses = 100;

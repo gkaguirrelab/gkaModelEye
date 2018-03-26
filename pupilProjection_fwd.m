@@ -198,7 +198,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Save a pre-compiled ray trace function
-    virtualImageFuncPointer = compileVirtualImageFunc(sceneGeometry,'functionPathStem','/tmp/example');
+    virtualImageFuncPointer = compileVirtualImageFunc(sceneGeometry,'functionDirPath','/tmp/demo_virtualImageFunc');
     % Perform forward projections with randomly selected eye poses
     % With ray tracing, using compiled mex file
     nPoses = 1000;
