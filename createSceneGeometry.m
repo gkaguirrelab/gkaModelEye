@@ -99,11 +99,6 @@ function sceneGeometry = createSceneGeometry(varargin)
 %   m surfaces of the cornea and any corrective lenses into a format needed
 %   for ray tracing.
 %
-%   useRayTracing - A boolean flag that sets if ray tracing should be used
-%   when computing the forward and inverse model. Set to true by this
-%   function. Subsequent functions may modify the setting of this flag to
-%   control the behavior of model fitting.
-%
 % Inputs:
 %   none
 %
@@ -236,7 +231,6 @@ end
 
 % Store the optical system
 sceneGeometry.opticalSystem = opticalSystem;
-sceneGeometry.useRayTracing = true;
 
 % Save the meta data
 sceneGeometry.meta.createSceneGeometry = p.Results;
