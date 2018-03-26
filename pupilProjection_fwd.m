@@ -591,9 +591,9 @@ imagePoints = (imagePointsNormalizedDistorted .* [sceneGeometry.intrinsicCameraM
 pupilPerimIdx = find(strcmp(pointLabels,'pupilPerimeter'));
 
 % Before we try to fit the ellipse, make sure that the radius is not zero,
-% that the image points are real (not imaginary points that did not pass
-% through corneal optics), and that there are at least 5 perimeter points.
-if eyePose(4)==0 || ~isreal(imagePoints(pupilPerimIdx,:)) || length(pupilPerimIdx)<5
+% that the image points not imaginary or nan, and that there are at least 5
+% perimeter points.
+if eyePose(4)==0 || ~isreal(imagePoints(pupilPerimIdx,:)) || any(any(isnan(imagePoints(pupilPerimIdx,:)))) || length(pupilPerimIdx)<5
     pupilEllipseOnImagePlane=nan(1,5);
 else
     % We place the ellipse fit in a try-catch block, as the fit can fail
