@@ -448,12 +448,20 @@ if ~isempty(virtualImageFuncPointer)
     for ii=1:length(refractPointsIdx)
         % Grab this eyeWorld point
         eyeWorldPoint=eyeWorldPoints(refractPointsIdx(ii),:);
-        % Perform the computation using the passed function handle
-        [eyeWorldPoints(refractPointsIdx(ii),:), nodalPointIntersectError(refractPointsIdx(ii))] = ...
-            virtualImageFuncPointer.handle(...
+        % Perform the computation using the passed function handle. This
+        % occurs within a try-catch block, as the point to be refracted may
+        % experience total internal reflection. When this happens, the
+        % routine exits with an error.
+        try
+            [eyeWorldPoints(refractPointsIdx(ii),:), nodalPointIntersectError(refractPointsIdx(ii))] = ...
+                virtualImageFuncPointer.handle(...
                 eyeWorldPoint, sceneGeometry.extrinsicTranslationVector, ...
                 eyeAzimuth, eyeElevation, eyeTorsion, ...
                 sceneGeometry.eye.rotationCenters);
+        catch
+            eyeWorldPoints(refractPointsIdx(ii),:) = nan;
+            nodalPointIntersectError(refractPointsIdx(ii)) = inf;
+        end
     end
 end
 
