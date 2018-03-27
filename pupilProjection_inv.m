@@ -211,7 +211,7 @@ if isempty(p.Results.x0)
     % location of the pupil ellipse correspond to one degree of rotation.
     % Omit ray-tracing to save time as it has minimal effect upon the
     % position of the center of the ellipse.
-    probeEllipse=pupilProjection_fwd([1 0 0 2],sceneGeometry, []);
+    probeEllipse=pupilProjection_fwd([1 0 0 2],sceneGeometry);
     pixelsPerDeg = probeEllipse(1)-CoP(1);
     
     % Estimate the eye azimuth and elevation by the X and Y displacement of
