@@ -45,7 +45,6 @@ function virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, varar
 %                               to empty if stored only in memory.
 %                           'opticalSystem' - the optical system used to
 %                               generate the function.
-%                           'header' - text field for 
 %
 % Examples:
 %{

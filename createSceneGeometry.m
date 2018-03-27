@@ -103,7 +103,15 @@ function sceneGeometry = createSceneGeometry(varargin)
 %   computes the virtual image location of eyeWorldPoints subject to
 %   refraction by the optical system. This function creates the field but
 %   leaves it empty. To populate the field, the routine
-%   compileVirtualImageFunc is used.
+%   compileVirtualImageFunc is used. It will then have the sub-fields:
+%   	'handle'  - Handle for the function.
+%       'path'    - Full path to the stored mex file; set to empty if stored 
+%                   only in memory.
+%       'opticalSystem' - the optical system used to generate the function.
+%                   This is stored so that the routine can check for
+%                   consistency between the optical system currently stored
+%                   in sceneGeometry and that used to generate the
+%                   function.
 %
 % Inputs:
 %   none
