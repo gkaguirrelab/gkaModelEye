@@ -436,7 +436,8 @@ if ~isempty(sceneGeometry.virtualImageFunc)
     % Check that the optical system in the function is the same as that in
     % the passed sceneGeometry
     if ~(sceneGeometry.opticalSystem==sceneGeometry.virtualImageFunc.opticalSystem)
-        warning('The optical system used to build the virtual image function does not match that in the sceneGeometry');
+        warning('pupilProjection_fwd:opticalSystemMismatch','The optical system used to build the virtual image function does not match that in the sceneGeometry');
+        
     end
     % Identify the eyeWorldPoints subject to refraction by the cornea
     refractPointsIdx = find(strcmp(pointLabels,'pupilPerimeter')+...
@@ -457,7 +458,7 @@ if ~isempty(sceneGeometry.virtualImageFunc)
                     eyeAzimuth, eyeElevation, eyeTorsion, ...
                     sceneGeometry.eye.rotationCenters);
         catch
-            warning('Ray tracing error. Returning nan for this eyeWorld point.');
+            warning('pupilProjection_fwd:rayTracingError','Ray tracing error. Returning nan for this eyeWorld point.');
             eyeWorldPoints(refractPointsIdx(ii),:) = nan;
             nodalPointIntersectError(refractPointsIdx(ii)) = inf;
         end

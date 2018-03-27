@@ -385,7 +385,7 @@ for ii = 2:nSurfaces
     % are not working with symbolic variables
     if ~symbolicFlag
         if abs((aVals(ii)*relativeIndices(ii))) > 1
-            warning('Angle of incidence for surface %d greater than critical angle. Returning.',ii);
+            warning('rayTraceCenteredSphericalSurfaces:criticalAngle','Angle of incidence for surface %d greater than critical angle. Returning.',ii);
             return
         end
     end
@@ -425,7 +425,7 @@ for ii = 2:nSurfaces
         try
             [xout,yout] = linecirc(slope,intercept,opticalSystem(ii,1),0,abs(opticalSystem(ii,2)));
         catch
-            warning('The ray is either tangential to or misses surface %d. Returning.',ii);
+            warning('rayTraceCenteredSphericalSurfaces:rayMissesSurface','The ray is either tangential to or misses surface %d. Returning.',ii);
             return
         end
         % This next bit of logic figures out which of the two coordinates
