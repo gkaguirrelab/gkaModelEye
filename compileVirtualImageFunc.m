@@ -51,12 +51,12 @@ function virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, varar
 %{
     % Basic example, placing the function in memory
     sceneGeometry = createSceneGeometry();
-    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry );
+    sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry );
 %}
 %{
     % Basic example with file caching of the functions
     sceneGeometry = createSceneGeometry();
-    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, 'functionDirPath', '/tmp/demo_virtualImageFunc' );
+    sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry, 'functionDirPath', '/tmp/demo_virtualImageFunc' );
 %}
 %{
     % Demonstrate how the time it takes to perform the symbolic variable
@@ -67,21 +67,21 @@ function virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, varar
     sceneGeometry = createSceneGeometry();
     % Define the virtual image function
     tic
-    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry );
+    sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry );
     t(1)=toc;
     n(1)=size(sceneGeometry.opticalSystem,1);
     % Add a contact lens (one additional surface)
-    virtualImageFuncPointer = createSceneGeometry('sphericalAmetropia',-2,'contactLens',-2);
+    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'contactLens',-2);
     % Define the ray tracing functions 
     tic
-    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry );
+    sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry );
     t(2)=toc;
     n(2)=size(sceneGeometry.opticalSystem,1);
     % Add a spectacle lens (two additional surfaces)
-    virtualImageFuncPointer = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',2);
+    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2);
     % Define the ray tracing functions 
     tic
-    virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry );
+    sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry );
     t(3)=toc;
     n(3)=size(sceneGeometry.opticalSystem,1);
     % Plot the timing results
@@ -408,9 +408,7 @@ end % compileVirtualImageFunc -- MAIN
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
 %% LOCAL FUNCTIONS
-%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 

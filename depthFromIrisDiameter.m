@@ -2,7 +2,7 @@ function cameraTranslationDepth = depthFromIrisDiameter( sceneGeometry, observed
 % Estimate camera depth given sceneGeometry and iris diameter in pixels
 %
 % Syntax:
-%  sceneGeometryOut = depthFromIrisDiameter( maxIrisDiameterPixels, sceneGeometryIn )
+%  cameraTranslationDepth = depthFromIrisDiameter( sceneGeometry, observedIrisDiamPixels )
 %
 % Description:
 %   There is limited individual variation in the horizontal visible
@@ -33,7 +33,7 @@ function cameraTranslationDepth = depthFromIrisDiameter( sceneGeometry, observed
     veridicalSceneGeometry = sceneGeometry;
     veridicalSceneGeometry.extrinsicTranslationVector(3) = 100;
     [~, imagePoints, ~, ~, pointLabels] = ...
-    	pupilProjection_fwd([0 0 0 1], veridicalSceneGeometry, [], 'fullEyeModelFlag', true, 'nIrisPerimPoints', 100);
+    	pupilProjection_fwd([0 0 0 1], veridicalSceneGeometry, 'fullEyeModelFlag', true, 'nIrisPerimPoints', 100);
     idx = find(strcmp(pointLabels,'irisPerimeter'));
     observedIrisDiamPixels = max(imagePoints(idx,1))-min(imagePoints(idx,1));
     % Now call the estimation function with the default (incorrect) scene
@@ -61,7 +61,7 @@ cameraTranslationDepth = fminsearch(@objfun, x0);
         candidateSceneGeometry = sceneGeometry;
         candidateSceneGeometry.extrinsicTranslationVector(3) = x;
         [~, imagePoints, ~, ~, pointLabels] = ...
-            pupilProjection_fwd([0 0 0 1], candidateSceneGeometry, [], 'fullEyeModelFlag', true, 'nIrisPerimPoints', 100);
+            pupilProjection_fwd([0 0 0 1], candidateSceneGeometry, 'fullEyeModelFlag', true, 'nIrisPerimPoints', 100);
         idx = find(strcmp(pointLabels,'irisPerimeter'));
         predictedIrisDiamPixels = max(imagePoints(idx,1))-min(imagePoints(idx,1));
         fVal = (predictedIrisDiamPixels - observedIrisDiamPixels)^2;

@@ -99,6 +99,12 @@ function sceneGeometry = createSceneGeometry(varargin)
 %   m surfaces of the cornea and any corrective lenses into a format needed
 %   for ray tracing.
 %
+%   virtualImageFunc - A sub-structure with a handle to the function that
+%   computes the virtual image location of eyeWorldPoints subject to
+%   refraction by the optical system. This function creates the field but
+%   leaves it empty. To populate the field, the routine
+%   compileVirtualImageFunc is used.
+%
 % Inputs:
 %   none
 %
@@ -231,6 +237,9 @@ end
 
 % Store the optical system
 sceneGeometry.opticalSystem = opticalSystem;
+
+% Add the virtualImageFunc field, but for now it is empty.
+sceneGeometry.virtualImageFunc = [];
 
 % Save the meta data
 sceneGeometry.meta.createSceneGeometry = p.Results;
