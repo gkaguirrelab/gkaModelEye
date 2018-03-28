@@ -43,14 +43,14 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %                           the axis.
 %   opticalSystemIn       - An mx3 matrix, where m is the number of
 %                           surfaces in the model, including the initial
-%                           position of the ray. Each row contains the
-%                           values [center, radius, refractiveIndex] that
-%                           define a spherical lens. The first row
-%                           corresponds to the initial conditions of the
-%                           ray. Thus, the refractive index value given in
-%                           the first row species the index of the medium
-%                           in which the raw arises. The center and radius
-%                           values for the first row are ignored.
+%                           state of the ray. Each row contains the values
+%                           [center, radius, refractiveIndex] that define a
+%                           spherical lens. The first row corresponds to
+%                           the initial conditions of the ray. Thus, the
+%                           refractive index value given in the first row
+%                           specifies the index of the medium in which the
+%                           ray arises. The center and radius values for
+%                           the first row are ignored.
 %   figureFlag            - Logical or structure. If logical, the true or
 %                           false value controls whether the default style
 %                           plot is created. If empty, it will be set to
