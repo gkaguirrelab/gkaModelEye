@@ -96,7 +96,18 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     sceneGeometry=createSceneGeometry();
     % Compile the ray tracing functions
     sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry);
-    % Define in eyePoses the azimuth, elevation, torsion, and pupil radius
+    % Define an eyePose with the azimuth, elevation, torsion, and pupil radius
+    eyePose = [-10 5 0 3];
+    % Obtain the pupil ellipse parameters in transparent format
+    pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
+%}
+%{
+    %% Obtain the parameters of the pupil ellipse in the image
+    % Obtain a default sceneGeometry structure
+    sceneGeometry=createSceneGeometry();
+    % Compile the ray tracing functions
+    sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry,'functionDirPath','/tmp/demo_virtualImageFunc');
+    % Define an eyePose with the azimuth, elevation, torsion, and pupil radius
     eyePose = [-10 5 0 3];
     % Obtain the pupil ellipse parameters in transparent format
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
