@@ -446,8 +446,8 @@ switch p.Results.species
         %
         % They measured the shape of the entrance pupil as a function of
         % viewing angle relative to the fixation point of the eye. Their
-        % data is well fit by a kappa of [5, -2] degrees (see
-        % TEST_entrancePupilShape.m).
+        % data is well fit by a kappa of [5, -2.5] degrees (see
+        % TEST_Mathur2013.m).
         %
         % Measured kappa has been found to depend upon axial length:
         %
@@ -478,7 +478,7 @@ switch p.Results.species
         % We note that there is evidence that the vertical kappa value can
         % vary based upon the subject being in a sittng or supine position.
         % Until better evidene is available, we adopt a vertical kappa of
-        % -2 degrees for the emmetropic model eye.        
+        % -2.5 degrees for the emmetropic model eye.        
         if isempty(p.Results.kappaAngle)
             switch eyeLaterality
                 case 'Right'
@@ -486,7 +486,7 @@ switch p.Results.species
                 case 'Left'
                     eye.kappaAngle(1) = -atand((15.0924/(eye.axialLength-8.5000))*tand(5));
             end
-            eye.kappaAngle(2) = atand((15.0924/(eye.axialLength-8.5000))*tand(2));
+            eye.kappaAngle(2) = atand((15.0924/(eye.axialLength-8.5000))*tand(2.5));
         else
             eye.kappaAngle = p.Results.kappaAngle;
         end
