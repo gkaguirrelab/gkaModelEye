@@ -45,7 +45,8 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
 %  'x0'                   - Starting point of the search for the eyePose.
 %                           If not defined, the starting point will be
 %                           estimated from the coordinates of the ellipse
-%                           center.
+%                           center. If set to Inf, a random x0 will be
+%                           selected within the eyePose bounds.
 %  'eyePoseLB/UB'         - A 1x4 vector that provides the lower (upper)
 %                           bounds on the eyePose [azimuth, elevation,
 %                           torsion, pupil radius]. The default values here
@@ -253,6 +254,11 @@ else
     x0 = p.Results.x0;
 end
 
+% Generate a random x0 starting point if x0 contains an inf flag
+if any(isinf(x0))
+    x0 = (eyePoseUB-eyePoseLB).*rand(1,4)+eyePoseLB;
+end
+
 
 %% Perform the search
 % We use nested functions for the objective and constraint so that the
@@ -388,4 +394,6 @@ else
 end
 
 end % function -- pupilProjection_inv
+
+
 
