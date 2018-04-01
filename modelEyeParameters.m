@@ -215,13 +215,9 @@ switch p.Results.species
             plot(x,entranceEccen,'kx');
             hold on
             plot(0.5:.1:3,fitEccen(0.5:.1:3),'-r');
-            % Radius at which the exit pupil is circular
-            myObj = @(x) abs(fitEccen(x));
-            exitPupilCircularRadius = fminsearch(myObj,2)
         %}
         eye.exitPupilEccenParams = [-1.7743 5 0.2671 0.171]; 
-        eye.exitPupilEccenFcnString = sprintf('@(x) abs((tanh((x+%f).*%f)+%f)*%f)',eye.exitPupilEccenParams(1),eye.exitPupilEccenParams(2),eye.exitPupilEccenParams(3),eye.exitPupilEccenParams(4)); 
-        eye.exitPupilCircularRadius = 1.7195;
+        eye.exitPupilEccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',eye.exitPupilEccenParams(1),eye.exitPupilEccenParams(2),eye.exitPupilEccenParams(3),eye.exitPupilEccenParams(4)); 
         eye.exitPupilThetaValues = [0   pi/2];
         
         

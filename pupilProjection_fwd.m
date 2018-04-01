@@ -275,33 +275,32 @@ nPupilPerimPoints = p.Results.nPupilPerimPoints;
 % and positive values are more nasal. Positive values of p3 are downward,
 % and negative values are upward
 
-% Define points around the elliptical exit pupil
+%% Define points around the elliptical exit pupil
 % The eccentricity of the exit pupil is given by a stored function
 exitPupilEccenFunc = str2func(sceneGeometry.eye.exitPupilEccenFcnString);
-% First, determine the parameters of the ellipse that defines the exit
-% pupil in the plane of the pupil.
+% Determine the parameters of the ellipse that defines the exit
+% pupil in the plane of the pupil. The absolute value of exitPupilEccenFunc
+% gives the eccentricity. The theta of the theta of the exit pupil switches
+% from horizontal to vertical when the pupil passes the circular radius
+% point (0).
 exitPupilEllipse = [sceneGeometry.eye.pupilCenter(2) , ...
     sceneGeometry.eye.pupilCenter(3), ...
     pi*pupilRadius^2, ...
-    exitPupilEccenFunc(pupilRadius),...
-    sceneGeometry.eye.exitPupilThetaValues(1)];
-% The theta of the exit pupil switches from horizontal to vertical when the
-% pupil passes the circular radius point.
-if pupilRadius > sceneGeometry.eye.exitPupilCircularRadius
-    exitPupilEllipse(5) = sceneGeometry.eye.exitPupilThetaValues(2);
-end
+    abs(exitPupilEccenFunc(pupilRadius)),...
+    sceneGeometry.eye.exitPupilThetaValues(1+(exitPupilEccenFunc(pupilRadius)>0))];
 % Obtain the points on the perimeter of the ellipse
 [p2p, p3p] = ellipsePerimeterPoints( exitPupilEllipse, nPupilPerimPoints );
 % Place these points into the eyeWorld coordinates
 eyeWorldPoints(1:nPupilPerimPoints,3) = p3p;
 eyeWorldPoints(1:nPupilPerimPoints,2) = p2p;
 eyeWorldPoints(1:nPupilPerimPoints,1) = sceneGeometry.eye.pupilCenter(1);
-
 % Create labels for the pupilPerimeter points
 tmpLabels = cell(nPupilPerimPoints, 1);
 tmpLabels(:) = {'pupilPerimeter'};
 pointLabels = tmpLabels;
 
+
+%% Define full eye model
 % If the fullEyeModel flag is set, then we will create a model of the
 % posterior and anterior chambers of the eye.
 if p.Results.fullEyeModelFlag
