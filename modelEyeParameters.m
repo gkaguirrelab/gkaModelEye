@@ -171,18 +171,17 @@ switch p.Results.species
         % zero
         eye.pupilCenter = [-3.7 0 0];
         
-        % The exit pupil of the eye is elliptical, and not perfectly
-        % circular. Further, the eccentricity and theta of the exit pupil
-        % ellipse changes with pupil dilation:
+        % The exit pupil of the eye is elliptical. Further, the
+        % eccentricity and theta of the exit pupil ellipse changes with
+        % pupil dilation:
         %
         %   Wyatt, Harry J. "The form of the human pupil." Vision Research
         %   35.14 (1995): 2021-2036.
         %
         % Wyatt reported the average ellipse parameters for the entrance
-        % pupil (pupil axis aligned with camera axis) under dim and bright
+        % pupil (witht the pupil axis aligned with camera axis) under dim and bright
         % light conditions. We can calculate the corresponding parameters
-        % of the exit pupil by first noting that (at azimuth, elevation of
-        % 0, 0), the entrance pupil radius is 1.13 times the exit pupil
+        % of the exit pupil by first noting that (at azimuth 0, elevation 0), the entrance pupil radius is 1.13 times the exit pupil
         % radius (SEE: DEMO_eyePoseParams). We then fit a hyperbolic
         % tangent (sigmoidal) function to the the eccentricity of the exit
         % pupil as a function of the exit pupil radius. The theta values
@@ -198,25 +197,24 @@ switch p.Results.species
             % This first value is calculated by DEMO_eyePoseParams
             ratioEntranceToExitRadius = 1.13;
             % Values reported in Wyatt 1995. We use the convention of a
-            % negative eccentricity for the % horizontal pupil and a 
+            % negative eccentricity for the horizontal pupil and a 
             % positive eccentricity for vertical.
-            entranceRadiusObserved = [3.09/2 4.93/2];        
-            entranceEccenObserved = [-0.12 0.21];
+            exitRadius = [3.09/2 4.93/2]./ratioEntranceToExitRadius;        
+            exitEccen = [-0.12 0.21];
             % We then interpolate the observed values, assuming that the
             % observed values are close to asymptote
-            entranceRadius = [entranceRadiusObserved(1)-1 entranceRadiusObserved(1) mean(entranceRadiusObserved) entranceRadiusObserved(2) entranceRadiusObserved(2)+1];
-            entranceEccen = [entranceEccenObserved(1)/0.964 entranceEccenObserved(1) mean(entranceEccenObserved) entranceEccenObserved(2) entranceEccenObserved(2)/0.964];
+            exitRadius = [exitRadius(1)-.5 exitRadius(1) mean(exitRadius) exitRadius(2) exitRadius(2)+.5];
+            exitEccen = [exitEccen(1)/0.8 exitEccen(1) mean(exitEccen) exitEccen(2) exitEccen(2)/0.8];
             % Fit a hand-tuned sigmoidal function
-            sigFit = @(shiftY, scaleY, x) (tanh((x-1.7743).*5)+shiftY)*scaleY;
-            x = entranceRadius./ratioEntranceToExitRadius;
-            fitEccen = fit(x',entranceEccen',sigFit,'StartPoint',[0.171 0.045]);
+            sigFit = @(scaleX, shiftY, scaleY, x) (tanh((x-1.7743).*scaleX)+shiftY)*scaleY;
+            fitEccen = fit(exitRadius',exitEccen',sigFit)
             % Plot the fit
             figure
-            plot(x,entranceEccen,'kx');
+            plot(exitRadius,exitEccen,'kx');
             hold on
             plot(0.5:.1:3,fitEccen(0.5:.1:3),'-r');
         %}
-        eye.exitPupilEccenParams = [-1.7743 5 0.2671 0.171]; 
+        eye.exitPupilEccenParams = [-1.7743 2.606 0.2358 0.2099]; 
         eye.exitPupilEccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',eye.exitPupilEccenParams(1),eye.exitPupilEccenParams(2),eye.exitPupilEccenParams(3),eye.exitPupilEccenParams(4)); 
         eye.exitPupilThetaValues = [0   pi/2];
         
