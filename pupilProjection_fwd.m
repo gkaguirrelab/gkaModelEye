@@ -275,14 +275,27 @@ nPupilPerimPoints = p.Results.nPupilPerimPoints;
 % and positive values are more nasal. Positive values of p3 are downward,
 % and negative values are upward
 
-% Define points around the pupil circle
-perimeterPointAngles = 0:2*pi/nPupilPerimPoints:2*pi-(2*pi/nPupilPerimPoints);
-eyeWorldPoints(1:nPupilPerimPoints,3) = ...
-    sin(perimeterPointAngles)*pupilRadius + sceneGeometry.eye.pupilCenter(3);
-eyeWorldPoints(1:nPupilPerimPoints,2) = ...
-    cos(perimeterPointAngles)*pupilRadius + sceneGeometry.eye.pupilCenter(2);
-eyeWorldPoints(1:nPupilPerimPoints,1) = ...
-    0 + sceneGeometry.eye.pupilCenter(1);
+% Define points around the elliptical exit pupil
+% The eccentricity of the exit pupil is given by a stored function
+exitPupilEccenFunc = str2func(sceneGeometry.eye.exitPupilEccenFcnString);
+% First, determine the parameters of the ellipse that defines the exit
+% pupil in the plane of the pupil.
+exitPupilEllipse = [sceneGeometry.eye.pupilCenter(2) , ...
+    sceneGeometry.eye.pupilCenter(3), ...
+    pi*pupilRadius^2, ...
+    exitPupilEccenFunc(pupilRadius),...
+    sceneGeometry.eye.exitPupilThetaValues(1)];
+% The theta of the exit pupil switches from horizontal to vertical when the
+% pupil passes the circular radius point.
+if pupilRadius > sceneGeometry.eye.exitPupilCircularRadius
+    exitPupilEllipse(5) = sceneGeometry.eye.exitPupilThetaValues(2);
+end
+% Obtain the points on the perimeter of the ellipse
+[p2p, p3p] = ellipsePerimeterPoints( exitPupilEllipse, nPupilPerimPoints );
+% Place these points into the eyeWorld coordinates
+eyeWorldPoints(1:nPupilPerimPoints,3) = p3p;
+eyeWorldPoints(1:nPupilPerimPoints,2) = p2p;
+eyeWorldPoints(1:nPupilPerimPoints,1) = sceneGeometry.eye.pupilCenter(1);
 
 % Create labels for the pupilPerimeter points
 tmpLabels = cell(nPupilPerimPoints, 1);
