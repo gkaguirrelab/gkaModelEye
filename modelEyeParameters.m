@@ -47,7 +47,7 @@ function eye = modelEyeParameters( varargin )
 %  'kappaAngle'           - 1x2 matrix. This is the angle of the visual
 %                           axis in degrees w.r.t. to pupil axis. The
 %                           values are [azimuth, elevation]. An eyePose of:
-%                               [-kappa(1), -kappa(2), 0, radius]
+%                               [-kappaAngle(1), -kappaAngle(2), 0, radius]
 %                           aligns the visual axis of the eye with the
 %                           optical axis of the camera
 %  'eyeLaterality'        - A text string that specifies which eye (left,
@@ -179,44 +179,83 @@ switch p.Results.species
         %   35.14 (1995): 2021-2036.
         %
         % Wyatt reported the average ellipse parameters for the entrance
-        % pupil (witht the pupil axis aligned with camera axis) under dim and bright
-        % light conditions. We can calculate the corresponding parameters
-        % of the exit pupil by first noting that (at azimuth 0, elevation 0), the entrance pupil radius is 1.13 times the exit pupil
-        % radius (SEE: DEMO_eyePoseParams). We then fit a hyperbolic
-        % tangent (sigmoidal) function to the the eccentricity of the exit
-        % pupil as a function of the exit pupil radius. The theta values
-        % observed by Wyatt were very close to vertically orientated in the
-        % dark, and horizontally oriented in the light, so we round to
-        % these values. We then calculate the critical radius at which the
-        % exit pupil is exactly circular. When the exit pupil radius is
-        % below this value, the theta is set to zero (horizontal), and
-        % above this value it is set to pi/2 (vertical). In the forward
-        % model, we take the absolute value of the eccentricity returned by
-        % the parameters.
+        % pupil (witht the visual axis aligned with camera axis) under dim
+        % and bright light conditions. We calculate the corresponding
+        % parameters of the exit pupil on the optical axis. We then fit a
+        % hyperbolic tangent (sigmoidal) function to the the eccentricity
+        % of the exit pupil as a function of the exit pupil radius. The
+        % theta values observed by Wyatt were very close to vertically
+        % orientated in the dark, and horizontally oriented in the light,
+        % so we round to these values. We the exit pupil eccentricity is
+        % below zero, the theta is set to zero (horizontal), and above zero
+        % value it is set to pi/2 (vertical). In the forward model, we take
+        % the absolute value of the eccentricity returned by the parameters
+        % for the exit pupil eccentrivity.
         %{
-            % This first value is calculated by DEMO_eyePoseParams
-            ratioEntranceToExitRadius = 1.13;
             % Values reported in Wyatt 1995. We use the convention of a
             % negative eccentricity for the horizontal pupil and a 
             % positive eccentricity for vertical.
-            exitRadius = [3.09/2 4.93/2]./ratioEntranceToExitRadius;        
-            exitEccen = [-0.12 0.21];
+            entranceRadius = [3.09/2 4.93/2];
+            entranceEccen = [-0.12 0.21];
+            % Prepare scene geometry and eye pose aligned with visual axis
+            sceneGeometry = createSceneGeometry();
+            virtualImageFunc = compileVirtualImageFunc(sceneGeometry);
+            % Fix the exit pupil eccentricity at 0
+            sceneGeometry.eye.exitPupilEccenFcnString = '@(x) 0';
+            sceneGeometry.eye.exitPupilThetaValues = [0, 0];
+            % Obtain the pupil area in the image for each entrance radius
+            % assuming no ray tracing
+            sceneGeometry.virtualImageFunc = [];
+            pupilImage = pupilProjection_fwd([-sceneGeometry.eye.kappaAngle(1), -sceneGeometry.eye.kappaAngle(2), 0, entranceRadius(1)],sceneGeometry);
+            exitArea(1) = pupilImage(3);
+            pupilImage = pupilProjection_fwd([-sceneGeometry.eye.kappaAngle(1), -sceneGeometry.eye.kappaAngle(2), 0, entranceRadius(2)],sceneGeometry);
+            exitArea(2) = pupilImage(3);
+            % Add the ray tracing function to the sceneGeometry
+            sceneGeometry.virtualImageFunc = virtualImageFunc;
+            % Search across exit pupil radii to find the values that match
+            % the observed entrance areas.
+            myPupilEllipse = @(radius) pupilProjection_fwd([-sceneGeometry.eye.kappaAngle(1), -sceneGeometry.eye.kappaAngle(2), 0, radius],sceneGeometry);
+            myArea = @(ellipseParams) ellipseParams(3);
+            myObj = @(radius) (myArea(myPupilEllipse(radius))-exitArea(1)).^2;
+            exitRadius(1) = fminunc(myObj, entranceRadius(1));
+            myObj = @(radius) (myArea(myPupilEllipse(radius))-exitArea(2)).^2;
+            exitRadius(2) = fminunc(myObj, entranceRadius(2));
+            % Now find the exit pupil eccentricity that produces the
+            % observed entrance pupil eccentricity
+            place = {'eye' 'exitPupilEccenFcnString'};
+            sceneGeometry.eye.exitPupilThetaValues = [0, 0];
+            mySceneGeom = @(eccen) setfield(sceneGeometry,place{:},['@(x) ' num2str(eccen)]);
+            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.kappaAngle(1), -sceneGeometry.eye.kappaAngle(2), 0, exitRadius(1)],mySceneGeom(eccen));
+            myEccen = @(ellipseParams) ellipseParams(4);
+            myObj = @(eccen) 1e4*(myEccen(myPupilEllipse(eccen))-abs(entranceEccen(1))).^2;
+            exitEccen(1) = -fminunc(myObj, 0.12685);
+            sceneGeometry.eye.exitPupilThetaValues = [pi/2, pi/2];
+            mySceneGeom = @(eccen) setfield(sceneGeometry,place{:},['@(x) ' num2str(eccen)]);
+            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.kappaAngle(1), -sceneGeometry.eye.kappaAngle(2), 0, exitRadius(2)],mySceneGeom(eccen));
+            myEccen = @(ellipseParams) ellipseParams(4);
+            myObj = @(eccen) 1e4*(myEccen(myPupilEllipse(eccen))-abs(entranceEccen(2))).^2;
+            exitEccen(2) = fminunc(myObj, 0.2023);
+        
             % We then interpolate the observed values, assuming that the
             % observed values are close to asymptote
-            exitRadius = [exitRadius(1)-.5 exitRadius(1) mean(exitRadius) exitRadius(2) exitRadius(2)+.5];
-            exitEccen = [exitEccen(1)/0.8 exitEccen(1) mean(exitEccen) exitEccen(2) exitEccen(2)/0.8];
+            exitRadiusInterp = [exitRadius(1)-.5 exitRadius(1) mean(exitRadius) exitRadius(2) exitRadius(2)+.5];
+            exitEccenInterp = [exitEccen(1)/0.8 exitEccen(1) mean(exitEccen) exitEccen(2) exitEccen(2)/0.8];
             % Fit a hand-tuned sigmoidal function
-            sigFit = @(scaleX, shiftY, scaleY, x) (tanh((x-1.7743).*scaleX)+shiftY)*scaleY;
-            fitEccen = fit(exitRadius',exitEccen',sigFit)
+            sigFit = @(scaleX, shiftY, scaleY, x) (tanh((x-mean(exitRadius)).*scaleX)+shiftY)*scaleY;
+            fitEccen = fit(exitRadiusInterp',exitEccenInterp',sigFit)
             % Plot the fit
             figure
-            plot(exitRadius,exitEccen,'kx');
+            plot(exitRadiusInterp,exitEccenInterp,'kx');
             hold on
             plot(0.5:.1:3,fitEccen(0.5:.1:3),'-r');
         %}
-        eye.exitPupilEccenParams = [-1.7743 2.606 0.2358 0.2099]; 
+        % Specify the params and equation that defines the exit pupil
+        % ellipse. This can be invoked as a function using str2func.
+        eye.exitPupilEccenParams = [-1.7648 2.6 0.1982 0.2094]; 
         eye.exitPupilEccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',eye.exitPupilEccenParams(1),eye.exitPupilEccenParams(2),eye.exitPupilEccenParams(3),eye.exitPupilEccenParams(4)); 
-        eye.exitPupilThetaValues = [0   pi/2];
+        % The theta values of the exit pupil ellipse for eccentricities
+        % less than and greater than zero.
+        eye.exitPupilThetaValues = [0  pi/2];
         
         
         %% Iris
