@@ -46,11 +46,16 @@ function sceneGeometry = createSceneGeometry(varargin)
 %   scene coordinate system to be x=0, y=0 along the optical axis of the
 %   eye, and z=0 to be the apex of the corneal surface.
 %
-%   extrinsicRotationMatrix - A 3x3 identity matrix:
-%
-%       [1  0  0]
-%       [0  1  0]
-%       [0  0  1]
+%   cameraRotationZ - A scaler in degrees that is used to create the camera
+%   rotation matrix. The rotation matrix specifies the rotation of the
+%   camera relative to the axes of the world coordinate system. Because eye
+%   rotations are set have a value of zero when the camera axis is aligned
+%   with the pupil axis of the eye, the camera rotation around the X and Y
+%   axes of the coordinate system are zero. Rotation about the Z axis is
+%   meaningful, as the model eye has different rotation properties in the
+%   azimuthal and elevational directions, and has a non circular exit
+%   pupil. We specify the camera rotation around the Z axis in degrees. In
+%   pupilProjection_fwd, this is used to construct the rotation matrix.
 %
 %   The projection of pupil circles from scene to image is invariant to
 %   rotations of the camera matrix, so these values should not require
@@ -120,7 +125,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %  'sceneGeometryFileName' - Full path to file 
 %  'intrinsicCameraMatrix' - 3x3 matrix
 %  'radialDistortionVector' - 1x2 vector of radial distortion parameters
-%  'extrinsicRotationMatrix' - 3x3 matrix
+%  'cameraRotationZ'      - Scaler.
 %  'extrinsicTranslationVector' - 3x1 vector
 %  'primaryPosition'      - 1x3 vector
 %  'constraintTolerance'  - Scalar. Range 0-1. Typical value 0.01 - 0.03
@@ -174,7 +179,7 @@ p.addParameter('sceneGeometryFileName','', @(x)(isempty(x) | ischar(x)));
 p.addParameter('intrinsicCameraMatrix',[2600 0 320; 0 2600 240; 0 0 1],@isnumeric);
 p.addParameter('radialDistortionVector',[0 0],@isnumeric);
 p.addParameter('extrinsicTranslationVector',[0; 0; 120],@isnumeric);
-p.addParameter('extrinsicRotationMatrix',[1 0 0; 0 1 0; 0 0 1],@isnumeric);
+p.addParameter('cameraRotationZ',0,@isnumeric);
 p.addParameter('primaryPosition',[0 0 0],@isnumeric);
 p.addParameter('constraintTolerance',0.02,@isscalar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
@@ -191,7 +196,7 @@ p.parse(varargin{:})
 sceneGeometry.intrinsicCameraMatrix = p.Results.intrinsicCameraMatrix;
 sceneGeometry.radialDistortionVector = p.Results.radialDistortionVector;
 sceneGeometry.extrinsicTranslationVector = p.Results.extrinsicTranslationVector;
-sceneGeometry.extrinsicRotationMatrix = p.Results.extrinsicRotationMatrix;
+sceneGeometry.cameraRotationZ = p.Results.cameraRotationZ;
 sceneGeometry.primaryPosition = p.Results.primaryPosition;
 sceneGeometry.constraintTolerance = p.Results.constraintTolerance;
 
