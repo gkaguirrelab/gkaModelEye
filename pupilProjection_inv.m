@@ -183,14 +183,8 @@ eyePoseLB = p.Results.eyePoseLB;
 eyePoseUB = p.Results.eyePoseUB;
 
 % Identify the center of projection.
-projectionMatrix = ...
-    sceneGeometry.intrinsicCameraMatrix * ...
-    [sceneGeometry.extrinsicRotationMatrix, ...
-    sceneGeometry.extrinsicTranslationVector];
-
-CoP = projectionMatrix*[0 0 0 1]';
-CoP(1:2)=CoP(1:2)./CoP(3);
-CoP=CoP(1:2);
+rotationCenterEllipse = pupilProjection_fwd([0 0 0 2], sceneGeometry);
+CoP = [rotationCenterEllipse(1),rotationCenterEllipse(2)];
 
 % Set the bounds on the eyePose based upon the quadrant of the ellipse
 % center. We provide 5 degrees of wiggle in the fit around zero.
