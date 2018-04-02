@@ -182,7 +182,7 @@ end
 eyePoseLB = p.Results.eyePoseLB;
 eyePoseUB = p.Results.eyePoseUB;
 
-% Identify the center of projection.
+% Identify the center of projection
 rotationCenterEllipse = pupilProjection_fwd([0 0 0 2], sceneGeometry);
 CoP = [rotationCenterEllipse(1),rotationCenterEllipse(2)];
 
