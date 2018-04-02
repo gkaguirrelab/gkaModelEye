@@ -53,7 +53,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %       [0  0  1]
 %
 %   The projection of pupil circles from scene to image is invariant to
-%   rotations of the camera matrix, so these valyes should not require
+%   rotations of the camera matrix, so these values should not require
 %   adjustment.
 %
 %   primaryPosition - A 1x3 vector of:
