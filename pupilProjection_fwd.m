@@ -111,23 +111,22 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry,'functionDirPath','/tmp/demo_virtualImageFunc');
     % Prepare a figure
     figure
-    blankFrame = zeros(480,640)+0.5;
+    blankFrame = zeros(720,1280)+0.5;
     imshow(blankFrame, 'Border', 'tight');
     hold on
     axis off
     axis equal
-    xlim([0 640]);
-    ylim([0 480]);
+    xlim([0 1280]);
+    ylim([0 720]);
     % Loop over eye poses and plot
     for azi = -25:25:25
         for ele = -25:25:25
             eyePose = [azi ele 0 1];
             % Obtain the pupil ellipse parameters in transparent format
-            [pupilEllipseOnImagePlane,~,~,~,~,~,pupilFitError] = pupilProjection_fwd(eyePose,sceneGeometry);
-            pupilFitError
+            pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
             pFitImplicit = ellipse_ex2im(ellipse_transparent2ex(pupilEllipseOnImagePlane));
             fh=@(x,y) pFitImplicit(1).*x.^2 +pFitImplicit(2).*x.*y +pFitImplicit(3).*y.^2 +pFitImplicit(4).*x +pFitImplicit(5).*y +pFitImplicit(6);
-            fimplicit(fh,[1, 640, 1, 480],'Color', 'g','LineWidth',1);
+            fimplicit(fh,[1, 1280, 1, 720],'Color', 'g','LineWidth',1);
             axis off;
         end
     end
@@ -197,6 +196,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     end
     % Observe that the ray trace nodal error, while small, grows as a
     % function of the rotation of the eye.
+    figure
     plot(sqrt(eyePoses(:,1).^2+eyePoses(:,2).^2),median(rayTraceError),'.r')
     xlabel('Euclidean rotation distance [deg]');
     ylabel('Ray trace nodal error [mm]');
@@ -661,7 +661,7 @@ else
             pupilEllipseOnImagePlane(5) = pupilEllipseOnImagePlane(5)+pi;
         end
         % Get the error of the ellipse fit to the pupil points
-        pupilFitError = sqrt(nanmean(ellipsefit_distance(Xp,Yp,ellipse_transparent2ex(p)).^2));
+        pupilFitError = sqrt(nanmean(ellipsefit_distance( imagePoints(pupilPerimIdx,1), imagePoints(pupilPerimIdx,2),ellipse_transparent2ex(pupilEllipseOnImagePlane)).^2));
     catch
         % In the event of an error, return nans for the ellipse
         pupilEllipseOnImagePlane = nan(1,length(pupilPerimIdx));
