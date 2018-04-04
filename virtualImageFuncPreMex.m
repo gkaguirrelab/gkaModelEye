@@ -19,6 +19,8 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFuncPreM
 % SEE: compileVirtualImageFunc for details.
 %
 
+options = optimset('TolFun',1e-2,'TolX',1e-6);
+
 % Define an error function which is the distance between the nodal
 % point of the camera and the point at which a ray impacts the
 % plane that contains the camera, with the ray departing from the
@@ -35,33 +37,25 @@ errorFunc = @(theta) calcCameraNodeDistanceError2D_p1p2(...
 % ray that strikes as close as possible to the camera nodal point.
 % Because the errorFunc returns nan for values very close to zero,
 % we initialize the search with a slightly non-zero value (1e-4)
-theta_p1p2=fminsearch(errorFunc,1e-4);
-% Now repeat this process for a ray that varies in theta in the
-% p1p3 plane
-errorFunc = @(theta) calcCameraNodeDistanceError2D_p1p3(...
+theta_p1p2=fminsearch(errorFunc,1e-4,options);
+% Now repeat this process for in the p1p3 plane, setting the p1p2 plane to
+% the theta value that was just found
+errorFunc = @(theta) calcCameraNodeDistanceError3D(...
     eyeWorldPoint, extrinsicTranslationVector, ...
     [deg2rad(eyeAzimuth), deg2rad(eyeElevation), deg2rad(eyeTorsion)], ...
     rotationCenters.azi([1 2]),...
     rotationCenters.ele([1 3]),...
     rotationCenters.tor([2 3]),...
-    theta);
-theta_p1p3=fminsearch(errorFunc,1e-4);
+    theta_p1p2, theta);
+% The fVal at the solution is the the total error (in mm) in both
+% dimensions for intersecting the nodal point of the camera.
+[theta_p1p3, nodalPointIntersectError]=fminsearch(errorFunc,1e-4,options);
 % With both theta values calculated, now obtain the virtual image
 % ray arising from the pupil plane that reflects the corneal optics
 virtualImageRay = calcVirtualImageRay(eyeWorldPoint(1), eyeWorldPoint(2), eyeWorldPoint(3), theta_p1p2, theta_p1p3);
 % Replace the original eyeWorld point with the virtual image
 % eyeWorld point
 virtualEyeWorldPoint = virtualImageRay(1,:);
-% Calculate the total error (in mm) in both dimensions for intersecting the
-% nodal point of the camera. Error values on the order of 0.01 - 0.02 are
-% found across pupil points and for a range of eye rotations.
-nodalPointIntersectError = ...
-    calcCameraNodeDistanceError3D(...
-    eyeWorldPoint, extrinsicTranslationVector, ...
-    [deg2rad(eyeAzimuth), deg2rad(eyeElevation), deg2rad(eyeTorsion)], ...
-    rotationCenters.azi([1 2]),...
-    rotationCenters.ele([1 3]),...
-    rotationCenters.tor([2 3]),...
-    theta_p1p2, theta_p1p3);
+
 end
 

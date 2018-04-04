@@ -1,8 +1,8 @@
-%% virtualImageFuncMatlab
-function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFuncMatlab( eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters, rayTraceFuncs)
+%% virtualImageFuncDebug
+function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFuncDebug( eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters)
 % Returns the virtual image coordinates for a point in eyeWorld space
 
-options = optimset('TolFun',1e-2,'TolX',1e-6);
+options = optimset('TolFun',1e-4,'TolX',1e-4);
 
 % Define an error function which is the distance between the nodal
 % point of the camera and the point at which a ray impacts the
@@ -14,7 +14,7 @@ options = optimset('TolFun',1e-2,'TolX',1e-6);
 	rayTraceFuncs = compileVirtualImageFunc(createSceneGeometry());
     rayTraceFuncs.calcCameraNodeDistanceError2D.varNames
 %}
-errorFunc = @(theta) rayTraceFuncs.calcCameraNodeDistanceError2D.p1p2(...
+errorFunc = @(theta) calcCameraNodeDistanceError2D_p1p2(...
     eyeWorldPoint, extrinsicTranslationVector, ...
     [deg2rad(eyeAzimuth), deg2rad(eyeElevation), deg2rad(eyeTorsion)], ...
     rotationCenters.azi([1 2]),...
@@ -28,7 +28,7 @@ errorFunc = @(theta) rayTraceFuncs.calcCameraNodeDistanceError2D.p1p2(...
 theta_p1p2=fminsearch(errorFunc,1e-4,options);
 % Now repeat this process for in the p1p3 plane, setting the p1p2 plane to
 % the theta value that was just found
-errorFunc = @(theta) rayTraceFuncs.calcCameraNodeDistanceError3D(...
+errorFunc = @(theta) calcCameraNodeDistanceError3D(...
     eyeWorldPoint, extrinsicTranslationVector, ...
     [deg2rad(eyeAzimuth), deg2rad(eyeElevation), deg2rad(eyeTorsion)], ...
     rotationCenters.azi([1 2]),...
@@ -40,8 +40,9 @@ errorFunc = @(theta) rayTraceFuncs.calcCameraNodeDistanceError3D(...
 [theta_p1p3, nodalPointIntersectError]=fminsearch(errorFunc,1e-4,options);
 % With both theta values calculated, now obtain the virtual image
 % ray arising from the pupil plane that reflects the corneal optics
-virtualImageRay = rayTraceFuncs.calcVirtualImageRay(eyeWorldPoint(1), eyeWorldPoint(2), eyeWorldPoint(3), theta_p1p2, theta_p1p3);
+virtualImageRay = calcVirtualImageRay(eyeWorldPoint(1), eyeWorldPoint(2), eyeWorldPoint(3), theta_p1p2, theta_p1p3);
 % Extract the origin of the ray, which is the virtual image eyeWorld point
 virtualEyeWorldPoint = virtualImageRay(1,:);
+
 
 end % virtualImageFunc
