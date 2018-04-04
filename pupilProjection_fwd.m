@@ -1,4 +1,4 @@
-function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoints, pointLabels, nodalPointIntersectError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
+function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoints, pointLabels, nodalPointIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
 % Project the pupil circle to an ellipse on the image plane
 %
 % Syntax:
@@ -88,6 +88,8 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
 %                           The value is nan for points not subject to
 %                           refraction by the cornea. All values will be
 %                           nan sceneGeometry.virtualImageFunc is empty.
+%   pupilFitError         - The RMSE distance (in pixels) of the pupil
+%                           perimeter points to the pupil ellipse.
 %
 % Examples:
 %{
@@ -102,15 +104,34 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
 %}
 %{
-    %% Obtain the parameters of the pupil ellipse in the image
+    %% Plot the pupil ellipse for various eye poses
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Compile the ray tracing functions
     sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry,'functionDirPath','/tmp/demo_virtualImageFunc');
-    % Define an eyePose with the azimuth, elevation, torsion, and pupil radius
-    eyePose = [-10 5 0 3];
-    % Obtain the pupil ellipse parameters in transparent format
-    pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
+    % Prepare a figure
+    figure
+    blankFrame = zeros(480,640)+0.5;
+    imshow(blankFrame, 'Border', 'tight');
+    hold on
+    axis off
+    axis equal
+    xlim([0 640]);
+    ylim([0 480]);
+    % Loop over eye poses and plot
+    for azi = -25:25:25
+        for ele = -25:25:25
+            eyePose = [azi ele 0 1];
+            % Obtain the pupil ellipse parameters in transparent format
+            [pupilEllipseOnImagePlane,~,~,~,~,~,pupilFitError] = pupilProjection_fwd(eyePose,sceneGeometry);
+            pupilFitError
+            pFitImplicit = ellipse_ex2im(ellipse_transparent2ex(pupilEllipseOnImagePlane));
+            fh=@(x,y) pFitImplicit(1).*x.^2 +pFitImplicit(2).*x.*y +pFitImplicit(3).*y.^2 +pFitImplicit(4).*x +pFitImplicit(5).*y +pFitImplicit(6);
+            fimplicit(fh,[1, 640, 1, 480],'Color', 'g','LineWidth',1);
+            axis off;
+        end
+    end
+    hold off
 %}
 %{
     %% Display a 2D image of a slightly myopic left eye wearing a contact
@@ -551,14 +572,14 @@ sceneWorldPoints = headWorldPoints(:,[2 3 1]);
 % This coordinate frame is in units of pixels, and has the dimensions
 % [x, y]:
 %
-%      ^
+% [0,0]    x
+%      +------->
 %      |
 %   y  |
 %      |
-%      +------->
-% [0,0]    x
+%      v
 %
-% With x being left/right and y being down/up
+% With x being left/right and y being up/down
 %
 
 % Create the extrinsicRotationMatrix. The model specifies only the camera
@@ -619,6 +640,9 @@ imagePoints = (imagePointsNormalizedDistorted .* [sceneGeometry.intrinsicCameraM
 % circle on the image plane.
 pupilPerimIdx = find(strcmp(pointLabels,'pupilPerimeter'));
 
+% Set up a variable to hold the pupil fit error
+pupilFitError = nan;
+
 % Before we try to fit the ellipse, make sure that the radius is not zero,
 % that the image points not imaginary or nan, and that there are at least 5
 % perimeter points.
@@ -636,6 +660,8 @@ else
         if pupilEllipseOnImagePlane(5) < 0
             pupilEllipseOnImagePlane(5) = pupilEllipseOnImagePlane(5)+pi;
         end
+        % Get the error of the ellipse fit to the pupil points
+        pupilFitError = sqrt(nanmean(ellipsefit_distance(Xp,Yp,ellipse_transparent2ex(p)).^2));
     catch
         % In the event of an error, return nans for the ellipse
         pupilEllipseOnImagePlane = nan(1,length(pupilPerimIdx));
