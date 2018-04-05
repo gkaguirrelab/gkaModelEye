@@ -782,8 +782,8 @@ syms theta_p1p2 theta_p1p3
 outputRayEyeWorld_p1p2 = rayTraceFunc(p2, theta_p1p2, p1);
 outputRayEyeWorld_p1p3 = rayTraceFunc(p3, theta_p1p3, p1);
 
-% Adjust the p1 (optical axis) position of the rays to have the
-% their initial position at the same p1
+% Adjust the p1 (optical axis) position of the rays to have their initial
+% position at the same p1
 slope =(outputRayEyeWorld_p1p2(2,2)-outputRayEyeWorld_p1p2(1,2))/(outputRayEyeWorld_p1p2(2,1)-outputRayEyeWorld_p1p2(1,1));
 zOffset=outputRayEyeWorld_p1p2(1,1)-p1;
 outputRayEyeWorld_p1p2(:,1)=outputRayEyeWorld_p1p2(:,1)-zOffset;
