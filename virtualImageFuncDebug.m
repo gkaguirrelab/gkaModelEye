@@ -1,5 +1,12 @@
-%% virtualImageFuncDebug
 function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFuncDebug( eyeWorldPoint, extrinsicTranslationVector, eyeAzimuth, eyeElevation, eyeTorsion, rotationCenters)
+
+%{
+virtualImageFuncDebug(...
+                    eyeWorldPoint, sceneGeometry.extrinsicTranslationVector, ...
+                    eyeAzimuth, eyeElevation, eyeTorsion, ...
+                    sceneGeometry.eye.rotationCenters)
+%}
+
 % Returns the virtual image coordinates for a point in eyeWorld space
 
 options = optimset('TolFun',1e-4,'TolX',1e-4);
