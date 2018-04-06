@@ -113,7 +113,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     % A model of the passage of a point on the pupil perimeter through
     % the cornea (units in mm)
     sceneGeometry = createSceneGeometry();
-    outputRay = rayTraceCenteredSurfaces([sceneGeometry.eye.pupilCenter(1) 2], deg2rad(-45), sceneGeometry.opticalSystem, true)
+    outputRay = rayTraceCenteredSurfaces([sceneGeometry.eye.pupilCenter(1) 2], deg2rad(-10), sceneGeometry.opticalSystem, true)
 %}
 %{
     %% Example 3 - Pupil through cornea and spectacle, plot range limits
@@ -122,7 +122,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     %  Create a myopic eye
     sceneGeometry = createSceneGeometry('sphericalAmetropia',-2);
     pupilRadius = 2;
-    theta = deg2rad(-45);
+    theta = deg2rad(-10);
     coords = [sceneGeometry.eye.pupilCenter(1) pupilRadius];
     opticalSystem = sceneGeometry.opticalSystem;
     % Add a -2 diopter lens for the correction of myopia
@@ -140,11 +140,8 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     clear coords
     clear theta
     clear figureFlag
-    eye = modelEyeParameters();
+    sceneGeometry = createSceneGeometry();
     pupilRadius = 2;
-    opticalSystem = [nan nan eye.aqueousRefractiveIndex; ...
-                     eye.corneaBackSurfaceCenter(1) -eye.corneaBackSurfaceRadius eye.corneaRefractiveIndex; ...
-                     eye.corneaFrontSurfaceCenter(1) -eye.corneaFrontSurfaceRadius 1.0];
     % Define FigureFlag as a structure, and set the new field to false so
     % that subsequent calls to the ray tracing routine will plot on the
     % same figure. Also, set the textLabels to false to reduce clutter
@@ -153,7 +150,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     figureFlag.textLabels = false;
     for theta = -35:70:35
         for pupilRadius = -2:4:2
-            rayTraceCenteredSurfaces([eye.pupilCenter(1) pupilRadius], theta, opticalSystem, figureFlag);
+            rayTraceCenteredSurfaces([eye.pupilCenter(1) pupilRadius], theta, sceneGeometry.opticalSystem, figureFlag);
         end
     end
 %}
@@ -164,18 +161,17 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     % to the values for thetas returned by Example 2
     clear coords
     clear theta
-    eye = modelEyeParameters();
+    sceneGeometry = createSceneGeometry();
     syms theta
     syms pupilPointHeight
     coords = [eye.pupilCenter(1) pupilPointHeight];
-    opticalSystem = [nan nan eye.aqueousRefractiveIndex; ...
-                     eye.corneaBackSurfaceCenter(1) -eye.corneaBackSurfaceRadius eye.corneaRefractiveIndex; ...
-                     eye.corneaFrontSurfaceCenter(1) -eye.corneaFrontSurfaceRadius 1.0];
-    outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem);
+    outputRay = rayTraceCenteredSurfaces(coords, theta, sceneGeometry.opticalSystem);
     % The variable output ray contains symbolic variables
     symvar(outputRay)
     theta = deg2rad(-45);
     pupilPointHeight = 2;
+    unity = 1;
+    zero = 0;
     % Substitute these new values for theta and height and evaluate
     double(subs(outputRay))
 %}
@@ -190,15 +186,16 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     % is then adjusted to share the same Z dimension point of origin.
     clear coords
     clear theta
-    eye = modelEyeParameters();
+    sceneGeometry = createSceneGeometry();
     syms theta
     syms pupilPointHeight
     coords = [eye.pupilCenter(1) pupilPointHeight];
-    opticalSystem = [nan nan eye.aqueousRefractiveIndex; ...
-                     eye.corneaBackSurfaceCenter(1) -eye.corneaBackSurfaceRadius eye.corneaRefractiveIndex; ...
-                     eye.corneaFrontSurfaceCenter(1) -eye.corneaFrontSurfaceRadius 1.0];
-    outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem);
+    outputRay = rayTraceCenteredSurfaces(coords, theta, sceneGeometry.opticalSystem);
     % demonstrate that outputRay has symbolic variables
+    symvar(outputRay)
+    % replace the unity and zero symbolic values with fixed values
+    unity = 1; zero = 0;
+    outputRay = subs(outputRay);
     symvar(outputRay)
     % define a function based upon the symbolic equation in outputRay
     unitRayFromPupilFunc = matlabFunction(outputRay);
@@ -322,26 +319,32 @@ nSurfaces = size(opticalSystemIn,1);
 % Set the values for at the first surface (initial position of ray)
 if symbolicFlag
     syms unity
+    syms zero
     aVals(1) = unity;
-    intersectionCoords=[];
+    curvature(1) = zero;
 else
     aVals(1) = 1;
-    intersectionCoords(1,:)=coordsInitial;
+    curvature(1) = 0;
 end
+intersectionCoords(1,:)=coordsInitial;
 thetas(1)=thetaInitial;
 relativeIndices(1) = 1;
 imageCoords(1,:)=[coordsInitial(1)-(coordsInitial(2)/tan(thetaInitial)) 0];
 
-% Build the local optical system. This is mostly copying over the passed
-% opticalSystemIn, but we replace the center and radius of the first
-% surface with the point of intersection of the initial ray with the
+% Build the local optical system. Replace the center and radius of the
+% first surface with the point of intersection of the initial ray with the
 % optical axis, and set the radius to zero. This re-assembly of the matrix
 % is also needed so that it can hold symbolic values if some were passed
 % for coordsInitial or thetaInitial.
 opticalSystem(1,1)=imageCoords(1,1);
 opticalSystem(1,2:size(opticalSystemIn,2)-1)=0;
 opticalSystem(1,size(opticalSystemIn,2))=opticalSystemIn(1,end);
-opticalSystem(2:nSurfaces,:)=opticalSystemIn(2:nSurfaces,:);
+opticalSystem = [opticalSystem; opticalSystemIn(2:end,:)];
+% If a single radius value was passed for the surfaces, copy this value
+% over to define the radius for these spheres along the horizontal axis
+if size(opticalSystemIn,2)==3
+    opticalSystem = [opticalSystem(:,1) opticalSystem(:,2) opticalSystem(:,2) opticalSystem(:,3)];
+end
 
 % Initialize the figure
 if figureFlag.show
@@ -374,15 +377,19 @@ end
 
 %% Peform the ray trace
 for ii = 2:nSurfaces
+    % Obtain the coordinate at which the ray intersects the next surface,
+    % and the radius of curvature of the lens at that point
+    [intersectionCoords(ii,:),curvature(ii)] = calcEllipseIntersect(intersectionCoords(ii-1,:), thetas(ii-1), opticalSystem(ii,1), opticalSystem(ii,2:3) );
+    
     % The distance between the center of curvature of the current lens
     % surface and the center of curvature of the prior lens surface
     d = opticalSystem(ii,1)-opticalSystem(ii-1,1);
     % The relative refractive index of the prior medium to the medium of
     % the surface that the ray is now impacting
     relativeIndices(ii)=opticalSystem(ii-1,end)/opticalSystem(ii,end);
-    % implements equation 54 of Eleghan
+    % Equation 54 of Elagha
     aVals(ii) = ...
-        (1/opticalSystem(ii,2))*(relativeIndices(ii-1).*aVals(ii-1).*opticalSystem(ii-1,2)+d.*sin(thetas(ii-1)));
+        (1/curvature(ii))*(relativeIndices(ii-1).*aVals(ii-1).*curvature(ii-1)+d.*sin(thetas(ii-1)));
     % check if the incidence angle is above the critical angle for the
     % relative refractive index at the surface interface, but only if we
     % are not working with symbolic variables
@@ -411,39 +418,6 @@ for ii = 2:nSurfaces
         imageCoords(1,:)=coordsInitial;
     else
         imageCoords(ii,:)=thisImageCoord;
-    end
-    % If we are not working with symbolic variables, find the coordinate of
-    % at which the ray intersects the current surface
-    if ~symbolicFlag
-        if ii==2
-            slope = tan(thetas(ii-1));
-        else
-            slope = intersectionCoords(ii-1,2)/(intersectionCoords(ii-1,1)-imageCoords(ii-1,1));
-        end
-        intercept = (0-imageCoords(ii-1))*slope;
-        % Place the linecirc test in a try-catch block. There are
-        % circumstances in which the ray does not have a feasible
-        % intersection with the surface, resulting in an error from the
-        % linecirc function
-        try
-            [xout,yout] = linecirc(slope,intercept,opticalSystem(ii,1),0,abs(opticalSystem(ii,2)));
-        catch
-            warning('rayTraceCenteredSurfaces:rayMissesSurface','The ray is either tangential to or misses surface %d. Returning.',ii);
-            return
-        end
-        % This next bit of logic figures out which of the two coordinates
-        % of intersection of the ray with a sphere correspond to the one we
-        % want for the lens
-        if length(xout)==2
-            whichIdx = 1.5+0.5*((sign(opticalSystem(ii,1))*sign(opticalSystem(ii,2))));
-            intersectionCoords(ii,:)=[xout(whichIdx) yout(whichIdx)];
-        else
-            % If it returns only one coordinate the ray either was
-            % tangential to the surface or missed entirely. We therefore
-            % exit the ray tracing
-            warning('The ray is either tangential to or misses surface %d. Returning.',ii);
-            return
-        end
     end
     % Update the plot
     if figureFlag.show
@@ -512,6 +486,6 @@ function plotLensArc(opticalSystem)
 % Local function to handle plotting lens surfaces
 ang=pi/2:0.01:3*pi/2;
 xp=opticalSystem(2)*cos(ang);
-yp=opticalSystem(2)*sin(ang);
+yp=opticalSystem(3)*sin(ang);
 plot(opticalSystem(1)+xp,yp,'-k');
 end
