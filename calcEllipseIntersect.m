@@ -1,4 +1,4 @@
-function [intersectCoords,curvature] = calcEllipseIntersect(coordsInitial, theta, ellipseCenterZ, ellipseRadii )
+function [intersectionCoords,curvature] = calcEllipseIntersect(coordsInitial, theta, ellipseCenterZ, ellipseRadii )
 % Returns coords and curvature of an ellipse intersected by a ray 
 %
 % Syntax:
@@ -28,9 +28,9 @@ function [intersectCoords,curvature] = calcEllipseIntersect(coordsInitial, theta
     [intersectCoords,curvature] = calcEllipseIntersect([-3.7,0], 0, -9.1412, [9.1412, 8.4277] )
 %}
 
-
-%% FIXED AT ZERO
-ellipseCenterH= 0; % center y? OBLIGATORY 0
+% Check and interpret the inputs
+radiiSign = sign(ellipseRadii(1));
+ellipseRadii = abs(ellipseRadii);
 
 % slope (m) and y-axis intercept(c) of a line, derived from initial
 % position and the theta of the ray.
@@ -45,37 +45,17 @@ O = (1/ellipseRadii(2)^2)*c^2 + (1/ellipseRadii(1)^2)*ellipseCenterZ^2 -1 ;
 
 determinant = (N^2 - 4* M * O);
 
-x1  = (- N + sqrt(determinant))/ (2*M);
-x2  = (- N - sqrt(determinant))/ (2*M);
+xCoords = [(- N + sqrt(determinant))/ (2*M), (- N - sqrt(determinant))/ (2*M)];
+yCoords = [m*xCoords(1) + c, m*xCoords(2) + c];
 
-y1 = m*x1 + c;
-y2 = m*x2 + c;
 
-cond1 = ( (     ((x1-ellipseCenterZ))^2 /ellipseRadii(1)^2  ) >= (1-1e-15)) && ...
-    ( (((x1-ellipseCenterZ))^2/ellipseRadii(1)^2 ) <= (1+1e-15));
+% If the radiiSign is positive, report the coordinates on the left-hand
+% side of the ellipse, otherwise report the coordinates on the right
+intersectionCoords = [xCoords((radiiSign/2)+1.5),yCoords((radiiSign/2)+1.5)];
 
-cond2 =  ( (((x2-ellipseCenterZ))^2/ellipseRadii(1)^2 ) >= (1-1e-15)) && ...
-    ( (((x2-ellipseCenterZ))^2/ellipseRadii(1)^2  ) <= (1+1e-15));
+t = acos((intersectionCoords(1)-ellipseCenterZ)/ellipseRadii(1));
 
-if (cond1 == 1 && cond2 == 0)
-    x2 = x1;
-    y2 = y1;
-elseif (cond1 == 0 && cond2 == 1)
-    x1 = x2;
-    y1 = y2;
-elseif (cond1 == 0 && cond2 == 0)
-    x1 = NaN;
-    x2 = NaN;
-    y1 = NaN;
-    y2 = NaN;
-end
-
-% Need some logic here to decide if we return x1,y1 or x2,y2
-intersectCoords = [x1,y1];
-
-t = acos((x1-ellipseCenterZ)/ellipseRadii(1));
-
-% radius of curvature
-curvature = ((ellipseRadii(1)^2*sin(t)^2 + ellipseRadii(2)^2*cos(t)^2)^(3/2))/(ellipseRadii(1)*ellipseRadii(2));
+% If the radiiSign is negative, report a negative radius of curvature
+curvature = radiiSign*((ellipseRadii(1)^2*sin(t)^2 + ellipseRadii(2)^2*cos(t)^2)^(3/2))/(ellipseRadii(1)*ellipseRadii(2));
 
 end
