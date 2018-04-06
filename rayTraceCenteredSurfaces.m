@@ -1,8 +1,8 @@
-function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCenteredSphericalSurfaces(coordsInitial, thetaInitial, opticalSystemIn, figureFlag)
+function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCenteredSurfaces(coordsInitial, thetaInitial, opticalSystemIn, figureFlag)
 % Returns the position and angle of a resultant ray WRT optical axis
 %
 % Syntax:
-%  [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCenteredSphericalSurfaces(coordsInitial, thetaInitial, opticalSystemIn)
+%  [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCenteredSurfaces(coordsInitial, thetaInitial, opticalSystemIn)
 %
 % Description:
 %   This routine implements the 2D generalized ray tracing equations of:
@@ -10,23 +10,23 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %       Elagha, Hassan A. "Generalized formulas for ray-tracing and
 %       longitudinal spherical aberration." JOSA A 34.3 (2017): 335-343.
 %
-%   The equations assume a set of spherical surfaces, with each spherical
-%   surface having its center of curvature positioned on the optical axis.
-%   The initial state of the ray is specified by its two-dimensional
-%   coordinates and by the angle (theta) that it makes with the optical
-%   axis. By convention, the optical axis is termed "z", and the orthogonal
-%   axis is termed "height". Positive values of z are to the right. A theta
-%   of zero indicates a ray that is parallel to the optical axis. Positive
-%   values of theta correspond to the ray diverging to a position above the
-%   optical axis. Each spherical surface is specified by a center of
-%   curvature and a radius. The center of curvature must lie on the optical
+%   The equations assume a set of elliptical surfaces, with each elliptical
+%   surface having its center positioned on the optical axis. The initial
+%   state of the ray is specified by its two-dimensional coordinates and by
+%   the angle (theta) that it makes with the optical axis. By convention,
+%   the optical axis is termed "z", and the orthogonal axis is termed
+%   "height". Positive values of z are to the right. A theta of zero
+%   indicates a ray that is parallel to the optical axis. Positive values
+%   of theta correspond to the ray diverging to a position above the
+%   optical axis. Each elliptical surface is specified by a center and a
+%   radius in the z and h dimebnsions. The center must lie on the optical
 %   axis; positive values place the center to the right of the origin of
 %   the ray. A positive radius presents the ray with a convex surface; a
 %   negative radius presents the ray with a concave surface. The output of
 %   the routine is the position and angle at which the ray (or its reverse
 %   projection) intersects the optical axis.
 %
-%   The will accept symbolic variables for some or all of the input
+%   The routine will accept symbolic variables for some or all of the input
 %   components. When the input contains one or more symbolic variables:
 %     - plotting is disabled
 %     - intersectionCoords are not calculated and instead returned as empty
@@ -41,16 +41,17 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %                           with the optical axis. Values between 0 and pi
 %                           direct the ray to diverge "upwards" away from
 %                           the axis.
-%   opticalSystemIn       - An mx3 matrix, where m is the number of
+%   opticalSystemIn       - An mx3 or mx4 matrix, where m is the number of
 %                           surfaces in the model, including the initial
 %                           state of the ray. Each row contains the values
-%                           [center, radius, refractiveIndex] that define a
-%                           spherical lens. The first row corresponds to
-%                           the initial conditions of the ray. Thus, the
-%                           refractive index value given in the first row
-%                           specifies the index of the medium in which the
-%                           ray arises. The center and radius values for
-%                           the first row are ignored.
+%                               [center, radius, refractiveIndex] or
+%                               [center, radiusZ, radiusH, refractiveIndex]
+%                           that define an elliptical lens. The first row
+%                           corresponds to the initial conditions of the
+%                           ray. Thus, the refractive index value given in
+%                           the first row specifies the index of the medium
+%                           in which the ray arises. The center and radius
+%                           values for the first row are ignored.
 %   figureFlag            - Logical or structure. If logical, the true or
 %                           false value controls whether the default style
 %                           plot is created. If empty, it will be set to
@@ -100,7 +101,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     theta = deg2rad(17.309724);
     figureFlag=true;
     opticalSystem=[nan nan 1; 22 10 1.2; 9 -8 1; 34 12 1.5; 20 -10 1.0];
-    [outputRay, thetas, imageCoords] = rayTraceCenteredSphericalSurfaces(coords, theta, opticalSystem, figureFlag);
+    [outputRay, thetas, imageCoords] = rayTraceCenteredSurfaces(coords, theta, opticalSystem, figureFlag);
     for ii=1:length(thetas)
         fprintf('theta%d: %f \n',ii-1,rad2deg(thetas(ii)));
     end
@@ -112,7 +113,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     % A model of the passage of a point on the pupil perimeter through
     % the cornea (units in mm)
     sceneGeometry = createSceneGeometry();
-    outputRay = rayTraceCenteredSphericalSurfaces([sceneGeometry.eye.pupilCenter(1) 2], deg2rad(-45), sceneGeometry.opticalSystem, true)
+    outputRay = rayTraceCenteredSurfaces([sceneGeometry.eye.pupilCenter(1) 2], deg2rad(-45), sceneGeometry.opticalSystem, true)
 %}
 %{
     %% Example 3 - Pupil through cornea and spectacle, plot range limits
@@ -126,11 +127,13 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     opticalSystem = sceneGeometry.opticalSystem;
     % Add a -2 diopter lens for the correction of myopia
     opticalSystem=addSpectacleLens(opticalSystem, -2);
+    % Try this with the surfaces defined in both dimensions
+    opticalSystem = [opticalSystem(:,1:2) opticalSystem(:,2) opticalSystem(:,3)];
     % Define FigureFlag as a structure with limits on the plot range
     clear figureFlag
     figureFlag.zLim = [-20 20];
     figureFlag.hLim = [-25 25];
-    outputRay = rayTraceCenteredSphericalSurfaces(coords, theta, opticalSystem, figureFlag)
+    outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem, figureFlag)
 %}
 %{
     %% Example 4 - Pupil through cornea, multiple points and rays
@@ -150,7 +153,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     figureFlag.textLabels = false;
     for theta = -35:70:35
         for pupilRadius = -2:4:2
-            rayTraceCenteredSphericalSurfaces([eye.pupilCenter(1) pupilRadius], theta, opticalSystem, figureFlag);
+            rayTraceCenteredSurfaces([eye.pupilCenter(1) pupilRadius], theta, opticalSystem, figureFlag);
         end
     end
 %}
@@ -168,7 +171,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     opticalSystem = [nan nan eye.aqueousRefractiveIndex; ...
                      eye.corneaBackSurfaceCenter(1) -eye.corneaBackSurfaceRadius eye.corneaRefractiveIndex; ...
                      eye.corneaFrontSurfaceCenter(1) -eye.corneaFrontSurfaceRadius 1.0];
-    outputRay = rayTraceCenteredSphericalSurfaces(coords, theta, opticalSystem);
+    outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem);
     % The variable output ray contains symbolic variables
     symvar(outputRay)
     theta = deg2rad(-45);
@@ -194,7 +197,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     opticalSystem = [nan nan eye.aqueousRefractiveIndex; ...
                      eye.corneaBackSurfaceCenter(1) -eye.corneaBackSurfaceRadius eye.corneaRefractiveIndex; ...
                      eye.corneaFrontSurfaceCenter(1) -eye.corneaFrontSurfaceRadius 1.0];
-    outputRay = rayTraceCenteredSphericalSurfaces(coords, theta, opticalSystem);
+    outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem);
     % demonstrate that outputRay has symbolic variables
     symvar(outputRay)
     % define a function based upon the symbolic equation in outputRay
@@ -215,16 +218,16 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     opticalSystem=[nan nan 1.5; 20 10 1.0];
     % This ray intersects the surface. Function returns without error.
     theta = deg2rad(5);
-    outputRay = rayTraceCenteredSphericalSurfaces(coords, theta, opticalSystem);
+    outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem);
     % This theta will not intersect the surface. The function issues
     % warning and returns an empty outputRay
     theta = deg2rad(45);
-    outputRay = rayTraceCenteredSphericalSurfaces(coords, theta, opticalSystem);
+    outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem);
     % Now define outputRay with theta as a symbolic variable, then evaluate
     % with a non-intersecting ray
     clear theta
     syms theta
-    outputRay = rayTraceCenteredSphericalSurfaces(coords, theta, opticalSystem);
+    outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem);
     testRay = double(subs(outputRay,'theta',deg2rad(45)))
     % The routine returns an outout ray with imaginary values
     isreal(testRay)
@@ -336,8 +339,8 @@ imageCoords(1,:)=[coordsInitial(1)-(coordsInitial(2)/tan(thetaInitial)) 0];
 % is also needed so that it can hold symbolic values if some were passed
 % for coordsInitial or thetaInitial.
 opticalSystem(1,1)=imageCoords(1,1);
-opticalSystem(1,2)=0;
-opticalSystem(1,3)=opticalSystemIn(1,3);
+opticalSystem(1,2:size(opticalSystemIn,2)-1)=0;
+opticalSystem(1,size(opticalSystemIn,2))=opticalSystemIn(1,end);
 opticalSystem(2:nSurfaces,:)=opticalSystemIn(2:nSurfaces,:);
 
 % Initialize the figure
@@ -376,7 +379,7 @@ for ii = 2:nSurfaces
     d = opticalSystem(ii,1)-opticalSystem(ii-1,1);
     % The relative refractive index of the prior medium to the medium of
     % the surface that the ray is now impacting
-    relativeIndices(ii)=opticalSystem(ii-1,3)/opticalSystem(ii,3);
+    relativeIndices(ii)=opticalSystem(ii-1,end)/opticalSystem(ii,end);
     % implements equation 54 of Eleghan
     aVals(ii) = ...
         (1/opticalSystem(ii,2))*(relativeIndices(ii-1).*aVals(ii-1).*opticalSystem(ii-1,2)+d.*sin(thetas(ii-1)));
@@ -385,7 +388,7 @@ for ii = 2:nSurfaces
     % are not working with symbolic variables
     if ~symbolicFlag
         if abs((aVals(ii)*relativeIndices(ii))) > 1
-            warning('rayTraceCenteredSphericalSurfaces:criticalAngle','Angle of incidence for surface %d greater than critical angle. Returning.',ii);
+            warning('rayTraceCenteredSurfaces:criticalAngle','Angle of incidence for surface %d greater than critical angle. Returning.',ii);
             return
         end
     end
@@ -425,7 +428,7 @@ for ii = 2:nSurfaces
         try
             [xout,yout] = linecirc(slope,intercept,opticalSystem(ii,1),0,abs(opticalSystem(ii,2)));
         catch
-            warning('rayTraceCenteredSphericalSurfaces:rayMissesSurface','The ray is either tangential to or misses surface %d. Returning.',ii);
+            warning('rayTraceCenteredSurfaces:rayMissesSurface','The ray is either tangential to or misses surface %d. Returning.',ii);
             return
         end
         % This next bit of logic figures out which of the two coordinates
