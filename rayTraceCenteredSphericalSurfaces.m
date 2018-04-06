@@ -34,7 +34,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %       miss an optical surface are not conducted
 %
 % Inputs:
-%   coordsInitial         - A 2x1 matrix, with the values corresponding to
+%   coordsInitial         - A 2x1 vector, with the values corresponding to
 %                           the z-position and height of the initial
 %                           position of the ray.
 %   thetaInitial          - A scalar in radians. A value of zero is aligned
