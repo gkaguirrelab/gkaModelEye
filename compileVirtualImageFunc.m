@@ -420,7 +420,11 @@ function rayTraceFunc = traceOpticalSystem(opticalSystem, compileDir)
 syms z h theta
 
 % Pass the optical system and the symbolic variables to the ray tracer
-outputRay2D = rayTraceCenteredSphericalSurfaces([z h], theta, opticalSystem);
+outputRay2D = rayTraceCenteredSurfaces([z h], theta, opticalSystem);
+
+% Substitute out the symbolic values for unity and zero
+unity = 1; zero = 0;
+outputRay2D = subs(outputRay2D);
 
 % Convert the equation with symbolic variables into a function and either
 % return a function handle or save the function to a file
