@@ -16,6 +16,11 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFuncPreM
 %       calcVirtualImageRay - Returns the unit vector virtual image ray for
 %           the initial depth position
 %
+%   This "PreMex" routine is identical to the primary virtualImageFunc,
+%   with the exception that the call to rayTraceCenteredSurfaces is
+%   commented out, as the compiler is scared by the symbolic variable calls
+%   that are present in this routine.
+%
 % Inputs:
 %   eyeWorldPoint         - A 1x3 vector that gives the coordinates (in mm)
 %                           of a point in eyeWorld space with the
