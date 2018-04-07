@@ -10,28 +10,25 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %       Elagha, Hassan A. "Generalized formulas for ray-tracing and
 %       longitudinal spherical aberration." JOSA A 34.3 (2017): 335-343.
 %
-%   The equations assume a set of elliptical surfaces, with each elliptical
-%   surface having its center positioned on the optical axis. The initial
-%   state of the ray is specified by its two-dimensional coordinates and by
-%   the angle (theta) that it makes with the optical axis. By convention,
-%   the optical axis is termed "z", and the orthogonal axis is termed
-%   "height". Positive values of z are to the right. A theta of zero
-%   indicates a ray that is parallel to the optical axis. Positive values
-%   of theta correspond to the ray diverging to a position above the
-%   optical axis. Each elliptical surface is specified by a center and a
-%   radius in the z and h dimebnsions. The center must lie on the optical
-%   axis; positive values place the center to the right of the origin of
-%   the ray. A positive radius presents the ray with a convex surface; a
-%   negative radius presents the ray with a concave surface. The output of
-%   the routine is the position and angle at which the ray (or its reverse
+%   The equations assume a set of elliptical surfaces, with each surface
+%   having its center positioned on the optical axis. The initial state of
+%   the ray is specified by its two-dimensional coordinates and by the
+%   angle (theta) that it makes with the optical axis. By convention, the
+%   optical axis is termed "z", and the orthogonal axis is termed "height".
+%   Positive values of z are to the right. A theta of zero indicates a ray
+%   that is parallel to the optical axis. Positive values of theta
+%   correspond to the ray diverging to a position above the optical axis.
+%   Each elliptical surface is specified by a center and a radius in the z
+%   and h dimebnsions. The center must lie on the optical axis; positive
+%   values place the center to the right of the origin of the ray. A
+%   positive radius presents the ray with a convex surface; a negative
+%   radius presents the ray with a concave surface. The output of the
+%   routine is the position and angle at which the ray (or its reverse
 %   projection) intersects the optical axis.
 %
 %   The routine will accept symbolic variables for some or all of the input
-%   components. When the input contains one or more symbolic variables:
-%     - plotting is disabled
-%     - intersectionCoords are not calculated and instead returned as empty
-%     - checks for incidence angles above the critical angle or rays that
-%       miss an optical surface are not conducted
+%   components. When the input contains one or more symbolic variables
+%   plotting is disabled.
 %
 % Inputs:
 %   coordsInitial         - A 2x1 vector, with the values corresponding to
@@ -69,10 +66,10 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %                           coordinates of a point on the optic axis and
 %                           the second row contains a point on a ray
 %                           arising from the first point that has unit
-%                           length. This vector passes through the point in
-%                           space and has the same theta as the ray which
-%                           emerges from the final surface for the input
-%                           ray.
+%                           length. This vector originates from the point
+%                           in space and has the same theta as the ray
+%                           which emerges from the final surface for the
+%                           input ray.
 %   thetas                - A scalar in radians
 %   imageCoords           - An mx2 matrix which provides at each surface
 %                           the point at which the resultant ray (or its
@@ -317,9 +314,11 @@ if symbolicFlag
     syms zero
     aVals(1) = unity;
     curvature(1) = zero;
+    curvatureCenters(1) = zero;
 else
     aVals(1) = 1;
     curvature(1) = 0;
+    curvatureCenters(1) = 0;
 end
 intersectionCoords(1,:)=coordsInitial;
 thetas(1)=thetaInitial;
@@ -335,6 +334,7 @@ opticalSystem(1,1)=imageCoords(1,1);
 opticalSystem(1,2:size(opticalSystemIn,2)-1)=0;
 opticalSystem(1,size(opticalSystemIn,2))=opticalSystemIn(1,end);
 opticalSystem = [opticalSystem; opticalSystemIn(2:end,:)];
+curvatureCenters(1) = opticalSystem(1,1);
 % If a single radius value was passed for the surfaces, copy this value
 % over to define the radius for these spheres along the horizontal axis
 if size(opticalSystemIn,2)==3
@@ -375,10 +375,10 @@ for ii = 2:nSurfaces
     % Obtain the coordinate at which the ray intersects the next surface,
     % and the radius of curvature of the lens at that point
     [intersectionCoords(ii,:),curvature(ii)] = calcEllipseIntersect(intersectionCoords(ii-1,:), thetas(ii-1), opticalSystem(ii,1), opticalSystem(ii,2:3) );
-    
+    curvatureCenters(ii) = opticalSystem(ii,1)-opticalSystem(ii,2)+curvature(ii);
     % The distance between the center of curvature of the current lens
     % surface and the center of curvature of the prior lens surface
-    d = opticalSystem(ii,1)-opticalSystem(ii-1,1);
+    d = curvatureCenters(ii)-curvatureCenters(ii-1);
     % The relative refractive index of the prior medium to the medium of
     % the surface that the ray is now impacting
     relativeIndices(ii)=opticalSystem(ii-1,end)/opticalSystem(ii,end);
@@ -396,23 +396,13 @@ for ii = 2:nSurfaces
     end
     % Find the angle of the ray after it enters the current surface
     thisTheta = thetas(ii-1) - asin(aVals(ii)) + asin(aVals(ii).*relativeIndices(ii));
+    % A bit of jiggery-pokery to handle symbolic variables here
     if symbolicFlag && ii==2
         clear thetas
         thetas(ii) = thisTheta;
         thetas(1) = thetaInitial;
     else
         thetas(ii) = thisTheta;
-    end
-    % Find the coordinates at which the ray, after making contact with the
-    % current surface, would contact (or originate from) the optical axis
-    thisImageCoord = [opticalSystem(ii,1) + ...
-        1./(-(1/relativeIndices(ii)).*(1/(aVals(ii).*opticalSystem(ii,2))).*sin(thetas(ii))) 0];
-    if symbolicFlag && ii==2
-        clear imageCoords
-        imageCoords(ii,:)=thisImageCoord;
-        imageCoords(1,:)=coordsInitial;
-    else
-        imageCoords(ii,:)=thisImageCoord;
     end
     % Update the plot
     if figureFlag.show
@@ -422,6 +412,10 @@ for ii = 2:nSurfaces
         end
         % plot the line for the virtual image
         if figureFlag.imageLines
+            % Find the coordinates at which the ray, after making contact with the
+            % current surface, would contact (or originate from) the optical axis
+            imageCoords(ii,:) = [-(intersectionCoords(ii,2)-tan(thetas(ii))*intersectionCoords(ii,1))/tan(thetas(ii)) 0];
+            % Plot the prior virtual image line
             plot([imageCoords(ii-1,1) intersectionCoords(ii-1,1)],[imageCoords(ii-1,2) intersectionCoords(ii-1,2)],'--b');
         end
         % plot the line for the path of the ray
@@ -436,7 +430,7 @@ end
 % Assemble an output which is the unit vector for the final ray
 slope = tan(thetas(ii)+pi);
 norm = sqrt(slope^2+1);
-outputRay = [imageCoords(ii,:); [imageCoords(ii,1)+(1/norm) imageCoords(ii,2)+(slope/norm)]];
+outputRay = [intersectionCoords(ii,:); [intersectionCoords(ii,1)+(1/norm) intersectionCoords(ii,2)+(slope/norm)]];
 
 % Complete the plot
 if figureFlag.show
@@ -444,6 +438,10 @@ if figureFlag.show
     if figureFlag.imageLines
         plot([imageCoords(ii,1) intersectionCoords(ii,1)],[imageCoords(ii,2) intersectionCoords(ii,2)],'-b');
     end
+    % Plot the ray path
+    if figureFlag.rayLines
+        plot([imageCoords(ii,1) intersectionCoords(ii,1)],[imageCoords(ii,2) intersectionCoords(ii,2)],'-r');
+    end    
     % Plot the output unit ray vector
     if figureFlag.finalUnitRay
         plot([outputRay(1,1) outputRay(2,1)],[outputRay(1,2) outputRay(2,2)],'-g');
