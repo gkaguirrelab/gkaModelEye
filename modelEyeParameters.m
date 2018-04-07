@@ -139,6 +139,8 @@ switch p.Results.species
         eye.corneaFrontSurfaceRadii(1) = a;
         eye.corneaFrontSurfaceRadii(2:3) = b;
         
+        eye.corneaFrontSurfaceRadii = [11.5223    8.4276    8.2983];
+
         % We set the axial apex of the corneal front surface at position
         % [0, 0, 0]
         eye.corneaFrontSurfaceCenter = [-eye.corneaFrontSurfaceRadii(1) 0 0];
@@ -156,6 +158,8 @@ switch p.Results.species
         b = eye.corneaBackSurfaceR * sqrt(1/(eye.corneaBackSurfaceQ+1)) ;
         eye.corneaBackSurfaceRadii(1) = a;
         eye.corneaBackSurfaceRadii(2:3) = b;
+        
+        eye.corneaBackSurfaceRadii = [11.1272 7.5164    7.5164];
         
         % The center of the cornea circle for the back surface is
         % positioned so that there is 0.55 mm of corneal thickness between
