@@ -1,8 +1,8 @@
 function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCenteredSurfaces(coordsInitial, thetaInitial, opticalSystemIn, figureFlag)
-% Returns the position and angle of a resultant ray WRT optical axis
+% Returns the position and angle of a resultant ray w.r.t. the optical axis
 %
 % Syntax:
-%  [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCenteredSurfaces(coordsInitial, thetaInitial, opticalSystemIn)
+%  [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCenteredSurfaces(coordsInitial, thetaInitial, opticalSystemIn, figureFlag)
 %
 % Description:
 %   This routine implements the 2D generalized ray tracing equations of:
@@ -10,24 +10,24 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %       Elagha, Hassan A. "Generalized formulas for ray-tracing and
 %       longitudinal spherical aberration." JOSA A 34.3 (2017): 335-343.
 %
-%   The equations assume a set of elliptical surfaces, with each surface
-%   having its center positioned on the optical axis. The initial state of
-%   the ray is specified by its two-dimensional coordinates and by the
-%   angle (theta) that it makes with the optical axis. By convention, the
-%   optical axis is termed "z", and the orthogonal axis is termed "height".
-%   Positive values of z are to the right. A theta of zero indicates a ray
-%   that is parallel to the optical axis. Positive values of theta
-%   correspond to the ray diverging to a position above the optical axis.
-%   Each elliptical surface is specified by a center and a radius in the z
-%   and h dimebnsions. The center must lie on the optical axis; positive
-%   values place the center to the right of the origin of the ray. A
-%   positive radius presents the ray with a convex surface; a negative
-%   radius presents the ray with a concave surface. The output of the
-%   routine is the position and angle at which the ray (or its reverse
+%   Our implementation assumes a set of elliptical surfaces, with each
+%   surface having its center positioned on the optical axis. The initial
+%   state of the ray is specified by its two-dimensional coordinates and by
+%   the angle (theta) that it makes with the optical axis. By convention,
+%   the optical axis is termed "z", and the orthogonal axis is termed
+%   "height". Positive values of z are to the right. A theta of zero
+%   indicates a ray that is parallel to the optical axis. Positive values
+%   of theta correspond to the ray diverging to a position above the
+%   optical axis. Each elliptical surface is specified by a center and a
+%   radius in the z and h dimensions. The center must lie on the optical
+%   axis; positive values place the center to the right of the origin of
+%   the ray. A positive radius presents the ray with a convex surface; a
+%   negative radius presents the ray with a concave surface. The output of
+%   the routine is the position and angle at which the ray (or its reverse
 %   projection) intersects the optical axis.
 %
 %   The routine will accept symbolic variables for some or all of the input
-%   components. When the input contains one or more symbolic variables
+%   components. When the input contains one or more symbolic variables,
 %   plotting is disabled.
 %
 % Inputs:
@@ -40,8 +40,9 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %                           the axis.
 %   opticalSystemIn       - An mx3 or mx4 matrix, where m is the number of
 %                           surfaces in the model, including the initial
-%                           state of the ray. Each row contains the values
-%                               [center, radius, refractiveIndex] or
+%                           state of the ray. Each row contains the values:
+%                               [center, radius, refractiveIndex]
+%                           or
 %                               [center, radiusZ, radiusH, refractiveIndex]
 %                           that define an elliptical lens. The first row
 %                           corresponds to the initial conditions of the
@@ -57,7 +58,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %                           set to true or false.
 %
 % Outputs:
-%   outputRay             - a 2x2 matrix that contains a unit vector which
+%   outputRay             - A 2x2 matrix that contains a unit vector that
 %                           describes the location and vector direction of
 %                           a ray that is the virtual image for this system
 %                           for the input. The first columns contains the z
@@ -323,6 +324,9 @@ end
 intersectionCoords(1,:)=coordsInitial;
 thetas(1)=thetaInitial;
 relativeIndices(1) = 1;
+
+% The initial image location is a projection of the initial ray back to the
+% optical axis.
 imageCoords(1,:)=[coordsInitial(1)-(coordsInitial(2)/tan(thetaInitial)) 0];
 
 % Build the local optical system. Replace the center and radius of the
@@ -375,6 +379,8 @@ for ii = 2:nSurfaces
     % Obtain the coordinate at which the ray intersects the next surface,
     % and the radius of curvature of the lens at that point
     [intersectionCoords(ii,:),curvature(ii)] = calcEllipseIntersect(intersectionCoords(ii-1,:), thetas(ii-1), opticalSystem(ii,1), opticalSystem(ii,2:3) );
+    % Find the curvature center, which is the position along the optical
+    % axis for this surface, given the curvature encountered by the ray.
     curvatureCenters(ii) = opticalSystem(ii,1)-opticalSystem(ii,2)+curvature(ii);
     % The distance between the center of curvature of the current lens
     % surface and the center of curvature of the prior lens surface
@@ -412,8 +418,9 @@ for ii = 2:nSurfaces
         end
         % plot the line for the virtual image
         if figureFlag.imageLines
-            % Find the coordinates at which the ray, after making contact with the
-            % current surface, would contact (or originate from) the optical axis
+            % Find the coordinates at which the ray, after making contact
+            % with the current surface, would contact (or originate from)
+            % the optical axis
             imageCoords(ii,:) = [-(intersectionCoords(ii,2)-tan(thetas(ii))*intersectionCoords(ii,1))/tan(thetas(ii)) 0];
             % Plot the prior virtual image line
             plot([imageCoords(ii-1,1) intersectionCoords(ii-1,1)],[imageCoords(ii-1,2) intersectionCoords(ii-1,2)],'--b');
@@ -475,6 +482,7 @@ end % function
 
 
 %% LOCAL FUNCTIONS
+
 function plotLensArc(opticalSystem)
 % Local function to handle plotting lens surfaces
 ang=pi/2:0.01:3*pi/2;
@@ -530,25 +538,25 @@ radiiSign = sign(ellipseRadii(1));
 % Convert the radii to their absolute values
 ellipseRadii = abs(ellipseRadii);
 
-% Convert the ray position and theat to the slope (m) and y-axis
+% Convert the ray position and theta to the slope (m) and y-axis
 % intercept(c) of a line.
 m = tan(theta);
 c = coordsInitial(2)-m*coordsInitial(1);
 
-% Obtain the pair of x and y coordinates that the line will intersect
+% Obtain the pair of z and h coordinates that the line will intersect
 % the ellipse
 M = (1/ellipseRadii(1)^2) + (1/ellipseRadii(2)^2)* m^2;
 N = 2*(1/ellipseRadii(2)^2)*m*c - 2*(1/ellipseRadii(1)^2)*ellipseCenterZ;
 O = (1/ellipseRadii(2)^2)*c^2 + (1/ellipseRadii(1)^2)*ellipseCenterZ^2 -1 ;
 determinant = (N^2 - 4* M * O);
-xCoords = [(- N + sqrt(determinant))/ (2*M), (- N - sqrt(determinant))/ (2*M)];
-yCoords = [m*xCoords(1) + c, m*xCoords(2) + c];
+zCoords = [(- N + sqrt(determinant))/ (2*M), (- N - sqrt(determinant))/ (2*M)];
+hCoords = [m*zCoords(1) + c, m*zCoords(2) + c];
 
 % If the radiiSign is positive, report the coordinates on the left-hand
 % side of the ellipse, otherwise report the coordinates on the right
-intersectionCoords = [xCoords((radiiSign/2)+1.5),yCoords((radiiSign/2)+1.5)];
+intersectionCoords = [zCoords((radiiSign/2)+1.5),hCoords((radiiSign/2)+1.5)];
 
-% Calculate the radius of curvature at the point of intersection. If the
+% Calculate the radius of curvature at the point of intersection. If
 % radiiSign is negative, report a negative radius of curvature
 t = acos((intersectionCoords(1)-ellipseCenterZ)/ellipseRadii(1));
 curvature = radiiSign*((ellipseRadii(1)^2*sin(t)^2 + ellipseRadii(2)^2*cos(t)^2)^(3/2))/(ellipseRadii(1)*ellipseRadii(2));

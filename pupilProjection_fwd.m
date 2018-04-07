@@ -5,10 +5,9 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
 %  [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoints, pointLabels] = pupilProjection_fwd(eyePoses, sceneGeometry)
 %
 % Description:
-%   Given the sceneGeometry--and optionally a ray tracing functions through
-%   the cornea--this routine simulates a circular pupil on a rotating eye
-%   and then measures the parameters of the ellipse (in transparent format)
-%   of the projection of the pupil to the image plane.
+%   Given the sceneGeometry this routine simulates an elliptical exit pupil
+%   on a rotating eye and then measures the parameters of the ellipse (in
+%   transparent format) of the entrance pupil in the image plane.
 %
 %   The forward model is a perspective projection of an anatomically
 %   accurate eye, with points positioned behind the cornea subject to

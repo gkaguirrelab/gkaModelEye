@@ -203,10 +203,9 @@ sceneGeometry.constraintTolerance = p.Results.constraintTolerance;
 % Values returned by the modelEyeParameters() routine
 sceneGeometry.eye = modelEyeParameters('spectralDomain',p.Results.spectralDomain,varargin{:});
 
-% Generate the opticalSystem matrix through the cornea. Note that we model
-% the corneal surfaces as spheres, with a radius equal to the radius of
-% curvature value R. To create a more accurate model, we would need to
-% update rayTraceCenteredSphericalSurfaces() to model aspherical surfaces.
+%% Assemble the opticalSystem
+
+% Get the refractive index of the medium between the eye and the camera
 mediumRefractiveIndex = returnRefractiveIndex( p.Results.medium, p.Results.spectralDomain );
 
 % The center of the cornea front surface is at a position equal to its
@@ -215,10 +214,13 @@ mediumRefractiveIndex = returnRefractiveIndex( p.Results.medium, p.Results.spect
 % the appropriate corneal thickness.
 cornealThickness = -sceneGeometry.eye.corneaBackSurfaceCenter(1)-sceneGeometry.eye.corneaBackSurfaceRadii(1);
 
+% Build the system matrix. Note that the model assumes that the corneal
+% surfaces are rotationally symmetric about the optical axis. Consequently,
+% two radii are passed for each surface, corresponding to the axial and
+% tangential radius of the elliptical lens surface.
 opticalSystem = [nan, nan, nan, sceneGeometry.eye.aqueousRefractiveIndex; ...
     -sceneGeometry.eye.corneaBackSurfaceRadii(1)-cornealThickness, -sceneGeometry.eye.corneaBackSurfaceRadii(1), -sceneGeometry.eye.corneaBackSurfaceRadii(2),  sceneGeometry.eye.corneaRefractiveIndex; ...
     -sceneGeometry.eye.corneaFrontSurfaceRadii(1), -sceneGeometry.eye.corneaFrontSurfaceRadii(1), -sceneGeometry.eye.corneaFrontSurfaceRadii(2), mediumRefractiveIndex];
-
 
 % Add a contact lens if requested
 if ~isempty(p.Results.contactLens)
