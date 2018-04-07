@@ -1,19 +1,28 @@
-function virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, functionDirPath )
+function virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, varargin )
 % Function handles to ray tracing equations
 %
 % Syntax:
 %  virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry )
 %
 % Description:
-%   This routine produces a compiled mex file for virtualImageFunc, places
-%   the function on the matlab path, and returns a handle to function.
-%   The compiled version executes ~100x faster.
+%   This routine produces a compiled mex file for virtualImageFunc, saves
+%   the file at a default (/tmp/demo_virtualImageFunc), and places the
+%   function on the MATLAB path. If a second input argument is passed, this
+%   is taken as the full path to where the compiled function should be
+%   placed. The routine returns a structure that contains the handle to the
+%   function.
+%
+%   Calls to the compiled virtualImageFunc execute roughly ~300x faster
+%   than the native matlab routine.
 %
 % Inputs:
 %   sceneGeometry         - A sceneGeometry structure. Critically, this
 %                           includes an optical system.
+%
+% Optional inputs:
 %   functionDirPath       - Character vector. Specifies the location in 
-%                           which the compiled function is writen.
+%                           which the compiled function is writen. Defaults
+%                           to '/tmp/demo_virtualImageFunc'.
 %
 % Outputs:
 %   virtualImageFuncPointer - Structure. Includes the fields:
@@ -29,6 +38,18 @@ function virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, funct
     sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry, '/tmp/demo_virtualImageFunc' );
     [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( [sceneGeometry.eye.pupilCenter(1) 2 0], [0 0 0 2], sceneGeometry.opticalSystem, sceneGeometry.extrinsicTranslationVector, sceneGeometry.eye.rotationCenters )
 %}
+
+
+%% input parser
+p = inputParser;
+
+% Required
+p.addRequired('sceneGeometry',@isstruct);
+p.addOptional('functionDirPath',fullfile(filesep,'tmp','demo_virtualImageFunc'),@(x) ischar(x));
+
+% parse
+p.parse(sceneGeometry, varargin{:});
+functionDirPath = p.Results.functionDirPath;
 
 
 %% Create a directory for the compiled functions
