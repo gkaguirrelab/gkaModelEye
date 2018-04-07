@@ -1,8 +1,8 @@
-function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFuncPreMex( eyeWorldPoint, eyePose, opticalSystem, extrinsicTranslationVector, rotationCenters )
+function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( eyeWorldPoint, eyePose, opticalSystem, extrinsicTranslationVector, rotationCenters )
 % Returns the virtual image location of a point in eyeWorld coordinates
 %
 % Syntax:
-%  [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( eyeWorldPoint, eyePose, sceneGeometry )
+%  [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( eyeWorldPoint, eyePose, opticalSystem, extrinsicTranslationVector, rotationCenters )
 %
 % Description:
 %   This routine returns a handle to a function that is used to calculate
@@ -50,7 +50,8 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFuncPreM
 %{
     % Basic example, placing the function in memory
     sceneGeometry = createSceneGeometry();
-    sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry );
+    [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( [-3.7, 2 0], [0 0 0], sceneGeometry.opticalSystem, sceneGeometry.extrinsicTranslationVector, sceneGeometry.eye.rotationCenters )
+
 %}
 %{
     % Basic example with file caching of the functions
@@ -94,10 +95,10 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFuncPreM
 %          'Vars',{z h theta});
     
 
-%traceOpticalSystem = @(z, h, theta) rayTraceCenteredSurfaces([z h], theta,sceneGeometry.opticalSystem);
-cameraNodeDistanceError2D_p1p2 = @(theta_p1p2) calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2, eyePose, extrinsicTranslationVector, rotationCenters);
-cameraNodeDistanceError3D = @(theta_p1p2, theta_p1p3) calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, theta_p1p3, eyePose, extrinsicTranslationVector, rotationCenters);
-virtualImageRay = @(theta_p1p2, theta_p1p3) calcVirtualImageRay(eyeWorldPoint, theta_p1p2, theta_p1p3);
+traceOpticalSystem = @(z, h, theta) rayTraceCenteredSurfaces([z h], theta,opticalSystem);
+cameraNodeDistanceError2D_p1p2 = @(theta_p1p2) calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2, eyePose, extrinsicTranslationVector, rotationCenters, traceOpticalSystem);
+cameraNodeDistanceError3D = @(theta_p1p2, theta_p1p3) calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, theta_p1p3, eyePose, extrinsicTranslationVector, rotationCenters, traceOpticalSystem);
+virtualImageRay = @(theta_p1p2, theta_p1p3) calcVirtualImageRay(eyeWorldPoint, theta_p1p2, theta_p1p3, traceOpticalSystem);
 
 
 options = optimset('TolFun',1e-2,'TolX',1e-6);
@@ -137,7 +138,7 @@ end % compileVirtualImageFunc -- MAIN
 
 
 %% calcCameraNodeDistanceError2D_p1p2
-function distance = calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2, eyePose, extrinsicTranslationVector, rotationCenters)
+function distance = calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2, eyePose, extrinsicTranslationVector, rotationCenters, traceOpticalSystem)
 % 2D distance of ray intersection on camera plane from camera node
 %
 % Syntax:
@@ -269,7 +270,7 @@ end % calcCameraNodeDistanceError2D
 
 
 %% calcCameraNodeDistanceError3D
-function distance = calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, theta_p1p3, eyePose, extrinsicTranslationVector, rotationCenters)
+function distance = calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, theta_p1p3, eyePose, extrinsicTranslationVector, rotationCenters, traceOpticalSystem)
 % 3D distance of ray intersection on camera plane from camera node
 %
 % Syntax:
@@ -381,7 +382,7 @@ end % calcCameraNodeDistanceError3D
 
 
 %% calcVirtualImageRay
-function [outputRayEyeWorld] = calcVirtualImageRay(eyeWorldPoint, theta_p1p2, theta_p1p3)
+function [outputRayEyeWorld] = calcVirtualImageRay(eyeWorldPoint, theta_p1p2, theta_p1p3, traceOpticalSystem)
 % Returns the unit vector virtual image ray for the initial depth position
 %
 % Syntax:

@@ -81,12 +81,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %                           only zeros.
 %   intersectionCoords    - An mx2 matrix which procides at each surface
 %                           the point at which the ray intersects the
-%                           surface. This matrix is only defined when
-%                           non-symbolic inputs are provided. This is
-%                           because there are two possible points of
-%                           intersection of a ray with the circular lens,
-%                           and the routine cannot resolve this ambiguity
-%                           analytically.
+%                           surface.
 %
 % Examples:
 %{
@@ -164,14 +159,14 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     sceneGeometry = createSceneGeometry();
     syms theta
     syms pupilPointHeight
-    coords = [eye.pupilCenter(1) pupilPointHeight];
+    coords = [sceneGeometry.eye.pupilCenter(1) pupilPointHeight];
     outputRay = rayTraceCenteredSurfaces(coords, theta, sceneGeometry.opticalSystem);
+    unity = 1; zero = 0;
+    outputRay = subs(outputRay);
     % The variable output ray contains symbolic variables
     symvar(outputRay)
-    theta = deg2rad(-45);
+    theta = deg2rad(-10);
     pupilPointHeight = 2;
-    unity = 1;
-    zero = 0;
     % Substitute these new values for theta and height and evaluate
     double(subs(outputRay))
 %}
@@ -498,7 +493,9 @@ function [intersectionCoords, curvature] = calcEllipseIntersect(coordsInitial, t
 %  [intersectionCoords, curvature] = calcEllipseIntersect(coordsInitial, theta, ellipseCenterZ, ellipseRadii )
 %
 % Description:
-%
+%   Implements trigonometric operations to identify the point at which a
+%   line intersects an ellipse, and returns the curvature of the ellipse at
+%   the point of contact.
 %
 % Inputs:
 %   coordsInitial         - 2x1 vector, with the values corresponding to

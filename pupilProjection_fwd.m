@@ -93,11 +93,19 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
 %
 % Examples:
 %{
-    %% Obtain the parameters of the pupil ellipse in the image
+    %% Basic forward projection example
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
-    % Compile the ray tracing functions
-    sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry);
+    % Define an eyePose with the azimuth, elevation, torsion, and pupil radius
+    eyePose = [-10 5 0 3];
+    % Obtain the pupil ellipse parameters in transparent format
+    pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
+%}
+%{
+    %% Compile the ray-tracing functions
+    % Obtain a default sceneGeometry structure
+    sceneGeometry=createSceneGeometry();
+    sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry, '/tmp/demo_virtualImageFunc' );
     % Define an eyePose with the azimuth, elevation, torsion, and pupil radius
     eyePose = [-10 5 0 3];
     % Obtain the pupil ellipse parameters in transparent format
@@ -480,8 +488,7 @@ if ~isempty(sceneGeometry.virtualImageFunc)
     % Check that the optical system in the function is the same as that in
     % the passed sceneGeometry
     if ~(sceneGeometry.opticalSystem==sceneGeometry.virtualImageFunc.opticalSystem)
-        warning('pupilProjection_fwd:opticalSystemMismatch','The optical system used to build the virtual image function does not match that in the sceneGeometry');
-        
+        warning('pupilProjection_fwd:opticalSystemMismatch','The optical system used to build the virtual image function does not match that in the sceneGeometry');        
     end
     % Identify the eyeWorldPoints subject to refraction by the cornea
     refractPointsIdx = find(strcmp(pointLabels,'pupilPerimeter')+...
@@ -498,8 +505,9 @@ if ~isempty(sceneGeometry.virtualImageFunc)
         try
             [eyeWorldPoints(refractPointsIdx(ii),:), nodalPointIntersectError(refractPointsIdx(ii))] = ...
                 sceneGeometry.virtualImageFunc.handle(...
-                    eyeWorldPoint, sceneGeometry.extrinsicTranslationVector, ...
-                    eyeAzimuth, eyeElevation, eyeTorsion, ...
+                    eyeWorldPoint, eyePose, ...
+                    sceneGeometry.opticalSystem, ...
+                    sceneGeometry.extrinsicTranslationVector, ...
                     sceneGeometry.eye.rotationCenters);
         catch
             warning('pupilProjection_fwd:rayTracingError','Ray tracing error. Returning nan for this eyeWorld point.');
