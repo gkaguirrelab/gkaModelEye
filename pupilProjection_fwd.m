@@ -145,7 +145,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry('eyeLaterality','left','sphericalAmetropia',-2,'contactLens',-2);
     % Compile the ray tracing functions
-    sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry);
+    sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry,'/tmp/demo_virtualImageFunc');
     % Define an eyePose with azimuth, elevation, torsion, and pupil radius
     eyePose = [-10 -5 0 3];
     % Perform the projection and request the full eye model
@@ -195,7 +195,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Compile the ray tracing functions
-    sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry);
+    sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry,'/tmp/demo_virtualImageFunc');
     % Perform 100 forward projections with randomly selected eye poses
     nPoses = 100;
     eyePoses=[(rand(nPoses,1)-0.5)*30, (rand(nPoses,1)-0.5)*20, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
@@ -213,41 +213,37 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     %% Calculate the time required for the forward projection
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
-    % Compile the ray tracing functions
-    sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry);
-    % Perform forward projections with randomly selected eye poses
-    % Without ray tracing
-    nPoses = 1000;
+    % Generate some randomly selected eye poses
+    nPoses = 100;
     eyePoses=[(rand(nPoses,1)-0.5)*20, (rand(nPoses,1)-0.5)*10, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
+    clc
+    fprintf('\nTime (msecs) to compute forward projection model (avg over %d projections):\n',nPoses);
+    % Perform the forward projection without ray tracing
+    sg = sceneGeometry;
+    sg.virtualImageFunc = [];
     tic
     for pp = 1:nPoses
-    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,[]);
+    	pupilProjection_fwd(eyePoses(pp,:),sg);
     end
-    noRayTraceTimeMsec = toc / nPoses * 1000;
-    % With ray tracing, using matlab function in memory
+    msecPerModel = toc / nPoses * 1000;
+    fprintf('\tWithout ray tracing is %4.2f msec.\n',msecPerModel);
+    % With ray tracing, using MATLAB routine
+    sg = sceneGeometry;
     tic
     for pp = 1:nPoses
-    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
+    	pupilProjection_fwd(eyePoses(pp,:),sg);
     end
-    withRayTraceTimeMsec = toc / nPoses * 1000;
-    fprintf('Forward model calculation time is %4.2f msecs without ray tracing and %4.2f with ray tracing.\n',noRayTraceTimeMsec,withRayTraceTimeMsec);
-%}
-%{
-    %% Calculate the time required when the ray trace func is pre-compiled
-    % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry();
-    % Compile the ray tracing functions; save as a mex file
-    sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry,'functionDirPath','/tmp/demo_virtualImageFunc');
-    % Perform forward projections with randomly selected eye poses
-    % With ray tracing, using compiled mex file
-    nPoses = 1000;
-    eyePoses=[(rand(nPoses,1)-0.5)*20, (rand(nPoses,1)-0.5)*10, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
+    msecPerModel = toc / nPoses * 1000;
+    fprintf('\tUsing MATLAB ray tracing is %4.2f msec.\n',msecPerModel);
+    % With ray tracing, using a compiled ray tracing routine
+    sg = sceneGeometry;
+    sg.virtualImageFunc = compileVirtualImageFunc(sg,'/tmp/demo_virtualImageFunc');
     tic
     for pp = 1:nPoses
-    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
+    	pupilProjection_fwd(eyePoses(pp,:),sg);
     end
-    withCachedRayTraceTimeMsec = toc / nPoses * 1000;
-    fprintf('Forward model calculation time is %4.2f msecs with cached ray trace functions.\n',withCachedRayTraceTimeMsec);
+    msecPerModel = toc / nPoses * 1000;
+    fprintf('\tUsing pre-compiled ray tracing is %4.2f msec.\n',msecPerModel);
 %}
 
 
@@ -483,36 +479,43 @@ R.tor = [1 0 0; 0 cosd(eyeTorsion) -sind(eyeTorsion); 0 sind(eyeTorsion) cosd(ey
 
 % Define a variable to hold the calculated ray tracing errors
 nodalPointIntersectError = nan(length(pointLabels),1);
-% If we have a handle to a virtual image function, proceed
-if ~isempty(sceneGeometry.virtualImageFunc)
-    % Check that the optical system in the function is the same as that in
-    % the passed sceneGeometry
-    if ~(sceneGeometry.opticalSystem==sceneGeometry.virtualImageFunc.opticalSystem)
-        warning('pupilProjection_fwd:opticalSystemMismatch','The optical system used to build the virtual image function does not match that in the sceneGeometry');        
-    end
-    % Identify the eyeWorldPoints subject to refraction by the cornea
-    refractPointsIdx = find(strcmp(pointLabels,'pupilPerimeter')+...
-        strcmp(pointLabels,'pupilCenter')+...
-        strcmp(pointLabels,'irisCenter'));
-    % Loop through the eyeWorldPoints that are to be refracted
-    for ii=1:length(refractPointsIdx)
-        % Grab this eyeWorld point
-        eyeWorldPoint=eyeWorldPoints(refractPointsIdx(ii),:);
-        % Perform the computation using the passed function handle. This
-        % occurs within a try-catch block, as the point to be refracted may
-        % experience total internal reflection. When this happens, the
-        % routine exits with an error.
-        try
-            [eyeWorldPoints(refractPointsIdx(ii),:), nodalPointIntersectError(refractPointsIdx(ii))] = ...
-                sceneGeometry.virtualImageFunc.handle(...
+% If we have a virtualImageFunction field, proceed
+if isfield(sceneGeometry,'virtualImageFunc')
+    % If this field is not set to empty, proceed
+    if ~isempty(sceneGeometry.virtualImageFunc)
+        % If the virtualImageFunc is a compiled routine (which we detect by
+        % checking if the function handle evaluates with exist() to 3),
+        % check that the that the optical system in the function is the
+        % same as that in the passed sceneGeometry
+        if exist(func2str(sceneGeometry.virtualImageFunc.handle))==3
+            if ~(sceneGeometry.opticalSystem==sceneGeometry.virtualImageFunc.opticalSystem)
+                warning('pupilProjection_fwd:opticalSystemMismatch','The optical system used to build the virtual image function does not match that in the sceneGeometry');
+            end
+        end
+        % Identify the eyeWorldPoints subject to refraction by the cornea
+        refractPointsIdx = find(strcmp(pointLabels,'pupilPerimeter')+...
+            strcmp(pointLabels,'pupilCenter')+...
+            strcmp(pointLabels,'irisCenter'));
+        % Loop through the eyeWorldPoints that are to be refracted
+        for ii=1:length(refractPointsIdx)
+            % Get this eyeWorld point
+            eyeWorldPoint=eyeWorldPoints(refractPointsIdx(ii),:);
+            % Perform the computation using the passed function handle.
+            % This occurs within a try-catch block, as the point to be
+            % refracted may experience total internal reflection. When this
+            % happens, the routine exits with an error.
+            try
+                [eyeWorldPoints(refractPointsIdx(ii),:), nodalPointIntersectError(refractPointsIdx(ii))] = ...
+                    sceneGeometry.virtualImageFunc.handle(...
                     eyeWorldPoint, eyePose, ...
                     sceneGeometry.opticalSystem, ...
                     sceneGeometry.extrinsicTranslationVector, ...
                     sceneGeometry.eye.rotationCenters);
-        catch
-            warning('pupilProjection_fwd:rayTracingError','Ray tracing error. Returning nan for this eyeWorld point.');
-            eyeWorldPoints(refractPointsIdx(ii),:) = nan;
-            nodalPointIntersectError(refractPointsIdx(ii)) = inf;
+            catch
+                warning('pupilProjection_fwd:rayTracingError','Ray tracing error. Returning nan for this eyeWorld point.');
+                eyeWorldPoints(refractPointsIdx(ii),:) = nan;
+                nodalPointIntersectError(refractPointsIdx(ii)) = inf;
+            end
         end
     end
 end
