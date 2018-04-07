@@ -253,10 +253,9 @@ end
 % Store the optical system
 sceneGeometry.opticalSystem = opticalSystem;
 
-% Add the virtualImageFunc field, but for now it is empty.
+% Add the virtualImageFunc field for the routine (non compiled) function.
 sceneGeometry.virtualImageFunc.handle = @virtualImageFunc;
 sceneGeometry.virtualImageFunc.path = which('virtualImageFunc');
-sceneGeometry.virtualImageFunc.opticalSystem = opticalSystem;
 
 % Save the meta data
 sceneGeometry.meta.createSceneGeometry = p.Results;
