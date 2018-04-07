@@ -12,11 +12,14 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %	curvature for rayTraceCenteredSphericalSurfaces().
 %
 % Inputs:
-%   opticalSystemIn       - An mx3 matrix, where m is the number of
+%   opticalSystemIn       - An mx3 or mx4 matrix, where m is the number of
 %                           surfaces in the model, including the initial
 %                           position of the ray. Each row contains the
-%                           values [center, radius, refractiveIndex] that
-%                           define a spherical lens.
+%                           values:
+%                               [center, radius, refractiveIndex]
+%                           or
+%                               [center, radiusZ, radiusH, refractiveIndex]
+%                           that define an elliptical lens.
 %   lensRefractionDiopters - Scalar. Refractive power in units of 
 %                           diopters. A negative value specifies a lens
 %                           that would be worn by someone with myopia to

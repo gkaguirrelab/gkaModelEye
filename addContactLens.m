@@ -11,12 +11,16 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %	surfaces for this lens, so both surfaces will have a negative radius of
 %	curvature for rayTraceCenteredSphericalSurfaces().
 %
+%   The optical system may specify one or two radii for the corneal
+%   surface. If two values area supplied, the first value is the axial
+%   radius of an ellipsoidal model of the eye.
+%
 % Inputs:
-%   opticalSystemIn       - An mx3 matrix, where m is the number of
-%                           surfaces in the model, including the initial
-%                           position of the ray. Each row contains the
-%                           values [center, radius, refractiveIndex] that
-%                           define a spherical lens.
+%   opticalSystemIn       - An mx3 matrix or mx4 matrix, where m is the
+%                           number of surfaces in the model, including the
+%                           initial position of the ray. Each row contains
+%                           the values [center, radius, refractiveIndex]
+%                           that define a spherical lens.
 %   lensRefractionDiopters - Scalar. Refractive power in units of
 %                           diopters. A negative value specifies a lens
 %                           that would be worn by someone with myopia to
@@ -30,7 +34,7 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %                           imaging domains.
 %
 % Outputs:
-%   opticalSystemOut      - An (m+2)x3 matrix, corresponding to the
+%   opticalSystemOut      - An (m+2)x3 or 4 matrix, corresponding to the
 %                           opticalSystemIn with the addition of the
 %                           contact lens
 %   p                     - The parameters returned by the input parser.
@@ -126,9 +130,9 @@ opticalSystemOut = opticalSystemIn;
 % contact lens.
 % We store the index of refraction of the ambient medium (which will
 % typically be air and thus 1.0) to apply to the final exit ray.
-priorRefractiveIndex = opticalSystemIn(end-1,3);
-mediumRefractiveIndex = opticalSystemIn(end,3);
-opticalSystemOut(end,3) = lensRefractiveIndex;
+priorRefractiveIndex = opticalSystemIn(end-1,end);
+mediumRefractiveIndex = opticalSystemIn(end,end);
+opticalSystemOut(end,end) = lensRefractiveIndex;
 
 % Calculate the diopters of the corneal surface without a contact lens; our
 % goal is to create a front surface of the contact lens that produces a
