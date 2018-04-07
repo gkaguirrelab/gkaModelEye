@@ -24,9 +24,10 @@ function virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, funct
 %
 % Examples:
 %{
-    % Basic example with file caching of the functions
+    % Basic example with a compiled virtualImageFunc
     sceneGeometry = createSceneGeometry();
     sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry, '/tmp/demo_virtualImageFunc' );
+    [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( [sceneGeometry.eye.pupilCenter(1) 2 0], [0 0 0 2], sceneGeometry.opticalSystem, sceneGeometry.extrinsicTranslationVector, sceneGeometry.eye.rotationCenters )
 %}
 
 
@@ -43,27 +44,23 @@ end
 %% Save the traceOpticalSystem function
 % Create a stand-alone 
 syms z
-%assume(z,'real');
 syms h
-%assume(h,'real');
 syms theta
-%assume(theta,'real');
 outputRayFunc = rayTraceCenteredSurfaces([z h], theta, sceneGeometry.opticalSystem);
 unity = 1; zero = 0;
 outputRayFunc = subs(outputRayFunc);
 functionFileName = fullfile(compileDir,'traceOpticalSystem');
-traceOpticalSystem = matlabFunction(outputRayFunc,'File',functionFileName,'Vars',{z h theta});
+traceOpticalSystemFuncHandle = matlabFunction(outputRayFunc,'File',functionFileName,'Vars',{z h theta});
 % Add saved function files to path
 addpath(compileDir,'-end');
 
 %% Compile virtualImageFunc
-% Define some argument variables so that the compiler can deduce
-% variable types
+% Define argument variables so the compiler can deduce variable types
 args = {[0,0,0], [0,0,0,0], sceneGeometry.opticalSystem, sceneGeometry.extrinsicTranslationVector, sceneGeometry.eye.rotationCenters};
 % Change to the compile directory
 initialDir = cd(compileDir);
 % Compile the mex file
-codegen -o virtualImageFuncMex virtualImageFunc -args args
+codegen -o virtualImageFuncMex virtualImageFuncPreMex -args args
 % Identify the compiled mex file, the suffix of which will vary
 % depending upon the operating system
 fileLocation = dir('virtualImageFuncMex.*');

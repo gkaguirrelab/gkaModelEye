@@ -43,7 +43,7 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( ey
 %{
     % Basic example that finds the virtual image location for a point from
     % the top of a 2mm radius exit pupil, with the eye posed straight
-    ahead, and the camera in its default location.
+    % ahead, and the camera in its default location.
     sceneGeometry = createSceneGeometry();
     [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( [sceneGeometry.eye.pupilCenter(1) 2 0], [0 0 0 2], sceneGeometry.opticalSystem, sceneGeometry.extrinsicTranslationVector, sceneGeometry.eye.rotationCenters )
 %}
@@ -53,14 +53,16 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( ey
 % Create an anonymous function that returns (for the specified optical
 % system) the output ray from the system given a starting point in 2D
 % eyeWorld space that emits a ray at angle theta w.r.t. the optical axis.
-% If we are in the deployed state, then then the traceOpticalSystem
-% function will have been previously compiled and placed on the path. This
-% is because the routine complains if 
-if isdeployed
-    traceOpticalSystemFuncHandle = [];
-else
-    traceOpticalSystemFuncHandle = @(z, h, theta) rayTraceCenteredSurfaces([z h], theta, opticalSystem);
-end
+% If we are in the deployed state, then the traceOpticalSystem function
+% will have been previously compiled and placed on the path.
+
+% I cannot get the compiler to ignore the code that is not behind the
+% isdeployed statement. So, I have to comment it out by hand. Ugh.
+% if isdeployed
+%    traceOpticalSystemFuncHandle = @traceOpticalSystem;
+% else
+     traceOpticalSystemFuncHandle = @(z, h, theta) rayTraceCenteredSurfaces([z h], theta, opticalSystem);
+% end
 
 %% Find the p1p2 theta
 % For this eyeWorld point, we find the theta value in the p1p2 plane that
@@ -85,7 +87,8 @@ theta_p1p2=fminsearch(cameraNodeDistanceError2D_p1p2,1e-4,options);
 %% Find the p1p3 theta
 % Given this p1p2 theta, we now find the p1p3 theta that further reduces
 % the distance to the nodal point.
-cameraNodeDistanceError3D = @(theta_p1p2, theta_p1p3) calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, theta_p1p3, eyePose, extrinsicTranslationVector, rotationCenters, traceOpticalSystemFuncHandle);
+cameraNodeDistanceError3D = @(theta_p1p3) calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, theta_p1p3, eyePose, extrinsicTranslationVector, rotationCenters, traceOpticalSystemFuncHandle);
+
 % The fVal at the solution is the the total error (in mm) in both
 % dimensions for intersecting the nodal point of the camera.
 [theta_p1p3, nodalPointIntersectError]=fminsearch(cameraNodeDistanceError3D,1e-4,options);
@@ -156,11 +159,7 @@ function distance = calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2
 %
 
 % Obtain the ray for the eyeWorld point after it exits the optical system
-if isempty(traceOpticalSystemFuncHandle)
-    outputRayEyeWorld2D_p1p2 = traceOpticalSystem(eyeWorldPoint(1),eyeWorldPoint(2),theta_p1p2);    
-else
-    outputRayEyeWorld2D_p1p2 = traceOpticalSystemFuncHandle(eyeWorldPoint(1),eyeWorldPoint(2),theta_p1p2);
-end
+outputRayEyeWorld2D_p1p2 = traceOpticalSystemFuncHandle(eyeWorldPoint(1),eyeWorldPoint(2),theta_p1p2);
 
 % Add the p3 dimension
 outputRayEyeWorld_p1p2=[outputRayEyeWorld2D_p1p2(1,1) outputRayEyeWorld2D_p1p2(1,2) eyeWorldPoint(3);...
@@ -232,7 +231,6 @@ cameraPlaneY = outputRaySceneWorld_p1p2(1,2)+((extrinsicTranslationVector(3)-out
 distance = sqrt((extrinsicTranslationVector(1)-cameraPlaneX)^2 + ...
         (extrinsicTranslationVector(2)-cameraPlaneY)^2 );
 
-
 end % calcCameraNodeDistanceError2D_p1p2
 
 
@@ -253,13 +251,8 @@ function distance = calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, the
 
 % Obtain the ray in each plane for the eyeWorld point after it exits the
 % optical system
-if isempty(traceOpticalSystemFuncHandle)
-    outputRayEyeWorld2D_p1p2 = traceOpticalSystem(eyeWorldPoint(1), eyeWorldPoint(2), theta_p1p2);
-    outputRayEyeWorld2D_p1p3 = traceOpticalSystem(eyeWorldPoint(1), eyeWorldPoint(3), theta_p1p3);
-else
-    outputRayEyeWorld2D_p1p2 = traceOpticalSystemFuncHandle(eyeWorldPoint(1), eyeWorldPoint(2), theta_p1p2);
-    outputRayEyeWorld2D_p1p3 = traceOpticalSystemFuncHandle(eyeWorldPoint(1), eyeWorldPoint(3), theta_p1p3);
-end
+outputRayEyeWorld2D_p1p2 = traceOpticalSystemFuncHandle(eyeWorldPoint(1), eyeWorldPoint(2), theta_p1p2);
+outputRayEyeWorld2D_p1p3 = traceOpticalSystemFuncHandle(eyeWorldPoint(1), eyeWorldPoint(3), theta_p1p3);
 
 % Shift the p1p3 ray to have the same initial p1 value as the p1p2 ray
 slope =(outputRayEyeWorld2D_p1p2(2,2)-outputRayEyeWorld2D_p1p2(1,2))/(outputRayEyeWorld2D_p1p2(2,1)-outputRayEyeWorld2D_p1p2(1,1));
@@ -386,13 +379,8 @@ function [outputRayEyeWorld] = calcVirtualImageRay(eyeWorldPoint, theta_p1p2, th
 %
 
 % Assemble the virtual image ray
-if isempty(traceOpticalSystemFuncHandle)
-    outputRayEyeWorld_p1p2 = traceOpticalSystem(eyeWorldPoint(1), eyeWorldPoint(2), theta_p1p2);
-    outputRayEyeWorld_p1p3 = traceOpticalSystem(eyeWorldPoint(1), eyeWorldPoint(3), theta_p1p3);
-else
-    outputRayEyeWorld_p1p2 = traceOpticalSystemFuncHandle(eyeWorldPoint(1), eyeWorldPoint(2), theta_p1p2);
-    outputRayEyeWorld_p1p3 = traceOpticalSystemFuncHandle(eyeWorldPoint(1), eyeWorldPoint(3), theta_p1p3);
-end
+outputRayEyeWorld_p1p2 = traceOpticalSystemFuncHandle(eyeWorldPoint(1), eyeWorldPoint(2), theta_p1p2);
+outputRayEyeWorld_p1p3 = traceOpticalSystemFuncHandle(eyeWorldPoint(1), eyeWorldPoint(3), theta_p1p3);
 
 % Adjust the p1 (optical axis) position of the rays to have their initial
 % position at the same p1
