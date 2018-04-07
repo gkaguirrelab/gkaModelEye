@@ -94,8 +94,6 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
     %% Test if we can find the eyePose for image ellipse
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
-    % Compile the ray tracing functions
-    sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry);
     % Define in eyePoses the azimuth, elevation, torsion, and pupil radius
     eyePose = [10 10 0 2];
     % Obtain the pupil ellipse parameters in transparent format
@@ -113,28 +111,20 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Compile the ray tracing functions
-    sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry,'functionDirPath','/tmp/demo_virtualImageFunc');
-    % Perform 100 forward projections with randomly selected eye poses
-    % without ray tracing
+    sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry,'/tmp/demo_virtualImageFunc');
+    % Generate ellipses for some randomly selected eye poses
     nPoses = 100;
     eyePoses=[(rand(nPoses,1)-0.5)*20, (rand(nPoses,1)-0.5)*10, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
     for pp = 1:nPoses
-    	ellipseParams(pp,:) = pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,[]);
+    	ellipseParams(pp,:) = pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
     end
-    % Calculate the time to do the inverse projection without ray tracing
-    tic
-    for pp = 1:nPoses
-    	pupilProjection_inv(ellipseParams(pp,:),sceneGeometry,[]);
-    end
-    noRayTraceTimeMsec = toc / nPoses * 1000;
-    fprintf('Inverse projection time is %4.2f msecs without ray tracing.\n',noRayTraceTimeMsec);
-    % and with ray tracing
+    fprintf('\nTime to compute inverse projection model (average over %d projections):\n',nPoses);
     tic
     for pp = 1:nPoses
     	pupilProjection_inv(ellipseParams(pp,:),sceneGeometry);
     end
-    withRayTraceTimeMsec = toc / nPoses * 1000;
-    fprintf('Inverse projection time is %4.2f msecs with ray tracing.\n',withRayTraceTimeMsec);
+    msecPerModel = toc / nPoses * 1000;
+    fprintf('\tUsing pre-compiled ray tracing: %4.2f msecs.\n',msecPerModel);
 %}
 
 

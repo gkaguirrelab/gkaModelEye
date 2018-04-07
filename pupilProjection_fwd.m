@@ -114,26 +114,24 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     %% Plot the pupil ellipse for various eye poses
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
-    % Compile the ray tracing functions
-    sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry,'/tmp/demo_virtualImageFunc');
     % Prepare a figure
     figure
-    blankFrame = zeros(720,1280)+0.5;
+    blankFrame = zeros(480,640)+0.5;
     imshow(blankFrame, 'Border', 'tight');
     hold on
     axis off
     axis equal
-    xlim([0 1280]);
-    ylim([0 720]);
+    xlim([0 640]);
+    ylim([0 480]);
     % Loop over eye poses and plot
-    for azi = -25:25:25
-        for ele = -25:25:25
+    for azi = -35:35:35
+        for ele = -35:35:35
             eyePose = [azi ele 0 1];
             % Obtain the pupil ellipse parameters in transparent format
             pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
             pFitImplicit = ellipse_ex2im(ellipse_transparent2ex(pupilEllipseOnImagePlane));
             fh=@(x,y) pFitImplicit(1).*x.^2 +pFitImplicit(2).*x.*y +pFitImplicit(3).*y.^2 +pFitImplicit(4).*x +pFitImplicit(5).*y +pFitImplicit(6);
-            fimplicit(fh,[1, 1280, 1, 720],'Color', 'g','LineWidth',1);
+            fimplicit(fh,[1, 640, 1, 480],'Color', 'g','LineWidth',1);
             axis off;
         end
     end
