@@ -217,7 +217,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     nPoses = 100;
     eyePoses=[(rand(nPoses,1)-0.5)*20, (rand(nPoses,1)-0.5)*10, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
     clc
-    fprintf('\nTime (msecs) to compute forward projection model (avg over %d projections):\n',nPoses);
+    fprintf('\nTime to compute forward projection model (average over %d projections):\n',nPoses);
     % Perform the forward projection without ray tracing
     sg = sceneGeometry;
     sg.virtualImageFunc = [];
@@ -226,7 +226,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     	pupilProjection_fwd(eyePoses(pp,:),sg);
     end
     msecPerModel = toc / nPoses * 1000;
-    fprintf('\tWithout ray tracing is %4.2f msec.\n',msecPerModel);
+    fprintf('\tWithout ray tracing: %4.2f msecs.\n',msecPerModel);
     % With ray tracing, using MATLAB routine
     sg = sceneGeometry;
     tic
@@ -234,7 +234,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     	pupilProjection_fwd(eyePoses(pp,:),sg);
     end
     msecPerModel = toc / nPoses * 1000;
-    fprintf('\tUsing MATLAB ray tracing is %4.2f msec.\n',msecPerModel);
+    fprintf('\tUsing MATLAB ray tracing: %4.2f msecs.\n',msecPerModel);
     % With ray tracing, using a compiled ray tracing routine
     sg = sceneGeometry;
     sg.virtualImageFunc = compileVirtualImageFunc(sg,'/tmp/demo_virtualImageFunc');
@@ -243,7 +243,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     	pupilProjection_fwd(eyePoses(pp,:),sg);
     end
     msecPerModel = toc / nPoses * 1000;
-    fprintf('\tUsing pre-compiled ray tracing is %4.2f msec.\n',msecPerModel);
+    fprintf('\tUsing pre-compiled ray tracing: %4.2f msecs.\n',msecPerModel);
 %}
 
 
@@ -486,12 +486,15 @@ if isfield(sceneGeometry,'virtualImageFunc')
         % If the virtualImageFunc is a compiled routine (which we detect by
         % checking if the function handle evaluates with exist() to 3),
         % check that the that the optical system in the function is the
-        % same as that in the passed sceneGeometry
+        % same as that in the passed sceneGeometry. For now, this check is
+        % deactivated, as it adds 2 msecs per forward model calculation.
+        %{
         if exist(func2str(sceneGeometry.virtualImageFunc.handle))==3
             if ~(sceneGeometry.opticalSystem==sceneGeometry.virtualImageFunc.opticalSystem)
                 warning('pupilProjection_fwd:opticalSystemMismatch','The optical system used to build the virtual image function does not match that in the sceneGeometry');
             end
         end
+        %}
         % Identify the eyeWorldPoints subject to refraction by the cornea
         refractPointsIdx = find(strcmp(pointLabels,'pupilPerimeter')+...
             strcmp(pointLabels,'pupilCenter')+...
