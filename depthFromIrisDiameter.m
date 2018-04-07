@@ -61,6 +61,9 @@ p.addRequired('maxIrisDiameterPixels',@isnumeric);
 % parse
 p.parse(sceneGeometry, observedIrisDiamPixels)
 
+% Disable ray tracing for this calculation
+sceneGeometry.virtualImageFunc = [];
+
 
 %% Iris width values
 % Define the iris radius. One study measured the horizontal visible
