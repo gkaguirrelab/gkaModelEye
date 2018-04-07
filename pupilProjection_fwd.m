@@ -116,7 +116,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Compile the ray tracing functions
-    sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry,'functionDirPath','/tmp/demo_virtualImageFunc');
+    sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry,'/tmp/demo_virtualImageFunc');
     % Prepare a figure
     figure
     blankFrame = zeros(720,1280)+0.5;
