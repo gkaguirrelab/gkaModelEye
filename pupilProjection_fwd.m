@@ -249,7 +249,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
 p = inputParser; p.KeepUnmatched = true;
 
 % Required
-p.addRequired('eyePose',@isnumeric);
+p.addRequired('eyePose',@(x)(isnumeric(x) && all(size(x)==[1 4])));
 p.addRequired('sceneGeometry',@isstruct);
 
 % Optional
@@ -478,7 +478,7 @@ R.tor = [1 0 0; 0 cosd(eyeTorsion) -sind(eyeTorsion); 0 sind(eyeTorsion) cosd(ey
 nodalPointIntersectError = nan(length(pointLabels),1);
 % If we have a virtualImageFunction field, proceed
 if isfield(sceneGeometry,'virtualImageFunc')
-    % If this field is not set to empty, proceed
+    % If this field is not set to empty, proceed    
     if ~isempty(sceneGeometry.virtualImageFunc)
         % If the virtualImageFunc is a compiled routine (which we detect by
         % checking if the function handle evaluates with exist() to 3),
@@ -511,10 +511,10 @@ if isfield(sceneGeometry,'virtualImageFunc')
                     sceneGeometry.opticalSystem, ...
                     sceneGeometry.extrinsicTranslationVector, ...
                     sceneGeometry.eye.rotationCenters);
-            catch
-                warning('pupilProjection_fwd:rayTracingError','Ray tracing error. Returning nan for this eyeWorld point.');
+            catch ME
                 eyeWorldPoints(refractPointsIdx(ii),:) = nan;
                 nodalPointIntersectError(refractPointsIdx(ii)) = inf;
+            	warning('pupilProjection_fwd:rayTracingError',['Received the error ' ME.identifier ' during ray tracing . Returning nan for this eyeWorld point.']);
             end
         end
     end
