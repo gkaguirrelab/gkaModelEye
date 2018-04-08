@@ -12,8 +12,8 @@ function virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, varar
 %   placed. The routine returns a structure that contains the handle to the
 %   function.
 %
-%   Calls to the compiled virtualImageFunc execute roughly ~300x faster
-%   than the native matlab routine.
+%   Calls to the compiled virtualImageFuncMex execute roughly ~50x faster
+%   than the native virtualImageFunc routine.
 %
 % Inputs:
 %   sceneGeometry         - A sceneGeometry structure. Critically, this
@@ -36,9 +36,29 @@ function virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, varar
     % Basic example with a compiled virtualImageFunc
     sceneGeometry = createSceneGeometry();
     sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry, '/tmp/demo_virtualImageFunc' );
-    [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( [sceneGeometry.eye.pupilCenter(1) 2 0], [0 0 0 2], sceneGeometry.opticalSystem, sceneGeometry.extrinsicTranslationVector, sceneGeometry.eye.rotationCenters )
+    [virtualEyeWorldPoint, nodalPointIntersectError] = sceneGeometry.virtualImageFunc.handle( [sceneGeometry.eye.pupilCenter(1) 2 0], [0 0 0 2], sceneGeometry.opticalSystem, sceneGeometry.extrinsicTranslationVector, sceneGeometry.eye.rotationCenters )
 %}
-
+%{
+    % Compare computation time for MATLAB and compiled C code
+    sceneGeometry = createSceneGeometry();
+    sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry, '/tmp/demo_virtualImageFunc' );
+    nComputes = 1000;
+    fprintf('\nTime to execute the virtualImageFunc (average over %d projections):\n',nComputes);
+    % Native function
+    tic
+    for ii=1:nComputes
+        virtualImageFunc( [sceneGeometry.eye.pupilCenter(1) 2 0], [0 0 0 2], sceneGeometry.opticalSystem, sceneGeometry.extrinsicTranslationVector, sceneGeometry.eye.rotationCenters );
+    end
+    msecPerCompute = toc / nComputes * 1000;
+    fprintf('\tUsing the MATLAB function: %4.2f msecs.\n',msecPerCompute);
+    % Compiled function
+    tic
+    for ii=1:nComputes
+        sceneGeometry.virtualImageFunc.handle( [sceneGeometry.eye.pupilCenter(1) 2 0], [0 0 0 2], sceneGeometry.opticalSystem, sceneGeometry.extrinsicTranslationVector, sceneGeometry.eye.rotationCenters );
+    end
+    msecPerCompute = toc / nComputes * 1000;
+    fprintf('\tUsing the compiled function: %4.2f msecs.\n',msecPerCompute);
+%}
 
 %% input parser
 p = inputParser;
@@ -62,18 +82,6 @@ else
     compileDir = [];
 end
 
-%% Save the traceOpticalSystem function
-% Create a stand-alone 
-syms z
-syms h
-syms theta
-outputRayFunc = rayTraceCenteredSurfaces([z h], theta, sceneGeometry.opticalSystem);
-unity = 1; zero = 0;
-outputRayFunc = subs(outputRayFunc);
-functionFileName = fullfile(compileDir,'traceOpticalSystem');
-traceOpticalSystemFuncHandle = matlabFunction(outputRayFunc,'File',functionFileName,'Vars',{z h theta});
-% Add saved function files to path
-addpath(compileDir,'-end');
 
 %% Compile virtualImageFunc
 % Define argument variables so the compiler can deduce variable types
@@ -81,7 +89,7 @@ args = {[0,0,0], [0,0,0,0], sceneGeometry.opticalSystem, sceneGeometry.extrinsic
 % Change to the compile directory
 initialDir = cd(compileDir);
 % Compile the mex file
-codegen -o virtualImageFuncMex virtualImageFuncPreMex -args args
+codegen -o virtualImageFuncMex virtualImageFunc -args args
 % Identify the compiled mex file, the suffix of which will vary
 % depending upon the operating system
 fileLocation = dir('virtualImageFuncMex.*');

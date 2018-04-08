@@ -48,21 +48,7 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( ey
     [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( [sceneGeometry.eye.pupilCenter(1) 2 0], [0 0 0 2], sceneGeometry.opticalSystem, sceneGeometry.extrinsicTranslationVector, sceneGeometry.eye.rotationCenters )
 %}
 
-    
-%% traceOpticalSystem
-% Create an anonymous function that returns (for the specified optical
-% system) the output ray from the system given a starting point in 2D
-% eyeWorld space that emits a ray at angle theta w.r.t. the optical axis.
-% If we are in the deployed state, then the traceOpticalSystem function
-% will have been previously compiled and placed on the path.
 
-% I cannot get the compiler to ignore the code that is not behind the
-% isdeployed statement. So, I have to comment it out by hand. Ugh.
-% if isdeployed
-%    traceOpticalSystemFuncHandle = @traceOpticalSystem;
-% else
-     traceOpticalSystemFuncHandle = @(z, h, theta) rayTraceCenteredSurfaces([z h], theta, opticalSystem);
-% end
 
 %% Find the p1p2 theta
 % For this eyeWorld point, we find the theta value in the p1p2 plane that
@@ -74,7 +60,7 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( ey
 % point of the camera and the point at which a ray intersects the
 % plane that contains the camera, with the ray departing from the
 % eyeWorld point at angle theta in the p1p2 plane.
-cameraNodeDistanceError2D_p1p2 = @(theta_p1p2) calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2, eyePose, extrinsicTranslationVector, rotationCenters, traceOpticalSystemFuncHandle);
+cameraNodeDistanceError2D_p1p2 = @(theta_p1p2) calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2, eyePose, extrinsicTranslationVector, rotationCenters, opticalSystem);
 
 % Conduct an fminsearch to find the p1p2 theta that minimizes the node
 % distance error. The options are adjusted to tolerate an error of 1e-2,
@@ -84,19 +70,21 @@ cameraNodeDistanceError2D_p1p2 = @(theta_p1p2) calcCameraNodeDistanceError2D_p1p
 options = optimset('TolFun',1e-2,'TolX',1e-6);
 theta_p1p2=fminsearch(cameraNodeDistanceError2D_p1p2,1e-4,options);
 
+
 %% Find the p1p3 theta
 % Given this p1p2 theta, we now find the p1p3 theta that further reduces
 % the distance to the nodal point.
-cameraNodeDistanceError3D = @(theta_p1p3) calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, theta_p1p3, eyePose, extrinsicTranslationVector, rotationCenters, traceOpticalSystemFuncHandle);
+cameraNodeDistanceError3D = @(theta_p1p3) calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, theta_p1p3, eyePose, extrinsicTranslationVector, rotationCenters, opticalSystem);
 
 % The fVal at the solution is the the total error (in mm) in both
 % dimensions for intersecting the nodal point of the camera.
 [theta_p1p3, nodalPointIntersectError]=fminsearch(cameraNodeDistanceError3D,1e-4,options);
 
+
 %% Obtain the virtual image location
 % With both theta values calculated, now obtain the virtual image
 % ray arising from the pupil plane that reflects the corneal optics
-virtualImageRay = calcVirtualImageRay(eyeWorldPoint, theta_p1p2, theta_p1p3, traceOpticalSystemFuncHandle);
+virtualImageRay = calcVirtualImageRay(eyeWorldPoint, theta_p1p2, theta_p1p3, opticalSystem);
 
 % Extract the origin of the ray, which is the virtual image eyeWorld point
 virtualEyeWorldPoint = virtualImageRay(1,:);
@@ -113,7 +101,7 @@ end % virtualImageFunc -- MAIN
 
 
 %% calcCameraNodeDistanceError2D_p1p2
-function distance = calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2, eyePose, extrinsicTranslationVector, rotationCenters, traceOpticalSystemFuncHandle)
+function distance = calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2, eyePose, extrinsicTranslationVector, rotationCenters, opticalSystem)
 % 2D distance of ray intersection on camera plane from camera node
 %
 % Syntax:
@@ -159,7 +147,7 @@ function distance = calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2
 %
 
 % Obtain the ray for the eyeWorld point after it exits the optical system
-outputRayEyeWorld2D_p1p2 = traceOpticalSystemFuncHandle(eyeWorldPoint(1),eyeWorldPoint(2),theta_p1p2);
+outputRayEyeWorld2D_p1p2 = rayTraceCenteredSurfaces([eyeWorldPoint(1),eyeWorldPoint(2)],theta_p1p2, opticalSystem);
 
 % Add the p3 dimension
 outputRayEyeWorld_p1p2=[outputRayEyeWorld2D_p1p2(1,1) outputRayEyeWorld2D_p1p2(1,2) eyeWorldPoint(3);...
@@ -236,7 +224,7 @@ end % calcCameraNodeDistanceError2D_p1p2
 
 
 %% calcCameraNodeDistanceError3D
-function distance = calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, theta_p1p3, eyePose, extrinsicTranslationVector, rotationCenters, traceOpticalSystemFuncHandle)
+function distance = calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, theta_p1p3, eyePose, extrinsicTranslationVector, rotationCenters, opticalSystem)
 % 3D distance of ray intersection on camera plane from camera node
 %
 % Syntax:
@@ -251,8 +239,8 @@ function distance = calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, the
 
 % Obtain the ray in each plane for the eyeWorld point after it exits the
 % optical system
-outputRayEyeWorld2D_p1p2 = traceOpticalSystemFuncHandle(eyeWorldPoint(1), eyeWorldPoint(2), theta_p1p2);
-outputRayEyeWorld2D_p1p3 = traceOpticalSystemFuncHandle(eyeWorldPoint(1), eyeWorldPoint(3), theta_p1p3);
+outputRayEyeWorld2D_p1p2 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(2)], theta_p1p2, opticalSystem);
+outputRayEyeWorld2D_p1p3 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(3)], theta_p1p3, opticalSystem);
 
 % Shift the p1p3 ray to have the same initial p1 value as the p1p2 ray
 slope =(outputRayEyeWorld2D_p1p2(2,2)-outputRayEyeWorld2D_p1p2(1,2))/(outputRayEyeWorld2D_p1p2(2,1)-outputRayEyeWorld2D_p1p2(1,1));
@@ -336,7 +324,7 @@ end % calcCameraNodeDistanceError3D
 
 
 %% calcVirtualImageRay
-function [outputRayEyeWorld] = calcVirtualImageRay(eyeWorldPoint, theta_p1p2, theta_p1p3, traceOpticalSystemFuncHandle)
+function [outputRayEyeWorld] = calcVirtualImageRay(eyeWorldPoint, theta_p1p2, theta_p1p3, opticalSystem)
 % Returns the unit vector virtual image ray for the initial depth position
 %
 % Syntax:
@@ -379,8 +367,8 @@ function [outputRayEyeWorld] = calcVirtualImageRay(eyeWorldPoint, theta_p1p2, th
 %
 
 % Assemble the virtual image ray
-outputRayEyeWorld_p1p2 = traceOpticalSystemFuncHandle(eyeWorldPoint(1), eyeWorldPoint(2), theta_p1p2);
-outputRayEyeWorld_p1p3 = traceOpticalSystemFuncHandle(eyeWorldPoint(1), eyeWorldPoint(3), theta_p1p3);
+outputRayEyeWorld_p1p2 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(2)], theta_p1p2, opticalSystem);
+outputRayEyeWorld_p1p3 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(3)], theta_p1p3, opticalSystem);
 
 % Adjust the p1 (optical axis) position of the rays to have their initial
 % position at the same p1

@@ -26,10 +26,6 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %   the routine is the position and angle at which the ray (or its reverse
 %   projection) intersects the optical axis.
 %
-%   The routine will accept symbolic variables for some or all of the input
-%   components. When the input contains one or more symbolic variables,
-%   plotting is disabled.
-%
 % Inputs:
 %   coordsInitial         - A 2x1 vector, with the values corresponding to
 %                           the z-position and height of the initial
@@ -148,59 +144,6 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     end
 %}
 %{
-    %% Example 5 - Pupil through cornea, symbolic variables
-    % The ray tracing routine can be called with symbolic variables.
-    % Compare the final values for thetas of the rays through the system
-    % to the values for thetas returned by Example 2
-    clear coords
-    clear theta
-    sceneGeometry = createSceneGeometry();
-    syms theta
-    syms pupilPointHeight
-    coords = [sceneGeometry.eye.pupilCenter(1) pupilPointHeight];
-    outputRay = rayTraceCenteredSurfaces(coords, theta, sceneGeometry.opticalSystem);
-    unity = 1; zero = 0;
-    outputRay = subs(outputRay);
-    % The variable output ray contains symbolic variables
-    symvar(outputRay)
-    theta = deg2rad(-10);
-    pupilPointHeight = 2;
-    % Substitute these new values for theta and height and evaluate
-    double(subs(outputRay))
-%}
-%{
-    %% Example 6 - Pupil through cornea, symbolic variables, create function
-    % Demonstrates the creation of a function handle to allow rapid
-    % evaluation of many values for the symbolic expression. The function
-    % unitRayFromPupilFunc returns a unitRay for a given pupil height and
-    % theta. The function is then called for the pupil heights and thetas
-    % that might reflect the position of a point on the pupil perimeter
-    % in the x and y dimensions, creating a zxRay and a zyRay. The zyRay
-    % is then adjusted to share the same Z dimension point of origin.
-    clear coords
-    clear theta
-    sceneGeometry = createSceneGeometry();
-    syms theta
-    syms pupilPointHeight
-    coords = [eye.pupilCenter(1) pupilPointHeight];
-    outputRay = rayTraceCenteredSurfaces(coords, theta, sceneGeometry.opticalSystem);
-    % demonstrate that outputRay has symbolic variables
-    symvar(outputRay)
-    % replace the unity and zero symbolic values with fixed values
-    unity = 1; zero = 0;
-    outputRay = subs(outputRay);
-    symvar(outputRay)
-    % define a function based upon the symbolic equation in outputRay
-    unitRayFromPupilFunc = matlabFunction(outputRay);
-    % call the unitRay function with inputs for the two planes (zx, zy)
-    zxRay=unitRayFromPupilFunc(2,pi/4)
-    zyRay=unitRayFromPupilFunc(1.7,pi/8)
-    slope =zyRay(2,2)/(zyRay(2,1)-zyRay(1,1));
-    zOffset=zxRay(1,1)-zyRay(1,1);
-    zyRay(:,1)=zyRay(:,1)+zOffset;
-    zyRay(:,2)=zyRay(:,2)+(zOffset*slope)
-%}
-%{
     %% Example 7 - Function behavior with a non-intersecting ray
     clear coords
     clear theta
@@ -213,15 +156,11 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     % warning and returns an empty outputRay
     theta = deg2rad(45);
     outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem);
-    % Now define outputRay with theta as a symbolic variable, then evaluate
-    % with a non-intersecting ray
-    clear theta
-    syms theta
-    outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem);
-    testRay = double(subs(outputRay,'theta',deg2rad(45)))
-    % The routine returns an outout ray with imaginary values
-    isreal(testRay)
 %}
+
+%% Tell codegen to ignore these functions
+% This is needed for compilation of the function as standalone mex file
+coder.extrinsic('warning','legend','strseq')
 
 
 %% Check the input
@@ -297,34 +236,25 @@ if nargin==4
     end
 end
 
-% check if there are symbolic variables in the input
-if ~isempty(symvar(coordsInitial)) || ~isempty(symvar(thetaInitial)) || ~isempty(symvar(opticalSystemIn(:)'))
-    symbolicFlag = true;
-    figureFlag.show = false;
-else
-    symbolicFlag = false;
-end
 
 %% Initialize variables and plotting
 outputRay = [];
 nSurfaces = size(opticalSystemIn,1);
+nDims = size(opticalSystemIn,2);
 
-% Set the values for at the first surface (initial position of ray)
-if symbolicFlag
-    syms unity
-    syms zero
-    aVals(1) = unity;
-    curvature(1) = zero;
-    curvatureCenters(1) = zero;
-else
-    aVals(1) = 1;
-    curvature(1) = 0;
-    curvatureCenters(1) = 0;
-end
+% Pre-allocate our loop variables; set the values for at the first surface
+% (initial position of ray)
+aVals = zeros(nSurfaces);
+aVals(1) = 1;
+curvature = zeros(nSurfaces,1);
+curvatureCenters = zeros(nSurfaces,1);
+intersectionCoords=zeros(nSurfaces,2);
 intersectionCoords(1,:)=coordsInitial;
+thetas = zeros(nSurfaces,1);
 thetas(1)=thetaInitial;
+relativeIndices = zeros(nSurfaces,1);
 relativeIndices(1) = 1;
-
+imageCoords=zeros(nSurfaces,2);
 % The initial image location is a projection of the initial ray back to the
 % optical axis.
 imageCoords(1,:)=[coordsInitial(1)-(coordsInitial(2)/tan(thetaInitial)) 0];
@@ -334,10 +264,11 @@ imageCoords(1,:)=[coordsInitial(1)-(coordsInitial(2)/tan(thetaInitial)) 0];
 % optical axis, and set the radius to zero. This re-assembly of the matrix
 % is also needed so that it can hold symbolic values if some were passed
 % for coordsInitial or thetaInitial.
+opticalSystem = zeros(nSurfaces,nDims);
 opticalSystem(1,1)=imageCoords(1,1);
 opticalSystem(1,2:size(opticalSystemIn,2)-1)=0;
 opticalSystem(1,size(opticalSystemIn,2))=opticalSystemIn(1,end);
-opticalSystem = [opticalSystem; opticalSystemIn(2:end,:)];
+opticalSystem(2:end,:) = opticalSystemIn(2:end,:);
 curvatureCenters(1) = opticalSystem(1,1);
 % If a single radius value was passed for the surfaces, copy this value
 % over to define the radius for these spheres along the horizontal axis
@@ -361,9 +292,6 @@ if figureFlag.show
         end
     end
     hold on
-    if figureFlag.refLine
-        refline(0,0)
-    end
     axis equal
     if ~isempty(figureFlag.zLim)
         xlim(figureFlag.zLim);
@@ -394,22 +322,13 @@ for ii = 2:nSurfaces
     % check if the incidence angle is above the critical angle for the
     % relative refractive index at the surface interface, but only if we
     % are not working with symbolic variables
-    if ~symbolicFlag
         if abs((aVals(ii)*relativeIndices(ii))) > 1
             warning('rayTraceCenteredSurfaces:criticalAngle','Angle of incidence for surface %d greater than critical angle. Returning.',ii);
             return
         end
-    end
     % Find the angle of the ray after it enters the current surface
     thisTheta = thetas(ii-1) - asin(aVals(ii)) + asin(aVals(ii).*relativeIndices(ii));
-    % A bit of jiggery-pokery to handle symbolic variables here
-    if symbolicFlag && ii==2
-        clear thetas
         thetas(ii) = thisTheta;
-        thetas(1) = thetaInitial;
-    else
-        thetas(ii) = thisTheta;
-    end
     % Update the plot
     if figureFlag.show
         % add this lens surface
@@ -455,14 +374,18 @@ if figureFlag.show
     end
     % Replot the refline
     if figureFlag.refLine
-        refline(0,0)
+        plot([min(imageCoords(:,1)),max(imageCoords(:,1))],[0,0],'-k');
     end
     % Add some labels
     if figureFlag.textLabels
+        yl = max(abs(intersectionCoords(:,2)));
+        yPos = zeros(nSurfaces,1)-(yl/2);
         plot(opticalSystem(:,1),zeros(nSurfaces,1),'+k');
-        text(opticalSystem(:,1),zeros(nSurfaces,1)-(diff(ylim)/50),strseq('c',[1:1:nSurfaces]),'HorizontalAlignment','center')
+        labels = strseq('c',1:1:nSurfaces);
+        text(opticalSystem(:,1),yPos,labels,'HorizontalAlignment','center');
+        labels = strseq('i',1:1:nSurfaces);
         plot(imageCoords(:,1),zeros(nSurfaces,1),'*r');
-        text(imageCoords(:,1),zeros(nSurfaces,1)-(diff(ylim)/50),strseq('i',[1:1:nSurfaces]),'HorizontalAlignment','center')
+        text(imageCoords(:,1),yPos,labels,'HorizontalAlignment','center');
     end
     % Add a legend
     if figureFlag.legend
