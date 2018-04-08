@@ -6,23 +6,14 @@ function eye = modelEyeParameters( varargin )
 %
 % Description:
 %   This routine returns the parameters of a model eye used in the
-%   sceneGeometry routines. We make use of values derived by Atchison for
-%   human eyes:
+%   sceneGeometry routines.
 %
-%       Atchison, David A. "Optical models for human myopic eyes." Vision
-%       research 46.14 (2006): 2236-2250.
-%
-%       Atchison, David A., et al. "Shape of the retinal surface in
-%       emmetropia and myopia." IOVS 46.8 (2005): 2698-2707.
-%
-%   Atchison uses the dimensions [x, y, z] corresponding to the width,
-%   height, and depth (axial length) of the model eye. The parameters
-%   returned by this routine correspond to the eyeWorld coordinate space
-%   used in pupilProjection_fwd, which is relative to the pupil axis, with
-%   the apex of the cornea set as zero in depth. The space has the
-%   dimensions [depth, horizontal, vertical]; negative values of depth are
-%   towards the center of the eye. The model assumes the optical and pupil
-%   axis of the eye are algined.
+%   The parameters returned by this routine correspond to the eyeWorld
+%   coordinate space used in pupilProjection_fwd, which is relative to the
+%   pupil axis, with the apex of the cornea set as zero in depth. The space
+%   has the dimensions [depth, horizontal, vertical]; negative values of
+%   depth are towards the back of the eye. The model assumes the optical
+%   and pupil axis of the eye are algined.
 %
 % Inputs:
 %   none
@@ -106,26 +97,43 @@ switch p.Results.species
     %% Human eye
     case {'human','Human','HUMAN'}
                 
-        %% Cornea front surface
-        % The properties of the cornea are typically described by the
-        % radius of curvature (R) at the vertex and its asphericity (Q).
-        % These values are taken from Atchison 2006, Table 1. The radius of
-        % curvature of the front surface at the apex varies by spherical
-        % ametropia of the eye; Q does not vary.
-        eye.corneaFrontSurfaceR = 7.77 + 0.022 * p.Results.sphericalAmetropia;
-        eye.corneaFrontSurfaceQ = -0.15;
-        
-        % The cornea is modeled as a prolate ellipsoid that is radially
-        % symmetric about the optical axis. We calculate here the radii of
-        % the ellipsoid. The radii of an ellipse along the primary and
-        % secondy axes (a, b) are related to R and Q by:
+        %% Cornea
+        % We model the cornea as an ellipsoid, taking the "canonical
+        % representation" parameters from Table 1 of Navarro 2006:
+        %
+        %   Navarro, Rafael, Luis González, and José L. Hernández. "Optics
+        %   of the average normal cornea from general and canonical
+        %   representations of its surface topography." JOSA A 23.2 (2006):
+        %   219-232.
+        %
+        % Their dimensions [a,b,c] correspond to our [p2, p3, p1].
+        %
+        % The radius of curvature at the vertex of the cornea was found by
+        % Atchison to vary as a function of spherical ametropia (Table 1):
+        %
+        %	Atchison, David A. "Optical models for human myopic eyes."
+        %	Vision research 46.14 (2006): 2236-2250.
+        %
+        % Atchison provides parameters for a radially symmetric ellipsoid
+        % in terms of the radius of curvature (R) at the vertex and its
+        % asphericity (Q). R varies with spherical ametropia (D):
+        %
+        %   R = 7.77 + 0.022 * D
+        %   Q = -0.15
+        % 
+        % Because the asphericity of the cornea did not change, the change
+        % in R corresponds to an overall scaling of the ellipsoid in all
+        % dimensions. We adjust the Navarro values to account for this
+        % effect. R and Q are related to the radii of an ellipse along the
+        % primary and secondy axes (a, b) by:
+        %
         %   R = b^2/a
         %	Q = (b^2 / a^2) - 1
+        %
         % when Q < 0. Therefore, given R and Q, we can obtain a and b,
         % which correspond to the radii of the ellipsoid model, with a
         % corresponding to the axial dimension, and b to the horizontal and
-        % verical dimensions.
-        % Checking my algebra here:
+        % verical dimensions. Checking my algebra here:
         %{
             syms a b R Q
             eqn1 = R == b^2/a;
@@ -134,37 +142,48 @@ switch p.Results.species
             solution.a
             solution.b
         %}        
-        a = eye.corneaFrontSurfaceR / ( eye.corneaFrontSurfaceQ + 1 );
-        b = eye.corneaFrontSurfaceR * sqrt(1/(eye.corneaFrontSurfaceQ+1)) ;
-        eye.corneaFrontSurfaceRadii(1) = a;
-        eye.corneaFrontSurfaceRadii(2:3) = b;
-        
-        eye.corneaFrontSurfaceRadii = [11.5223    8.4276    8.2983];
-
-        % We set the axial apex of the corneal front surface at position
-        % [0, 0, 0]
+        % We calculate the change in parameters of the Navarro model that
+        % would be expected given the Atchison effect for ametropia. 
+        %{
+            R = @(D) 7.77 + 0.022 .* D;
+            Q = -0.15;
+            a = @(D) R(D) ./ (Q+1);
+            b = @(D) R(D) .* sqrt(1./(Q+1));
+            radiiAtchFront = @(D) [a(D) b(D) b(D)];
+            % Show that the ametropia correction scales all radii equally
+            radiiAtchFront(0)./radiiAtchFront(1)
+            % Calculate the proportion change in radius 
+            radiusScalerPerD = 1-a(1)/a(0);
+            radiiNavFront = [14.26   10.43   10.27];
+            radiiNavFrontCorrected = @(D) radiiFrontNav.* (D.*radiusScalerPerD+1);
+            % Report the ratio of the Atchison and Navarro axial radii
+            % for the front surface of the corneal; we use this below.
+            atchNavScaler = a(0) ./ radiiNavFront(1)
+        %}
+        % Atchison finds that the back surface of cornea does not vary by
+        % ametropia. Navarro does not provide posterior cornea parameters.
+        % Therefore, we scale the parameters provided by Atchison to relate
+        % to the axial corneal radius specified by Navarro:
+        %{
+            R = 6.4;
+            Q = -0.275;
+            a = R ./ (Q+1);
+            b = R .* sqrt(1./(Q+1));
+            % Taken from the prior block of code 
+            atchNavScaler = 0.6410;
+            radiiNavBack = [a b b]./atchNavScaler
+        %}
+        eye.corneaFrontSurfaceRadii = [14.26    10.43    10.27] .* ...
+            ((p.Results.sphericalAmetropia .* -0.0028)+1);
+        eye.corneaBackSurfaceRadii = [13.7716   11.7261   11.7261];
+                
+        % We set the center of the cornea front surface ellipsoid so that
+        % the axial apex is at position [0, 0, 0]
         eye.corneaFrontSurfaceCenter = [-eye.corneaFrontSurfaceRadii(1) 0 0];
-        
-        
-        %% Cornea back surface
-        % The radius of curvature for the back corneal surface was not
-        % found to vary by spherical ametropia. The asphericity Q for the
-        % back corneal surface was set by Atchison to -0.275.
-        eye.corneaBackSurfaceR = 6.4;
-        eye.corneaBackSurfaceQ = -0.275;
-        
-        % Compute the radii of the ellipsoid
-        a = eye.corneaBackSurfaceR / ( eye.corneaBackSurfaceQ + 1 );
-        b = eye.corneaBackSurfaceR * sqrt(1/(eye.corneaBackSurfaceQ+1)) ;
-        eye.corneaBackSurfaceRadii(1) = a;
-        eye.corneaBackSurfaceRadii(2:3) = b;
-        
-        eye.corneaBackSurfaceRadii = [11.1272 7.5164    7.5164];
-        
-        % The center of the cornea circle for the back surface is
-        % positioned so that there is 0.55 mm of corneal thickness between
-        % the front and back surface of the cornea at the apex, following
-        % Atchison 2006.
+                
+        % The center of the back cornea ellipsoid is positioned so that
+        % there is 0.55 mm of corneal thickness between the front and back
+        % surface of the cornea at the apex, following Atchison 2006.
         eye.corneaBackSurfaceCenter = [-0.55-eye.corneaBackSurfaceRadii(1) 0 0];
         
         
@@ -183,14 +202,14 @@ switch p.Results.species
         %   35.14 (1995): 2021-2036.
         %
         % Wyatt reported the average ellipse parameters for the entrance
-        % pupil (witht the visual axis aligned with camera axis) under dim
+        % pupil (with the visual axis aligned with camera axis) under dim
         % and bright light conditions. We calculate the corresponding
         % parameters of the exit pupil on the optical axis. We then fit a
         % hyperbolic tangent (sigmoidal) function to the the eccentricity
         % of the exit pupil as a function of the exit pupil radius. The
         % theta values observed by Wyatt were very close to vertically
         % orientated in the dark, and horizontally oriented in the light,
-        % so we round to these values. We the exit pupil eccentricity is
+        % so we round to these values. When the exit pupil eccentricity is
         % below zero, the theta is set to zero (horizontal), and above zero
         % value it is set to pi/2 (vertical). In the forward model, we take
         % the absolute value of the eccentricity returned by the parameters
@@ -201,10 +220,10 @@ switch p.Results.species
             % Wyatt reported an eccentricity of the pupil of 0.21 under
             % dark conditions. We find that using that value produces
             % model results that disagree with Malthur 2013. We have
-            % adopted an upper value of 0.17 instead. We also use the 
+            % adopted an upper value of 0.12 instead. We also use the 
             % convention of a negative eccentricity for a horizontal major
             % axis and a positive eccentricity for vertical.
-            entranceEccen = [-0.12 0.17];
+            entranceEccen = [-0.12 0.12];
             % Prepare scene geometry and eye pose aligned with visual axis
             sceneGeometry = createSceneGeometry();
             virtualImageFunc = compileVirtualImageFunc(sceneGeometry);
@@ -259,7 +278,7 @@ switch p.Results.species
         %}
         % Specify the params and equation that defines the exit pupil
         % ellipse. This can be invoked as a function using str2func.
-        eye.exitPupilEccenParams = [-1.765 4.759 0.111 0.149]; 
+        eye.exitPupilEccenParams = [-1.723 4.796 0.976 0.047]; 
         eye.exitPupilEccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',eye.exitPupilEccenParams(1),eye.exitPupilEccenParams(2),eye.exitPupilEccenParams(3),eye.exitPupilEccenParams(4)); 
         % The theta values of the exit pupil ellipse for eccentricities
         % less than and greater than zero.
@@ -296,9 +315,8 @@ switch p.Results.species
         %}
         eye.irisRadius = 5.92;
         
-        % We align the iris center withi the optical axis, although we note
-        % that there are some reporst that the iris is shifted slightly
-        % temporally and upward with respect to the pupil center:
+        % The iris is shifted slightly temporally and upward with respect
+        % to the pupil center:
         %
         %   ...the typical entrance pupil is decentered
         %   approximately 0.15 mm nasally and 0.1 mm inferior to the
@@ -311,9 +329,9 @@ switch p.Results.species
         % the iris plane equal to the pupil plane.
         switch eyeLaterality
             case 'Right'
-                eye.irisCenter = [-3.7 0 0];
+                eye.irisCenter = [-3.7 0.15 0.1];
             case 'Left'
-                eye.irisCenter = [-3.7 0 0];
+                eye.irisCenter = [-3.7 -0.15 0.1];
         end
         
         
