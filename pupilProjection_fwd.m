@@ -374,7 +374,7 @@ if p.Results.fullEyeModelFlag
         (sqrt(anteriorChamberPoints(:,2).^2+anteriorChamberPoints(:,3).^2) <= sceneGeometry.eye.irisRadius) ...
         );
     if all(~retainIdx)
-        error('The pupil plane is set in front of the corneal apea');
+        error('pupilProjection_fwd:pupilPlanePosition','The pupil plane is set in front of the corneal apea');
     end
     anteriorChamberPoints = anteriorChamberPoints(retainIdx,:);
     
@@ -412,7 +412,7 @@ if p.Results.fullEyeModelFlag
         (posteriorChamberPoints(:,1) < sceneGeometry.eye.irisCenter(1)) .* ...
         sqrt(posteriorChamberPoints(:,2).^2+posteriorChamberPoints(:,3).^2) > sceneGeometry.eye.irisRadius );
     if all(~retainIdx)
-        error('The iris center is behind the center of the posterior chamber');
+        error('pupilProjection_fwd:irisCenterPosition','The iris center is behind the center of the posterior chamber');
     end
     posteriorChamberPoints = posteriorChamberPoints(retainIdx,:);
     
@@ -514,7 +514,7 @@ if isfield(sceneGeometry,'virtualImageFunc')
             catch ME
                 eyeWorldPoints(refractPointsIdx(ii),:) = nan;
                 nodalPointIntersectError(refractPointsIdx(ii)) = inf;
-            	warning('pupilProjection_fwd:rayTracingError',['Received the error ' ME.identifier ' during ray tracing . Returning nan for this eyeWorld point.']);
+            	warning('pupilProjection_fwd:rayTracingError',['Received the error ' ME.identifier ' during ray tracing. Returning nan for this point.']);
             end
         end
     end
@@ -655,16 +655,17 @@ pupilPerimIdx = find(strcmp(pointLabels,'pupilPerimeter'));
 pupilFitError = nan;
 
 % Before we try to fit the ellipse, make sure that the radius is not zero,
-% that the image points not imaginary or nan, and that there are at least 5
-% perimeter points.
-if eyePose(4)==0 || ~isreal(imagePoints(pupilPerimIdx,:)) || any(any(isnan(imagePoints(pupilPerimIdx,:)))) || length(pupilPerimIdx)<5
+% and that there are at least 5 perimeter points that are non nan.
+validPerimIdx = find(~any(isnan(imagePoints(pupilPerimIdx,:))')');
+
+if eyePose(4)==0 || ~isreal(imagePoints(pupilPerimIdx,:)) || length(validPerimIdx)<5
     pupilEllipseOnImagePlane=nan(1,5);
 else
     % We place the ellipse fit in a try-catch block, as the fit can fail
     % when the ellipse is so eccentric that it approaches a line
     try
         % Ellipse fitting with routine from the quadfit toolbox
-        implicitEllipseParams = ellipsefit_direct( imagePoints(pupilPerimIdx,1), imagePoints(pupilPerimIdx,2));
+        implicitEllipseParams = ellipsefit_direct( imagePoints(pupilPerimIdx(validPerimIdx),1), imagePoints(pupilPerimIdx(validPerimIdx),2));
         % Convert the ellipse from implicit to transparent form
         pupilEllipseOnImagePlane = ellipse_ex2transparent(ellipse_im2ex(implicitEllipseParams));
         % place theta within the range of 0 to pi
@@ -672,10 +673,11 @@ else
             pupilEllipseOnImagePlane(5) = pupilEllipseOnImagePlane(5)+pi;
         end
         % Get the error of the ellipse fit to the pupil points
-        pupilFitError = sqrt(nanmean(ellipsefit_distance( imagePoints(pupilPerimIdx,1), imagePoints(pupilPerimIdx,2),ellipse_transparent2ex(pupilEllipseOnImagePlane)).^2));
-    catch
+        pupilFitError = sqrt(nanmean(ellipsefit_distance( imagePoints(pupilPerimIdx(validPerimIdx),1), imagePoints(pupilPerimIdx(validPerimIdx),2),ellipse_transparent2ex(pupilEllipseOnImagePlane)).^2));
+    catch ME
         % In the event of an error, return nans for the ellipse
-        pupilEllipseOnImagePlane = nan(1,length(pupilPerimIdx));
+        pupilEllipseOnImagePlane = nan(1,5);
+        warning('pupilProjection_fwd:ellipseFittingError',['Received the error ' ME.identifier ' during ellipse fitting. Returning nans for this ellipse.']);
     end
 end
 
