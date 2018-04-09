@@ -1,23 +1,21 @@
 function virtualImageFuncStruct = compileVirtualImageFunc( sceneGeometry, varargin )
-% Function handles to ray tracing equations
+% Compiles the virtualImageFunc and saves it to disk
 %
 % Syntax:
-%  virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry )
+%  virtualImageFuncStruct = compileVirtualImageFunc( sceneGeometry, varargin )
 %
 % Description:
 %   This routine produces a compiled mex file for virtualImageFunc, saves
-%   the file at a default (/tmp/demo_virtualImageFunc), and places the
-%   function on the MATLAB path. If a second input argument is passed, this
-%   is taken as the full path to where the compiled function should be
-%   placed. The routine returns a structure that contains the handle to the
-%   function.
+%   the file at the specified disk location, and places the function on the
+%   MATLAB path. If a second input argument is not passed, a default save
+%   location is used (/tmp/demo_virtualImageFunc). The routine returns a
+%   structure that contains the handle to the function.
 %
 %   Calls to the compiled virtualImageFuncMex execute roughly ~50x faster
 %   than the native virtualImageFunc routine.
 %
 % Inputs:
-%   sceneGeometry         - A sceneGeometry structure. Critically, this
-%                           includes an optical system.
+%   sceneGeometry         - A sceneGeometry structure.
 %
 % Optional inputs:
 %   functionDirPath       - Character vector. Specifies the location in 
@@ -71,6 +69,8 @@ p = inputParser;
 
 % Required
 p.addRequired('sceneGeometry',@isstruct);
+
+% Optional
 p.addOptional('functionDirPath',fullfile(filesep,'tmp','demo_virtualImageFunc'),@(x) ischar(x));
 
 % parse
@@ -102,7 +102,7 @@ fileLocation = dir('virtualImageFuncMex.*');
 % Clean up the compile dir
 rmdir('codegen', 's');
 % Refresh the path to add the compiled function
-addpath(compileDir,'-end');
+addpath(compileDir,'-begin');
 % Change back to the initial directory
 cd(initialDir);
 
