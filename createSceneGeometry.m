@@ -166,8 +166,8 @@ function sceneGeometry = createSceneGeometry(varargin)
     sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',2,'medium','water');
     % Plot a figure that traces a ray arising from the optical axis at the
     % pupil plane, departing at 15 degrees.    
-    figureFlag.zLim = [-10 20]; figureFlag.hLim = [-10 10];
-    rayTraceCenteredSphericalSurfaces([sceneGeometry.eye.pupilCenter(1) 0], deg2rad(15), sceneGeometry.opticalSystem,figureFlag);
+    figureFlag.zLim = [-15 20]; figureFlag.hLim = [-10 10];
+    rayTraceCenteredSurfaces([-3.7 2], deg2rad(15), sceneGeometry.virtualImageFunc.opticalSystem.p1p2,figureFlag);
 %}
 
 

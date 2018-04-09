@@ -367,12 +367,14 @@ if figureFlag.show
     if figureFlag.imageLines
         plot([imageCoords(ii,1) intersectionCoords(ii,1)],[imageCoords(ii,2) intersectionCoords(ii,2)],'-b');
     end
-    % Plot the ray path, which is a triple length output ray
+    % Plot the ray path, which is a triple length output ray. Also, add a
+    % mark to indicate the initial coordinates of the ray
     if figureFlag.rayLines
         slope = tan(thetas(ii)+pi);
         norm = sqrt(slope^2+1);
         finalRay = [intersectionCoords(ii,:); [intersectionCoords(ii,1)+(3/norm) intersectionCoords(ii,2)+(3*slope/norm)]];
         plot([finalRay(1,1) finalRay(2,1)],[finalRay(1,2) finalRay(2,2)],'-r');
+        plot(intersectionCoords(1,1),intersectionCoords(1,2),'xr');
     end    
     % Plot the output unit ray vector
     if figureFlag.finalUnitRay

@@ -113,7 +113,7 @@ if lensRefractionDiopters > 0
     % We first add the near-plano back surface to the optical system
     backCurvature = nearPlanoCurvature;
     backCenter = lensVertexDistance+backCurvature;
-    opticalSystemOut(end+1,:)=[backCenter backCurvature lensRefractiveIndex];
+    opticalSystemOut(end+1,:)=[backCenter backCurvature backCurvature lensRefractiveIndex];
     backDiopters = (mediumRefractiveIndex-lensRefractiveIndex)/(backCurvature/1000);
  
     % How many diopters of correction do we need from the front surface?
@@ -151,7 +151,7 @@ if lensRefractionDiopters > 0
     clear x
     
     % Store the lens front surface in the optical system
-    opticalSystemOut(end+1,:)=[frontCurvature+lensVertexDistance+thickness frontCurvature mediumRefractiveIndex];
+    opticalSystemOut(end+1,:)=[frontCurvature+lensVertexDistance+thickness frontCurvature frontCurvature mediumRefractiveIndex];
 else
     % This is a minus lens for the correction of myopia. It has a
     % relatively flat front surface and a more curved back surface. It will

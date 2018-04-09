@@ -220,7 +220,7 @@ switch p.Results.species
         % parameters of the exit pupil on the optical axis. We then fit a
         % hyperbolic tangent (sigmoidal) function to the the eccentricity
         % of the exit pupil as a function of the exit pupil radius. The
-        % theta values observed by Wyatt were very close to vertically
+        % theta values observed by Wyatt were close to vertically
         % orientated in the dark, and horizontally oriented in the light,
         % so we round to these values. When the exit pupil eccentricity is
         % below zero, the theta is set to zero (horizontal), and above zero
@@ -294,8 +294,15 @@ switch p.Results.species
         eye.pupil.eccenParams = [-1.723 4.796 0.976 0.047]; 
         eye.pupil.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',eye.pupil.eccenParams(1),eye.pupil.eccenParams(2),eye.pupil.eccenParams(3),eye.pupil.eccenParams(4)); 
         % The theta values of the exit pupil ellipse for eccentricities
-        % less than and greater than zero.
-        eye.pupil.thetas = [0  pi/2];
+        % less than, and greater than, zero. We have the structure here to
+        % add a bit of tilt from vertical by eye, but not currently using
+        % it.
+        switch eyeLaterality
+            case 'Right'
+                eye.pupil.thetas = [0  pi/2];
+            case 'Left'
+                eye.pupil.thetas = [0  pi/2];
+        end
         
         
         %% Iris
