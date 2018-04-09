@@ -83,8 +83,6 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     % The paper provides a numerical example in section C which is
     % implemented here as an example. Compare the returned theta values
     % with those given on page 340, section C.
-    clear coords
-    clear theta
     clear figureFlag
     coords = [0 0];
     theta = deg2rad(17.309724);
@@ -126,15 +124,13 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %}
 %{
     %% Example 4 - Pupil through cornea, multiple points and rays
-    clear coords
-    clear theta
-    clear figureFlag
     sceneGeometry = createSceneGeometry();
     pupilRadius = 2;
     % Define FigureFlag as a structure, and set the new field to false so
     % that subsequent calls to the ray tracing routine will plot on the
     % same figure. Also, set the textLabels to false to reduce clutter
     figure
+    clear figureFlag
     figureFlag.new = false;
     figureFlag.textLabels = false;
     for theta = -35:70:35
@@ -145,8 +141,6 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %}
 %{
     %% Example 7 - Function behavior with a non-intersecting ray
-    clear coords
-    clear theta
     coords = [0 0];
     opticalSystem=[nan nan 1.5; 20 10 1.0];
     % This ray intersects the surface. Function returns without error.
@@ -251,8 +245,6 @@ curvature = zeros(nSurfaces,1);
 curvatureCenters = zeros(nSurfaces,1);
 intersectionCoords=zeros(nSurfaces,2);
 intersectionCoords(1,:)=coordsInitial;
-antiIntersectionCoords=zeros(nSurfaces,2);
-antiIntersectionCoords(1,:)=coordsInitial;
 thetas = zeros(nSurfaces,1);
 thetas(1)=thetaInitial;
 relativeIndices = zeros(nSurfaces,1);
@@ -264,9 +256,7 @@ imageCoords(1,:)=[coordsInitial(1)-(coordsInitial(2)/tan(thetaInitial)) 0];
 
 % Build the local optical system. Replace the center and radius of the
 % first surface with the point of intersection of the initial ray with the
-% optical axis, and set the radius to zero. This re-assembly of the matrix
-% is also needed so that it can hold symbolic values if some were passed
-% for coordsInitial or thetaInitial.
+% optical axis, and set the radius to zero.
 opticalSystem = zeros(nSurfaces,nDims);
 opticalSystem(1,1)=imageCoords(1,1);
 opticalSystem(1,2:size(opticalSystemIn,2)-1)=0;
@@ -322,9 +312,8 @@ for ii = 2:nSurfaces
     % Equation 54 of Elagha
     aVals(ii) = ...
         (1/curvature(ii))*(relativeIndices(ii-1).*aVals(ii-1).*curvature(ii-1)+d.*sin(thetas(ii-1)));
-    % check if the incidence angle is above the critical angle for the
-    % relative refractive index at the surface interface, but only if we
-    % are not working with symbolic variables
+    % Check if the incidence angle is above the critical angle for the
+    % relative refractive index at the surface interface.
         if abs((aVals(ii)*relativeIndices(ii))) > 1
             warning('rayTraceCenteredSurfaces:criticalAngle','Angle of incidence for surface %d greater than critical angle. Returning.',ii);
             return
@@ -367,7 +356,7 @@ if figureFlag.show
     if figureFlag.imageLines
         plot([imageCoords(ii,1) intersectionCoords(ii,1)],[imageCoords(ii,2) intersectionCoords(ii,2)],'-b');
     end
-    % Plot the ray path, which is a triple length output ray. Also, add a
+    % Plot the ray path, which is a triple-length output ray. Also, add a
     % mark to indicate the initial coordinates of the ray
     if figureFlag.rayLines
         slope = tan(thetas(ii)+pi);
@@ -426,11 +415,11 @@ plot(opticalSystem(1)+xp,yp,'-k');
 end
 
 
-function [intersectionCoords, curvature, antiIntersectionCoords] = calcEllipseIntersect(coordsInitial, theta, ellipseCenterZ, ellipseRadii )
+function [intersectionCoords, curvature] = calcEllipseIntersect(coordsInitial, theta, ellipseCenterZ, ellipseRadii )
 % Returns coords and curvature of an ellipse intersected by a ray 
 %
 % Syntax:
-%  [intersectionCoords, curvature, antiIntersectionCoords] = calcEllipseIntersect(coordsInitial, theta, ellipseCenterZ, ellipseRadii )
+%  [intersectionCoords, curvature] = calcEllipseIntersect(coordsInitial, theta, ellipseCenterZ, ellipseRadii )
 %
 % Description:
 %   Implements trigonometric operations to identify the point at which a
@@ -465,9 +454,10 @@ function [intersectionCoords, curvature, antiIntersectionCoords] = calcEllipseIn
     [intersectCoords,curvature] = calcEllipseIntersect([-3.7,0], 0, -9.1412, [9.1412, 8.4277] )
 %}
 
-% Store the sign of the radius values.  They radii must have the same sign,
-% but we do not test for this here as it would interfere with symbolic
-% computations
+% Store the sign of the radius values. They radii must have the same sign.
+if prod(sign(ellipseRadii))==-1
+    error('rayTraceCenteredSurfaces:incompatibleConvexity','The radii of the elliptical lens surface must have the same sign.');
+end
 radiiSign = sign(ellipseRadii(1));
 % Convert the radii to their absolute values
 ellipseRadii = abs(ellipseRadii);
@@ -477,7 +467,7 @@ ellipseRadii = abs(ellipseRadii);
 m = tan(theta);
 c = coordsInitial(2)-m*coordsInitial(1);
 
-% Obtain the pair of z and h coordinates that the line will intersect
+% Obtain the pair of z and h coordinates at which the line will intersect
 % the ellipse
 M = (1/ellipseRadii(1)^2) + (1/ellipseRadii(2)^2)* m^2;
 N = 2*(1/ellipseRadii(2)^2)*m*c - 2*(1/ellipseRadii(1)^2)*ellipseCenterZ;
