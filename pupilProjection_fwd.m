@@ -513,7 +513,12 @@ if isfield(sceneGeometry,'virtualImageFunc')
             catch ME
                 eyeWorldPoints(refractPointsIdx(ii),:) = nan;
                 nodalPointIntersectError(refractPointsIdx(ii)) = inf;
-            	warning('pupilProjection_fwd:rayTracingError',['Received the error ' ME.identifier ' during ray tracing. Returning nan for this point.']);
+                ME.identifier
+                switch ME.identifier
+                    case 'undefined'
+                    otherwise
+                        warning('pupilProjection_fwd:rayTracingError',['Received the error ' ME.identifier ' during ray tracing. Returning nan for this point.']);
+                end
             end
         end
     end
@@ -665,19 +670,27 @@ else
     try
         % Ellipse fitting with routine from the quadfit toolbox
         implicitEllipseParams = ellipsefit_direct( imagePoints(pupilPerimIdx(validPerimIdx),1), imagePoints(pupilPerimIdx(validPerimIdx),2));
-        % Convert the ellipse from implicit to transparent form
-        pupilEllipseOnImagePlane = ellipse_ex2transparent(ellipse_im2ex(implicitEllipseParams));
-        % place theta within the range of 0 to pi
-        if pupilEllipseOnImagePlane(5) < 0
-            pupilEllipseOnImagePlane(5) = pupilEllipseOnImagePlane(5)+pi;
-        end
-        % Get the error of the ellipse fit to the pupil points
-        pupilFitError = sqrt(nanmean(ellipsefit_distance( imagePoints(pupilPerimIdx(validPerimIdx),1), imagePoints(pupilPerimIdx(validPerimIdx),2),ellipse_transparent2ex(pupilEllipseOnImagePlane)).^2));
     catch ME
-        % In the event of an error, return nans for the ellipse
-        pupilEllipseOnImagePlane = nan(1,5);
-        warning('pupilProjection_fwd:ellipseFittingError',['Received the error ' ME.identifier ' during ellipse fitting. Returning nans for this ellipse.']);
+        % If the ellipse fit direct fails because of an inability to fit an
+        % ellipse to the provided points, return nans and issue a warning.
+        pupilEllipseOnImagePlane=nan(1,5);
+        pupilFitError = nan;
+        switch ME.identifier
+            case 'MATLAB:badsubscript'
+                warning('pupilProjection_fwd:ellipseFitOutOfBounds','Could not fit a valid pupil ellipse; returning nans.');
+            otherwise
+                warning('pupilProjection_fwd:ellipseFitUnknownError','Undefined error during ellipse fitting to pupil perimeter; returning nans.');
+        end
+        return
     end
+    % Convert the ellipse from implicit to transparent form
+    pupilEllipseOnImagePlane = ellipse_ex2transparent(ellipse_im2ex(implicitEllipseParams));
+    % place theta within the range of 0 to pi
+    if pupilEllipseOnImagePlane(5) < 0
+        pupilEllipseOnImagePlane(5) = pupilEllipseOnImagePlane(5)+pi;
+    end
+    % Get the error of the ellipse fit to the pupil points
+    pupilFitError = sqrt(nanmean(ellipsefit_distance( imagePoints(pupilPerimIdx(validPerimIdx),1), imagePoints(pupilPerimIdx(validPerimIdx),2),ellipse_transparent2ex(pupilEllipseOnImagePlane)).^2));
 end
 
 end % pupilProjection_fwd
