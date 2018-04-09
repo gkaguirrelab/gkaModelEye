@@ -1,4 +1,4 @@
-function virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, varargin )
+function virtualImageFuncStruct = compileVirtualImageFunc( sceneGeometry, varargin )
 % Function handles to ray tracing equations
 %
 % Syntax:
@@ -25,10 +25,10 @@ function virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, varar
 %                           to '/tmp/demo_virtualImageFunc'.
 %
 % Outputs:
-%   virtualImageFuncPointer - Structure. Includes the fields:
+%   virtualImageFuncStruct - Structure. Includes the fields:
 %                           'handle' - handle for the function
 %                           'path' -  full path to the stored mex file
-%                           'opticalSystem' - the optical system used to
+%                           'opticalSystem' - the optical system(s) used to
 %                               generate the function
 %
 % Examples:
@@ -36,28 +36,34 @@ function virtualImageFuncPointer = compileVirtualImageFunc( sceneGeometry, varar
     % Basic example with a compiled virtualImageFunc
     sceneGeometry = createSceneGeometry();
     sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry, '/tmp/demo_virtualImageFunc' );
-    [virtualEyeWorldPoint, nodalPointIntersectError] = sceneGeometry.virtualImageFunc.handle( [sceneGeometry.eye.pupilCenter(1) 2 0], [0 0 0 2], sceneGeometry.opticalSystem, sceneGeometry.extrinsicTranslationVector, sceneGeometry.eye.rotationCenters )
+    [virtualEyeWorldPoint, nodalPointIntersectError] = sceneGeometry.virtualImageFunc.handle( [-3.7 2 0], [0 0 0 2], sceneGeometry.virtualImageFunc.args{:} )
 %}
 %{
     % Compare computation time for MATLAB and compiled C code
     sceneGeometry = createSceneGeometry();
+    tic
     sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry, '/tmp/demo_virtualImageFunc' );
+    compileTime = toc;
     nComputes = 1000;
-    fprintf('\nTime to execute the virtualImageFunc (average over %d projections):\n',nComputes);
+    clc
+    fprintf('\nTime to execute virtualImageFunc (average over %d projections):\n',nComputes);
     % Native function
     tic
     for ii=1:nComputes
-        virtualImageFunc( [sceneGeometry.eye.pupilCenter(1) 2 0], [0 0 0 2], sceneGeometry.opticalSystem, sceneGeometry.extrinsicTranslationVector, sceneGeometry.eye.rotationCenters );
+        virtualImageFunc( [-3.7 2 0], [0 0 0 2], sceneGeometry.virtualImageFunc.args{:} );
     end
-    msecPerCompute = toc / nComputes * 1000;
-    fprintf('\tUsing the MATLAB function: %4.2f msecs.\n',msecPerCompute);
+    msecPerComputeNative = toc / nComputes * 1000;
+    fprintf('\tUsing the MATLAB function: %4.2f msecs.\n',msecPerComputeNative);
     % Compiled function
     tic
     for ii=1:nComputes
-        sceneGeometry.virtualImageFunc.handle( [sceneGeometry.eye.pupilCenter(1) 2 0], [0 0 0 2], sceneGeometry.opticalSystem, sceneGeometry.extrinsicTranslationVector, sceneGeometry.eye.rotationCenters );
+        sceneGeometry.virtualImageFunc.handle( [-3.7 2 0], [0 0 0 2], sceneGeometry.virtualImageFunc.args{:} );
     end
-    msecPerCompute = toc / nComputes * 1000;
-    fprintf('\tUsing the compiled function: %4.2f msecs.\n',msecPerCompute);
+    msecPerComputeCompile = toc / nComputes * 1000;
+    fprintf('\tUsing the compiled function: %4.2f msecs.\n',msecPerComputeCompile);
+    % Calculate the break-even point for perfoming the compilation
+    breakEvenComputes = round(compileTime/((msecPerComputeNative-msecPerComputeCompile)/1000));
+    fprintf('\nGiven a compile time of %4.2f seconds, break-even occurs when performing >%d computes.\n',compileTime,breakEvenComputes);
 %}
 
 %% input parser
@@ -85,7 +91,7 @@ end
 
 %% Compile virtualImageFunc
 % Define argument variables so the compiler can deduce variable types
-args = {[0,0,0], [0,0,0,0], sceneGeometry.opticalSystem, sceneGeometry.extrinsicTranslationVector, sceneGeometry.eye.rotationCenters};
+args = {[0,0,0], [0,0,0,0], sceneGeometry.virtualImageFunc.args{:}};
 % Change to the compile directory
 initialDir = cd(compileDir);
 % Compile the mex file
@@ -99,14 +105,23 @@ rmdir('codegen', 's');
 addpath(compileDir,'-end');
 % Change back to the initial directory
 cd(initialDir);
+
 % Return the path to the function as the output
-virtualImageFuncPointer.handle = @virtualImageFuncMex;
-virtualImageFuncPointer.path = fullfile(fileLocation.folder,fileLocation.name);
-virtualImageFuncPointer.opticalSystem = sceneGeometry.opticalSystem;
+virtualImageFuncStruct.handle = @virtualImageFuncMex;
+virtualImageFuncStruct.path = fullfile(fileLocation.folder,fileLocation.name);
+virtualImageFuncStruct.opticalSystem = sceneGeometry.virtualImageFunc.opticalSystem;
+
+% Remake the args
+virtualImageFuncStruct.args = {...
+    sceneGeometry.cameraExtrinsic.translation, ...
+    sceneGeometry.eye.rotationCenters, ...
+    sceneGeometry.virtualImageFunc.opticalSystem.p1p2, ...
+    sceneGeometry.virtualImageFunc.opticalSystem.p1p3};
+
 % Save a copy of this variable in the function directory. The saved
 % variable may be used to re-instantiate the function at a later point.
-filePath = fullfile(fileLocation.folder,'virtualImageFuncPointer');
-save(filePath,'virtualImageFuncPointer');
+filePath = fullfile(fileLocation.folder,'virtualImageFuncStruct');
+save(filePath,'virtualImageFuncStruct');
 
 end % compileVirtualImageFunc
 

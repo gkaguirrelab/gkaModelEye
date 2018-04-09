@@ -155,7 +155,7 @@ switch p.Results.species
             % Calculate the proportion change in radius 
             radiusScalerPerD = 1-a(1)/a(0);
             radiiNavFront = [14.26   10.43   10.27];
-            radiiNavFrontCorrected = @(D) radiiFrontNav.* (D.*radiusScalerPerD+1);
+            radiiNavFrontCorrected = @(D) radiiNavFront.* (D.*radiusScalerPerD+1);
             % Report the ratio of the Atchison and Navarro axial radii
             % for the front surface of the corneal; we use this below.
             atchNavScaler = a(0) ./ radiiNavFront(1)
@@ -171,20 +171,33 @@ switch p.Results.species
             b = R .* sqrt(1./(Q+1));
             % Taken from the prior block of code 
             atchNavScaler = 0.6410;
-            radiiNavBack = [a b b]./atchNavScaler
+            % Scale the overall back cornea ellipsoid to match Navarro
+            radiiNavBack = [a b b]./atchNavScaler;
+            % Now scale the relative horizontal and vertical axes so that
+            % the relationship between the horizontal (and vertical) radii
+            % and the axial radius is of the same proportion to the front
+            % surface in the Atchison model
+            radiiAtchFront0D = radiiAtchFront(0);
+            frontHorizToAxAtch = radiiAtchFront0D(2)/radiiAtchFront0D(1);
+            backHorizToAxAtch = b / a;
+            radiiNavFront0D = radiiNavFrontCorrected(0);
+            frontHorizToAxNav = radiiNavFront0D(2)/radiiNavFront0D(1);
+            backHorizToAxNav = radiiNavBack(2)/radiiNavBack(1);
+            targetBackHorizToAxNav = backHorizToAxAtch / frontHorizToAxAtch * frontHorizToAxNav;
+            radiiNavBackCorrected = [a a*targetBackHorizToAxNav a*targetBackHorizToAxNav]./atchNavScaler
         %}
-        eye.corneaFrontSurfaceRadii = [14.26    10.43    10.27] .* ...
+        eye.cornea.front.radii = [14.26    10.43    10.27] .* ...
             ((p.Results.sphericalAmetropia .* -0.0028)+1);
-        eye.corneaBackSurfaceRadii = [13.7716   11.7261   11.7261];
-                
+        eye.cornea.back.radii = [13.7716    9.3027    9.3027];
+        
         % We set the center of the cornea front surface ellipsoid so that
         % the axial apex is at position [0, 0, 0]
-        eye.corneaFrontSurfaceCenter = [-eye.corneaFrontSurfaceRadii(1) 0 0];
+        eye.cornea.front.center = [-eye.cornea.front.radii(1) 0 0];
                 
         % The center of the back cornea ellipsoid is positioned so that
         % there is 0.55 mm of corneal thickness between the front and back
         % surface of the cornea at the apex, following Atchison 2006.
-        eye.corneaBackSurfaceCenter = [-0.55-eye.corneaBackSurfaceRadii(1) 0 0];
+        eye.cornea.back.center = [-0.55-eye.cornea.back.radii(1) 0 0];
         
         
         %% Pupil
@@ -192,7 +205,7 @@ switch p.Results.species
         % the lens. The coordinate space of the model eye is define with
         % respect to the center of the pupil, so the p2 and p3 values are
         % zero
-        eye.pupilCenter = [-3.7 0 0];
+        eye.pupil.center = [-3.7 0 0];
         
         % The exit pupil of the eye is elliptical. Further, the
         % eccentricity and theta of the exit pupil ellipse changes with
@@ -269,7 +282,7 @@ switch p.Results.species
             % Fit a hand-tuned sigmoidal function
             sigFit = @(scaleX, shiftY, scaleY, x) (tanh((x-mean(exitRadius)).*scaleX)+shiftY)*scaleY;
             fitEccen = fit(exitRadiusInterp',exitEccenInterp',sigFit);
-            fprintf('eye.exitPupilEccenParams = [-%4.3f %4.3f %4.3f %4.3f];\n',mean(exitRadius),fitEccen.scaleX,fitEccen.shiftY,fitEccen.scaleY);
+            fprintf('eye.pupil.eccenParams = [-%4.3f %4.3f %4.3f %4.3f];\n',mean(exitRadius),fitEccen.scaleX,fitEccen.shiftY,fitEccen.scaleY);
             % Plot the fit
             figure
             plot(exitRadiusInterp,exitEccenInterp,'kx');
@@ -278,11 +291,11 @@ switch p.Results.species
         %}
         % Specify the params and equation that defines the exit pupil
         % ellipse. This can be invoked as a function using str2func.
-        eye.exitPupilEccenParams = [-1.723 4.796 0.976 0.047]; 
-        eye.exitPupilEccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',eye.exitPupilEccenParams(1),eye.exitPupilEccenParams(2),eye.exitPupilEccenParams(3),eye.exitPupilEccenParams(4)); 
+        eye.pupil.eccenParams = [-1.723 4.796 0.976 0.047]; 
+        eye.pupil.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',eye.pupil.eccenParams(1),eye.pupil.eccenParams(2),eye.pupil.eccenParams(3),eye.pupil.eccenParams(4)); 
         % The theta values of the exit pupil ellipse for eccentricities
         % less than and greater than zero.
-        eye.exitPupilThetaValues = [0  pi/2];
+        eye.pupil.thetas = [0  pi/2];
         
         
         %% Iris
@@ -313,7 +326,7 @@ switch p.Results.species
             xlabel('HVID radius in mm')
             ylabel('counts')
         %}
-        eye.irisRadius = 5.92;
+        eye.iris.radius = 5.92;
         
         % The iris is shifted slightly temporally and upward with respect
         % to the pupil center:
@@ -329,9 +342,9 @@ switch p.Results.species
         % the iris plane equal to the pupil plane.
         switch eyeLaterality
             case 'Right'
-                eye.irisCenter = [-3.7 0.15 0.1];
+                eye.iris.center = [-3.7 0.15 0.1];
             case 'Left'
-                eye.irisCenter = [-3.7 -0.15 0.1];
+                eye.iris.center = [-3.7 -0.15 0.1];
         end
         
         
@@ -358,21 +371,21 @@ switch p.Results.species
             solution.a
             solution.b
         %}
-        eye.lensFrontSurfaceR = 11.48;
-        eye.lensFrontSurfaceQ = -5;
-        a = eye.lensFrontSurfaceR * sqrt(abs( 1 / (eye.lensFrontSurfaceQ - 1 ) )) * sign(eye.lensFrontSurfaceQ);
-        b = eye.lensFrontSurfaceR / (eye.lensFrontSurfaceQ - 1 );
-        eye.lensFrontSurfaceRadii(1) = b;
-        eye.lensFrontSurfaceRadii(2:3) = a;
-        eye.lensFrontSurfaceCenter = [-3.7-eye.lensFrontSurfaceRadii(1) 0 0];
+        eye.lens.front.R = 11.48;
+        eye.lens.front.Q = -5;
+        a = eye.lens.front.R * sqrt(abs( 1 / (eye.lens.front.Q - 1 ) )) * sign(eye.lens.front.Q);
+        b = eye.lens.front.R / (eye.lens.front.Q - 1 );
+        eye.lens.front.radii(1) = b;
+        eye.lens.front.radii(2:3) = a;
+        eye.lens.front.center = [-3.7-eye.lens.front.radii(1) 0 0];
         
-        eye.lensBackSurfaceR = -5.9;
-        eye.lensBackSurfaceQ = -2;
-        a = eye.lensBackSurfaceR * sqrt(abs( 1 / (eye.lensBackSurfaceQ - 1 ) )) * sign(eye.lensBackSurfaceQ);
-        b = eye.lensBackSurfaceR / (eye.lensBackSurfaceQ - 1 );
-        eye.lensBackSurfaceRadii(1) = b;
-        eye.lensBackSurfaceRadii(2:3) = a;
-        eye.lensBackSurfaceCenter = [-7.3-eye.lensBackSurfaceRadii(1) 0 0];
+        eye.lens.back.R = -5.9;
+        eye.lens.back.Q = -2;
+        a = eye.lens.back.R * sqrt(abs( 1 / (eye.lens.back.Q - 1 ) )) * sign(eye.lens.back.Q);
+        b = eye.lens.back.R / (eye.lens.back.Q - 1 );
+        eye.lens.back.radii(1) = b;
+        eye.lens.back.radii(2:3) = a;
+        eye.lens.back.center = [-7.3-eye.lens.back.radii(1) 0 0];
         
         
         %% Posterior chamber
@@ -394,7 +407,7 @@ switch p.Results.species
         Rzy = -12.72+0.004*p.Results.sphericalAmetropia;
         Qzx = 0.27+0.026*p.Results.sphericalAmetropia;
         Qzy = 0.25+0.017*p.Results.sphericalAmetropia;
-        eye.posteriorChamberRadii = [ -(Rzx/(Qzx+1)) -(Rzx*sqrt(1/(Qzx+1))) -(Rzy*sqrt(1/(Qzy+1)))];
+        eye.posteriorChamber.radii = [ -(Rzx/(Qzx+1)) -(Rzx*sqrt(1/(Qzx+1))) -(Rzy*sqrt(1/(Qzy+1)))];
 
         % The model holds the depth of the anterior chamber constant. To
         % position the posterior chamber, we need to know the distance
@@ -417,7 +430,7 @@ switch p.Results.species
         
         % Compute and store axial length
         if isempty(p.Results.axialLength)
-            eye.axialLength = posteriorChamberApexDepth + eye.posteriorChamberRadii(1)*2;
+            eye.axialLength = posteriorChamberApexDepth + eye.posteriorChamber.radii(1)*2;
         else
             % If a specific axial length was passed (perhaps obtained by
             % measurement using the IOL Master apparatus), set the model
@@ -431,13 +444,13 @@ switch p.Results.species
             % pupillary) axis of the eye. May want to correct for this
             % somewhere.
             scaleFactor = (p.Results.axialLength - posteriorChamberApexDepth) / (eye.posteriorChamberRadii(1)*2);
-            eye.posteriorChamberRadii = eye.posteriorChamberRadii .* scaleFactor;
+            eye.posteriorChamber.radii = eye.posteriorChamber.radii .* scaleFactor;
             eye.axialLength = p.Results.axialLength;
         end
         
         % Set the depth of the center of the posterior chamber
-        eye.posteriorChamberCenter = ...
-            [(-posteriorChamberApexDepth - eye.posteriorChamberRadii(1)) 0 0];
+        eye.posteriorChamber.center = ...
+            [(-posteriorChamberApexDepth - eye.posteriorChamber.radii(1)) 0 0];
         
 
         %% Rotation centers
@@ -534,9 +547,9 @@ switch p.Results.species
         % emmetropic size
         emmetropicPostChamberRadii = [10.1653543307087 11.455772536562 11.3771138695189];
         for dim=1:3
-            eye.rotationCenters.azi(dim) = eye.rotationCenters.azi(dim) .* (eye.posteriorChamberRadii(dim)/emmetropicPostChamberRadii(dim));
-            eye.rotationCenters.ele(dim) = eye.rotationCenters.ele(dim) .* (eye.posteriorChamberRadii(dim)/emmetropicPostChamberRadii(dim));
-            eye.rotationCenters.tor(dim) = eye.rotationCenters.tor(dim) .* (eye.posteriorChamberRadii(dim)/emmetropicPostChamberRadii(dim));
+            eye.rotationCenters.azi(dim) = eye.rotationCenters.azi(dim) .* (eye.posteriorChamber.radii(dim)/emmetropicPostChamberRadii(dim));
+            eye.rotationCenters.ele(dim) = eye.rotationCenters.ele(dim) .* (eye.posteriorChamber.radii(dim)/emmetropicPostChamberRadii(dim));
+            eye.rotationCenters.tor(dim) = eye.rotationCenters.tor(dim) .* (eye.posteriorChamber.radii(dim)/emmetropicPostChamberRadii(dim));
         end
 
         
@@ -595,21 +608,21 @@ switch p.Results.species
         if isempty(p.Results.kappaAngle)
             switch eyeLaterality
                 case 'Right'
-                    eye.kappaAngle(1) = atand((15.0924/(eye.axialLength-8.5000))*tand(5));
+                    eye.kappa(1) = atand((15.0924/(eye.axialLength-8.5000))*tand(5));
                 case 'Left'
-                    eye.kappaAngle(1) = -atand((15.0924/(eye.axialLength-8.5000))*tand(5));
+                    eye.kappa(1) = -atand((15.0924/(eye.axialLength-8.5000))*tand(5));
             end
-            eye.kappaAngle(2) = atand((15.0924/(eye.axialLength-8.5000))*tand(2.15));
+            eye.kappa(2) = atand((15.0924/(eye.axialLength-8.5000))*tand(2.15));
         else
-            eye.kappaAngle = p.Results.kappaAngle;
+            eye.kappa = p.Results.kappaAngle;
         end
         
         
         %% Refractive indices
         % Obtain refractive index values for this spectral domain.
-        eye.corneaRefractiveIndex = returnRefractiveIndex( 'cornea', p.Results.spectralDomain );
-        eye.aqueousRefractiveIndex = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
-        eye.lensRefractiveIndex = returnRefractiveIndex( 'lens', p.Results.spectralDomain );
+        eye.index.cornea = returnRefractiveIndex( 'cornea', p.Results.spectralDomain );
+        eye.index.aqueous = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
+        eye.index.lens = returnRefractiveIndex( 'lens', p.Results.spectralDomain );
 
     %% Dog eye
     case {'dog','Dog','canine','Canine'}
@@ -630,27 +643,27 @@ switch p.Results.species
         %% Cornea front surface
         % I cannot find a value for the asphericity, so am using the human
         % value
-        eye.corneaFrontSurfaceR = 8.375;
-        eye.corneaFrontSurfaceQ = -0.15;        
-        a = eye.corneaFrontSurfaceR / ( eye.corneaFrontSurfaceQ + 1 );
-        b = eye.corneaFrontSurfaceR * sqrt(1/(eye.corneaFrontSurfaceQ+1)) ;
-        eye.corneaFrontSurfaceRadii(1) = a;
-        eye.corneaFrontSurfaceRadii(2:3) = b;
+        eye.cornea.front.R = 8.375;
+        eye.cornea.front.Q = -0.15;        
+        a = eye.cornea.front.R / ( eye.cornea.front.Q + 1 );
+        b = eye.cornea.front.R * sqrt(1/(eye.cornea.front.Q+1)) ;
+        eye.cornea.front.radii(1) = a;
+        eye.cornea.front.radii(2:3) = b;
         
         % We set the axial apex of the corneal front surface at position
         % [0, 0, 0]
-        eye.corneaFrontSurfaceCenter = [-eye.corneaFrontSurfaceRadii(1) 0 0];
+        eye.cornea.front.center = [-eye.cornea.front.radii(1) 0 0];
         
         %% Cornea back surface
         % Asphericity is the human value.
-        eye.corneaBackSurfaceR = 8;
-        eye.corneaBackSurfaceQ = -0.275;
+        eye.cornea.back.R = 8;
+        eye.cornea.back.Q = -0.275;
         
         % Compute the radii of the ellipsoid
-        a = eye.corneaBackSurfaceR / ( eye.corneaBackSurfaceQ + 1 );
-        b = eye.corneaBackSurfaceR * sqrt(1/(eye.corneaBackSurfaceQ+1)) ;
-        eye.corneaBackSurfaceRadii(1) = a;
-        eye.corneaBackSurfaceRadii(2:3) = b;
+        a = eye.cornea.back.R / ( eye.cornea.back.Q + 1 );
+        b = eye.cornea.back.R * sqrt(1/(eye.cornea.back.Q+1)) ;
+        eye.cornea.back.radii(1) = a;
+        eye.cornea.back.radii(2:3) = b;
         
         % The thickness of the canine cornea is given as 0.587 mm by:
         %   Alario, Anthony F., and Christopher G. Pirie. "Central corneal
@@ -661,7 +674,7 @@ switch p.Results.species
         % The center of the cornea circle for the back surface is
         % positioned to provide this thickness  between
         % the front and back surface of the cornea at the apex. 
-        eye.corneaBackSurfaceCenter = [-0.587-eye.corneaBackSurfaceRadii(1) 0 0];
+        eye.cornea.back.center = [-0.587-eye.cornea.back.radii(1) 0 0];
         
 
         %% Pupil
@@ -675,34 +688,64 @@ switch p.Results.species
         %
         % gives an anterior chamber depth of 4.29 mm. We must then add
         % corneal thickness to properly position the pupil plane.
-        eye.pupilCenter = [-4.877 0 0];
+        eye.pupil.center = [-4.877 0 0];
+        
+        % We assume that the canine exit pupil is circular
+        eye.pupil.eccenParams = []; 
+        eye.pupil.eccenFcnString = sprintf('@(x) 0'); 
+        % The theta values of the exit pupil ellipse for eccentricities
+        % less than and greater than zero.
+        eye.pupil.thetas = [0  0];
         
         
         %% Iris
         % Need values for this. Apparently the iris plane is tilted
         % substantially in the dog, so some estimate of this will be
         % needed.
-        eye.irisRadius = 7;
-       	eye.irisCenter = [-4.877 0 0];
+        eye.iris.radius = 7;
+       	eye.iris.center = [-4.877 0 0];
 
 
         %% Posterior chamber
-        eye.posteriorChamberRadii = [ 8.25 8.25 8.25];
-        eye.axialLength = p.Results.axialLength;
+        eye.posteriorChamber.radii = [ 8.25 8.25 8.25];
+        
+        % This is the human value; I'm sure a canine value is out there.
+        posteriorChamberApexDepth = 3.25;
+
+        if isempty(p.Results.axialLength)
+            eye.axialLength = posteriorChamberApexDepth + eye.posteriorChamber.radii(1)*2;
+        else
+            % If a specific axial length was passed (perhaps obtained by
+            % measurement using the IOL Master apparatus), set the model
+            % eye to have this length, and scale the other dimensions of
+            % the posterior chamber to maintain the specified ametropia. We
+            % adjust the axial length for the component of the anterior
+            % chamber that contibutes to length (posteriorChamberApexDepth)
+            %
+            % GKA to follow up: Axial length is usually measured with the
+            % IOL master along the visual (as opposed to optic or
+            % pupillary) axis of the eye. May want to correct for this
+            % somewhere.
+            scaleFactor = (p.Results.axialLength - posteriorChamberApexDepth) / (eye.posteriorChamberRadii(1)*2);
+            eye.posteriorChamber.radii = eye.posteriorChamber.radii .* scaleFactor;
+            eye.axialLength = p.Results.axialLength;
+        end
         
         % Set the depth of the center of the posterior chamber
-        eye.posteriorChamberCenter = ...
-            [(-4.2 - eye.posteriorChamberRadii(1)) 0 0];
+        eye.posteriorChamber.center = ...
+            [(-4.2 - eye.posteriorChamber.radii(1)) 0 0];
         
         eye.rotationCenters.azi = [-10 0 0];
         eye.rotationCenters.ele = [-10 0 0];
         eye.rotationCenters.tor = [0 0 0];
 
+        
         %% Refractive indices
         % Using the human values for now
-        eye.corneaRefractiveIndex = returnRefractiveIndex( 'cornea', p.Results.spectralDomain );
-        eye.aqueousRefractiveIndex = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
-        eye.lensRefractiveIndex = returnRefractiveIndex( 'lens', p.Results.spectralDomain );
+        % Obtain refractive index values for this spectral domain.
+        eye.index.cornea = returnRefractiveIndex( 'cornea', p.Results.spectralDomain );
+        eye.index.aqueous = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
+        eye.index.lens = returnRefractiveIndex( 'lens', p.Results.spectralDomain );
 
         
     otherwise
@@ -710,7 +753,7 @@ switch p.Results.species
 end
 
 % Meta data regarding the units of the model
-eye.meta = p.Results;
+eye.meta.p = p.Results;
 eye.meta.units = 'mm';
 eye.meta.coordinates = 'eyeWorld';
 eye.meta.dimensions = {'depth (axial)' 'horizontal' 'vertical'};

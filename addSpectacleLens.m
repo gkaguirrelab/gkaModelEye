@@ -12,12 +12,10 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %	curvature for rayTraceCenteredSphericalSurfaces().
 %
 % Inputs:
-%   opticalSystemIn       - An mx3 or mx4 matrix, where m is the number of
+%   opticalSystemIn       - An mx4 matrix, where m is the number of
 %                           surfaces in the model, including the initial
 %                           position of the ray. Each row contains the
 %                           values:
-%                               [center, radius, refractiveIndex]
-%                           or
 %                               [center, radiusZ, radiusH, refractiveIndex]
 %                           that define an elliptical lens.
 %   lensRefractionDiopters - Scalar. Refractive power in units of 
@@ -38,7 +36,7 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %                           plano face of the lens.
 %
 % Outputs:
-%   opticalSystemOut      - An (m+2)x3 matrix, corresponding to the
+%   opticalSystemOut      - An (m+2)x4 matrix, corresponding to the
 %                           opticalSystemIn with the addition of the
 %                           spectacle lens
 %   p                     - The parameters returned by the input parser.
@@ -49,10 +47,10 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
     % Obtain the eye parameters from the modelEyeParameters() function
     eye = modelEyeParameters('sphericalAmetropia',-2);
     % Define an optical system
-    cornealThickness = eye.corneaBackSurfaceCenter(1) - eye.corneaFrontSurfaceCenter(1);
-    opticalSystem = [nan, nan, eye.aqueousRefractiveIndex; ...
-        -eye.corneaBackSurfaceR-cornealThickness, -eye.corneaBackSurfaceR, eye.corneaRefractiveIndex; ...
-        -eye.corneaFrontSurfaceR, -eye.corneaFrontSurfaceR, 1.0];
+    cornealThickness = eye.cornea.back.center(1) - eye.cornea.front.center(1);
+    opticalSystem = [nan, nan, nan, sceneGeometry.eye.index.aqueous; ...
+        -sceneGeometry.eye.cornea.back.radii(1)-cornealThickness, -sceneGeometry.eye.cornea.back.radii(1), -sceneGeometry.eye.cornea.back.radii(2),  sceneGeometry.eye.index.cornea; ...
+        -sceneGeometry.eye.cornea.front.radii(1), -sceneGeometry.eye.cornea.front.radii(1), -sceneGeometry.eye.cornea.front.radii(2), 1];
     % Add a minus lens for the correction of myopia
     opticalSystem=addSpectacleLens(opticalSystem, -2);
     % Define FigureFlag as a structure so we can provide plot limits
@@ -64,7 +62,7 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
     clear coords
     clear theta
     theta = deg2rad(-30);
-    coords = [eye.pupilCenter(1) pupilRadius];
+    coords = [eye.pupil.center(1) pupilRadius];
     % Perform the ray tracing
     outputRay = rayTraceCenteredSphericalSurfaces(coords, theta, opticalSystem, figureFlag);
 %}

@@ -73,7 +73,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %                           virtual extension) intersects the optical axis.
 %                           The second column of this matrix will contain
 %                           only zeros.
-%   intersectionCoords    - An mx2 matrix which procides at each surface
+%   intersectionCoords    - An mx2 matrix which provides at each surface
 %                           the point at which the ray intersects the
 %                           surface.
 %
@@ -100,9 +100,9 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %{
     %% Example 2 - Pupil through cornea
     % A model of the passage of a point on the pupil perimeter through
-    % the cornea (units in mm)
+    % the axial cross-section of the cornea (units in mm)
     sceneGeometry = createSceneGeometry();
-    outputRay = rayTraceCenteredSurfaces([sceneGeometry.eye.pupilCenter(1) 2], deg2rad(-10), sceneGeometry.opticalSystem, true)
+    outputRay = rayTraceCenteredSurfaces([-3.7 2], deg2rad(-10), sceneGeometry.virtualImageFunc.opticalSystem.p1p2, true)
 %}
 %{
     %% Example 3 - Pupil through cornea and spectacle, plot range limits
@@ -157,6 +157,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     theta = deg2rad(45);
     outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem);
 %}
+
 
 %% Tell codegen to ignore these functions
 % This is needed for compilation of the function as standalone mex file
@@ -250,6 +251,8 @@ curvature = zeros(nSurfaces,1);
 curvatureCenters = zeros(nSurfaces,1);
 intersectionCoords=zeros(nSurfaces,2);
 intersectionCoords(1,:)=coordsInitial;
+antiIntersectionCoords=zeros(nSurfaces,2);
+antiIntersectionCoords(1,:)=coordsInitial;
 thetas = zeros(nSurfaces,1);
 thetas(1)=thetaInitial;
 relativeIndices = zeros(nSurfaces,1);
@@ -374,7 +377,10 @@ if figureFlag.show
     end
     % Replot the refline
     if figureFlag.refLine
-        plot([min(imageCoords(:,1)),max(imageCoords(:,1))],[0,0],'-k');
+        yl = [min([imageCoords(:,1); intersectionCoords(:,1); opticalSystem(:,1)]),max([imageCoords(:,1); intersectionCoords(:,1); opticalSystem(:,1)])];
+        yl(1) = yl(1)-(yl(1)/3)*sign(yl(1));
+        yl(2) = yl(2)+yl(1)/3*sign(yl(1));
+        plot(yl,[0,0],'-k');
     end
     % Add some labels
     if figureFlag.textLabels
@@ -415,11 +421,11 @@ plot(opticalSystem(1)+xp,yp,'-k');
 end
 
 
-function [intersectionCoords, curvature] = calcEllipseIntersect(coordsInitial, theta, ellipseCenterZ, ellipseRadii )
+function [intersectionCoords, curvature, antiIntersectionCoords] = calcEllipseIntersect(coordsInitial, theta, ellipseCenterZ, ellipseRadii )
 % Returns coords and curvature of an ellipse intersected by a ray 
 %
 % Syntax:
-%  [intersectionCoords, curvature] = calcEllipseIntersect(coordsInitial, theta, ellipseCenterZ, ellipseRadii )
+%  [intersectionCoords, curvature, antiIntersectionCoords] = calcEllipseIntersect(coordsInitial, theta, ellipseCenterZ, ellipseRadii )
 %
 % Description:
 %   Implements trigonometric operations to identify the point at which a
