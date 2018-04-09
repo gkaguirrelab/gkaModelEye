@@ -294,9 +294,9 @@ switch p.Results.species
         eye.pupil.eccenParams = [-1.723 4.796 0.976 0.047]; 
         eye.pupil.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',eye.pupil.eccenParams(1),eye.pupil.eccenParams(2),eye.pupil.eccenParams(3),eye.pupil.eccenParams(4)); 
         % The theta values of the exit pupil ellipse for eccentricities
-        % less than, and greater than, zero. We have the structure here to
-        % add a bit of tilt from vertical by eye, but not currently using
-        % it.
+        % less than, and greater than, zero. We have structure here to add
+        % a bit of tilt from vertical by laterality, but are not currently
+        % using it.
         switch eyeLaterality
             case 'Right'
                 eye.pupil.thetas = [0  pi/2];
@@ -402,7 +402,11 @@ switch p.Results.species
         % the calculations here and save only the corresponding radii.
         % Calculated using the formula for a positive Q value. We can
         % compare the posterior chamber radii calculated here to those
-        % reported in Atchison 2005, and we find they are very similar.
+        % reported in Atchison 2005, and we find they are very similar:
+        %
+        %   Atchison, David A., et al. "Shape of the retinal surface in
+        %   emmetropia and myopia." Investigative ophthalmology & visual
+        %   science 46.8 (2005): 2698-2707.
         %{
             eye = modelEyeParameters();
             fprintf('Atchison emmetropic eye 2005, posterior chamber radii [axial x horizontal x vertical]:\n');
@@ -716,7 +720,7 @@ switch p.Results.species
         %% Posterior chamber
         eye.posteriorChamber.radii = [ 8.25 8.25 8.25];
         
-        % This is the human value; I'm sure a canine value is out there.
+        % This is the human value; Need to do the computation for the dog.
         posteriorChamberApexDepth = 3.25;
 
         if isempty(p.Results.axialLength)
@@ -728,11 +732,6 @@ switch p.Results.species
             % the posterior chamber to maintain the specified ametropia. We
             % adjust the axial length for the component of the anterior
             % chamber that contibutes to length (posteriorChamberApexDepth)
-            %
-            % GKA to follow up: Axial length is usually measured with the
-            % IOL master along the visual (as opposed to optic or
-            % pupillary) axis of the eye. May want to correct for this
-            % somewhere.
             scaleFactor = (p.Results.axialLength - posteriorChamberApexDepth) / (eye.posteriorChamberRadii(1)*2);
             eye.posteriorChamber.radii = eye.posteriorChamber.radii .* scaleFactor;
             eye.axialLength = p.Results.axialLength;
