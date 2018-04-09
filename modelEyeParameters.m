@@ -450,7 +450,7 @@ switch p.Results.species
             % IOL master along the visual (as opposed to optic or
             % pupillary) axis of the eye. May want to correct for this
             % somewhere.
-            scaleFactor = (p.Results.axialLength - posteriorChamberApexDepth) / (eye.posteriorChamberRadii(1)*2);
+            scaleFactor = (p.Results.axialLength - posteriorChamberApexDepth) / (eye.posteriorChamber.radii(1)*2);
             eye.posteriorChamber.radii = eye.posteriorChamber.radii .* scaleFactor;
             eye.axialLength = p.Results.axialLength;
         end

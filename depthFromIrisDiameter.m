@@ -100,7 +100,7 @@ hvidRadiusSD = 0.28;
 % +- 1 and 2 SD sizes of the iris.
 
 % Set the x0 position for the search to be the passed scene geometry
-x0 = sceneGeometry.extrinsicTranslationVector(3);
+x0 = sceneGeometry.cameraExtrinsic.translation(3);
 
 for sizeSD = 0:1
     assumedIrisRadius = hvidRadiusMean + hvidRadiusSD*sizeSD;
@@ -109,7 +109,7 @@ end
     function fVal = objfun(x)
         candidateSceneGeometry = sceneGeometry;
         candidateSceneGeometry.eye.irisRadius = assumedIrisRadius;
-        candidateSceneGeometry.extrinsicTranslationVector(3) = x;
+        candidateSceneGeometry.cameraExtrinsic.translation(3) = x;
         [~, imagePoints, ~, ~, pointLabels] = ...
             pupilProjection_fwd([0 0 0 1], candidateSceneGeometry, 'fullEyeModelFlag', true, 'nIrisPerimPoints', 100);
         idx = find(strcmp(pointLabels,'irisPerimeter'));
