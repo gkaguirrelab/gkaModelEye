@@ -349,9 +349,9 @@ switch p.Results.species
         % the iris plane equal to the pupil plane.
         switch eyeLaterality
             case 'Right'
-                eye.iris.center = [-3.7 0.15 0.1];
-            case 'Left'
                 eye.iris.center = [-3.7 -0.15 0.1];
+            case 'Left'
+                eye.iris.center = [-3.7 0.15 0.1];
         end
         
         
