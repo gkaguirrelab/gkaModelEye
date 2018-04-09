@@ -367,9 +367,12 @@ if figureFlag.show
     if figureFlag.imageLines
         plot([imageCoords(ii,1) intersectionCoords(ii,1)],[imageCoords(ii,2) intersectionCoords(ii,2)],'-b');
     end
-    % Plot the ray path
+    % Plot the ray path, which is a triple length output ray
     if figureFlag.rayLines
-        plot([imageCoords(ii,1) intersectionCoords(ii,1)],[imageCoords(ii,2) intersectionCoords(ii,2)],'-r');
+        slope = tan(thetas(ii)+pi);
+        norm = sqrt(slope^2+1);
+        finalRay = [intersectionCoords(ii,:); [intersectionCoords(ii,1)+(3/norm) intersectionCoords(ii,2)+(3*slope/norm)]];
+        plot([finalRay(1,1) finalRay(2,1)],[finalRay(1,2) finalRay(2,2)],'-r');
     end    
     % Plot the output unit ray vector
     if figureFlag.finalUnitRay
@@ -483,7 +486,13 @@ hCoords = [m*zCoords(1) + c, m*zCoords(2) + c];
 
 % If the radiiSign is positive, report the coordinates on the left-hand
 % side of the ellipse, otherwise report the coordinates on the right
-intersectionCoords = [zCoords((radiiSign/2)+1.5),hCoords((radiiSign/2)+1.5)];
+if radiiSign<0
+    [~,rightIdx] = max(zCoords);
+    intersectionCoords = [zCoords(rightIdx),hCoords(rightIdx)];
+else
+    [~,leftIdx] = min(zCoords);
+    intersectionCoords = [zCoords(leftIdx),hCoords(leftIdx)];
+end
 
 % Calculate the radius of curvature at the point of intersection. If
 % radiiSign is negative, report a negative radius of curvature
