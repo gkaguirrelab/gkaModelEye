@@ -92,6 +92,30 @@ else
 end
 
 
+%% Remove pre-existing functions from the path
+% It may be the case that the virtualImageFuncMex may be on the path from a
+% prior analysis. If so, remove this
+
+% Detect the case in which the current directory itself contains a compiled
+% virtualImageFuncMex file, in which case the user needs to change
+% directories
+if strcmp(pwd(),fileparts(which('virtualImageFuncMex')))
+    error('compileVirtualImageFunc:dirConflict','The current folder itself contains a compiled virtualImageFunc. Change directories to avoid function shadowing.')
+end
+
+% Check if there is a virtualImageFuncMex on the file path. If so, remove
+% it.
+notDoneFlag = true;
+while notDoneFlag
+    funcPath = which('virtualImageFuncMex');
+    if isempty(funcPath)
+        notDoneFlag = false;
+    else
+        rmpath(fileparts(funcPath));
+    end
+end
+
+
 %% Compile virtualImageFunc
 % Define argument variables so the compiler can deduce variable types
 args = {[0,0,0], [0,0,0,0], sceneGeometry.virtualImageFunc.args{:}};
