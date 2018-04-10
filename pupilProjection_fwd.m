@@ -515,9 +515,10 @@ if isfield(sceneGeometry,'virtualImageFunc')
                 nodalPointIntersectError(refractPointsIdx(ii)) = inf;
                 ME.identifier
                 switch ME.identifier
-                    case 'undefined'
+                    case 'Coder:toolbox:ElFunDomainError'
+                        warning('pupilProjection_fwd:rayTracingError','virtualImageFuncMex experienced an error, perhaps due to total internal reflection at a surface; returning nans for this point.');
                     otherwise
-                        warning('pupilProjection_fwd:rayTracingError',['Received the error ' ME.identifier ' during ray tracing. Returning nan for this point.']);
+                        warning('pupilProjection_fwd:rayTracingUnknown',['Received the error ' ME.identifier ' during ray tracing; returning nans for this point.']);
                 end
             end
         end
