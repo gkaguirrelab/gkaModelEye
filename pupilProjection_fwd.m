@@ -99,6 +99,8 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     eyePose = [-10 5 0 3];
     % Obtain the pupil ellipse parameters in transparent format
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
+    % Test against 4/1/2018 cached result for eyePose [-10 5 0 3]
+    assert(max(abs(pupilEllipseOnImagePlane -  [2.739864849789935e+02 2.215036804371633e+02 1.764122079488454e+04 0.193258910639646 2.151744146100150])) < 1e-6)
 %}
 %{
     %% Basic forward projection with a compiled virtualImageFunc
@@ -109,6 +111,8 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     eyePose = [-10 5 0 3];
     % Obtain the pupil ellipse parameters in transparent format
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
+    % Test against 4/1/2018 cached result for eyePose [-10 5 0 3]
+    assert(max(abs(pupilEllipseOnImagePlane -  [2.739864849789935e+02 2.215036804371633e+02 1.764122079488454e+04 0.193258910639646 2.151744146100150])) < 1e-6)
 %}
 %{
     %% Plot the pupil ellipse for various eye poses
