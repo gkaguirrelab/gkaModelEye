@@ -685,7 +685,7 @@ else
         pupilFitError = nan;
         switch ME.identifier
             case {'MATLAB:badsubscript','MATLAB:realsqrt:complexResult','MATLAB:expectedReal','MATLAB:quad2dproj:expectedFinite'}
-                warning('pupilProjection_fwd:ellipseFitFailed','Could not fit a valid pupil ellipse to the pupil points; returning nans.');
+                warning('pupilProjection_fwd:ellipseFitFailed','Could not fit a valid ellipse to the pupil points; returning nans.');
             otherwise
                 warning('pupilProjection_fwd:ellipseFitUnknownError','Undefined error during ellipse fitting to pupil perimeter; returning nans.');
         end
