@@ -22,6 +22,10 @@ function n = returnRefractiveIndex( material, spectralDomain )
 % Outputs:
 %   n                     - The requested index of refraction.
 %
+% Examples:
+%{
+    n = returnRefractiveIndex( 'cornea', 'visible' )
+%}
 
 %% input parser
 p = inputParser;

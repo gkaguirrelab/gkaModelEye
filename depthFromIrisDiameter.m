@@ -38,7 +38,7 @@ function [cameraDepthMean, cameraDepthSD] = depthFromIrisDiameter( sceneGeometry
     sceneGeometry = createSceneGeometry();
     % Calculate what the observed iris diameter should be at 100 mm
     veridicalSceneGeometry = sceneGeometry;
-    veridicalSceneGeometry.extrinsicTranslationVector(3) = 100;
+    veridicalSceneGeometry.cameraExtrinsic.translation(3) = 100;
     [~, imagePoints, ~, ~, pointLabels] = ...
     	pupilProjection_fwd([0 0 0 1], veridicalSceneGeometry, 'fullEyeModelFlag', true, 'nIrisPerimPoints', 100);
     idx = find(strcmp(pointLabels,'irisPerimeter'));
@@ -48,7 +48,8 @@ function [cameraDepthMean, cameraDepthSD] = depthFromIrisDiameter( sceneGeometry
     cameraDepthMean = ...
         depthFromIrisDiameter( sceneGeometry, observedIrisDiamPixels );
     % Report the results
-    fprintf('Veridical camera depth: %4.0f, recovered camera depth: %4.0f \n',veridicalSceneGeometry.extrinsicTranslationVector(3),cameraDepthMean);
+    fprintf('Veridical camera depth: %4.0f, recovered camera depth: %4.0f \n',veridicalSceneGeometry.cameraExtrinsic.translation(3),cameraDepthMean);
+    assert( abs( veridicalSceneGeometry.cameraExtrinsic.translation(3) - cameraDepthMean) < 1e-4);
 %}
 
 %% input parser

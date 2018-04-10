@@ -79,7 +79,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %
 % Examples:
 %{
-    %% Example 1 - Elagha 2017
+    %% Elagha 2017 numerical example
     % The paper provides a numerical example in section C which is
     % implemented here as an example. Compare the returned theta values
     % with those given on page 340, section C.
@@ -92,30 +92,34 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     for ii=1:length(thetas)
         fprintf('theta%d: %f \n',ii-1,rad2deg(thetas(ii)));
     end
-    fprintf('Elegha gives a final image distance of 17.768432. we obtain:\n')
-    fprintf('i5 - c5 = K4 = %f \n',imageCoords(end,1)-opticalSystem(5,1));
+    finalImageDistanceOurs = imageCoords(end,1)-opticalSystem(5,1);
+    finalImageDistanceElagha = 17.768432;
+    fprintf('Elegha gives a final image distance of %4.2f.\n',finalImageDistanceElagha)
+    fprintf('We obtain: i5 - c5 = K4 = %4.2f \n',finalImageDistanceOurs);
+    assert( abs(finalImageDistanceOurs - finalImageDistanceElagha) < 1e-4);
 %}
 %{
-    %% Example 2 - Pupil through cornea
+    %% Pupil through cornea
     % A model of the passage of a point on the pupil perimeter through
     % the axial cross-section of the cornea (units in mm)
     sceneGeometry = createSceneGeometry();
-    outputRay = rayTraceCenteredSurfaces([-3.7 2], deg2rad(-10), sceneGeometry.virtualImageFunc.opticalSystem.p1p2, true)
+    outputRay = rayTraceCenteredSurfaces([-3.7 2], deg2rad(-10), sceneGeometry.virtualImageFunc.opticalSystem.p1p2, true);
+    % Compare the output to value calculated on April 10, 2018
+    outputRayStored = [-0.1248    1.3770; 0.8307    1.0822];
+    assert ( max(max(abs(outputRayStored - outputRay))) < 1e-4)
 %}
 %{
-    %% Example 3 - Pupil through cornea and spectacle, plot range limits
+    %% Pupil through cornea and spectacle, plot range limits
     % A model of the passage of a point on the pupil perimeter through
     % the cornea and spectacle lens (units in mm)
     %  Create a myopic eye
     sceneGeometry = createSceneGeometry('sphericalAmetropia',-2);
     pupilRadius = 2;
     theta = deg2rad(-10);
-    coords = [sceneGeometry.eye.pupilCenter(1) pupilRadius];
-    opticalSystem = sceneGeometry.opticalSystem;
+    coords = [sceneGeometry.eye.pupil.center(1) pupilRadius];
+    opticalSystem = sceneGeometry.virtualImageFunc.opticalSystem.p1p2;
     % Add a -2 diopter lens for the correction of myopia
     opticalSystem=addSpectacleLens(opticalSystem, -2);
-    % Try this with the surfaces defined in both dimensions
-    opticalSystem = [opticalSystem(:,1:2) opticalSystem(:,2) opticalSystem(:,3)];
     % Define FigureFlag as a structure with limits on the plot range
     clear figureFlag
     figureFlag.zLim = [-20 20];
@@ -123,7 +127,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem, figureFlag)
 %}
 %{
-    %% Example 4 - Pupil through cornea, multiple points and rays
+    %% Pupil through cornea, multiple points and rays
     sceneGeometry = createSceneGeometry();
     pupilRadius = 2;
     % Define FigureFlag as a structure, and set the new field to false so
@@ -135,12 +139,12 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     figureFlag.textLabels = false;
     for theta = -35:70:35
         for pupilRadius = -2:4:2
-            rayTraceCenteredSurfaces([eye.pupilCenter(1) pupilRadius], theta, sceneGeometry.opticalSystem, figureFlag);
+            rayTraceCenteredSurfaces([sceneGeometry.eye.pupil.center(1) pupilRadius], theta, sceneGeometry.virtualImageFunc.opticalSystem.p1p2, figureFlag);
         end
     end
 %}
 %{
-    %% Example 7 - Function behavior with a non-intersecting ray
+    %% Function behavior with a non-intersecting ray
     coords = [0 0];
     opticalSystem=[nan nan 1.5; 20 10 1.0];
     % This ray intersects the surface. Function returns without error.
