@@ -672,25 +672,24 @@ else
         implicitEllipseParams = ellipsefit_direct( imagePoints(pupilPerimIdx(validPerimIdx),1), imagePoints(pupilPerimIdx(validPerimIdx),2));
         % Convert the ellipse from implicit to transparent form
         pupilEllipseOnImagePlane = ellipse_ex2transparent(ellipse_im2ex(implicitEllipseParams));
+        % place theta within the range of 0 to pi
+        if pupilEllipseOnImagePlane(5) < 0
+            pupilEllipseOnImagePlane(5) = pupilEllipseOnImagePlane(5)+pi;
+        end
+        % Get the error of the ellipse fit to the pupil points
+        pupilFitError = sqrt(nanmean(ellipsefit_distance( imagePoints(pupilPerimIdx(validPerimIdx),1), imagePoints(pupilPerimIdx(validPerimIdx),2),ellipse_transparent2ex(pupilEllipseOnImagePlane)).^2));
     catch ME
         % If the ellipse fit direct fails because of an inability to fit an
         % ellipse to the provided points, return nans and issue a warning.
         pupilEllipseOnImagePlane=nan(1,5);
         pupilFitError = nan;
         switch ME.identifier
-            case {'MATLAB:badsubscript','MATLAB:realsqrt:complexResult'}
+            case {'MATLAB:badsubscript','MATLAB:realsqrt:complexResult','MATLAB:expectedReal','MATLAB:quad2dproj:expectedFinite'}
                 warning('pupilProjection_fwd:ellipseFitFailed','Could not fit a valid pupil ellipse to the pupil points; returning nans.');
             otherwise
                 warning('pupilProjection_fwd:ellipseFitUnknownError','Undefined error during ellipse fitting to pupil perimeter; returning nans.');
         end
-        return
     end
-    % place theta within the range of 0 to pi
-    if pupilEllipseOnImagePlane(5) < 0
-        pupilEllipseOnImagePlane(5) = pupilEllipseOnImagePlane(5)+pi;
-    end
-    % Get the error of the ellipse fit to the pupil points
-    pupilFitError = sqrt(nanmean(ellipsefit_distance( imagePoints(pupilPerimIdx(validPerimIdx),1), imagePoints(pupilPerimIdx(validPerimIdx),2),ellipse_transparent2ex(pupilEllipseOnImagePlane)).^2));
 end
 
 end % pupilProjection_fwd
