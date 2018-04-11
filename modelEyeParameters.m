@@ -333,7 +333,26 @@ switch p.Results.species
             xlabel('HVID radius in mm')
             ylabel('counts')
         %}
-        eye.iris.radius = 5.92;
+        % The HVID is the refracted iris size. We can use the forward model
+        % to find the size of the true iris.
+        %{
+            sceneGeometry = createSceneGeometry();
+            virtualImageFunc = compileVirtualImageFunc(sceneGeometry);
+            sceneGeometry.virtualImageFunc = [];
+            % Get the area in pixels of a "pupil" that is the same radius
+            % as the HVID when there is no ray tracing
+            hvidP=pupilProjection_fwd([0 0 0 hvidRadiusMean],sceneGeometry);
+            % Restore ray tracing
+            sceneGeometry.virtualImageFunc = virtualImageFunc;
+            % Set up the objective function
+            myArea = @(p) p(3);
+            myObj = @(r) (hvidP(3) - myArea(pupilProjection_fwd([0 0 0 r],sceneGeometry)))^2;
+            [r,pixelError] = fminsearch(myObj,5.5);
+            fprintf('An unrefracted iris radius of %4.2f yields a refracted HVID of %4.2f \n',r,hvidRadiusMean)
+        %}
+        % We use this true iris size and then subject the iris perimeter
+        % points to refraction
+        eye.iris.radius = 5.55;
         
         % The iris is shifted slightly temporally and upward with respect
         % to the pupil center:

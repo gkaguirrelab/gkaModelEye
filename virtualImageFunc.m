@@ -52,7 +52,6 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( ey
 %}
 
 
-
 %% Find the p1p2 theta
 % For this eyeWorld point, we find the theta value in the p1p2 plane that
 % results in a ray (after passing through the optical system) that
@@ -149,8 +148,27 @@ function distance = calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2
 %                           camera.
 %
 
+%% Tell codegen to ignore these functions
+% This is needed for compilation of the function as standalone mex file
+coder.extrinsic('warning')
+
+
 % Obtain the ray for the eyeWorld point after it exits the optical system
+% Turn off warnings for thetas above critical angle. We will handle these
+% after we receive the empty outputRay.
+
+warnState = warning();
+warning('off','rayTraceCenteredSurfaces:criticalAngle');
+
 outputRayEyeWorld2D_p1p2 = rayTraceCenteredSurfaces([eyeWorldPoint(1),eyeWorldPoint(2)],theta_p1p2, opticalSystem_p1p2);
+
+warning(warnState);
+
+% Handle ray above critical angle
+if isempty(outputRayEyeWorld2D_p1p2)
+    distance = nan;
+    return
+end
 
 % Add the p3 dimension
 outputRayEyeWorld_p1p2=[outputRayEyeWorld2D_p1p2(1,1) outputRayEyeWorld2D_p1p2(1,2) eyeWorldPoint(3);...
@@ -240,10 +258,27 @@ function distance = calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, the
 %   between the intersection point of the output ray on the Z camera plane
 %   and the nodal point of the camera.
 
+
+%% Tell codegen to ignore these functions
+% This is needed for compilation of the function as standalone mex file
+coder.extrinsic('warning')
+
+
 % Obtain the ray in each plane for the eyeWorld point after it exits the
 % optical system
+warnState = warning();
+warning('off','rayTraceCenteredSurfaces:criticalAngle');
+
 outputRayEyeWorld2D_p1p2 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(2)], theta_p1p2, opticalSystem_p1p2);
 outputRayEyeWorld2D_p1p3 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(3)], theta_p1p3, opticalSystem_p1p3);
+
+warning(warnState);
+
+% Handle ray above critical angle
+if isempty(outputRayEyeWorld2D_p1p2) || isempty(outputRayEyeWorld2D_p1p3)
+    distance = nan;
+    return
+end
 
 % Shift the p1p3 ray to have the same initial p1 value as the p1p2 ray
 slope =(outputRayEyeWorld2D_p1p2(2,2)-outputRayEyeWorld2D_p1p2(1,2))/(outputRayEyeWorld2D_p1p2(2,1)-outputRayEyeWorld2D_p1p2(1,1));
@@ -327,7 +362,7 @@ end % calcCameraNodeDistanceError3D
 
 
 %% calcVirtualImageRay
-function [outputRayEyeWorld] = calcVirtualImageRay(eyeWorldPoint, theta_p1p2, theta_p1p3, opticalSystem_p1p2, opticalSystem_p1p3)
+function [outputRayEyeWorld3D] = calcVirtualImageRay(eyeWorldPoint, theta_p1p2, theta_p1p3, opticalSystem_p1p2, opticalSystem_p1p3)
 % Returns the unit vector virtual image ray for the initial depth position
 %
 % Syntax:
@@ -369,27 +404,43 @@ function [outputRayEyeWorld] = calcVirtualImageRay(eyeWorldPoint, theta_p1p2, th
 %                           of the unit vector.
 %
 
+
+%% Tell codegen to ignore these functions
+% This is needed for compilation of the function as standalone mex file
+coder.extrinsic('warning')
+
+
 % Assemble the virtual image ray
-outputRayEyeWorld_p1p2 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(2)], theta_p1p2, opticalSystem_p1p2);
-outputRayEyeWorld_p1p3 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(3)], theta_p1p3, opticalSystem_p1p3);
+warnState = warning();
+warning('off','rayTraceCenteredSurfaces:criticalAngle');
+
+outputRayEyeWorld2D_p1p2 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(2)], theta_p1p2, opticalSystem_p1p2);
+outputRayEyeWorld2D_p1p3 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(3)], theta_p1p3, opticalSystem_p1p3);
+
+warning(warnState);
+
+if isempty(outputRayEyeWorld2D_p1p2) || isempty(outputRayEyeWorld2D_p1p3)
+    outputRayEyeWorld3D = nan(2,3);
+    return
+end
 
 % Adjust the p1 (optical axis) position of the rays to have their initial
 % position at the same p1
-slope =(outputRayEyeWorld_p1p2(2,2)-outputRayEyeWorld_p1p2(1,2))/(outputRayEyeWorld_p1p2(2,1)-outputRayEyeWorld_p1p2(1,1));
-zOffset=outputRayEyeWorld_p1p2(1,1)-eyeWorldPoint(1);
-outputRayEyeWorld_p1p2(:,1)=outputRayEyeWorld_p1p2(:,1)-zOffset;
-outputRayEyeWorld_p1p2(:,2)=outputRayEyeWorld_p1p2(:,2)-(zOffset*slope);
+slope =(outputRayEyeWorld2D_p1p2(2,2)-outputRayEyeWorld2D_p1p2(1,2))/(outputRayEyeWorld2D_p1p2(2,1)-outputRayEyeWorld2D_p1p2(1,1));
+zOffset=outputRayEyeWorld2D_p1p2(1,1)-eyeWorldPoint(1);
+outputRayEyeWorld2D_p1p2(:,1)=outputRayEyeWorld2D_p1p2(:,1)-zOffset;
+outputRayEyeWorld2D_p1p2(:,2)=outputRayEyeWorld2D_p1p2(:,2)-(zOffset*slope);
 
-slope =(outputRayEyeWorld_p1p3(2,2)-outputRayEyeWorld_p1p3(1,2))/(outputRayEyeWorld_p1p3(2,1)-outputRayEyeWorld_p1p3(1,1));
-zOffset=outputRayEyeWorld_p1p3(1,1)-eyeWorldPoint(1);
-outputRayEyeWorld_p1p3(:,1)=outputRayEyeWorld_p1p3(:,1)-zOffset;
-outputRayEyeWorld_p1p3(:,2)=outputRayEyeWorld_p1p3(:,2)-(zOffset*slope);
+slope =(outputRayEyeWorld2D_p1p3(2,2)-outputRayEyeWorld2D_p1p3(1,2))/(outputRayEyeWorld2D_p1p3(2,1)-outputRayEyeWorld2D_p1p3(1,1));
+zOffset=outputRayEyeWorld2D_p1p3(1,1)-eyeWorldPoint(1);
+outputRayEyeWorld2D_p1p3(:,1)=outputRayEyeWorld2D_p1p3(:,1)-zOffset;
+outputRayEyeWorld2D_p1p3(:,2)=outputRayEyeWorld2D_p1p3(:,2)-(zOffset*slope);
 
-outputRayEyeWorld = zeros(2,3);
+outputRayEyeWorld3D = zeros(2,3);
 
 % Combine the two dimensions into a single, 3D ray
-outputRayEyeWorld(1,:) = [outputRayEyeWorld_p1p2(1,1) outputRayEyeWorld_p1p2(1,2) outputRayEyeWorld_p1p3(1,2)];
-outputRayEyeWorld(2,:) = [outputRayEyeWorld_p1p2(2,1) outputRayEyeWorld_p1p2(2,2) outputRayEyeWorld_p1p3(2,2)];
+outputRayEyeWorld3D(1,:) = [outputRayEyeWorld2D_p1p2(1,1) outputRayEyeWorld2D_p1p2(1,2) outputRayEyeWorld2D_p1p3(1,2)];
+outputRayEyeWorld3D(2,:) = [outputRayEyeWorld2D_p1p2(2,1) outputRayEyeWorld2D_p1p2(2,2) outputRayEyeWorld2D_p1p3(2,2)];
 
 end % calcVirtualImageRay
 
