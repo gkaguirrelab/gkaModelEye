@@ -502,7 +502,7 @@ switch p.Results.species
         % is in optical axis coordinates, the effect of this difference is
         % very small (less than 1/100th of a millimeter).
         % 
-        % Note that the Fry & Hill measurements superseed the earlier, Park
+        % Note that the Fry & Hill measurements supersede the earlier, Park
         % & Park measurements that claimed substantial translation of the
         % eye during rotation:
         %
