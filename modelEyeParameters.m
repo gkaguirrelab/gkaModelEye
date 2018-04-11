@@ -35,12 +35,12 @@ function eye = modelEyeParameters( varargin )
 %                           the posterior chamber are scaled to fit the
 %                           proportions predicted by the Atchison model for
 %                           the specified degree of ametropia.
-%  'kappaAngle'           - 1x2 matrix. This is the angle of the visual
-%                           axis in degrees w.r.t. to pupil axis. The
+%  'kappaAngle'           - 1x4 vector. This is the angle of the visual
+%                           axis in degrees w.r.t. to pupillary axis. The
 %                           values are [azimuth, elevation]. An eyePose of:
-%                             [-kappaAngle(1), -kappaAngle(2), 0, radius]
+%                             [-kappa(1), -kappa(2), 0, radius]
 %                           aligns the visual axis of the eye with the
-%                           optical axis of the camera
+%                           optical axis of the camera.
 %  'eyeLaterality'        - A text string that specifies which eye (left,
 %                           right) to model. Allowed values (in any case)
 %                           are {'left','right','L','R','OS','OD'}
@@ -566,14 +566,35 @@ switch p.Results.species
         
         %% Kappa
         % We now calculate kappa, which is the angle (in degrees) between
-        % the pupil and visual axes of the eye. The visual axis is
-        % displaced nasally and superiorly within the visual field relative
-        % to the pupil axis. Horizontal kappa is usually defined with
-        % positive values being more nasal. We adopt a different convention
-        % in which kappa is defined in head-fixed coordinates. Thus,
-        % positive values for the right eye, and negative values for the
-        % left eye, are more nasal. Positive values for vertical kappa are
-        % upward.
+        % the pupil and visual axes of the eye. A related measurement is
+        % gamma, which is the angle between the optical axis and the
+        % fixation axis of the eye. We use the names and greek letter
+        % designations for eye axes from Atchison & Smith:
+        %
+        %   Atchison, David A., George Smith, and George Smith. "Optics of
+        %   the human eye." (2000): 34-35.
+        %
+        % The optical and pupil axes of the our model eye are aligned. The
+        % fixation axis of the eye is the line that connects the fixation
+        % point to the center of rotation of the eye. The visual axis of
+        % the eye connects the fixation point to the fovea via nodal points
+        % through the eye optics. The visual axis lies within 1% of the
+        % fixation axis when the fixation target is greater than 50 cm away
+        % (Atchison & Smith, 2000, p.37). Because the visual and fixation
+        % axes are closely aligned, and because our model equates the pupil
+        % and optical axes, we treat empirical measurements of kappa
+        % (visual to pupillary axis) as if they were the same as gamma
+        % (fixation to optical axis). A related angle (equivalent to kappa
+        % and gamma in our model) is alpha, which relates the visual and
+        % optical axes.
+        % 
+        % The visual axis is displaced nasally and inferiorly within the
+        % visual field relative to the optical axis. Horizontal kappa is
+        % usually defined with positive values being more nasal. We adopt a
+        % different convention in which kappa is defined in head-fixed
+        % coordinates. Thus, positive values for the right eye, and
+        % negative values for the left eye, are more nasal. Positive values
+        % for vertical kappa are upward.
         %
         % A source for an estimate of kappa comes from Mathur 2013:
         %
@@ -583,8 +604,8 @@ switch p.Results.species
         %
         % They measured the shape of the entrance pupil as a function of
         % viewing angle relative to the fixation point of the eye. Their
-        % data is well fit by a kappa of [5, -2.15] degrees (see
-        % TEST_Mathur2013.m).
+        % data from the right eye is well fit by a kappa of [5, -2.15]
+        % degrees (see TEST_Mathur2013.m).
         %
         % Measured kappa has been found to depend upon axial length:
         %
@@ -614,6 +635,13 @@ switch p.Results.species
         %
         % We note that there is evidence that the vertical kappa value can
         % vary based upon the subject being in a sittng or supine position.
+        % Tscherning measured a downward alpha of 2-3 degrees, although
+        % this varied amongst subjects:
+        %
+        %   Tscherning, Marius Hans Erik. Physiologic Optics: Dioptrics of
+        %   the Eye, Functions of the Retina Ocular Movements and Binocular
+        %   Vision. Keystone Publishing Company, 1920.
+        %
         % Until better evidene is available, we adopt a vertical kappa of
         % -2.15 degrees for the emmetropic model eye.        
         if isempty(p.Results.kappaAngle)
@@ -624,10 +652,14 @@ switch p.Results.species
                     eye.kappa(1) = -atand((15.0924/(eye.axialLength-8.5000))*tand(5));
             end
             eye.kappa(2) = atand((15.0924/(eye.axialLength-8.5000))*tand(2.15));
+            % We place values of zero into the final two elements of the
+            % kappa vector. This way, the vector can simply be subtracted
+            % from an eyePose to determine the pose of the eye for the
+            % visual axis.
+            eye.kappa(3:4)=0;
         else
             eye.kappa = p.Results.kappaAngle;
         end
-        
         
         %% Refractive indices
         % Obtain refractive index values for this spectral domain.
