@@ -36,16 +36,17 @@ function [cameraDepthMean, cameraDepthSD] = depthFromIrisDiameter( sceneGeometry
     %% Recover a veridical camera distance
     % Create a sceneGeometry structure
     sceneGeometry = createSceneGeometry();
+ 	sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry);
     % Calculate what the observed iris diameter should be at 100 mm
     veridicalSceneGeometry = sceneGeometry;
     veridicalSceneGeometry.cameraExtrinsic.translation(3) = 100;
     [~, imagePoints, ~, ~, pointLabels] = ...
-    	pupilProjection_fwd([0 0 0 1], veridicalSceneGeometry, 'fullEyeModelFlag', true, 'nIrisPerimPoints', 100);
+    	pupilProjection_fwd([0 0 0 1], veridicalSceneGeometry, 'fullEyeModelFlag', true, 'nIrisPerimPoints', 20);
     idx = find(strcmp(pointLabels,'irisPerimeter'));
     observedIrisDiamPixels = max(imagePoints(idx,1))-min(imagePoints(idx,1));
     % Now call the estimation function with the default (incorrect) scene
     % geometry
-    cameraDepthMean = ...
+    [cameraDepthMean, cameraDepthSD] = ...
         depthFromIrisDiameter( sceneGeometry, observedIrisDiamPixels );
     % Report the results
     fprintf('Veridical camera depth: %4.0f, recovered camera depth: %4.0f \n',veridicalSceneGeometry.cameraExtrinsic.translation(3),cameraDepthMean);
@@ -61,9 +62,6 @@ p.addRequired('maxIrisDiameterPixels',@isnumeric);
 
 % parse
 p.parse(sceneGeometry, observedIrisDiamPixels)
-
-% Disable ray tracing for this calculation
-sceneGeometry.virtualImageFunc = [];
 
 
 %% Iris width values
@@ -94,17 +92,45 @@ sceneGeometry.virtualImageFunc = [];
     xlabel('HVID radius in mm')
     ylabel('counts')
 %}
-hvidRadiusMean = 5.92;
-hvidRadiusSD = 0.28;
+% The HVID is the refracted iris size. We can use the forward model
+% to find the size of the true iris for the mean and mean+1SD observed
+% refracted iris sizes
+%{
+ 	sceneGeometry = createSceneGeometry();
+ 	virtualImageFunc = compileVirtualImageFunc(sceneGeometry);
+	% Get the area in pixels of a "pupil" that is the same radius
+	sceneGeometry.virtualImageFunc = [];
+	% as the HVID when there is no ray tracing
+	hvidP=pupilProjection_fwd([0 0 0 hvidRadiusMean],sceneGeometry);
+	% Restore ray tracing
+	sceneGeometry.virtualImageFunc = virtualImageFunc;
+	% Set up the objective function
+	myArea = @(p) p(3);
+	myObj = @(r) (hvidP(3) - myArea(pupilProjection_fwd([0 0 0 r],sceneGeometry)))^2;
+	[r,pixelError] = fminsearch(myObj,5.5);
+	fprintf('An unrefracted iris radius of %4.2f yields a refracted HVID of %4.2f \n',r,hvidRadiusMean)
+	% Now handle the +1SD case
+	sceneGeometry.virtualImageFunc = [];
+	% as the HVID when there is no ray tracing
+	hvidP=pupilProjection_fwd([0 0 0 hvidRadiusMean+hvidRadiusSD],sceneGeometry);
+	% Restore ray tracing
+	sceneGeometry.virtualImageFunc = virtualImageFunc;
+	% Set up the objective function
+	myArea = @(p) p(3);
+	myObj = @(r) (hvidP(3) - myArea(pupilProjection_fwd([0 0 0 r],sceneGeometry)))^2;
+	[r,pixelError] = fminsearch(myObj,5.5);
+	fprintf('An unrefracted iris radius of %4.2f yields a refracted HVID of %4.2f \n',r,hvidRadiusMean+hvidRadiusSD)
+%}
+trueIrisSizes = [5.55, 5.86];
 
-% We now identify the camera distances corresponding the mean, and then the
-% +- 1 and 2 SD sizes of the iris.
+% We now identify the camera distances corresponding the mean, and then to
+% the +1SD iris sizes
 
 % Set the x0 position for the search to be the passed scene geometry
 x0 = sceneGeometry.cameraExtrinsic.translation(3);
 
 for sizeSD = 0:1
-    assumedIrisRadius = hvidRadiusMean + hvidRadiusSD*sizeSD;
+    assumedIrisRadius = trueIrisSizes(sizeSD+1);
     cameraTranslationValues(sizeSD+1) = fminsearch(@objfun, x0);
 end
     function fVal = objfun(x)
@@ -112,7 +138,7 @@ end
         candidateSceneGeometry.eye.irisRadius = assumedIrisRadius;
         candidateSceneGeometry.cameraExtrinsic.translation(3) = x;
         [~, imagePoints, ~, ~, pointLabels] = ...
-            pupilProjection_fwd([0 0 0 1], candidateSceneGeometry, 'fullEyeModelFlag', true, 'nIrisPerimPoints', 100);
+            pupilProjection_fwd([0 0 0 1], candidateSceneGeometry, 'fullEyeModelFlag', true, 'nIrisPerimPoints', 20);
         idx = find(strcmp(pointLabels,'irisPerimeter'));
         predictedIrisDiamPixels = max(imagePoints(idx,1))-min(imagePoints(idx,1));
         fVal = (predictedIrisDiamPixels - observedIrisDiamPixels)^2;
