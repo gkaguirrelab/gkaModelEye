@@ -149,7 +149,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     % Define an eyePose with azimuth, elevation, torsion, and pupil radius
     eyePose = [-10 -5 0 3];
     % Perform the projection and request the full eye model
-    [~, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose,sceneGeometry,'fullEyeModelFlag',true);
+    [~, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose,sceneGeometry,'fullEyeModelFlag',true, 'nIrisPerimPoints', 20);
     % Define some settings for display
     eyePartLabels = {'posteriorChamber' 'irisPerimeter' 'pupilPerimeter' 'anteriorChamber'};
     plotColors = {'.w' '.b' '*g' '.y'};
@@ -259,7 +259,7 @@ p.addRequired('sceneGeometry',@isstruct);
 % Optional
 p.addParameter('fullEyeModelFlag',false,@islogical);
 p.addParameter('nPupilPerimPoints',5,@(x)(isnumeric(x) && x>4));
-p.addParameter('nIrisPerimPoints',5,@(x)(isnumeric(x) && x>4));
+p.addParameter('nIrisPerimPoints',5,@isnumeric);
 p.addParameter('posteriorChamberEllipsoidPoints',30,@isnumeric);
 p.addParameter('anteriorChamberEllipsoidPoints',30,@isnumeric);
 p.addParameter('removeOccultedPoints',true,@islogical);
@@ -378,6 +378,7 @@ if p.Results.fullEyeModelFlag
         (anteriorChamberPoints(:,1) >= sceneGeometry.eye.iris.center(1)) .* ...
         (sqrt(anteriorChamberPoints(:,2).^2+anteriorChamberPoints(:,3).^2) <= sceneGeometry.eye.iris.radius) ...
         );
+    retainIdx = anteriorChamberPoints(:,1) >= sceneGeometry.eye.iris.center(1);
     if all(~retainIdx)
         error('pupilProjection_fwd:pupilPlanePosition','The pupil plane is set in front of the corneal apea');
     end
@@ -507,25 +508,10 @@ if isfield(sceneGeometry,'virtualImageFunc')
             % Get this eyeWorld point
             eyeWorldPoint=eyeWorldPoints(refractPointsIdx(ii),:);
             % Perform the computation using the passed function handle.
-            % This occurs within a try-catch block, as the point to be
-            % refracted may experience total internal reflection. When this
-            % happens, the routine exits with an error.
-            try
-                [eyeWorldPoints(refractPointsIdx(ii),:), nodalPointIntersectError(refractPointsIdx(ii))] = ...
-                    sceneGeometry.virtualImageFunc.handle(...
-                    eyeWorldPoint, eyePose, ...
-                    sceneGeometry.virtualImageFunc.args{:});
-            catch ME
-                eyeWorldPoints(refractPointsIdx(ii),:) = nan;
-                nodalPointIntersectError(refractPointsIdx(ii)) = inf;
-                ME.identifier
-                switch ME.identifier
-                    case 'Coder:toolbox:ElFunDomainError'
-                        warning('pupilProjection_fwd:rayTracingError','virtualImageFuncMex experienced an error, perhaps due to total internal reflection at a surface; returning nans for this point.');
-                    otherwise
-                        warning('pupilProjection_fwd:rayTracingUnknown',['Received the error ' ME.identifier ' during ray tracing; returning nans for this point.']);
-                end
-            end
+            [eyeWorldPoints(refractPointsIdx(ii),:), nodalPointIntersectError(refractPointsIdx(ii))] = ...
+                sceneGeometry.virtualImageFunc.handle(...
+                eyeWorldPoint, eyePose, ...
+                sceneGeometry.virtualImageFunc.args{:});
         end
     end
 end

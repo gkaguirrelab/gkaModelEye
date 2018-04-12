@@ -69,9 +69,26 @@ cameraNodeDistanceError2D_p1p2 = @(theta_p1p2) calcCameraNodeDistanceError2D_p1p
 % and to make changes in theta as small as 1e-6. Because the errorFunc
 % returns nan for values very close to zero, we initialize the search with
 % a slightly non-zero value (1e-4)
-options = optimset('TolFun',1e-2,'TolX',1e-6);
-theta_p1p2=fminsearch(cameraNodeDistanceError2D_p1p2,1e-4,options);
 
+% Set a scoped variable that detects if we encountered a bad ray trace.
+badTraceFlag = false;
+
+% Perform the search
+options = optimset('TolFun',1e-2,'TolX',1e-6);
+theta_p1p2=fminsearch(@myObj_p1p2,1e-4,options);
+    function fval = myObj_p1p2(x)
+        fval = cameraNodeDistanceError2D_p1p2(x);
+        if isinf(fval)
+            badTraceFlag = true;
+        end
+    end
+
+% If we hit a bad ray trace, exit the routine
+if badTraceFlag
+    virtualEyeWorldPoint = nan(1,3);
+    nodalPointIntersectError = Inf;
+    return
+end
 
 %% Find the p1p3 theta
 % Given this p1p2 theta, we now find the p1p3 theta that further reduces
@@ -80,8 +97,26 @@ cameraNodeDistanceError3D = @(theta_p1p3) calcCameraNodeDistanceError3D(eyeWorld
 
 % The fVal at the solution is the the total error (in mm) in both
 % dimensions for intersecting the nodal point of the camera.
-[theta_p1p3, nodalPointIntersectError]=fminsearch(cameraNodeDistanceError3D,1e-4,options);
 
+% Set a scoped variable that detects if we encountered a bad ray trace.
+badTraceFlag = false;
+
+% Perform the search
+options = optimset('TolFun',1e-2,'TolX',1e-6);
+[theta_p1p3, nodalPointIntersectError]=fminsearch(@myObj_3D,1e-4,options);
+    function fval = myObj_3D(x)
+        fval = cameraNodeDistanceError3D(x);
+        if isinf(fval)
+            badTraceFlag = true;
+        end
+    end
+
+% If we hit a bad ray trace, exit the routine
+if badTraceFlag
+    virtualEyeWorldPoint = nan(1,3);
+    nodalPointIntersectError = Inf;
+    return
+end
 
 %% Obtain the virtual image location
 % With both theta values calculated, now obtain the virtual image
@@ -148,25 +183,21 @@ function distance = calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2
 %                           camera.
 %
 
-%% Tell codegen to ignore these functions
-% This is needed for compilation of the function as standalone mex file
+
+% Handle ray trace warnings
 coder.extrinsic('warning')
-
-
-% Obtain the ray for the eyeWorld point after it exits the optical system
-% Turn off warnings for thetas above critical angle. We will handle these
-% after we receive the empty outputRay.
-
 warnState = warning();
 warning('off','rayTraceCenteredSurfaces:criticalAngle');
 
+% Ray trace for this theta
 outputRayEyeWorld2D_p1p2 = rayTraceCenteredSurfaces([eyeWorldPoint(1),eyeWorldPoint(2)],theta_p1p2, opticalSystem_p1p2);
 
+% Restore the warning state
 warning(warnState);
 
-% Handle ray above critical angle
+% If we received a ray-trace error, then return Inf for the distance
 if isempty(outputRayEyeWorld2D_p1p2)
-    distance = nan;
+    distance = Inf;
     return
 end
 
@@ -259,24 +290,21 @@ function distance = calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, the
 %   and the nodal point of the camera.
 
 
-%% Tell codegen to ignore these functions
-% This is needed for compilation of the function as standalone mex file
+% Handle ray trace warnings
 coder.extrinsic('warning')
-
-
-% Obtain the ray in each plane for the eyeWorld point after it exits the
-% optical system
 warnState = warning();
 warning('off','rayTraceCenteredSurfaces:criticalAngle');
 
+% Ray trace for these thetas
 outputRayEyeWorld2D_p1p2 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(2)], theta_p1p2, opticalSystem_p1p2);
 outputRayEyeWorld2D_p1p3 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(3)], theta_p1p3, opticalSystem_p1p3);
 
+% Restore the warning state
 warning(warnState);
 
-% Handle ray above critical angle
+% If we received a ray-trace error, then return Inf for the distance
 if isempty(outputRayEyeWorld2D_p1p2) || isempty(outputRayEyeWorld2D_p1p3)
-    distance = nan;
+    distance = Inf;
     return
 end
 
@@ -405,20 +433,19 @@ function [outputRayEyeWorld3D] = calcVirtualImageRay(eyeWorldPoint, theta_p1p2, 
 %
 
 
-%% Tell codegen to ignore these functions
-% This is needed for compilation of the function as standalone mex file
+% Handle ray trace warnings
 coder.extrinsic('warning')
-
-
-% Assemble the virtual image ray
 warnState = warning();
 warning('off','rayTraceCenteredSurfaces:criticalAngle');
 
+% Ray trace for these thetas
 outputRayEyeWorld2D_p1p2 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(2)], theta_p1p2, opticalSystem_p1p2);
 outputRayEyeWorld2D_p1p3 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(3)], theta_p1p3, opticalSystem_p1p3);
 
+% Restore the warning state
 warning(warnState);
 
+% If we received a ray-trace error, then return nans for output ray
 if isempty(outputRayEyeWorld2D_p1p2) || isempty(outputRayEyeWorld2D_p1p3)
     outputRayEyeWorld3D = nan(2,3);
     return
