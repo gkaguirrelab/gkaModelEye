@@ -304,6 +304,11 @@ for ii = 2:nSurfaces
     % Obtain the coordinate at which the ray intersects the next surface,
     % and the radius of curvature of the lens at that point
     [intersectionCoords(ii,:),curvature(ii)] = calcEllipseIntersect(intersectionCoords(ii-1,:), thetas(ii-1), opticalSystem(ii,1), opticalSystem(ii,2:3) );
+    % Check if there if the ray was not intersecting
+    if isnan(curvature(ii))
+        warning('rayTraceCenteredSurfaces:criticalAngle','Ray did not intersect surface %d. Returning.',ii);
+        return
+    end
     % Find the curvature center, which is the position along the optical
     % axis for this surface, given the curvature encountered by the ray.
     curvatureCenters(ii) = opticalSystem(ii,1)-opticalSystem(ii,2)+curvature(ii);
@@ -492,7 +497,15 @@ end
 
 % Calculate the radius of curvature at the point of intersection. If
 % radiiSign is negative, report a negative radius of curvature
-t = acos((intersectionCoords(1)-ellipseCenterZ)/ellipseRadii(1));
+
+% If the an
+P = (intersectionCoords(1)-ellipseCenterZ)/ellipseRadii(1);
+if ~isreal(P)
+    curvature = nan;
+    return
+end
+
+t = acos(P);
 curvature = radiiSign*((ellipseRadii(1)^2*sin(t)^2 + ellipseRadii(2)^2*cos(t)^2)^(3/2))/(ellipseRadii(1)*ellipseRadii(2));
 
 end
