@@ -121,7 +121,8 @@ p.parse(sceneGeometry, observedIrisDiamPixels)
 	[r,pixelError] = fminsearch(myObj,5.5);
 	fprintf('An unrefracted iris radius of %4.2f yields a refracted HVID of %4.2f \n',r,hvidRadiusMean+hvidRadiusSD)
 %}
-trueIrisSizes = [5.55, 5.86];
+trueIrisSizeMean = 5.55;
+trueIrisSizeSD = 0.31;
 
 % We now identify the camera distances corresponding the mean, and then to
 % the +1SD iris sizes
@@ -129,13 +130,14 @@ trueIrisSizes = [5.55, 5.86];
 % Set the x0 position for the search to be the passed scene geometry
 x0 = sceneGeometry.cameraExtrinsic.translation(3);
 
-for sizeSD = 0:1
-    assumedIrisRadius = trueIrisSizes(sizeSD+1);
-    cameraTranslationValues(sizeSD+1) = fminsearch(@objfun, x0);
+searchSDvals = [0, 1];
+for tt = 1:2
+    assumedIrisRadius = trueIrisSizeMean + trueIrisSizeSD*searchSDvals(tt);
+    cameraTranslationValues(tt) = fminsearch(@objfun, x0);
 end
     function fVal = objfun(x)
         candidateSceneGeometry = sceneGeometry;
-        candidateSceneGeometry.eye.irisRadius = assumedIrisRadius;
+        candidateSceneGeometry.eye.iris.radius = assumedIrisRadius;
         candidateSceneGeometry.cameraExtrinsic.translation(3) = x;
         [~, imagePoints, ~, ~, pointLabels] = ...
             pupilProjection_fwd([0 0 0 1], candidateSceneGeometry, 'fullEyeModelFlag', true, 'nIrisPerimPoints', 20);
