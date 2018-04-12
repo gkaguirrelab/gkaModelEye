@@ -52,6 +52,12 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( ey
 %}
 
 
+%% Handle ray trace warnings
+coder.extrinsic('warning')
+warnState = warning();
+warning('off','rayTraceCenteredSurfaces:criticalAngle');
+
+
 %% Find the p1p2 theta
 % For this eyeWorld point, we find the theta value in the p1p2 plane that
 % results in a ray (after passing through the optical system) that
@@ -87,6 +93,8 @@ theta_p1p2=fminsearch(@myObj_p1p2,1e-4,options);
 if badTraceFlag
     virtualEyeWorldPoint = nan(1,3);
     nodalPointIntersectError = Inf;
+    % Restore the warning state
+    warning(warnState);
     return
 end
 
@@ -115,6 +123,8 @@ options = optimset('TolFun',1e-2,'TolX',1e-6);
 if badTraceFlag
     virtualEyeWorldPoint = nan(1,3);
     nodalPointIntersectError = Inf;
+    % Restore the warning state
+    warning(warnState);
     return
 end
 
@@ -122,6 +132,9 @@ end
 % With both theta values calculated, now obtain the virtual image
 % ray arising from the pupil plane that reflects the corneal optics
 virtualImageRay = calcVirtualImageRay(eyeWorldPoint, theta_p1p2, theta_p1p3, opticalSystem_p1p2, opticalSystem_p1p3);
+
+% Restore the warning state
+warning(warnState);
 
 % Extract the origin of the ray, which is the virtual image eyeWorld point
 virtualEyeWorldPoint = virtualImageRay(1,:);
@@ -184,16 +197,8 @@ function distance = calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2
 %
 
 
-% Handle ray trace warnings
-coder.extrinsic('warning')
-warnState = warning();
-warning('off','rayTraceCenteredSurfaces:criticalAngle');
-
 % Ray trace for this theta
 outputRayEyeWorld2D_p1p2 = rayTraceCenteredSurfaces([eyeWorldPoint(1),eyeWorldPoint(2)],theta_p1p2, opticalSystem_p1p2);
-
-% Restore the warning state
-warning(warnState);
 
 % If we received a ray-trace error, then return Inf for the distance
 if isempty(outputRayEyeWorld2D_p1p2)
@@ -290,17 +295,9 @@ function distance = calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, the
 %   and the nodal point of the camera.
 
 
-% Handle ray trace warnings
-coder.extrinsic('warning')
-warnState = warning();
-warning('off','rayTraceCenteredSurfaces:criticalAngle');
-
 % Ray trace for these thetas
 outputRayEyeWorld2D_p1p2 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(2)], theta_p1p2, opticalSystem_p1p2);
 outputRayEyeWorld2D_p1p3 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(3)], theta_p1p3, opticalSystem_p1p3);
-
-% Restore the warning state
-warning(warnState);
 
 % If we received a ray-trace error, then return Inf for the distance
 if isempty(outputRayEyeWorld2D_p1p2) || isempty(outputRayEyeWorld2D_p1p3)
@@ -433,17 +430,9 @@ function [outputRayEyeWorld3D] = calcVirtualImageRay(eyeWorldPoint, theta_p1p2, 
 %
 
 
-% Handle ray trace warnings
-coder.extrinsic('warning')
-warnState = warning();
-warning('off','rayTraceCenteredSurfaces:criticalAngle');
-
 % Ray trace for these thetas
 outputRayEyeWorld2D_p1p2 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(2)], theta_p1p2, opticalSystem_p1p2);
 outputRayEyeWorld2D_p1p3 = rayTraceCenteredSurfaces([eyeWorldPoint(1), eyeWorldPoint(3)], theta_p1p3, opticalSystem_p1p3);
-
-% Restore the warning state
-warning(warnState);
 
 % If we received a ray-trace error, then return nans for output ray
 if isempty(outputRayEyeWorld2D_p1p2) || isempty(outputRayEyeWorld2D_p1p3)
