@@ -306,7 +306,7 @@ for ii = 2:nSurfaces
     [intersectionCoords(ii,:),curvature(ii)] = calcEllipseIntersect(intersectionCoords(ii-1,:), thetas(ii-1), opticalSystem(ii,1), opticalSystem(ii,2:3) );
     % Check if there if the ray was not intersecting
     if isnan(curvature(ii))
-        warning('rayTraceCenteredSurfaces:criticalAngle','Ray did not intersect surface %d. Returning.',ii);
+        warning('rayTraceCenteredSurfaces:nonIntersectingRay','Ray did not intersect surface %d. Returning.',ii);
         return
     end
     % Find the curvature center, which is the position along the optical
