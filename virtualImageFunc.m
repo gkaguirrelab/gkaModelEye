@@ -56,6 +56,7 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( ey
 coder.extrinsic('warning')
 warnState = warning();
 warning('off','rayTraceCenteredSurfaces:criticalAngle');
+warning('off','rayTraceCenteredSurfaces:nonIntersectingRay');
 
 
 %% Find the p1p2 theta
@@ -64,10 +65,10 @@ warning('off','rayTraceCenteredSurfaces:criticalAngle');
 % minimizes the distance between the camera node and point of intersection
 % with the camera plane
 
-% Define an error function which is the distance between the nodal
-% point of the camera and the point at which a ray intersects the
-% plane that contains the camera, with the ray departing from the
-% eyeWorld point at angle theta in the p1p2 plane.
+% Define an error function that is the distance between the nodal point of
+% the camera and the point at which a ray intersects the plane that
+% contains the camera, with the ray departing from the eyeWorld point at
+% angle theta in the p1p2 plane.
 cameraNodeDistanceError2D_p1p2 = @(theta_p1p2) calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2, eyePose, extrinsicTranslationVector, rotationCenters, opticalSystem_p1p2);
 
 % Conduct an fminsearch to find the p1p2 theta that minimizes the node
