@@ -495,16 +495,19 @@ else
     intersectionCoords = [zCoords(leftIdx),hCoords(leftIdx)];
 end
 
-% Calculate the radius of curvature at the point of intersection. If
-% radiiSign is negative, report a negative radius of curvature
-
-% If the an
+% Detect if we have a tangential or non-intersecting ray
 P = (intersectionCoords(1)-ellipseCenterZ)/ellipseRadii(1);
 if ~isreal(P)
     curvature = nan;
     return
 end
+if P>1 || P<-1
+    curvature = nan;
+    return
+end
 
+% Calculate the radius of curvature at the point of intersection. If
+% radiiSign is negative, report a negative radius of curvature
 t = acos(P);
 curvature = radiiSign*((ellipseRadii(1)^2*sin(t)^2 + ellipseRadii(2)^2*cos(t)^2)^(3/2))/(ellipseRadii(1)*ellipseRadii(2));
 
