@@ -616,6 +616,9 @@ validPerimIdx = find(~any(isnan(imagePoints(pupilPerimIdx,:))')');
 if eyePose(4)==0 || ~isreal(imagePoints(pupilPerimIdx,:)) || length(validPerimIdx)<5
     pupilEllipseOnImagePlane=nan(1,5);
 else
+    % silence a warning that can arise regarding a nearly singular matrix
+    warnState = warning;
+    warning('off','MATLAB:nearlySingularMatrix');
     % We place the ellipse fit in a try-catch block, as the fit can fail
     % when the ellipse is so eccentric that it approaches a line
     try
@@ -640,7 +643,8 @@ else
             otherwise
                 warning('pupilProjection_fwd:ellipseFitUnknownError','Undefined error during ellipse fitting to pupil perimeter; returning nans.');
         end
-    end
+    end % try-catch block
+    warning(warnState);
 end
 
 end % pupilProjection_fwd
