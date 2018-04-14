@@ -468,6 +468,11 @@ function [intersectionCoords, curvature] = calcEllipseIntersect(coordsInitial, t
     [intersectCoords,curvature] = calcEllipseIntersect([-3.7,0], 0, -9.1412, [9.1412, 8.4277] )
 %}
 
+
+% Initialize return variables
+intersectionCoords = [nan, nan];
+curvature = nan;
+
 % Store the sign of the radius values. They radii must have the same sign.
 if prod(sign(ellipseRadii))==-1
     error('rayTraceCenteredSurfaces:incompatibleConvexity','The radii of the elliptical lens surface must have the same sign.');
@@ -489,8 +494,7 @@ O = (1/ellipseRadii(2)^2)*c^2 + (1/ellipseRadii(1)^2)*ellipseCenterZ^2 -1 ;
 determinant = (N^2 - 4* M * O);
 
 % Detect if we have a tangential or non-intersecting ray
-if ~isreal(determinant)
-    curvature = nan;
+if ~isreal(determinant) || determinant<0 
     return
 end
 
@@ -510,11 +514,9 @@ end
 % Detect if we have a tangential or non-intersecting ray
 P = (intersectionCoords(1)-ellipseCenterZ)/ellipseRadii(1);
 if ~isreal(P)
-    curvature = nan;
     return
 end
 if P>1 || P<-1
-    curvature = nan;
     return
 end
 
