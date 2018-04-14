@@ -103,7 +103,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     % A model of the passage of a point on the pupil perimeter through
     % the axial cross-section of the cornea (units in mm)
     sceneGeometry = createSceneGeometry();
-    outputRay = rayTraceCenteredSurfaces([-3.7 2], deg2rad(-10), sceneGeometry.virtualImageFunc.opticalSystem.p1p2, true);
+    outputRay = rayTraceCenteredSurfaces([-3.7 2], deg2rad(-10), sceneGeometry.refraction.opticalSystem.p1p2, true);
     % Compare the output to value calculated on April 10, 2018
     outputRayStored = [-0.1248    1.3770; 0.8307    1.0822];
     assert ( max(max(abs(outputRayStored - outputRay))) < 1e-4)
@@ -117,7 +117,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     pupilRadius = 2;
     theta = deg2rad(-10);
     coords = [sceneGeometry.eye.pupil.center(1) pupilRadius];
-    opticalSystem = sceneGeometry.virtualImageFunc.opticalSystem.p1p2;
+    opticalSystem = sceneGeometry.refraction.opticalSystem.p1p2;
     % Add a -2 diopter lens for the correction of myopia
     opticalSystem=addSpectacleLens(opticalSystem, -2);
     % Define FigureFlag as a structure with limits on the plot range
@@ -139,7 +139,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     figureFlag.textLabels = false;
     for theta = -35:70:35
         for pupilRadius = -2:4:2
-            rayTraceCenteredSurfaces([sceneGeometry.eye.pupil.center(1) pupilRadius], theta, sceneGeometry.virtualImageFunc.opticalSystem.p1p2, figureFlag);
+            rayTraceCenteredSurfaces([sceneGeometry.eye.pupil.center(1) pupilRadius], theta, sceneGeometry.refraction.opticalSystem.p1p2, figureFlag);
         end
     end
 %}
@@ -237,7 +237,12 @@ end
 
 
 %% Initialize variables and plotting
+% outputRay set to empty
 outputRay = [];
+% strip the optical system of any rows which are all nans
+opticalSystemIn=opticalSystemIn(sum(isnan(opticalSystemIn),2)~=size(opticalSystemIn,2),:);
+% determine the number of surfaces and dimensionalty in which they are
+% defined (i.e., spherical or elliptical)
 nSurfaces = size(opticalSystemIn,1);
 nDims = size(opticalSystemIn,2);
 
@@ -355,22 +360,22 @@ end
 
 %% Finish and clean up
 % Assemble an output which is the unit vector for the final ray
-slope = tan(thetas(ii)+pi);
+slope = tan(thetas(nSurfaces)+pi);
 norm = sqrt(slope^2+1);
-outputRay = [intersectionCoords(ii,:); [intersectionCoords(ii,1)+(1/norm) intersectionCoords(ii,2)+(slope/norm)]];
+outputRay = [intersectionCoords(nSurfaces,:); [intersectionCoords(nSurfaces,1)+(1/norm) intersectionCoords(nSurfaces,2)+(slope/norm)]];
 
 % Complete the plot
 if figureFlag.show
     % Plot the final virtual image
     if figureFlag.imageLines
-        plot([imageCoords(ii,1) intersectionCoords(ii,1)],[imageCoords(ii,2) intersectionCoords(ii,2)],'-b');
+        plot([imageCoords(nSurfaces,1) intersectionCoords(nSurfaces,1)],[imageCoords(nSurfaces,2) intersectionCoords(nSurfaces,2)],'-b');
     end
     % Plot the ray path, which is a triple-length output ray. Also, add a
     % mark to indicate the initial coordinates of the ray
     if figureFlag.rayLines
-        slope = tan(thetas(ii)+pi);
+        slope = tan(thetas(nSurfaces)+pi);
         norm = sqrt(slope^2+1);
-        finalRay = [intersectionCoords(ii,:); [intersectionCoords(ii,1)+(3/norm) intersectionCoords(ii,2)+(3*slope/norm)]];
+        finalRay = [intersectionCoords(nSurfaces,:); [intersectionCoords(nSurfaces,1)+(3/norm) intersectionCoords(nSurfaces,2)+(3*slope/norm)]];
         plot([finalRay(1,1) finalRay(2,1)],[finalRay(1,2) finalRay(2,2)],'-r');
         plot(intersectionCoords(1,1),intersectionCoords(1,2),'xr');
     end    

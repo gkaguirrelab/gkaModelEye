@@ -45,7 +45,7 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( ey
     % the top of a 2mm radius exit pupil, with the eye posed straight
     % ahead, and the camera in its default location.
     sceneGeometry = createSceneGeometry();
-    [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( [-3.7 2 0], [0 0 0 2], sceneGeometry.virtualImageFunc.args{:} );
+    [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( [-3.7 2 0], [0 0 0 2], sceneGeometry.refraction.args{:} );
     % Test output against value computed on April 10, 2018
     virtualEyeWorldPointStored = [-3.7000    2.2553    0.0000];
     assert(max(abs(virtualEyeWorldPoint - virtualEyeWorldPointStored)) < 1e-4)

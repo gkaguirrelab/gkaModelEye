@@ -86,7 +86,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
 %                           the intersection of a ray on the camera plane.
 %                           The value is nan for points not subject to
 %                           refraction by the cornea. All values will be
-%                           nan sceneGeometry.virtualImageFunc is empty.
+%                           nan sceneGeometry.refraction is empty.
 %   pupilFitError         - The RMSE distance (in pixels) of the pupil
 %                           perimeter points to the pupil ellipse.
 %
@@ -95,18 +95,6 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     %% Basic forward projection example
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
-    % Define an eyePose with the azimuth, elevation, torsion, and pupil radius
-    eyePose = [-10 5 0 3];
-    % Obtain the pupil ellipse parameters in transparent format
-    pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
-    % Test against 4/1/2018 cached result for eyePose [-10 5 0 3]
-    assert(max(abs(pupilEllipseOnImagePlane -  [2.739864849789935e+02 2.215036804371633e+02 1.764122079488454e+04 0.193258910639646 2.151744146100150])) < 1e-6)
-%}
-%{
-    %% Basic forward projection with a compiled virtualImageFunc
-    % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry();
-    sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry, '/tmp/demo_virtualImageFunc' );
     % Define an eyePose with the azimuth, elevation, torsion, and pupil radius
     eyePose = [-10 5 0 3];
     % Obtain the pupil ellipse parameters in transparent format
@@ -173,8 +161,8 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     %% Display a 3D plot of a right eye
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
-    % Disable the virtualImageFunc, as we are viewing the 3D model
-    sceneGeometry.vitualImageFunc = [];
+    % Disable the refraction correction, as we are viewing the 3D model
+    sceneGeometry.refraction = [];
     % Define an eyePose with azimuth, elevation, torsion, and pupil radius
     eyePose = [-10 5 0 3];
     % Perform the projection and request the full eye model
@@ -195,6 +183,8 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
 %}
 %{
     %% Calculate the ray tracing error for some random poses
+    % Make sure there is a compiled virtualImageFunc
+    compileVirtualImageFunc
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Perform 100 forward projections with randomly selected eye poses
@@ -212,36 +202,17 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
 %}
 %{
     %% Calculate the time required for the forward projection
+    % Make sure there is a compiled virtualImageFunc
+    compileVirtualImageFunc
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Generate some randomly selected eye poses
     nPoses = 100;
     eyePoses=[(rand(nPoses,1)-0.5)*20, (rand(nPoses,1)-0.5)*10, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
-    clc
     fprintf('\nTime to compute forward projection model (average over %d projections):\n',nPoses);
-    % Perform the forward projection without ray tracing
-    sg = sceneGeometry;
-    sg.virtualImageFunc = [];
     tic
     for pp = 1:nPoses
-    	pupilProjection_fwd(eyePoses(pp,:),sg);
-    end
-    msecPerModel = toc / nPoses * 1000;
-    fprintf('\tWithout ray tracing: %4.2f msecs.\n',msecPerModel);
-    % With ray tracing, using MATLAB routine
-    sg = sceneGeometry;
-    tic
-    for pp = 1:nPoses
-    	pupilProjection_fwd(eyePoses(pp,:),sg);
-    end
-    msecPerModel = toc / nPoses * 1000;
-    fprintf('\tUsing MATLAB ray tracing: %4.2f msecs.\n',msecPerModel);
-    % With ray tracing, using a compiled ray tracing routine
-    sg = sceneGeometry;
-    sg.virtualImageFunc = compileVirtualImageFunc(sg,'/tmp/demo_virtualImageFunc');
-    tic
-    for pp = 1:nPoses
-    	pupilProjection_fwd(eyePoses(pp,:),sg);
+    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
     end
     msecPerModel = toc / nPoses * 1000;
     fprintf('\tUsing pre-compiled ray tracing: %4.2f msecs.\n',msecPerModel);
@@ -482,22 +453,10 @@ R.tor = [1 0 0; 0 cosd(eyeTorsion) -sind(eyeTorsion); 0 sind(eyeTorsion) cosd(ey
 
 % Define a variable to hold the calculated ray tracing errors
 nodalPointIntersectError = nan(length(pointLabels),1);
-% If we have a virtualImageFunction field, proceed
-if isfield(sceneGeometry,'virtualImageFunc')
+% If we have a refraction field, proceed
+if isfield(sceneGeometry,'refraction')
     % If this field is not set to empty, proceed    
-    if ~isempty(sceneGeometry.virtualImageFunc)
-        % If the virtualImageFunc is a compiled routine (which we detect by
-        % checking if the function handle evaluates with exist() to 3),
-        % check that the that the optical system in the function is the
-        % same as that in the passed sceneGeometry. For now, this check is
-        % deactivated, as it adds 2 msecs per forward model calculation.
-        %{
-        if exist(func2str(sceneGeometry.virtualImageFunc.handle))==3
-            if ~(sceneGeometry.opticalSystem==sceneGeometry.virtualImageFunc.opticalSystem)
-                warning('pupilProjection_fwd:opticalSystemMismatch','The optical system used to build the virtual image function does not match that in the sceneGeometry');
-            end
-        end
-        %}
+    if ~isempty(sceneGeometry.refraction)
         % Identify the eyeWorldPoints subject to refraction by the cornea
         refractPointsIdx = find(strcmp(pointLabels,'pupilPerimeter')+...
             strcmp(pointLabels,'pupilCenter')+...
@@ -509,9 +468,9 @@ if isfield(sceneGeometry,'virtualImageFunc')
             eyeWorldPoint=eyeWorldPoints(refractPointsIdx(ii),:);
             % Perform the computation using the passed function handle.
             [eyeWorldPoints(refractPointsIdx(ii),:), nodalPointIntersectError(refractPointsIdx(ii))] = ...
-                sceneGeometry.virtualImageFunc.handle(...
+                sceneGeometry.refraction.handle(...
                 eyeWorldPoint, eyePose, ...
-                sceneGeometry.virtualImageFunc.args{:});
+                sceneGeometry.refraction.args{:});
         end
     end
 end

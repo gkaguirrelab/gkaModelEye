@@ -1,4 +1,4 @@
-function virtualImageFuncStruct = compileVirtualImageFunc( sceneGeometry, varargin )
+function compileVirtualImageFunc( varargin )
 % Compiles the virtualImageFunc and saves it to disk
 %
 % Syntax:
@@ -7,9 +7,7 @@ function virtualImageFuncStruct = compileVirtualImageFunc( sceneGeometry, vararg
 % Description:
 %   This routine produces a compiled mex file for virtualImageFunc, saves
 %   the file at the specified disk location, and places the function on the
-%   MATLAB path. If a second input argument is not passed, a default save
-%   location is used (/tmp/demo_virtualImageFunc). The routine returns a
-%   structure that contains the handle to the function.
+%   MATLAB path.
 %
 %   Calls to the compiled virtualImageFuncMex execute roughly ~50x faster
 %   than the native virtualImageFunc routine.
@@ -17,48 +15,47 @@ function virtualImageFuncStruct = compileVirtualImageFunc( sceneGeometry, vararg
 % Inputs:
 %   sceneGeometry         - A sceneGeometry structure.
 %
-% Optional inputs:
-%   functionDirPath       - Character vector. Specifies the location in 
-%                           which the compiled function is writen. Defaults
-%                           to '/tmp/demo_virtualImageFunc'.
+% Optional key/value pairs:
+%  'functionDirPath'      - Character vector. Specifies the location in 
+%                           which the compiled function is writen.
+%  'replaceExistingFunc'  - Logical, default false. If set to true, any
+%                           existing versions of virtualImageFuncMex will
+%                           be removed from the path and a new version will
+%                           be created.
 %
 % Outputs:
-%   virtualImageFuncStruct - Structure. Includes the fields:
-%                           'handle' - handle for the function
-%                           'path' -  full path to the stored mex file
-%                           'opticalSystem' - the optical system(s) used to
-%                               generate the function
+%   none
 %
 % Examples:
 %{
     % Basic example with a compiled virtualImageFunc
+    compileVirtualImageFunc
     sceneGeometry = createSceneGeometry();
-    sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry, '/tmp/demo_virtualImageFunc' );
-    [virtualEyeWorldPoint, nodalPointIntersectError] = sceneGeometry.virtualImageFunc.handle( [-3.7 2 0], [0 0 0 2], sceneGeometry.virtualImageFunc.args{:} );
+    [virtualEyeWorldPoint, nodalPointIntersectError] = sceneGeometry.refraction.handle( [-3.7 2 0], [0 0 0 2], sceneGeometry.refraction.args{:} );
     % Test output against value computed on April 10, 2018
     virtualEyeWorldPointStored = [-3.7000    2.2553    0.0000];
     assert(max(abs(virtualEyeWorldPoint - virtualEyeWorldPointStored)) < 1e-4)
 %}
 %{
     % Compare computation time for MATLAB and compiled C code
-    sceneGeometry = createSceneGeometry();
     tic
-    sceneGeometry.virtualImageFunc = compileVirtualImageFunc( sceneGeometry, '/tmp/demo_virtualImageFunc' );
+    compileVirtualImageFunc('replaceExistingFunc',true)
     compileTime = toc;
     nComputes = 1000;
-    clc
     fprintf('\nTime to execute virtualImageFunc (average over %d projections):\n',nComputes);
     % Native function
+    sceneGeometry = createSceneGeometry('forceUncompiledVirtualImageFunc',true);
     tic
     for ii=1:nComputes
-        virtualImageFunc( [-3.7 2 0], [0 0 0 2], sceneGeometry.virtualImageFunc.args{:} );
+        virtualImageFunc( [-3.7 2 0], [0 0 0 2], sceneGeometry.refraction.args{:} );
     end
     msecPerComputeNative = toc / nComputes * 1000;
     fprintf('\tUsing the MATLAB function: %4.2f msecs.\n',msecPerComputeNative);
     % Compiled function
+    sceneGeometry = createSceneGeometry();
     tic
     for ii=1:nComputes
-        sceneGeometry.virtualImageFunc.handle( [-3.7 2 0], [0 0 0 2], sceneGeometry.virtualImageFunc.args{:} );
+        sceneGeometry.refraction.handle( [-3.7 2 0], [0 0 0 2], sceneGeometry.refraction.args{:} );
     end
     msecPerComputeCompile = toc / nComputes * 1000;
     fprintf('\tUsing the compiled function: %4.2f msecs.\n',msecPerComputeCompile);
@@ -70,15 +67,23 @@ function virtualImageFuncStruct = compileVirtualImageFunc( sceneGeometry, vararg
 %% input parser
 p = inputParser;
 
-% Required
-p.addRequired('sceneGeometry',@isstruct);
-
 % Optional
-p.addOptional('functionDirPath',fullfile(filesep,'tmp','demo_virtualImageFunc'),@(x) ischar(x));
+p.addParameter('functionDirPath',fullfile(userpath(),'toolboxes','transparentTrackMex'),@(x) ischar(x));
+p.addParameter('replaceExistingFunc',false,@islogical);
 
 % parse
-p.parse(sceneGeometry, varargin{:});
+p.parse(varargin{:});
 functionDirPath = p.Results.functionDirPath;
+
+
+%% Test if the function exists
+% If we have not been asked to replace an existing function, test if the
+% compiled function exists. If so, exit.
+if ~p.Results.replaceExistingFunc
+    if exist('virtualImageFuncMex')==3
+        return
+    end
+end
 
 
 %% Create a directory for the compiled functions
@@ -93,9 +98,6 @@ end
 
 
 %% Remove pre-existing functions from the path
-% It may be the case that the virtualImageFuncMex may be on the path from a
-% prior analysis. If so, remove this
-
 % Detect the case in which the current directory itself contains a compiled
 % virtualImageFuncMex file, in which case the user needs to change
 % directories
@@ -103,22 +105,29 @@ if strcmp(pwd(),fileparts(which('virtualImageFuncMex')))
     error('compileVirtualImageFunc:dirConflict','The current folder itself contains a compiled virtualImageFunc. Change directories to avoid function shadowing.')
 end
 
-% Check if there is a virtualImageFuncMex on the file path. If so, remove
-% it.
+% Remove any existing versions of the virtualImageFuncMex from the path.
 notDoneFlag = true;
+removalsCounter = 0;
+tooManyRemovals = 4;
 while notDoneFlag
     funcPath = which('virtualImageFuncMex');
     if isempty(funcPath)
         notDoneFlag = false;
     else
+        warning('compileVirtualImageFunc:previousFunc','Removing a previous virtualImageFuncMex from the path');
         rmpath(fileparts(funcPath));
+        removalsCounter = removalsCounter+1;
+    end
+    if removalsCounter == tooManyRemovals
+        error('compileVirtualImageFunc:tooManyRemovals','Potentially stuck in a loop trying to remove previous virtualImageFuncMex functions from the path.')
     end
 end
 
 
 %% Compile virtualImageFunc
 % Define argument variables so the compiler can deduce variable types
-args = {[0,0,0], [0,0,0,0], sceneGeometry.virtualImageFunc.args{:}};
+sceneGeometry = createSceneGeometry();
+args = {[0,0,0], [0,0,0,0], sceneGeometry.refraction.args{:}};
 % Change to the compile directory
 initialDir = cd(compileDir);
 % Compile the mex file
@@ -133,22 +142,6 @@ addpath(compileDir,'-begin');
 % Change back to the initial directory
 cd(initialDir);
 
-% Return the path to the function as the output
-virtualImageFuncStruct.handle = @virtualImageFuncMex;
-virtualImageFuncStruct.path = fullfile(fileLocation.folder,fileLocation.name);
-virtualImageFuncStruct.opticalSystem = sceneGeometry.virtualImageFunc.opticalSystem;
-
-% Remake the args
-virtualImageFuncStruct.args = {...
-    sceneGeometry.cameraExtrinsic.translation, ...
-    sceneGeometry.eye.rotationCenters, ...
-    sceneGeometry.virtualImageFunc.opticalSystem.p1p2, ...
-    sceneGeometry.virtualImageFunc.opticalSystem.p1p3};
-
-% Save a copy of this variable in the function directory. The saved
-% variable may be used to re-instantiate the function at a later point.
-filePath = fullfile(fileLocation.folder,'virtualImageFuncStruct');
-save(filePath,'virtualImageFuncStruct');
 
 end % compileVirtualImageFunc
 

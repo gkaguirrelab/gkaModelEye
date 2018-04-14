@@ -3,6 +3,6 @@ The code in this directory implements a ray-traced model eye for the purpose of 
 
 Every function has associated examples. To test all examples, set the working directory in MATLAB to this directory, and issue the command:
 
-`[names,status] = RunExamples('.')`
+`[names,status] = RunExamples(fullfile(userpath(),'toolboxes','transparentTrack','code','modelEye'))`
 
 in the console.

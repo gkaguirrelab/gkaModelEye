@@ -36,7 +36,6 @@ function [cameraDepthMean, cameraDepthSD] = depthFromIrisDiameter( sceneGeometry
     %% Recover a veridical camera distance
     % Create a sceneGeometry structure
     sceneGeometry = createSceneGeometry();
- 	sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry);
     % Calculate what the observed iris diameter should be at 100 mm
     veridicalSceneGeometry = sceneGeometry;
     veridicalSceneGeometry.cameraExtrinsic.translation(3) = 100;
@@ -96,8 +95,9 @@ p.parse(sceneGeometry, observedIrisDiamPixels)
 % to find the size of the true iris for the mean and mean+1SD observed
 % refracted iris sizes
 %{
+    compileVirtualImageFunc
  	sceneGeometry = createSceneGeometry();
- 	virtualImageFunc = compileVirtualImageFunc(sceneGeometry);
+    virtualImageFuncStruct = sceneGeometry.virtualImageFuncStruct;
 	% Get the area in pixels of a "pupil" that is the same radius
 	sceneGeometry.virtualImageFunc = [];
 	% as the HVID when there is no ray tracing

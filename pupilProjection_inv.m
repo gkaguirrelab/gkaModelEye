@@ -99,9 +99,7 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
     % Obtain the pupil ellipse parameters in transparent format
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
     % Recover the eye pose from the ellipse
-    tic
     inverseEyePose = pupilProjection_inv(pupilEllipseOnImagePlane, sceneGeometry);
-    toc
     % Report the difference between the input and recovered eyePose
     fprintf('Error in the recovered eye pose (deg azimuth, deg elevation, deg torsion, mm pupil radius) is: \n');
     eyePose - inverseEyePose
@@ -109,10 +107,10 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
 %}
 %{
     %% Calculate the time required for the inverse projection
+    % Compile the virtualImageFunction
+    compileVirtualImageFunc
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
-    % Compile the ray tracing functions
-    sceneGeometry.virtualImageFunc = compileVirtualImageFunc(sceneGeometry,'/tmp/demo_virtualImageFunc');
     % Generate ellipses for some randomly selected eye poses
     nPoses = 20;
     eyePoses=[(rand(nPoses,1)-0.5)*20, (rand(nPoses,1)-0.5)*10, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
