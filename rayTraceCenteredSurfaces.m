@@ -487,6 +487,13 @@ M = (1/ellipseRadii(1)^2) + (1/ellipseRadii(2)^2)* m^2;
 N = 2*(1/ellipseRadii(2)^2)*m*c - 2*(1/ellipseRadii(1)^2)*ellipseCenterZ;
 O = (1/ellipseRadii(2)^2)*c^2 + (1/ellipseRadii(1)^2)*ellipseCenterZ^2 -1 ;
 determinant = (N^2 - 4* M * O);
+
+% Detect if we have a tangential or non-intersecting ray
+if ~isreal(determinant)
+    curvature = nan;
+    return
+end
+
 zCoords = [(- N + sqrt(determinant))/ (2*M), (- N - sqrt(determinant))/ (2*M)];
 hCoords = [m*zCoords(1) + c, m*zCoords(2) + c];
 
