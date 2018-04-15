@@ -18,7 +18,7 @@ createSceneGeometry    -->  pupilProjection_fwd
  - modelEyeParameters		     |
  - returnRefractiveIndex	     V
  - addContactLens      	     virtualImageFunc
- - addSpectaleLens		     |
+ - addSpectacleLens	             |
  				     V
  			 rayTraceCenteredSurfaces
 ```
