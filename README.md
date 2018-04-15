@@ -11,16 +11,16 @@ The forward model of the appearance of the pupil and iris accounts for the refra
 
 A rough hierarchy of the functions is as follows:
 ```
-                             pupilProjection_inv
-			             |
-				     V
-createSceneGeometry    -->  pupilProjection_fwd
- - modelEyeParameters		     |
- - returnRefractiveIndex	     V
- - addContactLens      	     virtualImageFunc
- - addSpectacleLens	             |
- 				     V
- 			 rayTraceCenteredSurfaces
+    pupilProjection_inv
+            |
+            V
+    pupilProjection_fwd  <--  createSceneGeometry
+            |                   |-- modelEyeParameters
+            V                   |     '--returnRefractiveIndex
+    virtualImageFunc            |
+            |                   |-- addContactLens
+            V                   '-- addSpectacleLens
+rayTraceCenteredSurfaces
 ```
 
 Every function has associated examples in the header comments. This command issued in the MATLAB console will test all examples:
