@@ -10,10 +10,10 @@ function eye = modelEyeParameters( varargin )
 %
 %   The parameters returned by this routine correspond to the eyeWorld
 %   coordinate space used in pupilProjection_fwd, which is relative to the
-%   pupil axis, with the apex of the cornea set as zero in depth. The space
-%   has the dimensions [depth, horizontal, vertical]; negative values of
-%   depth are towards the back of the eye. The model assumes the optical
-%   and pupil axis of the eye are algined.
+%   optic / pupil axis, with the apex of the cornea set as zero in depth.
+%   The space has the dimensions [depth, horizontal, vertical]; negative
+%   values of depth are towards the back of the eye. The model assumes the
+%   optical and pupil axis of the eye are algined.
 %
 % Inputs:
 %   none
@@ -35,10 +35,10 @@ function eye = modelEyeParameters( varargin )
 %                           the posterior chamber are scaled to fit the
 %                           proportions predicted by the Atchison model for
 %                           the specified degree of ametropia.
-%  'kappaAngle'           - 1x4 vector. This is the angle of the visual
-%                           axis in degrees w.r.t. to pupillary axis. The
+%  'gammaAngle'           - 1x4 vector. This is the angle of the fixation
+%                           axis in degrees w.r.t. to optical axis. The
 %                           values are [azimuth, elevation]. An eyePose of:
-%                             [-kappa(1), -kappa(2), 0, radius]
+%                             [-gamma(1), -gamma(2), 0, radius]
 %                           aligns the visual axis of the eye with the
 %                           optical axis of the camera.
 %  'eyeLaterality'        - A text string that specifies which eye (left,
@@ -73,7 +73,7 @@ p = inputParser; p.KeepUnmatched = true;
 % Optional
 p.addParameter('sphericalAmetropia',0,@isscalar);
 p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
-p.addParameter('kappaAngle',[],@(x)(isempty(x) || isnumeric(x)));
+p.addParameter('gammaAngle',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
 p.addParameter('spectralDomain','nir',@ischar);
@@ -199,6 +199,36 @@ switch p.Results.species
         % surface of the cornea at the apex, following Atchison 2006.
         eye.cornea.back.center = [-0.55-eye.cornea.back.radii(1) 0 0];
         
+        % Navarro 2006 measured the angle of rotation of the axes of the
+        % corneal ellipsoid relative to the keratometric axis, which is the
+        % axis that connects a fixation point with the center of curvature
+        % of the cornea. We convert those angles here to be relative to the
+        % optic axis of the eye. To do so, we first assume that the
+        % keratometric axis is equal to the fixation axis [MAY WANT TO ADD
+        % A CONVERSION STEP FOR THIS]. Next, we add the Navarro
+        % measurements to the gamma angle values that we have for the
+        % model.
+        %{
+            % Navarro values for the displacement of the corneal axis from
+            % keratometric axis for the right eye (in degrees)
+            keratometricAxisWRTcornealAxis = [2.35 0.85 0.02];
+            % assume that the fixation and keratometric axes are equal
+            fixationAxisWRTcornealAxis = [2.35 0.85 0.02];
+            % specify our gamma angles
+            eye = modelEyeParameters();
+            fixationAxisWRTopticalAxis = eye.gamma;
+            % Now obtain the corneal axes relative to optical axis
+            cornealAxisWRTopticalAxis = fixationAxisWRTopticalAxis - fixationAxisWRTcornealAxis
+            
+        %}
+        switch eyeLaterality
+            case 'Right'
+                eye.cornea.axis = [2.6539    1.3017   -0.0200];
+            case 'Left'
+                eye.cornea.axis = [-2.6539    1.3017   0.0200];
+        end
+              eye.cornea.axis = [0    0   0];
+
         
         %% Pupil
         % We position the pupil plane at the depth of the anterior point of
@@ -293,6 +323,7 @@ switch p.Results.species
         % ellipse. This can be invoked as a function using str2func.
         eye.pupil.eccenParams = [-1.723 4.796 0.976 0.047]; 
         eye.pupil.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',eye.pupil.eccenParams(1),eye.pupil.eccenParams(2),eye.pupil.eccenParams(3),eye.pupil.eccenParams(4)); 
+
         % The theta values of the exit pupil ellipse for eccentricities
         % less than, and greater than, zero. We have structure here to add
         % a bit of tilt from vertical by laterality, but are not currently
@@ -583,12 +614,12 @@ switch p.Results.species
         end
 
         
-        %% Kappa
-        % We now calculate kappa, which is the angle (in degrees) between
-        % the pupil and visual axes of the eye. A related measurement is
-        % gamma, which is the angle between the optical axis and the
-        % fixation axis of the eye. We use the names and greek letter
-        % designations for eye axes from Atchison & Smith:
+        %% Gamma
+        % We now calculate gamma, which is the angle (in degrees) between
+        % the optical and fixation axes of the eye. A related measurement
+        % is kappa, which is the angle between the pupil and visual axes.
+        % We use the names and greek letter designations for eye axes from
+        % Atchison & Smith:
         %
         %   Atchison, David A., George Smith, and George Smith. "Optics of
         %   the human eye." (2000): 34-35.
@@ -663,21 +694,17 @@ switch p.Results.species
         %
         % Until better evidene is available, we adopt a vertical kappa of
         % -2.15 degrees for the emmetropic model eye.        
-        if isempty(p.Results.kappaAngle)
+        if isempty(p.Results.gammaAngle)
             switch eyeLaterality
                 case 'Right'
-                    eye.kappa(1) = atand((15.0924/(eye.axialLength-8.5000))*tand(5));
+                    eye.gamma(1) = atand((15.0924/(eye.axialLength-8.5000))*tand(5));
                 case 'Left'
-                    eye.kappa(1) = -atand((15.0924/(eye.axialLength-8.5000))*tand(5));
+                    eye.gamma(1) = -atand((15.0924/(eye.axialLength-8.5000))*tand(5));
             end
-            eye.kappa(2) = atand((15.0924/(eye.axialLength-8.5000))*tand(2.15));
-            % We place values of zero into the final two elements of the
-            % kappa vector. This way, the vector can simply be subtracted
-            % from an eyePose to determine the pose of the eye for the
-            % visual axis.
-            eye.kappa(3:4)=0;
+            eye.gamma(2) = atand((15.0924/(eye.axialLength-8.5000))*tand(2.15));
+            eye.gamma(3)=0;
         else
-            eye.kappa = p.Results.kappaAngle;
+            eye.gamma = p.Results.gammaAngle;
         end
         
         %% Refractive indices
@@ -814,7 +841,7 @@ eye.meta.p = p.Results;
 eye.meta.units = 'mm';
 eye.meta.coordinates = 'eyeWorld';
 eye.meta.dimensions = {'depth (axial)' 'horizontal' 'vertical'};
-eye.meta.kappa = 'Degrees angle of visual axis w.r.t. pupil axis.';
+eye.meta.gamma = 'Degrees angle of fixation axis w.r.t. optical axis.';
 
 end % function
 
