@@ -343,12 +343,7 @@ if p.Results.fullEyeModelFlag
     ansTmp = surf2patch(p1tmp, p2tmp, p3tmp);
     anteriorChamberPoints=ansTmp.vertices;
     
-    % Retain those points that are anterior to the iris plane and not at a
-    % greater radius in the p2xp3 plane than the iris.
-    retainIdx = logical(...
-        (anteriorChamberPoints(:,1) >= sceneGeometry.eye.iris.center(1)) .* ...
-        (sqrt(anteriorChamberPoints(:,2).^2+anteriorChamberPoints(:,3).^2) <= sceneGeometry.eye.iris.radius) ...
-        );
+    % Retain those points that are anterior to the iris plane.
     retainIdx = anteriorChamberPoints(:,1) >= sceneGeometry.eye.iris.center(1);
     if all(~retainIdx)
         error('pupilProjection_fwd:pupilPlanePosition','The pupil plane is set in front of the corneal apea');
@@ -402,6 +397,35 @@ if p.Results.fullEyeModelFlag
 end
 
 
+%% Refract the eyeWorld points
+% This steps accounts for the effect of corneal and corrective lens
+% refraction upon the appearance of points from the eye.
+
+% Define a variable to hold the calculated ray tracing errors
+nodalPointIntersectError = nan(length(pointLabels),1);
+% If we have a refraction field, proceed
+if isfield(sceneGeometry,'refraction')
+    % If this field is not set to empty, proceed    
+    if ~isempty(sceneGeometry.refraction)
+        % Identify the eyeWorldPoints subject to refraction by the cornea
+        refractPointsIdx = find(strcmp(pointLabels,'pupilPerimeter')+...
+            strcmp(pointLabels,'pupilCenter')+...
+            strcmp(pointLabels,'irisPerimeter')+...
+            strcmp(pointLabels,'irisCenter'));
+        % Loop through the eyeWorldPoints that are to be refracted
+        for ii=1:length(refractPointsIdx)
+            % Get this eyeWorld point
+            eyeWorldPoint=eyeWorldPoints(refractPointsIdx(ii),:);
+            % Perform the computation using the passed function handle.
+            [eyeWorldPoints(refractPointsIdx(ii),:), nodalPointIntersectError(refractPointsIdx(ii))] = ...
+                sceneGeometry.refraction.handle(...
+                eyeWorldPoint, eyePose, ...
+                sceneGeometry.refraction.args{:});
+        end
+    end
+end
+
+
 %% Project the eyeWorld points to headWorld coordinates.
 % This coordinate frame is in mm units and has the dimensions (h1,h2,h3).
 % The diagram is of a cartoon eye, being viewed directly from the front.
@@ -437,6 +461,10 @@ end
 % later.
 
 
+%% Copy the eyeWorld points into headWorld
+headWorldPoints=eyeWorldPoints;
+
+
 %% Define the eye rotation matrix
 % Assemble a rotation matrix from the head-fixed Euler angle rotations. In
 % the head-centered world coordinate frame, positive azimuth, elevation and
@@ -447,39 +475,7 @@ R.ele = [cosd(eyeElevation) 0 sind(eyeElevation); 0 1 0; -sind(eyeElevation) 0 c
 R.tor = [1 0 0; 0 cosd(eyeTorsion) -sind(eyeTorsion); 0 sind(eyeTorsion) cosd(eyeTorsion)];
 
 
-%% Obtain the virtual image for the eyeWorld points
-% This steps accounts for the effect of corneal and corrective lens
-% refraction upon the appearance of points from the eye.
-
-% Define a variable to hold the calculated ray tracing errors
-nodalPointIntersectError = nan(length(pointLabels),1);
-% If we have a refraction field, proceed
-if isfield(sceneGeometry,'refraction')
-    % If this field is not set to empty, proceed    
-    if ~isempty(sceneGeometry.refraction)
-        % Identify the eyeWorldPoints subject to refraction by the cornea
-        refractPointsIdx = find(strcmp(pointLabels,'pupilPerimeter')+...
-            strcmp(pointLabels,'pupilCenter')+...
-            strcmp(pointLabels,'irisPerimeter')+...
-            strcmp(pointLabels,'irisCenter'));
-        % Loop through the eyeWorldPoints that are to be refracted
-        for ii=1:length(refractPointsIdx)
-            % Get this eyeWorld point
-            eyeWorldPoint=eyeWorldPoints(refractPointsIdx(ii),:);
-            % Perform the computation using the passed function handle.
-            [eyeWorldPoints(refractPointsIdx(ii),:), nodalPointIntersectError(refractPointsIdx(ii))] = ...
-                sceneGeometry.refraction.handle(...
-                eyeWorldPoint, eyePose, ...
-                sceneGeometry.refraction.args{:});
-        end
-    end
-end
-
-
 %% Apply the eye rotation
-% Copy the eyeWorld points into headWorld
-headWorldPoints=eyeWorldPoints;
-
 % This order (tor-ele-azi) corresponds to a head-fixed, extrinsic, rotation
 % matrix. The reverse order (azi-ele-tor) would be an eye-fixed, intrinsic
 % rotation matrix and would corresponds to the "Fick coordinate" scheme.
@@ -487,6 +483,8 @@ rotOrder = {'tor','ele','azi'};
 
 % We shift the headWorld points to this rotation center, rotate, shift
 % back, and repeat. Omit the eye rotation centers from this process.
+% We must perform the rotation independently for each Euler angle to
+% accomodate having rotation centers that differ by Euler angle.
 rotatePointsIdx = ~contains(pointLabels,'Rotation');
 for rr=1:3
     headWorldPoints(rotatePointsIdx,:) = ...
