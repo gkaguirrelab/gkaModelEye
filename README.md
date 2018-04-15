@@ -8,10 +8,10 @@ The function `pupilProjection_fwd` implements the forward model of this projecti
 The function `pupilProjection_inv` implements a search over eyePose parameters and executions of the forwrad model to find the eyePose values that best describe an observed entrance pupil ellipse.
 
 The forward model of the appearance of the pupil and iris accounts for the refractive properties of the cornea (and any artificial lenses between the eye and the camera). The routine `virtualImageFunc.m` calculates the effect of refraction, making use of calls to `rayTraceCenteredSurfaces.m`. An improvement in the execution time of the forward model can be achieved by compiling the ray tracing routines. To do so, issue the command `compileVirtualImageFunc` at the MATLAB console. A compiled MEX file version of `virtualImageFunc` will be placed on the MATLAB path if it is not already present.
-```
-A rough hierarchy of the functions is as follows:
 
-`                            pupilProjection_inv
+A rough hierarchy of the functions is as follows:
+```
+                             pupilProjection_inv
 			             |
 				     V
 createSceneGeometry    -->  pupilProjection_fwd
@@ -20,7 +20,7 @@ createSceneGeometry    -->  pupilProjection_fwd
  - addContactLens      	     virtualImageFunc
  - addSpectaleLens		     |
  				     V
- 			 rayTraceCenteredSurfaces`
+ 			 rayTraceCenteredSurfaces
 ```
 
 Every function has associated examples in the header comments. This command issued in the MATLAB console will test all examples:
