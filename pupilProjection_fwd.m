@@ -99,8 +99,8 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     eyePose = [-10 5 0 3];
     % Obtain the pupil ellipse parameters in transparent format
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
-    % Test against 4/1/2018 cached result for eyePose [-10 5 0 3]
-    pupilEllipseOnImagePlaneCached = [2.739888037679040e+02 2.215054382386746e+02 1.763662134215358e+04 0.193208740889886 2.151336856968847];
+    % Test against 4/15/2018 cached result for eyePose [-10 5 0 3]
+    pupilEllipseOnImagePlaneCached = [2.739903247249959e+02 2.215041869179179e+02 1.763654315743883e+04 0.197418612612315 2.108032545222294];
     assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-6)
 %}
 %{
@@ -190,7 +190,8 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     sceneGeometry=createSceneGeometry();
     % Perform 100 forward projections with randomly selected eye poses
     nPoses = 100;
-    eyePoses=[(rand(nPoses,1)-0.5)*30, (rand(nPoses,1)-0.5)*20, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
+    eyePoses=[(rand(nPoses,1)-0.5)*45, (rand(nPoses,1)-0.5)*40, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
+    clear nodalPointIntersectError
     for pp = 1:nPoses
     	[~,~,~,~,~,nodalPointIntersectError(:,pp)]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
     end
