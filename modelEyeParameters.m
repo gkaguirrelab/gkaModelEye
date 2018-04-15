@@ -218,8 +218,7 @@ switch p.Results.species
             eye = modelEyeParameters();
             fixationAxisWRTopticalAxis = eye.gamma;
             % Now obtain the corneal axes relative to optical axis
-            cornealAxisWRTopticalAxis = fixationAxisWRTopticalAxis - fixationAxisWRTcornealAxis
-            
+            cornealAxisWRTopticalAxis = fixationAxisWRTopticalAxis - fixationAxisWRTcornealAxis            
         %}
         switch eyeLaterality
             case 'Right'
@@ -227,14 +226,12 @@ switch p.Results.species
             case 'Left'
                 eye.cornea.axis = [-2.6539    1.3017   0.0200];
         end
-              eye.cornea.axis = [0    0   0];
 
         
         %% Pupil
         % We position the pupil plane at the depth of the anterior point of
-        % the lens. The coordinate space of the model eye is define with
-        % respect to the center of the pupil, so the p2 and p3 values are
-        % zero
+        % the lens. The coordinate space of the model eye is defined w.r.t.
+        % the center of the pupil, so the p2 and p3 values are zero
         eye.pupil.center = [-3.7 0 0];
         
         % The exit pupil of the eye is elliptical. Further, the
@@ -470,8 +467,15 @@ switch p.Results.species
         Qzy = 0.25+0.017*p.Results.sphericalAmetropia;
         eye.posteriorChamber.radii = [ -(Rzx/(Qzx+1)) -(Rzx*sqrt(1/(Qzx+1))) -(Rzy*sqrt(1/(Qzy+1)))];
 
-        % The model holds the depth of the anterior chamber constant. To
-        % position the posterior chamber, we need to know the distance
+        % Our model holds the depth of the anterior chamber constant.
+        % Atchison found that anterior chamber depth does not vary with
+        % spherical ametropia, although this is not a consistent finding:
+        %
+        %   Hosny, Mohamed, et al. "Relationship between anterior chamber
+        %   depth, refractive state, corneal diameter, and axial length."
+        %   Journal of Refractive Surgery 16.3 (2000): 336-340.
+        %
+        % To position the posterior chamber, we need to know the distance
         % between the apex of the anterior chamber and the apex of the
         % posterior chamber. The value for this fixed distance is derived
         % from the Atchison 2006 model eye. The total interior depth of the
@@ -482,12 +486,12 @@ switch p.Results.species
         % The axial length of the posterior chamber ellipsoid in an
         % emmetrope is:
         %
-        %   10.165 * 2 = 20.33
+        %   10.1654 * 2 = 20.3308
         %
         % Therefore, the apex of the posterior ellipsoid is:
-        %   23.5800 - 20.33 = 3.2964 mm
+        %   23.5800 - 20.3308 = 3.2492 mm
         % behind the corneal apex.
-        posteriorChamberApexDepth = 3.25;
+        posteriorChamberApexDepth = 3.2492;
         
         % Compute and store axial length
         if isempty(p.Results.axialLength)
@@ -654,23 +658,8 @@ switch p.Results.species
         %
         % They measured the shape of the entrance pupil as a function of
         % viewing angle relative to the fixation point of the eye. Their
-        % data from the right eye is well fit by a kappa of [5, -2.15]
+        % data from the right eye is well fit by a horizontal kappa of 5.3
         % degrees (see TEST_Mathur2013.m).
-        %
-        % Measured kappa has been found to depend upon axial length:
-        %
-        %   Tabernero, Juan, et al. "Mechanism of compensation of
-        %   aberrations in the human eye." JOSA A 24.10 (2007): 3274-3283.
-        %
-        % Tabernero 2007 report a mean horizontal kappa of 5 degrees in
-        % emmetropes, and their Equation 6 expresses kappa (technically
-        % alpha, the angle w.r.t. the optical axis) as a function of axial
-        % length. Their formula assumes an emmetropic model eye of 24 mm,
-        % while the model eye used here has an emmetropic axial length of
-        % 23.592. The equation implemented below is adjusted so that an
-        % emmetropic eye of 23.5924 mm has a horizontal (nasal directed)
-        % kappa of 5 degrees and a vertical (inferiorly directed) kappa of
-        % -2.15 degrees.
         %
         % While a horizontal kappa of ~5 degrees is a consistent finding,
         % measurements of vertical kappa differ:
@@ -693,13 +682,30 @@ switch p.Results.species
         %   Vision. Keystone Publishing Company, 1920.
         %
         % Until better evidene is available, we adopt a vertical kappa of
-        % -2.15 degrees for the emmetropic model eye.        
+        % -2.15 degrees for the emmetropic model eye, as this value best
+        % fits the Mathur 2013 data.
+        %
+        % Measured kappa has been found to depend upon axial length:
+        %
+        %   Tabernero, Juan, et al. "Mechanism of compensation of
+        %   aberrations in the human eye." JOSA A 24.10 (2007): 3274-3283.
+        %
+        % Tabernero 2007 report a mean horizontal kappa of 5 degrees in
+        % emmetropes, and their Equation 6 expresses kappa (technically
+        % alpha, the angle w.r.t. the optical axis) as a function of axial
+        % length. Their formula assumes an emmetropic model eye of 24 mm,
+        % while the model eye used here has an emmetropic axial length of
+        % 23.592. The equation implemented below is adjusted so that an
+        % emmetropic eye of 23.5924 mm has a horizontal (nasal directed)
+        % kappa of 5.3 degrees and a vertical (inferiorly directed) kappa
+        % of -2.15 degrees.
+        %
         if isempty(p.Results.gammaAngle)
             switch eyeLaterality
                 case 'Right'
-                    eye.gamma(1) = atand((15.0924/(eye.axialLength-8.5000))*tand(5));
+                    eye.gamma(1) = atand((15.0924/(eye.axialLength-8.5000))*tand(5.3));
                 case 'Left'
-                    eye.gamma(1) = -atand((15.0924/(eye.axialLength-8.5000))*tand(5));
+                    eye.gamma(1) = -atand((15.0924/(eye.axialLength-8.5000))*tand(5.3));
             end
             eye.gamma(2) = atand((15.0924/(eye.axialLength-8.5000))*tand(2.15));
             eye.gamma(3)=0;
@@ -707,12 +713,14 @@ switch p.Results.species
             eye.gamma = p.Results.gammaAngle;
         end
         
+        
         %% Refractive indices
         % Obtain refractive index values for this spectral domain.
         eye.index.cornea = returnRefractiveIndex( 'cornea', p.Results.spectralDomain );
         eye.index.aqueous = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
         eye.index.lens = returnRefractiveIndex( 'lens', p.Results.spectralDomain );
 
+        
     %% Dog eye
     case {'dog','Dog','canine','Canine'}
         
