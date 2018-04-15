@@ -95,10 +95,6 @@ function sceneGeometry = createSceneGeometry(varargin)
 %                           for optical surfaces having a different
 %                           elliptical cross section in the axial and
 %                           sagittal dimension.
-%          'args'         - A cell array of variables extracted from the
-%                           sceneGeometry that are to be passed to the
-%                           virtualImageFunc. Stored here to simplify the
-%                           calling of the routine.
 %
 %  'lenses' - An optional structure that describes the properties of 
 %       refractive lenses that are present between the eye and the camera.
@@ -156,7 +152,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %                           This is the light domain within which imaging
 %                           is being performed. The refractive indices vary
 %                           based upon this choice.
-%  'forceUncompiledVirtualImageFunc' - Logical, default false. If set to
+%  'forceMATLABVirtualImageFunc' - Logical, default false. If set to
 %                           true, the native MATLAB code for the
 %                           virtualImageFunc is used for refraction,
 %                           instead of a compiled MEX file. This is used
@@ -198,7 +194,7 @@ p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('medium','air',@ischar);
 p.addParameter('spectralDomain','nir',@ischar);
-p.addParameter('forceUncompiledVirtualImageFunc',false,@islogical);
+p.addParameter('forceMATLABVirtualImageFunc',false,@islogical);
 
 % parse
 p.parse(varargin{:})
@@ -219,7 +215,7 @@ sceneGeometry.eye = modelEyeParameters('spectralDomain',p.Results.spectralDomain
 
 %% refraction - handle and path
 % Handle to the function; use the MEX version if available
-if exist('virtualImageFuncMex')==3 && ~p.Results.forceUncompiledVirtualImageFunc
+if exist('virtualImageFuncMex')==3 && ~p.Results.forceMATLABVirtualImageFunc
     sceneGeometry.refraction.handle = @virtualImageFuncMex;
     sceneGeometry.refraction.path = which('virtualImageFuncMex');
 else
@@ -299,15 +295,6 @@ sceneGeometry.refraction.opticalSystem.p1p2 = [sceneGeometry.refraction.opticalS
 sceneGeometry.refraction.opticalSystem.p1p3 = [sceneGeometry.refraction.opticalSystem.p1p3; ...
     nan(10-size(sceneGeometry.refraction.opticalSystem.p1p3,1),4)];
 
-
-%% refraction - args
-% Assemble an args field that has these components to simplify calling the
-% virtualImageFunc routine
-sceneGeometry.refraction.args = {...
-    sceneGeometry.cameraExtrinsic.translation, ...
-    sceneGeometry.eye.rotationCenters, ...
-    sceneGeometry.refraction.opticalSystem.p1p2, ...
-    sceneGeometry.refraction.opticalSystem.p1p3};
 
 %% constraintTolerance
 sceneGeometry.constraintTolerance = p.Results.constraintTolerance;

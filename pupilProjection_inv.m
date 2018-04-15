@@ -104,6 +104,7 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
     fprintf('Error in the recovered eye pose (deg azimuth, deg elevation, deg torsion, mm pupil radius) is: \n');
     eyePose - inverseEyePose
     assert(max(abs(eyePose - inverseEyePose)) < 1e-4)
+
 %}
 %{
     %% Calculate the time required for the inverse projection

@@ -45,20 +45,9 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
     %   Bennett, Edward S., and Barry A. Weissman, eds. Clinical contact 
     %   lens practice. Lippincott Williams & Wilkins, 2005. Chapter 7A, 
     %   "Optical phenomena of contact lenses", WJ Benjamin. p130
-    eye = modelEyeParameters();
-    %eye.corneaFrontSurfaceR = 7.8;
-    % Obtain the eye parameters from the modelEyeParameters() function
-    eye = modelEyeParameters('sphericalAmetropia',-2);
-    % Define an optical system
-    cornealThickness = -eye.cornea.back.center(1)-eye.cornea.back.radii(1);
-    opticalSystem = [nan, nan, nan, eye.index.aqueous; ...
-        -eye.cornea.back.radii(1)-cornealThickness, -eye.cornea.back.radii(1), -eye.cornea.back.radii(2),  eye.index.cornea; ...
-        -eye.cornea.front.radii(1), -eye.cornea.front.radii(1), -eye.cornea.front.radii(2), 1];
-    % Add a -10 diopter lens
-    opticalSystem=addContactLens(opticalSystem, -10, 'lensRefractiveIndex', 1.43, 'minimumLensThickness', 0.1);
+    sceneGeometry = createSceneGeometry('contactLens',[-10,1.43]);
     % The curvature of the front surface of the contact lens should be
     % 9.56 mm
-    opticalSystem(end,2)
 %}
 %{
     %% Example - Test the output for zero diopters
@@ -66,42 +55,8 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
     % refraction equal to the corneal index, then the curvature of the
     % front surface of the lens should be equivalent to the corneal front
     % surface curvature.
-    eye = modelEyeParameters();
-    eye.corneaRefractiveIndex = 1.376;
-    cornealThickness = -sceneGeometry.eye.corneaBackSurfaceCenter(1)-sceneGeometry.eye.corneaBackSurfaceRadii(1);
-    opticalSystem = [nan, nan, eye.aqueousRefractiveIndex; ...
-        -eye.corneaBackSurfaceR-cornealThickness, -eye.corneaBackSurfaceR, eye.corneaRefractiveIndex; ...
-        -eye.corneaFrontSurfaceR, -eye.corneaFrontSurfaceR, 1.0];
-    opticalSystem=addContactLens(opticalSystem, 0, 'lensRefractiveIndex', eye.corneaRefractiveIndex, 'minimumLensThickness',0);
-    % Is the lens surface the same curvature as the corneal surface?
-    round(opticalSystem(end,1),4) == round(opticalSystem(end-1,1),4)
 %}
-%{
-    %% Example - Ray trace through cornea and contact lens
-    % Obtain the eye parameters from the modelEyeParameters() function
-    eye = modelEyeParameters('sphericalAmetropia',2);
-    % Define an optical system
-    cornealThickness = -sceneGeometry.eye.corneaBackSurfaceCenter(1)-sceneGeometry.eye.corneaBackSurfaceRadii(1);
-    opticalSystem = [nan, nan, eye.aqueousRefractiveIndex; ...
-        -eye.corneaBackSurfaceR-cornealThickness, -eye.corneaBackSurfaceR, eye.corneaRefractiveIndex; ...
-        -eye.corneaFrontSurfaceR, -eye.corneaFrontSurfaceR, 1.0];
-    % Add a plus lens for the correction of hyperopia
-    opticalSystem=addContactLens(opticalSystem, 2);
-    % Define FigureFlag as a structure so we can provide plot limits. Also,
-    % turn off the text labels to reduce clutter
-    clear figureFlag
-    figureFlag.textLabels = false;
-    figureFlag.zLim = [-10 5];
-    figureFlag.hLim = [-5 5];
-    % Define a ray originating from the border of the pupil
-    pupilRadius = 2;
-    clear coords
-    clear theta
-    theta = deg2rad(-30);
-    coords = [eye.pupilCenter(1) pupilRadius];
-    % Perform the ray tracing
-    outputRay = rayTraceCenteredSphericalSurfaces(coords, theta, opticalSystem, figureFlag)
-%}
+
 
 %% input parser
 p = inputParser; p.KeepUnmatched = true;

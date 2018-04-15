@@ -9,7 +9,7 @@ function compileVirtualImageFunc( varargin )
 %   the file at the specified disk location, and places the function on the
 %   MATLAB path.
 %
-%   Calls to the compiled virtualImageFuncMex execute roughly ~50x faster
+%   Calls to the compiled virtualImageFuncMex execute roughly ~13x faster
 %   than the native virtualImageFunc routine.
 %
 % Inputs:
@@ -31,23 +31,31 @@ function compileVirtualImageFunc( varargin )
     % Basic example with a compiled virtualImageFunc
     compileVirtualImageFunc
     sceneGeometry = createSceneGeometry();
-    [virtualEyeWorldPoint, nodalPointIntersectError] = sceneGeometry.refraction.handle( [-3.7 2 0], [0 0 0 2], sceneGeometry.refraction.args{:} );
+    % Assemble the args for the virtualImageFunc
+    args = {sceneGeometry.cameraExtrinsic.translation, ...
+    	sceneGeometry.eye.rotationCenters, ...
+    	sceneGeometry.refraction.opticalSystem.p1p2, ...
+    	sceneGeometry.refraction.opticalSystem.p1p3};
+    [virtualEyeWorldPoint, nodalPointIntersectError] = sceneGeometry.refraction.handle( [-3.7 2 0], [0 0 0 2], args{:} );
     % Test output against value computed on April 10, 2018
-    virtualEyeWorldPointStored = [-3.7000    2.2553    0.0000];
-    assert(max(abs(virtualEyeWorldPoint - virtualEyeWorldPointStored)) < 1e-4)
+    virtualEyeWorldPointStored = [-3.700000000000000   2.254956600943682  -0.000000790843393];
+    assert(max(abs(virtualEyeWorldPoint - virtualEyeWorldPointStored)) < 1e-6)
 %}
 %{
     % Compare computation time for MATLAB and compiled C code
-    tic
-    compileVirtualImageFunc('replaceExistingFunc',true)
-    compileTime = toc;
-    nComputes = 1000;
+    % Turn off warning that we are replacing the compiled func
+    nComputes = 100;
     fprintf('\nTime to execute virtualImageFunc (average over %d projections):\n',nComputes);
     % Native function
-    sceneGeometry = createSceneGeometry('forceUncompiledVirtualImageFunc',true);
+    sceneGeometry = createSceneGeometry('forceMATLABVirtualImageFunc',true);
+    % Assemble the args for the virtualImageFunc
+    args = {sceneGeometry.cameraExtrinsic.translation, ...
+    	sceneGeometry.eye.rotationCenters, ...
+    	sceneGeometry.refraction.opticalSystem.p1p2, ...
+    	sceneGeometry.refraction.opticalSystem.p1p3};
     tic
     for ii=1:nComputes
-        virtualImageFunc( [-3.7 2 0], [0 0 0 2], sceneGeometry.refraction.args{:} );
+        virtualImageFunc( [-3.7 2 0], [0 0 0 2], args{:} );
     end
     msecPerComputeNative = toc / nComputes * 1000;
     fprintf('\tUsing the MATLAB function: %4.2f msecs.\n',msecPerComputeNative);
@@ -55,13 +63,10 @@ function compileVirtualImageFunc( varargin )
     sceneGeometry = createSceneGeometry();
     tic
     for ii=1:nComputes
-        sceneGeometry.refraction.handle( [-3.7 2 0], [0 0 0 2], sceneGeometry.refraction.args{:} );
+        sceneGeometry.refraction.handle( [-3.7 2 0], [0 0 0 2], args{:} );
     end
     msecPerComputeCompile = toc / nComputes * 1000;
     fprintf('\tUsing the compiled function: %4.2f msecs.\n',msecPerComputeCompile);
-    % Calculate the break-even point for perfoming the compilation
-    breakEvenComputes = round(compileTime/((msecPerComputeNative-msecPerComputeCompile)/1000));
-    fprintf('\nGiven a compile time of %4.2f seconds, break-even occurs when performing >%d computes.\n',compileTime,breakEvenComputes);
 %}
 
 %% input parser
@@ -127,7 +132,13 @@ end
 %% Compile virtualImageFunc
 % Define argument variables so the compiler can deduce variable types
 sceneGeometry = createSceneGeometry();
-args = {[0,0,0], [0,0,0,0], sceneGeometry.refraction.args{:}};
+dynamicArgs = {[0,0,0], [0,0,0,0]};
+staticArgs = {sceneGeometry.cameraExtrinsic.translation, ...
+    	sceneGeometry.eye.rotationCenters, ...
+    	sceneGeometry.refraction.opticalSystem.p1p2, ...
+    	sceneGeometry.refraction.opticalSystem.p1p3};
+
+args = [dynamicArgs, staticArgs{:}];
 % Change to the compile directory
 initialDir = cd(compileDir);
 % Compile the mex file

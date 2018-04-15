@@ -105,26 +105,8 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     sceneGeometry = createSceneGeometry();
     outputRay = rayTraceCenteredSurfaces([-3.7 2], deg2rad(-10), sceneGeometry.refraction.opticalSystem.p1p2, true);
     % Compare the output to value calculated on April 10, 2018
-    outputRayStored = [-0.1248    1.3770; 0.8307    1.0822];
-    assert ( max(max(abs(outputRayStored - outputRay))) < 1e-4)
-%}
-%{
-    %% Pupil through cornea and spectacle, plot range limits
-    % A model of the passage of a point on the pupil perimeter through
-    % the cornea and spectacle lens (units in mm)
-    %  Create a myopic eye
-    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2);
-    pupilRadius = 2;
-    theta = deg2rad(-10);
-    coords = [sceneGeometry.eye.pupil.center(1) pupilRadius];
-    opticalSystem = sceneGeometry.refraction.opticalSystem.p1p2;
-    % Add a -2 diopter lens for the correction of myopia
-    opticalSystem=addSpectacleLens(opticalSystem, -2);
-    % Define FigureFlag as a structure with limits on the plot range
-    clear figureFlag
-    figureFlag.zLim = [-20 20];
-    figureFlag.hLim = [-25 25];
-    outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem, figureFlag)
+    outputRayCached = [-0.128318821107929   1.377619055323267; 0.827239365853814   1.082816492019643];
+    assert ( max(max(abs(outputRayCached - outputRay))) < 1e-6)
 %}
 %{
     %% Pupil through cornea, multiple points and rays
@@ -144,16 +126,19 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     end
 %}
 %{
-    %% Function behavior with a non-intersecting ray
+    %% Demo warnings
     coords = [0 0];
     opticalSystem=[nan nan 1.5; 20 10 1.0];
-    % This ray intersects the surface. Function returns without error.
-    theta = deg2rad(5);
-    outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem);
-    % This theta will not intersect the surface. The function issues
+    % This ray will not intersect the surface. The function issues
     % warning and returns an empty outputRay
     theta = deg2rad(45);
     outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem);
+    % Make the index of refraction of the surface very high
+    opticalSystem=[nan nan 5; 20 10 1.0];
+    % This ray encounters total internal reflection. The function issues
+    % warning and returns an empty outputRay
+    theta = deg2rad(15);
+    outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem);    
 %}
 
 

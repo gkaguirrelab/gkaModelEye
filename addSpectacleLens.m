@@ -43,28 +43,6 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %
 % Examples:
 %{
-    %% Example - Ray trace through cornea and spectacle lens
-    % Obtain the eye parameters from the modelEyeParameters() function
-    eye = modelEyeParameters('sphericalAmetropia',-2);
-    % Define an optical system
-    cornealThickness = -eye.cornea.back.center(1)-eye.cornea.back.radii(1);
-    opticalSystem = [nan, nan, nan, eye.index.aqueous; ...
-        -eye.cornea.back.radii(1)-cornealThickness, -eye.cornea.back.radii(1), -eye.cornea.back.radii(2),  eye.index.cornea; ...
-        -eye.cornea.front.radii(1), -eye.cornea.front.radii(1), -eye.cornea.front.radii(2), 1];
-    % Add a minus lens for the correction of myopia
-    opticalSystem=addSpectacleLens(opticalSystem, -2);
-    % Define FigureFlag as a structure so we can provide plot limits
-    clear figureFlag
-    figureFlag.zLim = [-20 20];
-    figureFlag.hLim = [-25 25];
-    % Define a ray originating from the border of the pupil
-    pupilRadius = 2;
-    clear coords
-    clear theta
-    theta = deg2rad(-30);
-    coords = [eye.pupil.center(1) pupilRadius];
-    % Perform the ray tracing
-    outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem, figureFlag);
 %}
 
 %% input parser

@@ -100,7 +100,8 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     % Obtain the pupil ellipse parameters in transparent format
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
     % Test against 4/1/2018 cached result for eyePose [-10 5 0 3]
-    assert(max(abs(pupilEllipseOnImagePlane -  [2.739864849789935e+02 2.215036804371633e+02 1.764122079488454e+04 0.193258910639646 2.151744146100150])) < 1e-6)
+    pupilEllipseOnImagePlaneCached = [2.739888037679040e+02 2.215054382386746e+02 1.763662134215358e+04 0.193208740889886 2.151336856968847];
+    assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-6)
 %}
 %{
     %% Plot the pupil ellipse for various eye poses
@@ -407,15 +408,11 @@ nodalPointIntersectError = nan(length(pointLabels),1);
 if isfield(sceneGeometry,'refraction')
     % If this field is not set to empty, proceed    
     if ~isempty(sceneGeometry.refraction)
-        % Check that the specified arguments for the refraction match the
-        % values in sceneGeometryStructure
-        if ~isequaln(sceneGeometry.refraction.args, ...
-                {sceneGeometry.cameraExtrinsic.translation, ...
+        % Assemble the static args for the virtualImageFunc
+        args = {sceneGeometry.cameraExtrinsic.translation, ...
                 sceneGeometry.eye.rotationCenters, ...
                 sceneGeometry.refraction.opticalSystem.p1p2, ...
-                sceneGeometry.refraction.opticalSystem.p1p3})
-                warning('pupilProjection_fwd:refractionArgsMismatch','Values in sceneGeometry.refraction.args do not match the rest of the sceneGeometry structure.');
-        end
+                sceneGeometry.refraction.opticalSystem.p1p3};
         % Identify the eyeWorldPoints subject to refraction by the cornea
         refractPointsIdx = find(strcmp(pointLabels,'pupilPerimeter')+...
             strcmp(pointLabels,'pupilCenter')+...
@@ -428,8 +425,7 @@ if isfield(sceneGeometry,'refraction')
             % Perform the computation using the passed function handle.
             [eyeWorldPoints(refractPointsIdx(ii),:), nodalPointIntersectError(refractPointsIdx(ii))] = ...
                 sceneGeometry.refraction.handle(...
-                eyeWorldPoint, eyePose, ...
-                sceneGeometry.refraction.args{:});
+                eyeWorldPoint, eyePose, args{:});
         end
     end
 end

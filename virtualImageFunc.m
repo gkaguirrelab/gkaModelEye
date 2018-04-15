@@ -5,16 +5,11 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( ey
 %  [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( eyeWorldPoint, eyePose, extrinsicTranslationVector, rotationCenters, opticalSystem_p1p2, opticalSystem_p1p3 )
 %
 % Description:
-%   This routine returns the virtual image location of a point that has passed through an
-%   optical system. The computation is assembled step-wise:
-%       traceOpticalSystemFuncHandle - 2D ray tracing through the cornea and any
-%           corrective lenses
-%       calcCameraNodeDistanceError2D - 2D distance of ray intersection on 
-%           camera plane from camera node
-%       calcCameraNodeDistanceError3D - 3D distance of ray intersection on 
-%           camera plane from camera node
-%       calcVirtualImageRay - Returns the unit vector virtual image ray for
-%           the initial depth position
+%   This routine returns the virtual image location of a point that has
+%   passed through an optical system. The function requires specification
+%   of the eyeWorld coordinates of the point, the pose of the eye, as well
+%   as several features of sceneGeometry. These last four input arguments
+%   can be supplied with sceneGeometry.refraction.args{:}.
 %
 % Inputs:
 %   eyeWorldPoint         - A 1x3 vector that gives the coordinates (in mm)
@@ -23,12 +18,13 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( ey
 %   eyePose               - A 1x4 vector provides values for [eyeAzimuth,
 %                           eyeElevation, eyeTorsion, pupilRadius].
 %                           Azimuth, elevation, and torsion are in units of
-%                           head-centered (extrinsic) degrees, and pupil
-%                           radius in mm.
-%   opticalSystem         - Equal to sceneGeometry.opticalSystem
-%   extrinsicTranslationVector - Equal to sceneGeometry.
-%                               extrinsicTranslationVector
+%                           head-centered (extrinsic) degrees. The pupil
+%                           radius value is unused by this routine.
+%   extrinsicTranslationVector - Equal to sceneGeometry.cameraExtrinsic.
+%                           translation
 %   rotationCenters       - Equal to sceneGeometry.eye.rotationCenters
+%   opticalSystem_p1p2, opticalSystem_p1p3 - Equal to sceneGeometry.
+%                           refraction.opticalSystem.p1p2 and .p1p3.
 %
 % Outputs:
 %   virtualEyeWorldPoint  - A 1x3 vector that gives the coordinates (in mm)
@@ -44,11 +40,16 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( ey
     % Basic example that finds the virtual image location for a point from
     % the top of a 2mm radius exit pupil, with the eye posed straight
     % ahead, and the camera in its default location.
-    sceneGeometry = createSceneGeometry();
-    [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( [-3.7 2 0], [0 0 0 2], sceneGeometry.refraction.args{:} );
+    sceneGeometry = createSceneGeometry('forceMATLABVirtualImageFunc',true);
+    % Assemble the args for the virtualImageFunc
+    args = {sceneGeometry.cameraExtrinsic.translation, ...
+    	sceneGeometry.eye.rotationCenters, ...
+    	sceneGeometry.refraction.opticalSystem.p1p2, ...
+    	sceneGeometry.refraction.opticalSystem.p1p3};
+    [virtualEyeWorldPoint, nodalPointIntersectError] = sceneGeometry.refraction.handle( [-3.7 2 0], [0 0 0 2], args{:} );
     % Test output against value computed on April 10, 2018
-    virtualEyeWorldPointStored = [-3.7000    2.2553    0.0000];
-    assert(max(abs(virtualEyeWorldPoint - virtualEyeWorldPointStored)) < 1e-4)
+    virtualEyeWorldPointStored = [-3.700000000000000   2.254956600943682  -0.000000790843393];
+    assert(max(abs(virtualEyeWorldPoint - virtualEyeWorldPointStored)) < 1e-6)
 %}
 
 
@@ -71,17 +72,19 @@ warning('off','rayTraceCenteredSurfaces:nonIntersectingRay');
 % angle theta in the p1p2 plane.
 cameraNodeDistanceError2D_p1p2 = @(theta_p1p2) calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2, eyePose, extrinsicTranslationVector, rotationCenters, opticalSystem_p1p2);
 
-% Conduct an fminsearch to find the p1p2 theta that minimizes the node
-% distance error. The options are adjusted to tolerate an error of 1e-2,
-% and to make changes in theta as small as 1e-6. Because the errorFunc
-% returns nan for values very close to zero, we initialize the search with
-% a slightly non-zero value (1e-4)
+% Set fminsearch options to tolerate an error of 1e-2, and to make changes
+% in theta as small as 1e-6.
+% Perform the search
+TolFun = 1e-2; % nodal point intersection error to tolerate
+TolX = 1e-6; % precision with which theta is estimated
+options = optimset('TolFun',TolFun,'TolX',TolX);
 
 % Set a scoped variable that detects if we encountered a bad ray trace.
 badTraceFlag = false;
 
-% Perform the search
-options = optimset('TolFun',1e-2,'TolX',1e-6);
+% Conduct an fminsearch to find the p1p2 theta that minimizes the node
+% distance error. Because the errorFunc returns nan for values very close
+% to zero, we initialize the search with a slightly non-zero value (1e-4)
 theta_p1p2=fminsearch(@myObj_p1p2,1e-4,options);
     function fval = myObj_p1p2(x)
         fval = cameraNodeDistanceError2D_p1p2(x);
@@ -90,8 +93,12 @@ theta_p1p2=fminsearch(@myObj_p1p2,1e-4,options);
         end
     end
 
-% If we hit a bad ray trace, exit the routine
-if badTraceFlag
+% Detect if we hit a bad ray trace. We will tolerate a bad trace if the
+% solution theta is very close to zero (within an order of magnitude of
+% TolX). This is because the ray tracing solution is undefined exactly at
+% zero, so bad ray traces occur when we search for thetas close to zero. If
+% we have encountered a bad ray trace away from zero, exit the routine.
+if badTraceFlag && theta_p1p2 > (TolX*10)
     virtualEyeWorldPoint = nan(1,3);
     nodalPointIntersectError = Inf;
     % Restore the warning state
@@ -99,19 +106,25 @@ if badTraceFlag
     return
 end
 
+
 %% Find the p1p3 theta
 % Given this p1p2 theta, we now find the p1p3 theta that further reduces
 % the distance to the nodal point.
 cameraNodeDistanceError3D = @(theta_p1p3) calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, theta_p1p3, eyePose, extrinsicTranslationVector, rotationCenters, opticalSystem_p1p2, opticalSystem_p1p3);
 
-% The fVal at the solution is the the total error (in mm) in both
-% dimensions for intersecting the nodal point of the camera.
+% Set fminsearch options to tolerate an error of 1e-2, and to make changes
+% in theta as small as 1e-6.
+% Perform the search
+TolFun = 1e-2; % nodal point intersection error to tolerate
+TolX = 1e-6; % precision with which theta is estimated
+options = optimset('TolFun',TolFun,'TolX',TolX);
 
 % Set a scoped variable that detects if we encountered a bad ray trace.
 badTraceFlag = false;
 
-% Perform the search
-options = optimset('TolFun',1e-2,'TolX',1e-6);
+% Perform the search. The fVal at the solution is the the total error (in
+% mm) in both dimensions for ray intersecting the nodal point of the
+% camera.
 [theta_p1p3, nodalPointIntersectError]=fminsearch(@myObj_3D,1e-4,options);
     function fval = myObj_3D(x)
         fval = cameraNodeDistanceError3D(x);
@@ -120,14 +133,19 @@ options = optimset('TolFun',1e-2,'TolX',1e-6);
         end
     end
 
-% If we hit a bad ray trace, exit the routine
-if badTraceFlag
+% Detect if we hit a bad ray trace. We will tolerate a bad trace if the
+% solution theta is very close to zero (within an order of magnitude of
+% TolX). This is because the ray tracing solution is undefined exactly at
+% zero, so bad ray traces occur when we search for thetas close to zero. If
+% we have encountered a bad ray trace away from zero, exit the routine.
+if badTraceFlag && theta_p1p3 > (TolX*10)
     virtualEyeWorldPoint = nan(1,3);
     nodalPointIntersectError = Inf;
     % Restore the warning state
     warning(warnState);
     return
 end
+
 
 %% Obtain the virtual image location
 % With both theta values calculated, now obtain the virtual image
