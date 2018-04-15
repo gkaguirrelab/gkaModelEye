@@ -304,7 +304,8 @@ pointLabels = tmpLabels;
 % posterior and anterior chambers of the eye.
 if p.Results.fullEyeModelFlag
     
-    % Add points for the center of the pupil, iris, and rotation
+    % Add points for the pupil center, iris center, rotation centers, and
+    % origin of the optical axis
     eyeWorldPoints = [eyeWorldPoints; sceneGeometry.eye.pupil.center];
     pointLabels = [pointLabels; 'pupilCenter'];
     eyeWorldPoints = [eyeWorldPoints; sceneGeometry.eye.iris.center];
@@ -313,6 +314,8 @@ if p.Results.fullEyeModelFlag
     pointLabels = [pointLabels; 'aziRotationCenter'];
     eyeWorldPoints = [eyeWorldPoints; sceneGeometry.eye.rotationCenters.ele];
     pointLabels = [pointLabels; 'eleRotationCenter'];
+    eyeWorldPoints = [eyeWorldPoints; 0 0 0];
+    pointLabels = [pointLabels; 'opticalAxisOrigin'];
     
     % Define points around the perimeter of the iris
     nIrisPerimPoints = p.Results.nIrisPerimPoints;
@@ -342,7 +345,21 @@ if p.Results.fullEyeModelFlag
     % Convert the surface matrices to a vector of points and switch the
     % axes back
     ansTmp = surf2patch(p1tmp, p2tmp, p3tmp);
-    anteriorChamberPoints=ansTmp.vertices;
+    anteriorChamberPoints=double(ansTmp.vertices);
+
+    % Identify the index of the corneal apex
+    [~,apexIdx]=max(anteriorChamberPoints(:,1));
+    
+    % Rotate the anteriorChamber points so that they reflect the difference
+    % in the axis of the corneal ellipsoid w.r.t. the optical axis
+    angles = sceneGeometry.eye.cornea.axis;
+    R3 = [cosd(angles(1)) -sind(angles(1)) 0; sind(angles(1)) cosd(angles(1)) 0; 0 0 1];
+    R2 = [cosd(angles(2)) 0 sind(angles(2)); 0 1 0; -sind(angles(2)) 0 cosd(angles(2))];
+    R1 = [1 0 0; 0 cosd(angles(3)) -sind(angles(3)); 0 sind(angles(3)) cosd(angles(3))];
+    anteriorChamberPoints = ((R1*R2*R3)*(anteriorChamberPoints-sceneGeometry.eye.cornea.front.center)')'+sceneGeometry.eye.cornea.front.center;
+    
+    % Save the corneal apex coordinates
+    cornealApex = anteriorChamberPoints(apexIdx,:);
     
     % Retain those points that are anterior to the iris plane.
     retainIdx = anteriorChamberPoints(:,1) >= sceneGeometry.eye.iris.center(1);
@@ -357,8 +374,7 @@ if p.Results.fullEyeModelFlag
     tmpLabels(:) = {'anteriorChamber'};
     pointLabels = [pointLabels; tmpLabels];
     
-    % Add a point for the corneal apex
-    cornealApex=[0 0 0];
+    % Add a entry for the corneal apex
     eyeWorldPoints = [eyeWorldPoints; cornealApex];
     pointLabels = [pointLabels; 'cornealApex'];
     
