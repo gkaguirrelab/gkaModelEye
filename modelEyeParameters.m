@@ -260,28 +260,27 @@ switch p.Results.species
             % Wyatt reported an eccentricity of the pupil of 0.21 under
             % dark conditions. We find that using that value produces
             % model results that disagree with Malthur 2013. We have
-            % adopted an upper value of 0.12 instead. We also use the 
+            % adopted an upper value of 0.15 instead. We also use the 
             % convention of a negative eccentricity for a horizontal major
             % axis and a positive eccentricity for vertical.
-            entranceEccen = [-0.12 0.12];
+            entranceEccen = [-0.12 0.15];
             % Prepare scene geometry and eye pose aligned with visual axis
             sceneGeometry = createSceneGeometry();
-            virtualImageFunc = compileVirtualImageFunc(sceneGeometry);
             % Fix the exit pupil eccentricity at 0
-            sceneGeometry.eye.exitPupilEccenFcnString = '@(x) 0';
-            sceneGeometry.eye.exitPupilThetaValues = [0, 0];
+            sceneGeometry.eye.pupil.eccenFcnString = '@(x) 0';
+            sceneGeometry.eye.pupil.thetas = [0, 0];
             % Obtain the pupil area in the image for each entrance radius
             % assuming no ray tracing
-            sceneGeometry.virtualImageFunc = [];
-            pupilImage = pupilProjection_fwd([-sceneGeometry.eye.kappaAngle(1), -sceneGeometry.eye.kappaAngle(2), 0, entranceRadius(1)],sceneGeometry);
+            sceneGeometry.refraction = [];
+            pupilImage = pupilProjection_fwd([-sceneGeometry.eye.gamma(1), -sceneGeometry.eye.gamma(2), 0, entranceRadius(1)],sceneGeometry);
             exitArea(1) = pupilImage(3);
-            pupilImage = pupilProjection_fwd([-sceneGeometry.eye.kappaAngle(1), -sceneGeometry.eye.kappaAngle(2), 0, entranceRadius(2)],sceneGeometry);
+            pupilImage = pupilProjection_fwd([-sceneGeometry.eye.gamma(1), -sceneGeometry.eye.gamma(2), 0, entranceRadius(2)],sceneGeometry);
             exitArea(2) = pupilImage(3);
             % Add the ray tracing function to the sceneGeometry
-            sceneGeometry.virtualImageFunc = virtualImageFunc;
+            sceneGeometry = createSceneGeometry();
             % Search across exit pupil radii to find the values that match
             % the observed entrance areas.
-            myPupilEllipse = @(radius) pupilProjection_fwd([-sceneGeometry.eye.kappaAngle(1), -sceneGeometry.eye.kappaAngle(2), 0, radius],sceneGeometry);
+            myPupilEllipse = @(radius) pupilProjection_fwd([-sceneGeometry.eye.gamma(1), -sceneGeometry.eye.gamma(2), 0, radius],sceneGeometry);
             myArea = @(ellipseParams) ellipseParams(3);
             myObj = @(radius) (myArea(myPupilEllipse(radius))-exitArea(1)).^2;
             exitRadius(1) = fminunc(myObj, entranceRadius(1));
@@ -289,16 +288,16 @@ switch p.Results.species
             exitRadius(2) = fminunc(myObj, entranceRadius(2));
             % Now find the exit pupil eccentricity that produces the
             % observed entrance pupil eccentricity
-            place = {'eye' 'exitPupilEccenFcnString'};
-            sceneGeometry.eye.exitPupilThetaValues = [0, 0];
+            place = {'eye' 'pupil' 'eccenFcnString'};
+            sceneGeometry.eye.pupil.thetas = [0, 0];
             mySceneGeom = @(eccen) setfield(sceneGeometry,place{:},['@(x) ' num2str(eccen)]);
-            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.kappaAngle(1), -sceneGeometry.eye.kappaAngle(2), 0, exitRadius(1)],mySceneGeom(eccen));
+            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.gamma(1), -sceneGeometry.eye.gamma(2), 0, exitRadius(1)],mySceneGeom(eccen));
             myEccen = @(ellipseParams) ellipseParams(4);
             myObj = @(eccen) 1e4*(myEccen(myPupilEllipse(eccen))-abs(entranceEccen(1))).^2;
             exitEccen(1) = -fminsearch(myObj, 0.1);
-            sceneGeometry.eye.exitPupilThetaValues = [pi/2, pi/2];
+            sceneGeometry.eye.pupil.thetas = [pi/2, pi/2];
             mySceneGeom = @(eccen) setfield(sceneGeometry,place{:},['@(x) ' num2str(eccen)]);
-            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.kappaAngle(1), -sceneGeometry.eye.kappaAngle(2), 0, exitRadius(2)],mySceneGeom(eccen));
+            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.gamma(1), -sceneGeometry.eye.gamma(2), 0, exitRadius(2)],mySceneGeom(eccen));
             myEccen = @(ellipseParams) ellipseParams(4);
             myObj = @(eccen) 1e4*(myEccen(myPupilEllipse(eccen))-abs(entranceEccen(2))).^2;
             exitEccen(2) = fminsearch(myObj, 0.2);        
@@ -318,7 +317,7 @@ switch p.Results.species
         %}
         % Specify the params and equation that defines the exit pupil
         % ellipse. This can be invoked as a function using str2func.
-        eye.pupil.eccenParams = [-1.723 4.796 0.976 0.047]; 
+        eye.pupil.eccenParams = [-1.766 4.716 0.290 0.087]; 
         eye.pupil.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',eye.pupil.eccenParams(1),eye.pupil.eccenParams(2),eye.pupil.eccenParams(3),eye.pupil.eccenParams(4)); 
 
         % The theta values of the exit pupil ellipse for eccentricities
