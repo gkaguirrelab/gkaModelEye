@@ -310,9 +310,22 @@ end
 
 end % createSceneGeometry
 
+
 %% LOCAL FUNCTIONS
 
 function rotRadii = ellipsesFromEllipsoid(radii,angles)
+% Returns ellipse radii that are derived from a rotated ellipsoid
+%
+% Syntax:
+%  rotRadii = ellipsesFromEllipsoid(radii,angles)
+%
+% Description:
+%   The ellipsoids that describe the back and front surface of the cornea
+%   are rotated with respect to the optical axis of the eye. Here, we
+%   calculate the ellipse radii that correspond to the p1p2 and p1p3 axes
+%   as they intersect with the rotated ellipsoid.
+%
+
 
 % The angles specify the rotation of the corneal ellipsoid w.r.t. the
 % optical axis of the eye. As we are rotating the axes here, we need to
