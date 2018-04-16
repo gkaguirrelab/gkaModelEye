@@ -9,6 +9,8 @@ function compileVirtualImageFunc( varargin )
 %   the file at the specified disk location, and places the function on the
 %   MATLAB path.
 %
+%   The default save location is 
+%
 %   Calls to the compiled virtualImageFuncMex execute roughly ~13x faster
 %   than the native virtualImageFunc routine.
 %
@@ -73,7 +75,7 @@ function compileVirtualImageFunc( varargin )
 p = inputParser;
 
 % Optional
-p.addParameter('functionDirPath',fullfile(userpath(),'toolboxes','transparentTrackMex'),@(x) ischar(x));
+p.addParameter('functionDirPath',fullfile(userpath(),'toolboxes','transparentTrack/code/bin'),@(x) ischar(x));
 p.addParameter('replaceExistingFunc',false,@islogical);
 
 % parse
