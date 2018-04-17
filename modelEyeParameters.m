@@ -657,7 +657,7 @@ switch p.Results.species
         %
         % They measured the shape of the entrance pupil as a function of
         % viewing angle relative to the fixation point of the eye. Their
-        % data from the right eye is well fit by a horizontal kappa of 5.3
+        % data from the right eye is well fit by a horizontal kappa of 5.5
         % degrees (see TEST_Mathur2013.m).
         %
         % While a horizontal kappa of ~5 degrees is a consistent finding,
@@ -696,15 +696,15 @@ switch p.Results.species
         % while the model eye used here has an emmetropic axial length of
         % 23.592. The equation implemented below is adjusted so that an
         % emmetropic eye of 23.5924 mm has a horizontal (nasal directed)
-        % kappa of 5.3 degrees and a vertical (inferiorly directed) kappa
+        % kappa of 5.5 degrees and a vertical (inferiorly directed) kappa
         % of -2.15 degrees.
         %
         if isempty(p.Results.gammaAngle)
             switch eyeLaterality
                 case 'Right'
-                    eye.gamma(1) = atand((15.0924/(eye.axialLength-8.5000))*tand(5.3));
+                    eye.gamma(1) = atand((15.0924/(eye.axialLength-8.5000))*tand(5.5));
                 case 'Left'
-                    eye.gamma(1) = -atand((15.0924/(eye.axialLength-8.5000))*tand(5.3));
+                    eye.gamma(1) = -atand((15.0924/(eye.axialLength-8.5000))*tand(5.5));
             end
             eye.gamma(2) = atand((15.0924/(eye.axialLength-8.5000))*tand(2.15));
             eye.gamma(3)=0;
