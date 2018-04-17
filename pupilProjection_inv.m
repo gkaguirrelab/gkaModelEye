@@ -216,8 +216,7 @@ if isempty(p.Results.x0)
     pupilRadiusPixels = sqrt(pupilEllipseOnImagePlane(3) / (pi * ellipseAspectRatio));
     
     % Probe the forward model at the estimated pose angles to
-    % estimate the pupil radius. Here we do need ray tracing as it
-    % has a substantial influence upon the area of the ellipse.
+    % estimate the pupil radius.
     probeEllipse=pupilProjection_fwd([x0(1) x0(2) x0(3) 2], sceneGeometry);
     pixelsPerMM = sqrt(probeEllipse(3)/pi)/2;
     
