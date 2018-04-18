@@ -171,8 +171,9 @@ switch p.Results.species
             b = R .* sqrt(1./(Q+1));
             % Taken from the prior block of code 
             atchNavScaler = 0.6410;
+            radiiAtchBack = [a b b];
             % Scale the overall back cornea ellipsoid to match Navarro
-            radiiNavBack = [a b b]./atchNavScaler;
+            radiiNavBack = radiiAtchBack./atchNavScaler;
             % Now scale the relative horizontal and vertical axes so that
             % the relationship between the horizontal (and vertical) radii
             % and the axial radius is of the same proportion to the front
@@ -381,8 +382,9 @@ switch p.Results.species
         % points to refraction
         eye.iris.radius = 5.55;
         
-        % The iris is shifted slightly temporally and upward with respect
-        % to the pupil center:
+        % We center the iris on the optical axis of the eye, although we
+        % are aware of some reports that the iris is shifted slightly
+        % temporally and upward with respect to the pupil center:
         %
         %   ...the typical entrance pupil is decentered
         %   approximately 0.15 mm nasally and 0.1 mm inferior to the
@@ -391,14 +393,20 @@ switch p.Results.species
         % Bennett, Edward S., and Barry A. Weissman, eds. Clinical contact
         % lens practice. Lippincott Williams & Wilkins, 2005, p119
         %
-        % We model an eye with zero iris angle, and thus set the depth of
-        % the iris plane equal to the pupil plane.
+        % If we wished to model this observation by Bennett, we would use
+        % the code:
+        %{
         switch eyeLaterality
             case 'Right'
                 eye.iris.center = [-3.7 -0.15 0.1];
             case 'Left'
                 eye.iris.center = [-3.7 0.15 0.1];
         end
+        %}
+        %
+        % We model an eye with zero iris angle, and thus set the depth of
+        % the iris plane equal to the pupil plane.
+        eye.iris.center = [-3.7 0 0];
         
         
         %% Lens
@@ -439,6 +447,12 @@ switch p.Results.species
         eye.lens.back.radii(1) = b;
         eye.lens.back.radii(2:3) = a;
         eye.lens.back.center = [-7.3-eye.lens.back.radii(1) 0 0];
+        
+        % We specify the location of a nodal point so that this can be used
+        % in transforming between eye axes. Values taken from the
+        % Gullstrand-LeGrand Eye Model
+        eye.lens.nodalPoint.front = [-7.2 0 0];
+        eye.lens.nodalPoint.rear = [-7.513 0 0];
         
         
         %% Posterior chamber
