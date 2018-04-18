@@ -136,7 +136,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry('eyeLaterality','left','sphericalAmetropia',-2,'contactLens',-2);
     % Define an eyePose with azimuth, elevation, torsion, and pupil radius
-    eyePose = [-10 -5 0 3];
+    eyePose = [-40 -5 0 3];
     % Perform the projection and request the full eye model
     [~, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose,sceneGeometry,'fullEyeModelFlag',true, 'nIrisPerimPoints', 20);
     % Define some settings for display
@@ -519,6 +519,7 @@ end
 % visible to the camera.
 if p.Results.fullEyeModelFlag && p.Results.removeOccultedPoints
     retainIdx = headWorldPoints(:,1) >= min([sceneGeometry.eye.rotationCenters.azi(1) sceneGeometry.eye.rotationCenters.ele(1)]);
+    retainIdx = logical(retainIdx + isnan(headWorldPoints(:,1)));
     eyeWorldPoints = eyeWorldPoints(retainIdx,:);
     headWorldPoints = headWorldPoints(retainIdx,:);
     pointLabels = pointLabels(retainIdx);
