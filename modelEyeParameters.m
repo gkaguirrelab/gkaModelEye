@@ -530,6 +530,37 @@ switch p.Results.species
         eye.posteriorChamber.center = ...
             [(-posteriorChamberApexDepth - eye.posteriorChamber.radii(1)) 0 0];
         
+        
+        %% Fovea
+        % Calculate the location of the fovea
+        aziFoveaFromOpticAxisRetDeg = 7.1311;
+        eleFoveaFromOpticAxisRetDeg = 2.5728;
+        angles = [aziFoveaFromOpticAxisRetDeg, eleFoveaFromOpticAxisRetDeg, 0];
+        radii = eye.posteriorChamber.radii;
+        % Get the radii of the ellipse for the plane that is rotated to
+        % azimuthal location
+        angles = -angles;
+        R3 = [cosd(angles(1)) -sind(angles(1)) 0; sind(angles(1)) cosd(angles(1)) 0; 0 0 1];
+        R2 = [cosd(angles(2)) 0 sind(angles(2)); 0 1 0; -sind(angles(2)) 0 cosd(angles(2))];
+        R1 = [1 0 0; 0 cosd(angles(3)) -sind(angles(3)); 0 sind(angles(3)) cosd(angles(3))];
+        rotMat = R1 * R2 * R3;
+        
+        % Obtain the radii of the posterior chamber ellipsoid in the
+        % rotated frame (for which the fovea is at the apex of each
+        % ellipsoid
+        % p1p2
+        rotPlane = rotMat * [0; 0; 1];
+        [~,Bye]=EllipsoidPlaneIntersection(rotPlane(1),rotPlane(2),rotPlane(3),0,radii(1),radii(2),radii(3));
+        foveaCoordRotFrame = [-Bye 0 0]+eye.posteriorChamber.center;
+        % Now rotate this coordinate location back to the original axes
+        foveaCoordRightEye = (rotMat\foveaCoordRotFrame')';
+        switch eyeLaterality
+            case 'Right'
+                eye.posteriorChamber.fovea = foveaCoordRightEye;
+            case 'Left'
+                eye.posteriorChamber.fovea = foveaCoordRightEye.*[1 -1 1];
+        end
+        
 
         %% Rotation centers
         % The rotation center of the eye is often treated as a single,

@@ -305,8 +305,8 @@ pointLabels = tmpLabels;
 % posterior and anterior chambers of the eye.
 if p.Results.fullEyeModelFlag
     
-    % Add points for the pupil center, iris center, rotation centers, and
-    % origin of the optical axis
+    % Add points for the pupil center, iris center, rotation centers,
+    % origin of the optical axis, rear nodal point, and the fovea
     eyeWorldPoints = [eyeWorldPoints; sceneGeometry.eye.pupil.center];
     pointLabels = [pointLabels; 'pupilCenter'];
     eyeWorldPoints = [eyeWorldPoints; sceneGeometry.eye.iris.center];
@@ -317,6 +317,8 @@ if p.Results.fullEyeModelFlag
     pointLabels = [pointLabels; 'eleRotationCenter'];
     eyeWorldPoints = [eyeWorldPoints; 0 0 0];
     pointLabels = [pointLabels; 'opticalAxisOrigin'];
+    eyeWorldPoints = [eyeWorldPoints; sceneGeometry.eye.posteriorChamber.fovea];
+    pointLabels = [pointLabels; 'fovea'];
     
     % Define points around the perimeter of the iris
     nIrisPerimPoints = p.Results.nIrisPerimPoints;
@@ -514,12 +516,12 @@ for rr=1:3
 end
 
 % If we are projecting a full eye model, and the 'removeOccultedPoints' is
-% set to true, then remove those points that are posterior to the most
-% posterior of the centers of rotation of the eye, and thus would not be
-% visible to the camera.
+% set to true, then remove those posterior chamber points that are
+% posterior to the most posterior of the centers of rotation of the eye,
+% and thus would not be visible to the camera.
 if p.Results.fullEyeModelFlag && p.Results.removeOccultedPoints
-    retainIdx = headWorldPoints(:,1) >= min([sceneGeometry.eye.rotationCenters.azi(1) sceneGeometry.eye.rotationCenters.ele(1)]);
-    retainIdx = logical(retainIdx + isnan(headWorldPoints(:,1)));
+    retainIdx = strcmp(pointLabels,'posteriorChamber') .* (headWorldPoints(:,1) >= min([sceneGeometry.eye.rotationCenters.azi(1) sceneGeometry.eye.rotationCenters.ele(1)]));
+    retainIdx = logical(retainIdx + ~strcmp(pointLabels,'posteriorChamber'));
     eyeWorldPoints = eyeWorldPoints(retainIdx,:);
     headWorldPoints = headWorldPoints(retainIdx,:);
     pointLabels = pointLabels(retainIdx);
