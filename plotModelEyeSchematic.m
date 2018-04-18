@@ -13,7 +13,7 @@ function figHandle = plotModelEyeSchematic(sceneGeometry, varargin)
 %
 % Optional key/value pairs:
 %  'crossSectionView'     - String. The view to display. Valid choices
-%                           include {'axial','sagittal','coronal'};
+%                           include {'axial','sagittal'};
 %  'newFigure'            - Logical. Determines if we create a new figure.
 %
 % Outputs:
@@ -35,6 +35,7 @@ p.addRequired('eye',@isstruct);
 % Optional
 p.addParameter('crossSectionView','axial',@ischar);
 p.addParameter('newFigure',true,@islogical);
+p.addParameter('plotColor','k',@ischar);
 
 % parse
 p.parse(sceneGeometry, varargin{:})
@@ -73,50 +74,54 @@ switch p.Results.crossSectionView
         postChamberRange = [-30, -7, -15, 15];
         corneaRange = [sceneGeometry.eye.pupil.center(1), 5, -15, 15];
         lensRange = [-10, 0, -5, 5];       
-    case 'coronal'
-        PdimA = 2;
-        PdimB = 3;
-        rotationField = 'tor';
-        titleString = 'Coronal';
-        xLabelString = 'temporal <----> nasal';
-        yLabelString = 'inferior <----> superior';
     otherwise
         error('Not a recognized crossSectionView for the schematic eye');
 end
 
 %% Plot the anterior and posterior chambers and the lens
 ep = ellipse_ex2im([sceneGeometry.eye.posteriorChamber.center([PdimA PdimB]) sceneGeometry.eye.posteriorChamber.radii([PdimA PdimB]) 0]);
-plotEllipse(ep,'k',postChamberRange)
+plotEllipse(ep,p.Results.plotColor,postChamberRange)
 ep = ellipse_ex2im([sceneGeometry.eye.cornea.back.center([PdimA PdimB]) sceneGeometry.eye.cornea.back.radii([PdimA PdimB]) deg2rad(sceneGeometry.eye.cornea.axis(PdimA))]);
-plotEllipse(ep,'k',corneaRange)
+plotEllipse(ep,p.Results.plotColor,corneaRange)
 ep = ellipse_ex2im([sceneGeometry.eye.cornea.front.center([PdimA PdimB]) sceneGeometry.eye.cornea.front.radii([PdimA PdimB]) deg2rad(sceneGeometry.eye.cornea.axis(PdimA))]);
-plotEllipse(ep,'k',corneaRange)
+plotEllipse(ep,p.Results.plotColor,corneaRange)
 ep = ellipse_ex2im([sceneGeometry.eye.lens.front.center([PdimA PdimB]) sceneGeometry.eye.lens.front.radii([PdimA PdimB]) 0]);
-plotHyperbola(ep,[0.5 0.5 0.5],lensRange)
+plotHyperbola(ep,p.Results.plotColor,lensRange)
 ep = ellipse_ex2im([sceneGeometry.eye.lens.back.center([PdimA PdimB]) sceneGeometry.eye.lens.back.radii([PdimA PdimB]) 0]);
-plotHyperbola(ep,[0.5 0.5 0.5],lensRange)
+plotHyperbola(ep,p.Results.plotColor,lensRange)
 
-%% Add the pupil center, 2mm radius pupil, center of rotation, iris boundary
-plot([sceneGeometry.eye.pupil.center(PdimA) sceneGeometry.eye.pupil.center(PdimA)],[-2 2],'-k');
-plot(sceneGeometry.eye.pupil.center(PdimA),sceneGeometry.eye.pupil.center(PdimB),'*r')
-plot(sceneGeometry.eye.rotationCenters.azi(PdimA),sceneGeometry.eye.rotationCenters.azi(PdimB),'>g')
-plot(sceneGeometry.eye.rotationCenters.ele(PdimA),sceneGeometry.eye.rotationCenters.ele(PdimB),'^g')
-plot(sceneGeometry.eye.iris.center(PdimA),sceneGeometry.eye.iris.center(PdimB)+sceneGeometry.eye.iris.radius,'xb')
-plot(sceneGeometry.eye.iris.center(PdimA),sceneGeometry.eye.iris.center(PdimB)-sceneGeometry.eye.iris.radius,'xb')
+%% Add a 2mm radius pupil, center of rotation, iris boundary, and fovea
+plot([sceneGeometry.eye.pupil.center(PdimA) sceneGeometry.eye.pupil.center(PdimA)],[-2 2],['-' p.Results.plotColor]);
+plot(sceneGeometry.eye.rotationCenters.azi(PdimA),sceneGeometry.eye.rotationCenters.azi(PdimB),['>' p.Results.plotColor])
+plot(sceneGeometry.eye.rotationCenters.ele(PdimA),sceneGeometry.eye.rotationCenters.ele(PdimB),['^' p.Results.plotColor])
+plot(sceneGeometry.eye.iris.center(PdimA),sceneGeometry.eye.iris.center(PdimB)+sceneGeometry.eye.iris.radius,['x' p.Results.plotColor])
+plot(sceneGeometry.eye.iris.center(PdimA),sceneGeometry.eye.iris.center(PdimB)-sceneGeometry.eye.iris.radius,['x' p.Results.plotColor])
+plot(sceneGeometry.eye.posteriorChamber.fovea(PdimA),sceneGeometry.eye.posteriorChamber.fovea(PdimB),['*' p.Results.plotColor])
+
 
 %% Plot the cornealApex
 [~, ~, ~, eyeWorldPoints, pointLabels] = pupilProjection_fwd([0 0 0 1], sceneGeometry, 'fullEyeModelFlag',true);
 idx = find(strcmp(pointLabels,'cornealApex'));
-plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),'xy');
+plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColor]);
 
-%% Plot the fixation Axis
+%% Plot the visual axis
+m = (sceneGeometry.eye.posteriorChamber.fovea(PdimB) - sceneGeometry.eye.lens.nodalPoint.rear(PdimB)) / (sceneGeometry.eye.posteriorChamber.fovea(PdimA) - sceneGeometry.eye.lens.nodalPoint.rear(PdimA));
+b = sceneGeometry.eye.lens.nodalPoint.rear(PdimB) -  (sceneGeometry.eye.lens.nodalPoint.rear(PdimA) * m);
+xRange = xlim;
+plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
+
+%% Plot the optical axis when the eye is rotated to gamma
 [~, ~, sceneWorldPoints, ~, pointLabels] = pupilProjection_fwd([sceneGeometry.eye.gamma(1) sceneGeometry.eye.gamma(2) sceneGeometry.eye.gamma(3) 1], sceneGeometry, 'fullEyeModelFlag',true);
-idx = find(strcmp(pointLabels,'opticalAxisOrigin'));
-rotationCenter = mean([sceneGeometry.eye.rotationCenters.azi; sceneGeometry.eye.rotationCenters.ele]);
-plot([sceneWorldPoints(idx,SdimA) rotationCenter(PdimA)],[sceneWorldPoints(idx,SdimB) rotationCenter(PdimB)],'-r');
+idx1 = find(strcmp(pointLabels,'pupilCenter'));
+idx2 = find(strcmp(pointLabels,'opticalAxisOrigin'));
+m = (sceneWorldPoints(idx2,SdimB) - sceneWorldPoints(idx1,SdimB)) / (sceneWorldPoints(idx2,SdimA) - sceneWorldPoints(idx1,SdimA));
+b = sceneWorldPoints(idx1,SdimB) -  (sceneWorldPoints(idx1,SdimA) * m);
+xRange = xlim;
+plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
+
 
 %% Reference axis
-refline(0,0)
+plot(xRange,[0 0],['-' p.Results.plotColor]);
 
 axis equal
 title(titleString);
