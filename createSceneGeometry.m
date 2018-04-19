@@ -341,13 +341,13 @@ rotMat = R.tor * R.ele * R.azi;
 % Obtain the semi-axes of the ellipses in each of the planes p1p2 and p1p3
 
 % p1p2
-rotPlane = rotMat * [0; 0; 1];
+rotPlane = rotMat * [0; 1; 0];
 [Aye,Bye]=EllipsoidPlaneIntersection(rotPlane(1),rotPlane(2),rotPlane(3),0,radii(1),radii(2),radii(3));
 rotRadii(1:2) = [Aye,Bye];
 
 % p1p3
-rotPlane = rotMat * [0; 1; 0];
-[Aye,Bye]=EllipsoidPlaneIntersection(rotPlane(1),rotPlane(2),rotPlane(3),0,radii(1),radii(2),radii(3));
+rotPlane = rotMat * [0; 0; 1];
+[~,Bye]=EllipsoidPlaneIntersection(rotPlane(1),rotPlane(2),rotPlane(3),0,radii(1),radii(2),radii(3));
 
 rotRadii(3) = Bye;
 
