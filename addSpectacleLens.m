@@ -43,6 +43,12 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %
 % Examples:
 %{
+    %% Spectacle lens added to correct myopia
+    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2);
+    clear figureFlag
+    figureFlag.zLim = [-20 20];
+    figureFlag.hLim = [-15 15];
+    rayTraceCenteredSurfaces([-3.7,0],deg2rad(-15),sceneGeometry.refraction.opticalSystem.p1p2,figureFlag);
 %}
 
 %% input parser

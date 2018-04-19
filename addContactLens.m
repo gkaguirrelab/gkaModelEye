@@ -38,23 +38,24 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %
 % Examples:
 %{
-    %% Example - Replicate calculation of contact lens curvature
+    %% Replicate calculation of contact lens curvature
     % WJ Benajamin provudes an example calculation for a contact lens
     % that provides -10D power. We confirm here that our routine provides
     % the same solution.
     %   Bennett, Edward S., and Barry A. Weissman, eds. Clinical contact 
     %   lens practice. Lippincott Williams & Wilkins, 2005. Chapter 7A, 
     %   "Optical phenomena of contact lenses", WJ Benjamin. p130
-    sceneGeometry = createSceneGeometry('contactLens',[-10,1.43]);
+    opticalSystemIn = [nan nan nan 1.3760;  -7.8  -7.8   -7.8   1.0];
     % The curvature of the front surface of the contact lens should be
-    % 9.56 mm
+    % -9.56. We obtain a slightly lower value (9.5468) as we do not model
+    % the effect of the pre-lens tear film.
+    opticalSystemOut = addContactLens(opticalSystemIn, -10, 'lensRefractiveIndex', 1.43 )
+    assert(abs(opticalSystemOut(end,2) - -9.56)<0.1);
 %}
 %{
-    %% Example - Test the output for zero diopters
-    % If zero diopters are requested for a contact lens with an index of
-    % refraction equal to the corneal index, then the curvature of the
-    % front surface of the lens should be equivalent to the corneal front
-    % surface curvature.
+    %% Contact lens added to correct myopia
+    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'contactLens',-2);
+    rayTraceCenteredSurfaces([-3.7,0],deg2rad(-15),sceneGeometry.refraction.opticalSystem.p1p2,true);
 %}
 
 
@@ -72,6 +73,7 @@ p.addParameter('minimumLensThickness',0.05,@isnumeric);
 % parse
 p.parse(opticalSystemIn, lensRefractionDiopters, varargin{:})
 
+
 % Distribute the parameters into variables
 lensRefractiveIndex = p.Results.lensRefractiveIndex;
 
@@ -82,9 +84,9 @@ opticalSystemOut = opticalSystemIn;
 % a specified index of refraction. Because the contact lens contacts the
 % corneal surface, this index of refraction will be replaced with the index
 % of refraction of the contact lens. This is now the back surface of the
-% contact lens.
-% We store the index of refraction of the ambient medium (which will
-% typically be air and thus 1.0) to apply to the final exit ray.
+% contact lens. We store the index of refraction of the ambient medium
+% (which will typically be air and thus 1.0) to apply to the final exit
+% ray.
 priorRefractiveIndex = opticalSystemIn(end-1,end);
 mediumRefractiveIndex = opticalSystemIn(end,end);
 opticalSystemOut(end,end) = lensRefractiveIndex;
@@ -94,10 +96,12 @@ opticalSystemOut(end,end) = lensRefractiveIndex;
 % Our goal is to create a front surface of the contact lens that produces a
 % refractive correction equal to:
 %   cornealSurfaceDiopters + lensRefractionDiopters
-cornealSurfaceDiopters = (mediumRefractiveIndex-priorRefractiveIndex)/(opticalSystemIn(end,2)/1000);
+t =0;
+cornealSurfaceCurvature = -((opticalSystemIn(end,2)^2*sin(t)^2 + opticalSystemIn(end,3)^2*cos(t)^2)^(3/2))/(opticalSystemIn(end,2)*opticalSystemIn(end,3));
+cornealSurfaceDiopters = (mediumRefractiveIndex-priorRefractiveIndex)/(cornealSurfaceCurvature/1000);
 
 % Calculate the refractive power of the back surface of the lens.
-backCurvature = opticalSystemIn(end,2);
+backCurvature = cornealSurfaceCurvature;
 backDiopters = (lensRefractiveIndex-priorRefractiveIndex)/(backCurvature/1000);
 
 % We calculate here thickness and thus center of the front surface.
@@ -137,7 +141,7 @@ if lensRefractionDiopters > 0
     
     % Store the lens front surface in the optical system. We set the
     % curvature along the orthogonal axis equal to the corneal curvature 
-    opticalSystemOut(end+1,:)=[frontCenter frontCurvature opticalSystemIn(end,3) mediumRefractiveIndex];
+    opticalSystemOut(end+1,:)=[frontCenter frontCurvature frontCurvature mediumRefractiveIndex];
 else
     % This is a minus lens for the correction of myopia.
     % It will be thinnest at the center of the lens on the optical axis.
@@ -166,7 +170,7 @@ else
     frontCenter = frontCurvature + p.Results.minimumLensThickness;
 
     % Add the surfaces to the optical system
-    opticalSystemOut(end+1,:)=[frontCenter frontCurvature opticalSystemIn(end,3) mediumRefractiveIndex];
+    opticalSystemOut(end+1,:)=[frontCenter frontCurvature frontCurvature mediumRefractiveIndex];
 end
 
 end % function - addContactLens
