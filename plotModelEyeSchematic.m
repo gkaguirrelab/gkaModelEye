@@ -12,7 +12,7 @@ function figHandle = plotModelEyeSchematic(sceneGeometry, varargin)
 %   sceneGeometry         - A sceneGeometry struct.
 %
 % Optional key/value pairs:
-%  'crossSectionView'     - String. The view to display. Valid choices
+%  'view'     - String. The view to display. Valid choices
 %                           include {'axial','sagittal'};
 %  'newFigure'            - Logical. Determines if we create a new figure.
 %  'plotColor'            - String. Matlab line spec code for line color,
@@ -34,14 +34,14 @@ function figHandle = plotModelEyeSchematic(sceneGeometry, varargin)
     figure
     subplot(2,1,1)
     sceneGeometry = createSceneGeometry('sphericalAmetropia',0);
-    plotModelEyeSchematic(sceneGeometry,'crossSectionView','axial','newFigure',false,'plotColor','k')
+    plotModelEyeSchematic(sceneGeometry,'view','axial','newFigure',false,'plotColor','k')
     sceneGeometry = createSceneGeometry('sphericalAmetropia',-10);
-    plotModelEyeSchematic(sceneGeometry,'crossSectionView','axial','newFigure',false,'plotColor','r')
+    plotModelEyeSchematic(sceneGeometry,'view','axial','newFigure',false,'plotColor','r')
     subplot(2,1,2)
     sceneGeometry = createSceneGeometry('sphericalAmetropia',0);
-    plotModelEyeSchematic(sceneGeometry,'crossSectionView','sagittal','newFigure',false,'plotColor','k')
+    plotModelEyeSchematic(sceneGeometry,'view','sagittal','newFigure',false,'plotColor','k')
     sceneGeometry = createSceneGeometry('sphericalAmetropia',-10);
-    plotModelEyeSchematic(sceneGeometry,'crossSectionView','sagittal','newFigure',false,'plotColor','r')
+    plotModelEyeSchematic(sceneGeometry,'view','sagittal','newFigure',false,'plotColor','r')
 %}
 
 %% input parser
@@ -51,7 +51,7 @@ p = inputParser; p.KeepUnmatched = true;
 p.addRequired('eye',@isstruct);
 
 % Optional
-p.addParameter('crossSectionView','axial',@ischar);
+p.addParameter('view','axial',@ischar);
 p.addParameter('newFigure',true,@islogical);
 p.addParameter('plotColor','k',@ischar);
 
@@ -66,7 +66,7 @@ end
 hold on
 
 % Determine which view we are using
-switch p.Results.crossSectionView
+switch p.Results.view
     case {'axial','Axial','Ax','ax','Horizontal','horizontal','horiz'}
         PdimA = 1;
         PdimB = 2;
@@ -93,7 +93,7 @@ switch p.Results.crossSectionView
         corneaRange = [sceneGeometry.eye.pupil.center(1), 5, -15, 15];
         lensRange = [-10, 0, -5, 5];       
     otherwise
-        error('Not a recognized crossSectionView for the schematic eye');
+        error('Not a recognized view for the schematic eye');
 end
 
 %% Plot the anterior and posterior chambers and the lens
@@ -127,8 +127,8 @@ b = sceneGeometry.eye.lens.nodalPoint.rear(PdimB) -  (sceneGeometry.eye.lens.nod
 xRange = xlim;
 plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
 
-%% Plot the visual axis when the eye is rotated to -gamma
-[~, ~, sceneWorldPoints, ~, pointLabels] = pupilProjection_fwd([-sceneGeometry.eye.gamma(1) -sceneGeometry.eye.gamma(2) -sceneGeometry.eye.gamma(3) 1], sceneGeometry, 'fullEyeModelFlag',true);
+%% Plot the visual axis when the eye is rotated to -alpha
+[~, ~, sceneWorldPoints, ~, pointLabels] = pupilProjection_fwd([-sceneGeometry.eye.alpha(1) -sceneGeometry.eye.alpha(2) -sceneGeometry.eye.alpha(3) 1], sceneGeometry, 'fullEyeModelFlag',true);
 idx1 = find(strcmp(pointLabels,'fovea'));
 idx2 = find(strcmp(pointLabels,'nodalPointRear'));
 m = (sceneWorldPoints(idx2,SdimB) - sceneWorldPoints(idx1,SdimB)) / (sceneWorldPoints(idx2,SdimA) - sceneWorldPoints(idx1,SdimA));
