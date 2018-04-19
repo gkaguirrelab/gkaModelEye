@@ -39,9 +39,9 @@ function compileVirtualImageFunc( varargin )
     	sceneGeometry.refraction.opticalSystem.p1p2, ...
     	sceneGeometry.refraction.opticalSystem.p1p3};
     [virtualEyeWorldPoint, nodalPointIntersectError] = sceneGeometry.refraction.handle( [-3.7 2 0], [0 0 0 2], args{:} );
-    % Test output against value computed on April 10, 2018
-    virtualEyeWorldPointStored = [-3.700000000000000   2.254956600943682  -0.000000790843393];
-    assert(max(abs(virtualEyeWorldPoint - virtualEyeWorldPointStored)) < 1e-6)
+    % Test output against cached value
+    virtualEyeWorldPointCached = [ -3.700000000000000   2.260297326476055  -0.000000817841759];
+    assert(max(abs(virtualEyeWorldPoint - virtualEyeWorldPointCached)) < 1e-6)
 %}
 %{
     % Compare computation time for MATLAB and compiled C code

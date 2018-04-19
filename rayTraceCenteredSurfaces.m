@@ -105,7 +105,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     sceneGeometry = createSceneGeometry();
     outputRay = rayTraceCenteredSurfaces([-3.7 2], deg2rad(-10), sceneGeometry.refraction.opticalSystem.p1p2, true);
     % Compare the output to value calculated on April 10, 2018
-    outputRayCached = [-0.128318821107929   1.377619055323267; 0.827239365853814   1.082816492019643];
+    outputRayCached = [-0.151947109615718   1.381824292230910; 0.802861112858012   1.084601718565053];
     assert ( max(max(abs(outputRayCached - outputRay))) < 1e-6)
 %}
 %{
