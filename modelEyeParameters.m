@@ -318,7 +318,7 @@ switch p.Results.species
         %}
         % Specify the params and equation that defines the exit pupil
         % ellipse. This can be invoked as a function using str2func.
-        eye.pupil.eccenParams = [-1.766 4.716 0.290 0.087]; 
+        eye.pupil.eccenParams = [-1.767 4.714 0.134 0.140]; 
         eye.pupil.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',eye.pupil.eccenParams(1),eye.pupil.eccenParams(2),eye.pupil.eccenParams(3),eye.pupil.eccenParams(4)); 
 
         % The theta values of the exit pupil ellipse for eccentricities
@@ -449,8 +449,8 @@ switch p.Results.species
         eye.lens.back.center = [-7.3-eye.lens.back.radii(1) 0 0];
         
         % We specify the location of a nodal point so that this can be used
-        % in transforming between eye axes. Values taken from the
-        % Gullstrand-LeGrand Eye Model
+        % for displaying eye axes. Values taken from the Gullstrand-LeGrand
+        % eye model
         eye.lens.nodalPoint.front = [-7.2 0 0];
         eye.lens.nodalPoint.rear = [-7.513 0 0];
         
@@ -479,7 +479,7 @@ switch p.Results.species
         Qzx = 0.27+0.026*p.Results.sphericalAmetropia;
         Qzy = 0.25+0.017*p.Results.sphericalAmetropia;
         eye.posteriorChamber.radii = [ -(Rzx/(Qzx+1)) -(Rzx*sqrt(1/(Qzx+1))) -(Rzy*sqrt(1/(Qzy+1)))];
-
+        
         % Our model holds the depth of the anterior chamber constant.
         % Atchison found that anterior chamber depth does not vary with
         % spherical ametropia, although this is not a consistent finding:
@@ -532,34 +532,64 @@ switch p.Results.species
         
         
         %% Fovea
-        % Calculate the location of the fovea
-        aziFoveaFromOpticAxisRetDeg = 7.1311;
+        % We specify the coordinate position on the posterior chamber
+        % ellipsoidal surface that corresponds to the fovea. Charman
+        % (quoting Emsley 1952) notes that the optical axis intersects the
+        % retina 1.5 mm nasal and 0.5 mm superior to the visual axis:
+        %
+        %   Charman, W. N. (1991). Optics of the human eye. In J. Cronly
+        %   Dillon (Ed.), Visual optics and instrumen- tation (pp. 1?26).
+        %   Boca Raton: CRC Press
+        %
+        % These values can be convered to polar coordinate degrees of
+        % retinal angle using the unit conversion functions of the
+        % rgcDisplacementMap toolbox, and then converted again to degrees
+        % of azimuth and elevation of the fovea relatove to the point of
+        % intersection of the optic axis in the eyeWorld coordinate frame:
+        %{
+            tbUse('rgcDisplacementMap');
+            [ angleVisualToOpticalAxis, distanceMmRetinaVisualToOpticalAxis ] = retinalVectorVisualToOpticalAxis();
+            distanceDegRetinaVisualToOpticalAxis = convert_mmRetina_to_degRetina(distanceMmRetinaVisualToOpticalAxis);
+            aziFoveaFromOpticAxisRetDeg = cosd(angleVisualToOpticalAxis)*distanceDegRetinaVisualToOpticalAxis
+            eleFoveaFromOpticAxisRetDeg = sind(angleVisualToOpticalAxis)*distanceDegRetinaVisualToOpticalAxis
+        %}
+
+        % Location of the fovea in degrees of retina w.r.t. optical axis,
+        % adjusted for the laterality of the eye
+        switch eyeLaterality
+            case 'Right'
+                aziFoveaFromOpticAxisRetDeg = 7.1310;
+                aziFoveaFromOpticAxisRetDeg = 8.6;
+            case 'Left'
+                aziFoveaFromOpticAxisRetDeg = -7.1310;
+        end        
         eleFoveaFromOpticAxisRetDeg = 2.5728;
-        angles = [aziFoveaFromOpticAxisRetDeg, eleFoveaFromOpticAxisRetDeg, 0];
-        radii = eye.posteriorChamber.radii;
-        % Get the radii of the ellipse for the plane that is rotated to
-        % azimuthal location
-        angles = -angles;
+        eleFoveaFromOpticAxisRetDeg = 3.42;
+
+        % Rotation matrix to bring the eyeWorld (p1p2p3) axes to be w.r.t.
+        % the fovea
+        angles = -[aziFoveaFromOpticAxisRetDeg, eleFoveaFromOpticAxisRetDeg, 0];
         R3 = [cosd(angles(1)) -sind(angles(1)) 0; sind(angles(1)) cosd(angles(1)) 0; 0 0 1];
         R2 = [cosd(angles(2)) 0 sind(angles(2)); 0 1 0; -sind(angles(2)) 0 cosd(angles(2))];
         R1 = [1 0 0; 0 cosd(angles(3)) -sind(angles(3)); 0 sind(angles(3)) cosd(angles(3))];
         rotMat = R1 * R2 * R3;
         
-        % Obtain the radii of the posterior chamber ellipsoid in the
-        % rotated frame (for which the fovea is at the apex of each
-        % ellipsoid
-        % p1p2
+        % Obtain the position of the apex of the posterior chamber
+        % ellipsoid in the rotated frame (for which the fovea is at the
+        % apex)
+        rotPlane = rotMat * [0; 1; 0];
+        [p1p2_Aye, p1p2_Bye]=EllipsoidPlaneIntersection(rotPlane(1),rotPlane(2),rotPlane(3),0,eye.posteriorChamber.radii(1),eye.posteriorChamber.radii(2),eye.posteriorChamber.radii(3));
         rotPlane = rotMat * [0; 0; 1];
-        [~,Bye]=EllipsoidPlaneIntersection(rotPlane(1),rotPlane(2),rotPlane(3),0,radii(1),radii(2),radii(3));
-        foveaCoordRotFrame = [-Bye 0 0]+eye.posteriorChamber.center;
+        [~, Bye]=EllipsoidPlaneIntersection(rotPlane(1),rotPlane(2),rotPlane(3),0,p1p2_Bye, p1p2_Aye,eye.posteriorChamber.radii(3));
+        foveaCoordRotFrame = [-Bye 0 0];
+
         % Now rotate this coordinate location back to the original axes
-        foveaCoordRightEye = (rotMat\foveaCoordRotFrame')';
-        switch eyeLaterality
-            case 'Right'
-                eye.posteriorChamber.fovea = foveaCoordRightEye;
-            case 'Left'
-                eye.posteriorChamber.fovea = foveaCoordRightEye.*[1 -1 1];
-        end
+        angles = [aziFoveaFromOpticAxisRetDeg, eleFoveaFromOpticAxisRetDeg, 0];
+        R3 = [cosd(angles(1)) -sind(angles(1)) 0; sind(angles(1)) cosd(angles(1)) 0; 0 0 1];
+        R2 = [cosd(angles(2)) 0 sind(angles(2)); 0 1 0; -sind(angles(2)) 0 cosd(angles(2))];
+        R1 = [1 0 0; 0 cosd(angles(3)) -sind(angles(3)); 0 sind(angles(3)) cosd(angles(3))];
+        rotMat = R1 * R2 * R3;
+        eye.posteriorChamber.fovea = (rotMat * foveaCoordRotFrame')'+eye.posteriorChamber.center;
         
 
         %% Rotation centers
@@ -747,17 +777,25 @@ switch p.Results.species
         if isempty(p.Results.gammaAngle)
             switch eyeLaterality
                 case 'Right'
-                    eye.gamma(1) = atand((15.0924/(eye.axialLength-8.5000))*tand(5.5));
+                    eye.gamma(1) = atand((15.0924/(eye.axialLength-8.5000))*tand(5.3));
                 case 'Left'
-                    eye.gamma(1) = -atand((15.0924/(eye.axialLength-8.5000))*tand(5.5));
+                    eye.gamma(1) = -atand((15.0924/(eye.axialLength-8.5000))*tand(5.3));
             end
-            eye.gamma(2) = atand((15.0924/(eye.axialLength-8.5000))*tand(2.15));
+            eye.gamma(2) = atand((15.0924/(eye.axialLength-8.5000))*tand(2.1));
             eye.gamma(3)=0;
         else
             eye.gamma = p.Results.gammaAngle;
         end
         
+        % Find gamma angles that rotate the visual axis to be parallel to
+        % the optical axis. This is achieved when the slope of the visual
+        % axis is zero in the p1p2 and p1p3 planes.
         
+        objfun_p1p2 = @(x) visualAxisSlope([x,0],eye,'p1p2')^2;
+        eye.gamma(1) = fminsearch(objfun_p1p2,5);
+        objfun_p1p3 = @(x) visualAxisSlope([eye.gamma(1) x],eye,'p1p3')^2;
+        eye.gamma(2) = fminsearch(objfun_p1p3,2);
+         
         %% Refractive indices
         % Obtain refractive index values for this spectral domain.
         eye.index.cornea = returnRefractiveIndex( 'cornea', p.Results.spectralDomain );
@@ -897,3 +935,20 @@ eye.meta.gamma = 'Degrees angle of fixation axis w.r.t. optical axis.';
 
 end % function
 
+
+%% LOCAL FUNCTION
+function slope = visualAxisSlope(x, eye, axisLabel)
+sceneGeometry.eye = eye;
+
+[~, ~, sceneWorldPoints, ~, pointLabels] = pupilProjection_fwd([-x(1) -x(2) 0 1], sceneGeometry, 'fullEyeModelFlag', true);
+idx1 = find(strcmp(pointLabels,'fovea'));
+idx2 = find(strcmp(pointLabels,'nodalPointRear'));
+
+switch axisLabel
+    case 'p1p2'
+        slope = (sceneWorldPoints(idx2,1) - sceneWorldPoints(idx1,1)) / (sceneWorldPoints(idx2,3) - sceneWorldPoints(idx1,3));
+    case 'p1p3'
+        slope = (sceneWorldPoints(idx2,2) - sceneWorldPoints(idx1,2)) / (sceneWorldPoints(idx2,3) - sceneWorldPoints(idx1,3));
+end
+
+end
