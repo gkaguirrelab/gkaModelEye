@@ -318,6 +318,8 @@ if p.Results.fullEyeModelFlag
     eyeWorldPoints = [eyeWorldPoints; 0 0 0];
     pointLabels = [pointLabels; 'opticalAxisOrigin'];
     eyeWorldPoints = [eyeWorldPoints; sceneGeometry.eye.posteriorChamber.fovea];
+    pointLabels = [pointLabels; 'nodalPointRear'];
+    eyeWorldPoints = [eyeWorldPoints; sceneGeometry.eye.lens.nodalPoint.rear];
     pointLabels = [pointLabels; 'fovea'];
     
     % Define points around the perimeter of the iris
@@ -570,6 +572,15 @@ sceneWorldPoints = headWorldPoints(:,[2 3 1]);
 %
 % With x being left/right and y being up/down
 %
+
+% If the sceneGeometry is lacking a cameraIntrinsic or cameraIntrinsic,
+% then return
+if ~isfield(sceneGeometry,'cameraExtrinsic') || ~isfield(sceneGeometry,'cameraIntrinsic')
+    imagePoints = [];
+    pupilEllipseOnImagePlane=nan(1,5);
+    pupilFitError = nan;
+    return
+end
 
 % Create the extrinsicRotationMatrix. The model specifies only the camera
 % rotation about the Z axis of the sceneWorld coordinate system.
