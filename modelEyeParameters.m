@@ -224,9 +224,9 @@ switch p.Results.species
         %}
         switch eyeLaterality
             case 'Right'
-                eye.cornea.axis = [2.6539    1.3017   -0.0200];
+                eye.cornea.axis = [3.4582    1.4499   -0.0200];
             case 'Left'
-                eye.cornea.axis = [-2.6539    1.3017   0.0200];
+                eye.cornea.axis = [-3.4582    1.4499   -0.0200];
         end
 
         
@@ -818,6 +818,7 @@ switch p.Results.species
             eye.alpha(1) = fminsearch(objfun_p1p2,5);
             objfun_p1p3 = @(x) visualAxisSlope([eye.alpha(1) -x],eye,'p1p3')^2;
             eye.alpha(2) = fminsearch(objfun_p1p3,2);
+            eye.alpha(3) = 0;
         else
             eye.alpha = p.Results.alphaAngle;
         end
