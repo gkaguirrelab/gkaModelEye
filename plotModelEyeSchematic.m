@@ -15,6 +15,8 @@ function figHandle = plotModelEyeSchematic(sceneGeometry, varargin)
 %  'crossSectionView'     - String. The view to display. Valid choices
 %                           include {'axial','sagittal'};
 %  'newFigure'            - Logical. Determines if we create a new figure.
+%  'plotColor'            - String. Matlab line spec code for line color,
+%                           e.g., {'k','r','b'};
 %
 % Outputs:
 %   figHandle             - Handle to a created figure. Empty if a new
@@ -22,8 +24,24 @@ function figHandle = plotModelEyeSchematic(sceneGeometry, varargin)
 %
 % Examples:
 %{
+    % Basic call for an axial view plot in a new window with black lines
     sceneGeometry = createSceneGeometry;
     plotModelEyeSchematic(sceneGeometry)
+%}
+%{
+    % Two panel plot with axial and sagittal views for eyes with 0 and -10
+    % spherical ametropia
+    figure
+    subplot(2,1,1)
+    sceneGeometry = createSceneGeometry('sphericalAmetropia',0);
+    plotModelEyeSchematic(sceneGeometry,'crossSectionView','axial','newFigure',false,'plotColor','k')
+    sceneGeometry = createSceneGeometry('sphericalAmetropia',-10);
+    plotModelEyeSchematic(sceneGeometry,'crossSectionView','axial','newFigure',false,'plotColor','r')
+    subplot(2,1,2)
+    sceneGeometry = createSceneGeometry('sphericalAmetropia',0);
+    plotModelEyeSchematic(sceneGeometry,'crossSectionView','sagittal','newFigure',false,'plotColor','k')
+    sceneGeometry = createSceneGeometry('sphericalAmetropia',-10);
+    plotModelEyeSchematic(sceneGeometry,'crossSectionView','sagittal','newFigure',false,'plotColor','r')
 %}
 
 %% input parser
@@ -98,7 +116,6 @@ plot(sceneGeometry.eye.iris.center(PdimA),sceneGeometry.eye.iris.center(PdimB)+s
 plot(sceneGeometry.eye.iris.center(PdimA),sceneGeometry.eye.iris.center(PdimB)-sceneGeometry.eye.iris.radius,['x' p.Results.plotColor])
 plot(sceneGeometry.eye.posteriorChamber.fovea(PdimA),sceneGeometry.eye.posteriorChamber.fovea(PdimB),['*' p.Results.plotColor])
 
-
 %% Plot the cornealApex
 [~, ~, ~, eyeWorldPoints, pointLabels] = pupilProjection_fwd([0 0 0 1], sceneGeometry, 'fullEyeModelFlag',true);
 idx = find(strcmp(pointLabels,'cornealApex'));
@@ -110,10 +127,10 @@ b = sceneGeometry.eye.lens.nodalPoint.rear(PdimB) -  (sceneGeometry.eye.lens.nod
 xRange = xlim;
 plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
 
-%% Plot the optical axis when the eye is rotated to gamma
-[~, ~, sceneWorldPoints, ~, pointLabels] = pupilProjection_fwd([sceneGeometry.eye.gamma(1) sceneGeometry.eye.gamma(2) sceneGeometry.eye.gamma(3) 1], sceneGeometry, 'fullEyeModelFlag',true);
-idx1 = find(strcmp(pointLabels,'pupilCenter'));
-idx2 = find(strcmp(pointLabels,'opticalAxisOrigin'));
+%% Plot the visual axis when the eye is rotated to -gamma
+[~, ~, sceneWorldPoints, ~, pointLabels] = pupilProjection_fwd([-sceneGeometry.eye.gamma(1) -sceneGeometry.eye.gamma(2) -sceneGeometry.eye.gamma(3) 1], sceneGeometry, 'fullEyeModelFlag',true);
+idx1 = find(strcmp(pointLabels,'fovea'));
+idx2 = find(strcmp(pointLabels,'nodalPointRear'));
 m = (sceneWorldPoints(idx2,SdimB) - sceneWorldPoints(idx1,SdimB)) / (sceneWorldPoints(idx2,SdimA) - sceneWorldPoints(idx1,SdimA));
 b = sceneWorldPoints(idx1,SdimB) -  (sceneWorldPoints(idx1,SdimA) * m);
 xRange = xlim;
