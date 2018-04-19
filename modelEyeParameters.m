@@ -383,8 +383,7 @@ switch p.Results.species
         % points to refraction
         eye.iris.radius = 5.55;
         
-        % We center the iris on the optical axis of the eye, although we
-        % are aware of some reports that the iris is shifted slightly
+        % We are aware of some reports that the iris is shifted slightly
         % temporally and upward with respect to the pupil center:
         %
         %   ...the typical entrance pupil is decentered
@@ -394,26 +393,15 @@ switch p.Results.species
         % Bennett, Edward S., and Barry A. Weissman, eds. Clinical contact
         % lens practice. Lippincott Williams & Wilkins, 2005, p119
         %
-        % If we wished to model this observation by Bennett, we would use
-        % the code:
-        %{
-        switch eyeLaterality
-            case 'Right'
-                eye.iris.center = [-3.7 0.15 -0.1];
-            case 'Left'
-                eye.iris.center = [-3.7 -0.15 -0.1];
-        end
-        %}
-        %
         % We model an eye with zero iris angle, and thus set the depth of
         % the iris plane equal to the pupil plane. We adjust the position
         % of the iris so that it is centered within the rotated corneal
         % ellipse.
         switch eyeLaterality
             case 'Right'
-                eye.iris.center = [-3.7 0.3 0.25];
+                eye.iris.center = [-3.7 0.35 0.35];
             case 'Left'
-                eye.iris.center = [-3.7 -0.3 0.25];
+                eye.iris.center = [-3.7 -0.35 0.35];
         end
         
         
