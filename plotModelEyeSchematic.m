@@ -128,14 +128,17 @@ xRange = xlim;
 plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
 
 %% Plot the visual axis when the eye is rotated to -alpha
-[~, ~, sceneWorldPoints, ~, pointLabels] = pupilProjection_fwd([-sceneGeometry.eye.alpha(1) -sceneGeometry.eye.alpha(2) -sceneGeometry.eye.alpha(3) 1], sceneGeometry, 'fullEyeModelFlag',true);
-idx1 = find(strcmp(pointLabels,'fovea'));
-idx2 = find(strcmp(pointLabels,'nodalPointRear'));
-m = (sceneWorldPoints(idx2,SdimB) - sceneWorldPoints(idx1,SdimB)) / (sceneWorldPoints(idx2,SdimA) - sceneWorldPoints(idx1,SdimA));
-b = sceneWorldPoints(idx1,SdimB) -  (sceneWorldPoints(idx1,SdimA) * m);
-xRange = xlim;
-plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
-
+% This can be used to confirm that we are calculating alpha properly, but
+% usually does not need to be displayed
+%{
+    [~, ~, sceneWorldPoints, ~, pointLabels] = pupilProjection_fwd([-sceneGeometry.eye.alpha(1) -sceneGeometry.eye.alpha(2) -sceneGeometry.eye.alpha(3) 1], sceneGeometry, 'fullEyeModelFlag',true);
+    idx1 = find(strcmp(pointLabels,'fovea'));
+    idx2 = find(strcmp(pointLabels,'nodalPointRear'));
+    m = (sceneWorldPoints(idx2,SdimB) - sceneWorldPoints(idx1,SdimB)) / (sceneWorldPoints(idx2,SdimA) - sceneWorldPoints(idx1,SdimA));
+    b = sceneWorldPoints(idx1,SdimB) -  (sceneWorldPoints(idx1,SdimA) * m);
+    xRange = xlim;
+    plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
+%}
 
 %% Reference axis
 plot(xRange,[0 0],['-' p.Results.plotColor]);
