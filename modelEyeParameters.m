@@ -75,6 +75,7 @@ p.addParameter('sphericalAmetropia',0,@isscalar);
 p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('alphaAngle',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('foveaAngle',[],@(x)(isempty(x) || isnumeric(x)));
+p.addParameter('corneaAxis',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
 p.addParameter('spectralDomain','nir',@ischar);
@@ -222,13 +223,16 @@ switch p.Results.species
             % Now obtain the corneal axes relative to optical axis
             cornealAxisWRTopticalAxis = fixationAxisWRTopticalAxis - fixationAxisWRTcornealAxis            
         %}
-        switch eyeLaterality
-            case 'Right'
-                eye.cornea.axis = [3.4582    1.4499   -0.0200];
-            case 'Left'
-                eye.cornea.axis = [-3.4582    1.4499   -0.0200];
+        if isempty(p.Results.corneaAxis)
+            switch eyeLaterality
+                case 'Right'
+                    eye.cornea.axis = [3.4582    1.4499   -0.0200];
+                case 'Left'
+                    eye.cornea.axis = [-3.4582    1.4499   -0.0200];
+            end
+        else
+            eye.cornea.axis = p.Results.corneaAxis;
         end
-
         
         %% Pupil
         % We position the pupil plane at the depth of the anterior point of
@@ -795,17 +799,11 @@ switch p.Results.species
         % alpha, the angle w.r.t. the optical axis) as a function of axial
         % length. 
         %
-        % In this model, I set a foveal location that varies based upon the
-        % axial length of the eye, following Tabernero 2007. With the
-        % foveal location set, 
+        % In this model, alpha is deter,ined by the visual axis, which
+        % itself is defined by the foveal position.
         if isempty(p.Results.alphaAngle)
-            % Find alpha angles that rotate the visual axis to be parallel
-            % to the optical axis. This is achieved when the slope of the
-            % visual axis is zero in the p1p2 and p1p3 planes.
-            objfun_p1p2 = @(x) visualAxisSlope([-x,0],eye,'p1p2')^2;
-            eye.alpha(1) = fminsearch(objfun_p1p2,5);
-            objfun_p1p3 = @(x) visualAxisSlope([eye.alpha(1) -x],eye,'p1p3')^2;
-            eye.alpha(2) = fminsearch(objfun_p1p3,2);
+            eye.alpha(1) = atand((eye.posteriorChamber.fovea(2) - eye.lens.nodalPoint.rear(2)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint.rear(1)));
+            eye.alpha(2) = -atand((eye.posteriorChamber.fovea(3) - eye.lens.nodalPoint.rear(3)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint.rear(1)));
             eye.alpha(3) = 0;
         else
             eye.alpha = p.Results.alphaAngle;
@@ -952,51 +950,3 @@ eye.meta.alpha = 'Degrees angle of fixation axis w.r.t. optical axis.';
 end % function
 
 
-
-%% LOCAL FUNCTION
-
-function slope = visualAxisSlope(x, eye, axisLabel)
-% Returns the slope of the visual axis in the p1p2 or p1p3 plane
-%
-% Description:
-%   Given a eye structure that specifies the coordinates of the fovea and
-%   the rear lens nodal point, we can calculate the slope of the line
-%   within the eyeWorld coordinate space that connects these points and
-%   thus defines the visual axis. We perform this calculation after having
-%   rotated the eye by the azimuth and elevation values specified in 'x'.
-%   This allows us to determine the eye rotation that causes the visual
-%   axis of the eye to be parallel with the original orientation of the
-%   optical axis of the eye, and thus have a slope of zero.
-%
-% Inputs:
-%   x                     - The [azimuth, elevation] of eye rotation.
-%   eye                   - The eye structure variable
-%   axisLabel             - Char vector, of the value 'p1p2' or 'p1p3'
-%
-% Outputs
-%   slope                 - The slope of the visual axis of the
-%                           rotated eye within either the p1p2 or p1p3
-%                           planes of the eyeWorld coordinate space.
-%
-
-% Put the eye structure into a sceneGeometry structure
-sceneGeometry.eye = eye;
-
-% Obtain the sceneWorld points for the eye rotated by the x angles
-[~, ~, sceneWorldPoints, ~, pointLabels] = pupilProjection_fwd([x(1) x(2) 0 1], sceneGeometry, 'fullEyeModelFlag', true);
-
-% Find the indices in the returned points for the fovea and lens rear nodal
-% point
-idx1 = find(strcmp(pointLabels,'fovea'));
-idx2 = find(strcmp(pointLabels,'nodalPointRear'));
-
-% Depending upon which plane we are interogating, return the slope of the
-% visual axis
-switch axisLabel
-    case 'p1p2'
-        slope = (sceneWorldPoints(idx2,1) - sceneWorldPoints(idx1,1)) / (sceneWorldPoints(idx2,3) - sceneWorldPoints(idx1,3));
-    case 'p1p3'
-        slope = (sceneWorldPoints(idx2,2) - sceneWorldPoints(idx1,2)) / (sceneWorldPoints(idx2,3) - sceneWorldPoints(idx1,3));
-end
-
-end
