@@ -370,13 +370,12 @@ switch p.Results.species
         % to find the size of the true iris.
         %{
             sceneGeometry = createSceneGeometry();
-            virtualImageFunc = compileVirtualImageFunc(sceneGeometry);
-            sceneGeometry.virtualImageFunc = [];
+            sceneGeometry.refraction = [];
             % Get the area in pixels of a "pupil" that is the same radius
             % as the HVID when there is no ray tracing
             hvidP=pupilProjection_fwd([0 0 0 hvidRadiusMean],sceneGeometry);
             % Restore ray tracing
-            sceneGeometry.virtualImageFunc = virtualImageFunc;
+            sceneGeometry = createSceneGeometry();
             % Set up the objective function
             myArea = @(p) p(3);
             myObj = @(r) (hvidP(3) - myArea(pupilProjection_fwd([0 0 0 r],sceneGeometry)))^2;
@@ -385,7 +384,7 @@ switch p.Results.species
         %}
         % We use this true iris size and then subject the iris perimeter
         % points to refraction
-        eye.iris.radius = 5.55;
+        eye.iris.radius = 5.56;
         
         % We are aware of some reports that the iris is shifted slightly
         % temporally and upward with respect to the pupil center:
@@ -472,7 +471,7 @@ switch p.Results.species
             fprintf('Atchison emmetropic eye 2005, posterior chamber radii [axial x horizontal x vertical]:\n');
             fprintf('\t10.148\t11.455\t11.365\n');
             fprintf('The current model eye, emmetropic eye:\n');
-            fprintf('\t%4.3f \t%4.3f \t%4.3f \n',eye.posteriorChamberRadii(1),eye.posteriorChamberRadii(2),eye.posteriorChamberRadii(3));
+            fprintf('\t%4.3f \t%4.3f \t%4.3f \n',eye.posteriorChamber.radii(1),eye.posteriorChamber.radii(2),eye.posteriorChamber.radii(3));
         %}
         Rzx = -12.91-0.094*p.Results.sphericalAmetropia;
         Rzy = -12.72+0.004*p.Results.sphericalAmetropia;
@@ -582,9 +581,9 @@ switch p.Results.species
         if isempty(p.Results.foveaAngle)
             switch eyeLaterality
                 case 'Right'
-                    aziFoveaEmmetropic = 9.1542;
+                    aziFoveaEmmetropic = 9.1543;
                 case 'Left'
-                    aziFoveaEmmetropic = -9.1542;
+                    aziFoveaEmmetropic = -9.1543;
             end
             eleFoveaEmmetropic = 3.6480;
         else

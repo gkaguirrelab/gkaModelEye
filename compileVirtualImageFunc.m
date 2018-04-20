@@ -9,7 +9,9 @@ function compileVirtualImageFunc( varargin )
 %   the file at the specified disk location, and places the function on the
 %   MATLAB path.
 %
-%   The default save location is 
+%   The default save location is within userpath(), at:
+%
+%       /toolboxes/transparentTrack/code/bin' 
 %
 %   Calls to the compiled virtualImageFuncMex execute roughly ~13x faster
 %   than the native virtualImageFunc routine.
