@@ -507,19 +507,30 @@ switch p.Results.species
         %
         % To position the posterior chamber, we need to know the distance
         % between the apex of the anterior chamber and the apex of the
-        % posterior chamber. The value for this fixed distance is derived
-        % from the Atchison 2006 model eye. The total interior depth of the
-        % eye from Table 1 for an emmetrope is:
+        % posterior chamber. I derived the value for this distance from the
+        % Atchison 2006 model eye. Atchison givens the axial length of his
+        % model eye as:
         %
-        %   0.55 + 3.15 + 1.44 + 2.16 + 16.28 = 23.58
+        %   23.58 - 0.299 * sphericalAmetropia
         %
-        % Therefore, the apex of the posterior ellipsoid is:
+        % For the ellipsoid implementation of Atchison's biconic model of
+        % the posterior chamber, the total axial length of the posterior
+        % chamber is:
+        %
+        %   postChamberRadiiAmetropiaSlope(1)*2 = -0.2796
+        %
+        % which is less than the rate at which the total axial length
+        % changes with ametropia. Therefore, we set adjust the posterior
+        % chamber apex by spherical ametropia to achieve the correct total
+        % axial length:
         %{
-            23.5800 - postChamberRadiiEmetrope(1)*2
+            posteriorChamberApexDepth = 23.5800 - postChamberRadiiEmetrope(1)*2 - (0.2990 + postChamberRadiiAmetropiaSlope(1)*2)
         %}
         % behind the corneal apex.
-        posteriorChamberApexDepth = 23.5800 - postChamberRadiiEmetrope(1)*2;
-        
+        posteriorChamberApexDepth = 23.5800 - ...
+            postChamberRadiiEmetrope(1)*2 - ...
+            (0.2990 + postChamberRadiiAmetropiaSlope(1)*2)*p.Results.sphericalAmetropia;
+
         % Compute and store axial length
         if isempty(p.Results.axialLength)
             eye.axialLength = posteriorChamberApexDepth + eye.posteriorChamber.radii(1)*2;
@@ -532,12 +543,14 @@ switch p.Results.species
             % chamber that contibutes to length (posteriorChamberApexDepth)
             scaleFactor = (p.Results.axialLength - posteriorChamberApexDepth) / (eye.posteriorChamber.radii(1)*2);
             eye.posteriorChamber.radii = eye.posteriorChamber.radii .* scaleFactor;
+            posteriorChamberApexDepth = posteriorChamberApexDepth * scaleFactor;
             eye.axialLength = p.Results.axialLength;
         end
-        
+
         % Set the depth of the center of the posterior chamber
         eye.posteriorChamber.center = ...
             [(-posteriorChamberApexDepth - eye.posteriorChamber.radii(1)) 0 0];
+
         
         
         %% Fovea
