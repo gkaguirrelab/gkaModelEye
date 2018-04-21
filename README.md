@@ -21,9 +21,6 @@ A rough hierarchy of the functions is as follows:
             |                   |-- addContactLens
             V                   '-- addSpectacleLens
 rayTraceCenteredSurfaces
-            |
-            V
-   calcEllipseIntersct
 ```
 
 Every function has associated examples in the header comments. This command issued in the MATLAB console will test all examples:
