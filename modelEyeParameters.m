@@ -468,7 +468,19 @@ switch p.Results.species
         %
         % I model the posterior chamber as a centered ellipsoid. I convert
         % the 4 parameeters of the Atchison biconic model to a 3 radii of
-        % an ellipsoid by numeric approximation.
+        % an ellipsoid by numeric approximation. To match Atchison's axial
+        % length formula (Eq 19), I had to inflate the effect of spherical
+        % ametropia upon the asphericity coefficients very sligtly.
+        % Atchison gives the values:
+        %
+        %   Qx = 0.27+0.026*SR
+        %   Qy = 0.25+0.017*SR
+        %
+        % and I increased the effects of SR to be 0.0272 and 0.0182 upon Qx
+        % and Qy, respectively. I suspect this adjustment is the result of
+        % a small, systematic underestimation of the ellipsoid radii by my
+        % numeric approximation.
+        %   
         %{
             % Numeric approximation of Atchison 2006 biconic model of 
             % posterior chamber with ellipsoid radii
@@ -476,8 +488,8 @@ switch p.Results.species
             for SR = -2:2
             Cx = 1/(12.91+0.094*SR);
             Cy = 1/(12.72-0.004*SR);
-            Qx = 0.27+0.026*SR;
-            Qy = 0.25+0.017*SR;
+            Qx = 0.27+0.0272*SR;
+            Qy = 0.25+0.0182*SR;
             biconicZ = @(x,y) (Cx.*x.^2 + Cy.*y.^2)./(1+sqrt( 1-(1+Qx).* Cx.^2.*x.^2 - (1+Qy).*Cy.^2.*y.^2));
             myObj = @(p) -biconicZ(p,0);
             [radiusX] = fminsearch(myObj,10);
@@ -492,7 +504,7 @@ switch p.Results.species
             fprintf('vertical radius = %4.4f %4.4f * SR \n',radii(3,3),slopes(3));
         %}
         postChamberRadiiEmetrope = [10.1760 11.4558 11.3771];
-        postChamberRadiiAmetropiaSlope = [-0.1398 -0.0339 -0.0810];
+        postChamberRadiiAmetropiaSlope = [-0.1495 -0.0393 -0.0864];
         
         eye.posteriorChamber.radii = ...
             postChamberRadiiEmetrope + postChamberRadiiAmetropiaSlope.* p.Results.sphericalAmetropia;
@@ -507,29 +519,9 @@ switch p.Results.species
         %
         % To position the posterior chamber, we need to know the distance
         % between the apex of the anterior chamber and the apex of the
-        % posterior chamber. I derived the value for this distance from the
-        % Atchison 2006 model eye. Atchison givens the axial length of his
-        % model eye as:
-        %
-        %   23.58 - 0.299 * sphericalAmetropia
-        %
-        % For the ellipsoid implementation of Atchison's biconic model of
-        % the posterior chamber, the total axial length of the posterior
-        % chamber is:
-        %
-        %   postChamberRadiiAmetropiaSlope(1)*2 = -0.2796
-        %
-        % which is less than the rate at which the total axial length
-        % changes with ametropia. Therefore, we set adjust the posterior
-        % chamber apex by spherical ametropia to achieve the correct total
-        % axial length:
-        %{
-            posteriorChamberApexDepth = 23.5800 - postChamberRadiiEmetrope(1)*2 - (0.2990 + postChamberRadiiAmetropiaSlope(1)*2)
-        %}
-        % behind the corneal apex.
-        posteriorChamberApexDepth = 23.5800 - ...
-            postChamberRadiiEmetrope(1)*2 - ...
-            (0.2990 + postChamberRadiiAmetropiaSlope(1)*2)*p.Results.sphericalAmetropia;
+        % posterior chamber. I derive the value for this distance from the
+        % Atchison 2006 model eye.
+        posteriorChamberApexDepth = 23.5800 - postChamberRadiiEmetrope(1)*2;
 
         % Compute and store axial length
         if isempty(p.Results.axialLength)
@@ -543,14 +535,12 @@ switch p.Results.species
             % chamber that contibutes to length (posteriorChamberApexDepth)
             scaleFactor = (p.Results.axialLength - posteriorChamberApexDepth) / (eye.posteriorChamber.radii(1)*2);
             eye.posteriorChamber.radii = eye.posteriorChamber.radii .* scaleFactor;
-            posteriorChamberApexDepth = posteriorChamberApexDepth * scaleFactor;
             eye.axialLength = p.Results.axialLength;
         end
 
         % Set the depth of the center of the posterior chamber
         eye.posteriorChamber.center = ...
             [(-posteriorChamberApexDepth - eye.posteriorChamber.radii(1)) 0 0];
-
         
         
         %% Fovea
