@@ -542,42 +542,97 @@ switch p.Results.species
         eye.posteriorChamber.center = ...
             [(-posteriorChamberApexDepth - eye.posteriorChamber.radii(1)) 0 0];
                 
-        % Set the axis of the posterior chamber. In the axial plane, the
-        % posterior apex is tilted slightly towards the nasal direction. 
-        switch eyeLaterality
-            case 'Right'
-                eye.posteriorChamber.axis =  [-2.3551 0 0];
-            case 'Left'
-                eye.posteriorChamber.axis =  [+2.3551 0 0];
-        end        
         
-        %% Fovea
-        % We specify the coordinate position on the posterior chamber
-        % ellipsoidal surface that corresponds to the fovea. Charman
-        % (quoting Emsley 1952) notes that the optical axis intersects the
-        % retina 1.5 mm nasal and 0.5 mm superior to the visual axis:
+        %% Optic disc and fovea
+        % Despite substantial differences in posterior chamber size, the
+        % visual field position of the physiologic blind spot is highly
+        % consistent across individuals. This suggests that the distance
+        % (in mm) between the optic disc and the fovea increases
+        % commensurately with increasing posterior chamber size, so that
+        % the distance between these locations in retinal degrees remains
+        % roughly constant. Conversely, the angle between the visual and
+        % optical axes of the eye (alpha) is found to be systematically
+        % decreased with increasing axial length. Tabernero modeled this
+        % effect by assuming that the axial elongation of the eye does not
+        % alter the distance of the fovea from the optic axis in the
+        % horizontal dimension. As a consequence, the angle between this
+        % foveal location and the nodal point of the lens would be decrease
+        % as the tangent of axial length:
         %
-        %   Charman, W. N. (1991). Optics of the human eye. In J. Cronly
-        %   Dillon (Ed.), Visual optics and instrumen- tation (pp. 1?26).
-        %   Boca Raton: CRC Press
+        %   Tabernero, Juan, et al. "Mechanism of compensation of
+        %   aberrations in the human eye." JOSA A 24.10 (2007): 3274-3283.
         %
-        % These values can be convered to polar coordinate degrees of
-        % retinal angle using the unit conversion functions of the
-        % rgcDisplacementMap toolbox, and then converted again to degrees
-        % of azimuth and elevation of the fovea relatove to the point of
-        % intersection of the optic axis in the eyeWorld coordinate frame:
-        %{
-            tbUse('rgcDisplacementMap');
-            [ angleVisualToOpticalAxis, distanceMmRetinaVisualToOpticalAxis ] = retinalVectorVisualToOpticalAxis();
-            distanceDegRetinaVisualToOpticalAxis = convert_mmRetina_to_degRetina(distanceMmRetinaVisualToOpticalAxis);
-            aziFoveaFromOpticAxisRetDeg = cosd(angleVisualToOpticalAxis)*distanceDegRetinaVisualToOpticalAxis
-            eleFoveaFromOpticAxisRetDeg = sind(angleVisualToOpticalAxis)*distanceDegRetinaVisualToOpticalAxis
-        %}
-        % This computation yields a displacement of the fovea from the
-        % intersection of the optical axis of 7.13 deg azimuth and 2.57
-        % deg elevation. The computation relies upon the assumption of a
-        % spherical posterior chamber with a radius of 11.95 mm.
+        % However, this model underestimates the observed decrease in
+        % alpha, and has the limitation that it asymptotes at a positive,
+        % non-zero number, in disagreement with empirical measures.
         %
+        % The model I adopt is one in which the optic disc has a constant
+        % distance from the fovea in units of retinal degrees. Therefore,
+        % growth of the eye increases the distance between these
+        % structures, as has been reported:
+        %
+        %   Jonas, Rahul Arvo, et al. "Optic disc-fovea distance, axial
+        %   length and parapapillary zones. The Beijing Eye Study 2011."
+        %   PloS one 10.9 (2015): e0138701.
+        %
+        % We set this distance to be 26.56 retinal degrees of azimuth, and
+        % XX retinal degrees of elevation. In the emmetropic eye, the
+        % center of the optic disc is located at 14.56 retinal degrees of
+        % azimuth relative to the optical axis (and thus, in the nasal
+        % retina) and at XX retinal degrees of elevation relative to the
+        % optical axis (and thus in the superior retina). We then assume
+        % that further elongation or reduction of the posterior chamber
+        % originates from the posterior apex. Therefore an increase in
+        % axial length of the eye has the property of increasing the
+        % distance (in retinal degrees) between the optical axis and the
+        % fovea. We calculate the increase (in mm) in the perimeter of the
+        % ellipse in each plane. We assign 1/4 of this growth (or
+        % shrinkage) to shift the position of the fovea from the optical
+        % axis, and then calculate the retinal degrees that is needed for
+        % this shift.
+        %
+        % Because the distance in retinal degrees between the optic disc
+        % and the fovea is held constant, an increase in the axial length
+        % of the eye has the effect of "dragging" the fovea closer to the
+        % optical axis
+        %
+        emmetropicPerim = 68.0178;
+
+        % These functions implement the elliptic integral. The parameter
+        % "theta" has a value of zero at the apex of the ellipse along the
+        % axial dimension (p1).
+        ellipticIntegral_p1p2=@(theta) sqrt(1-sqrt(1-eye.posteriorChamber.radii(2)^2/eye.posteriorChamber.radii(1)^2)^2*(sin(theta)).^2);
+        ellipticIntegral_p1p3=@(theta) sqrt(1-sqrt(1-eye.posteriorChamber.radii(3)^2/eye.posteriorChamber.radii(1)^2)^2*(sin(theta)).^2);
+        arcLength_p1p2 = @(theta1,theta2) eye.posteriorChamber.radii(1).*integral(ellipticIntegral_p1p2,theta1, theta2);
+        arcLength_p1p3 = @(theta1,theta2) eye.posteriorChamber.radii(1).*integral(ellipticIntegral_p1p3,theta1, theta2);
+
+        % Calculate the perimeter of the posterior chamber in the p1p2 and
+        % p1p3 dimensions
+        perim_p1p2 = arcLength_p1p2(0,deg2rad(360));
+        perim_p1p3 = arcLength_p1p3(0,deg2rad(360));
+        
+        % Determine the discrepancy (in mm) between these perimeters and
+        % that of the emmetropic eye, and assign 1/4 of the discrepancy to
+        % the position adjustment of the optic disc.
+        perim_p1p2_emmetrope = 68.0178;
+        perim_p1p3_emmetrope = 68.0178;
+        shift_mm_p1p2 = (perim_p1p2 - perim_p1p2_emmetrope)/4;
+        shift_mm_p1p3 = (perim_p1p3 - perim_p1p3_emmetrope)/4;
+        
+        % Conduct a search to invert the elliptic integral and obtain the
+        % degrees of shift, relative to the posterior chamber apex
+        myObj = @(x) (shift_mm_p1p2 - arcLength_p1p2(0,x)).^2;
+        shift_deg_p1p2 = rad2deg(fminsearch(myObj,0));
+        myObj = @(x) (shift_mm_p1p3 - arcLength_p1p3(0,x)).^2;
+        shift_deg_p1p3 = rad2deg(fminsearch(myObj,0));
+
+        opticDiscPositionDeg = [14.5602 + shift_deg_p1p2, 2 + shift_deg_p1p3, 0];
+        
+        % Now calculate the foveal position
+        foveaPositionWRTopticDiscDeg = [26.56 5 0];
+        
+        foveaPositionWRTopticAxis = foveaPositionWRTopticDiscDeg - opticDiscPositionDeg;
+
         % An alternative approach to setting the foveal position is to
         % identify the location of the fovea that yields a visual axis that
         % is at an angle alpha w.r.t. the optical axis such that this angle
@@ -602,34 +657,18 @@ switch p.Results.species
         if isempty(p.Results.foveaAngle)
             switch eyeLaterality
                 case 'Right'
-                    aziFoveaEmmetropic = 11.5;
                 case 'Left'
-                    aziFoveaEmmetropic = -11.5;
+                    foveaPositionWRTopticAxis(1)=-foveaPositionWRTopticAxis(1);
             end
-            eleFoveaEmmetropic = 3.6442;
         else
-            aziFoveaEmmetropic = p.Results.foveaAngle(1);
-            eleFoveaEmmetropic = p.Results.foveaAngle(2);
+            aziFovea = p.Results.foveaAngle(1);
+            eleFovea = p.Results.foveaAngle(2);
         end
-        
-        % Taberno 2007 finds that alpha varies as a function of eye axial
-        % length, suggesting that the position of the fovea is a fixed
-        % distance (in mm) from the optical axis of the eye:
-        %
-        %	Tabernero, Juan, et al. "Mechanism of compensation of
-        %   aberrations in the human eye." JOSA A 24.10 (2007): 3274-3283.
-        %
-        % We use the Taberno equation 6 to adjust the position of the fovea
-        % in units of degrees of distance from the optical axis as the size
-        % of the posterior chamber changes. The fixed value of 10.1760 is
-        % axial radius of the posterior chamber in the emmetropic eye.
-        aziFoveaEmmetropic = atand( (postChamberRadiiEmetrope(1)/eye.posteriorChamber.radii(1))*tand(aziFoveaEmmetropic) );
-        eleFoveaEmmetropic = atand( (postChamberRadiiEmetrope(1)/eye.posteriorChamber.radii(1))*tand(eleFoveaEmmetropic) );
-        
+                
         % Rotation matrix to bring the eyeWorld (p1p2p3) axes to be w.r.t.
         % the fovea, accounting for the tilted axis of the posterior
         % chamber.
-        angles = -[aziFoveaEmmetropic, eleFoveaEmmetropic, 0] - eye.posteriorChamber.axis;        
+        angles = -foveaPositionWRTopticAxis;        
         R3 = [cosd(angles(1)) -sind(angles(1)) 0; sind(angles(1)) cosd(angles(1)) 0; 0 0 1];
         R2 = [cosd(angles(2)) 0 sind(angles(2)); 0 1 0; -sind(angles(2)) 0 cosd(angles(2))];
         R1 = [1 0 0; 0 cosd(angles(3)) -sind(angles(3)); 0 sind(angles(3)) cosd(angles(3))];
@@ -647,7 +686,7 @@ switch p.Results.species
         % Now rotate this coordinate location back to the original axes.
         % This gives us the coordinates of the fovea in the canonical
         % eyeWorld coordinate space.
-        angles = [aziFoveaEmmetropic, eleFoveaEmmetropic, 0];
+        angles = foveaPositionWRTopticAxis;
         R3 = [cosd(angles(1)) -sind(angles(1)) 0; sind(angles(1)) cosd(angles(1)) 0; 0 0 1];
         R2 = [cosd(angles(2)) 0 sind(angles(2)); 0 1 0; -sind(angles(2)) 0 cosd(angles(2))];
         R1 = [1 0 0; 0 cosd(angles(3)) -sind(angles(3)); 0 sind(angles(3)) cosd(angles(3))];
