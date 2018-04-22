@@ -541,7 +541,15 @@ switch p.Results.species
         % Set the depth of the center of the posterior chamber
         eye.posteriorChamber.center = ...
             [(-posteriorChamberApexDepth - eye.posteriorChamber.radii(1)) 0 0];
-        
+                
+        % Set the axis of the posterior chamber. In the axial plane, the
+        % posterior apex is tilted slightly towards the nasal direction. 
+        switch eyeLaterality
+            case 'Right'
+                eye.posteriorChamber.axis =  [-2.3551 0 0];
+            case 'Left'
+                eye.posteriorChamber.axis =  [+2.3551 0 0];
+        end        
         
         %% Fovea
         % We specify the coordinate position on the posterior chamber
@@ -594,9 +602,9 @@ switch p.Results.species
         if isempty(p.Results.foveaAngle)
             switch eyeLaterality
                 case 'Right'
-                    aziFoveaEmmetropic = 9.1449;
+                    aziFoveaEmmetropic = 11.5;
                 case 'Left'
-                    aziFoveaEmmetropic = -9.1449;
+                    aziFoveaEmmetropic = -11.5;
             end
             eleFoveaEmmetropic = 3.6442;
         else
@@ -619,8 +627,9 @@ switch p.Results.species
         eleFoveaEmmetropic = atand( (postChamberRadiiEmetrope(1)/eye.posteriorChamber.radii(1))*tand(eleFoveaEmmetropic) );
         
         % Rotation matrix to bring the eyeWorld (p1p2p3) axes to be w.r.t.
-        % the fovea
-        angles = -[aziFoveaEmmetropic, eleFoveaEmmetropic, 0];
+        % the fovea, accounting for the tilted axis of the posterior
+        % chamber.
+        angles = -[aziFoveaEmmetropic, eleFoveaEmmetropic, 0] - eye.posteriorChamber.axis;        
         R3 = [cosd(angles(1)) -sind(angles(1)) 0; sind(angles(1)) cosd(angles(1)) 0; 0 0 1];
         R2 = [cosd(angles(2)) 0 sind(angles(2)); 0 1 0; -sind(angles(2)) 0 cosd(angles(2))];
         R1 = [1 0 0; 0 cosd(angles(3)) -sind(angles(3)); 0 sind(angles(3)) cosd(angles(3))];
