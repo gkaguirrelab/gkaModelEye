@@ -169,16 +169,24 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     % Perform the projection and request the full eye model
     [~, ~, sceneWorldPoints, ~, pointLabels] = pupilProjection_fwd(eyePose,sceneGeometry,'fullEyeModelFlag',true,'removeOccultedPoints',false);
     % Define some settings for display
-    eyePartLabels = {'aziRotationCenter', 'eleRotationCenter', 'posteriorChamber' 'irisPerimeter' 'pupilPerimeter' 'anteriorChamber' 'cornealApex'};
-    plotColors = {'>r' '^m' '.k' '*b' '*g' '.y' '*y'};
+    eyePartLabels = {'aziRotationCenter', 'eleRotationCenter', 'posteriorChamber' 'irisPerimeter' 'pupilPerimeter' 'anteriorChamber' 'cornealApex' 'fovea' 'opticDisc'};
+    plotColors = {'>r' '^m' '.k' '*b' '*g' '.y' '*y' '*r' 'xk'};
     % Prepare a figure
     figure
+    hold on
     % Plot each anatomical component
     for pp = 1:length(eyePartLabels)
     	idx = strcmp(pointLabels,eyePartLabels{pp});
         plot3(sceneWorldPoints(idx,1), sceneWorldPoints(idx,2), sceneWorldPoints(idx,3), plotColors{pp})
-        hold on
     end
+    % Add the visual and optical axes
+    opticalOrigin = sceneWorldPoints(strcmp(pointLabels,'opticalAxisOrigin'),:);
+    foveaPoint = sceneWorldPoints(strcmp(pointLabels,'fovea'),:);
+    nodalPoint = sceneWorldPoints(strcmp(pointLabels,'nodalPointRear'),:);
+    visualAxis = [foveaPoint; nodalPoint];
+    opticalAxis = [opticalOrigin; nodalPoint];
+    plot3(visualAxis(:,1),visualAxis(:,2),visualAxis(:,3),'-r');
+    plot3(opticalAxis(:,1),opticalAxis(:,2),opticalAxis(:,3),'-k');
     hold off
     axis equal
 %}
@@ -317,10 +325,12 @@ if p.Results.fullEyeModelFlag
     pointLabels = [pointLabels; 'eleRotationCenter'];
     eyeWorldPoints = [eyeWorldPoints; 0 0 0];
     pointLabels = [pointLabels; 'opticalAxisOrigin'];
-    eyeWorldPoints = [eyeWorldPoints; sceneGeometry.eye.posteriorChamber.fovea];
-    pointLabels = [pointLabels; 'nodalPointRear'];
     eyeWorldPoints = [eyeWorldPoints; sceneGeometry.eye.lens.nodalPoint.rear];
+    pointLabels = [pointLabels; 'nodalPointRear'];
+    eyeWorldPoints = [eyeWorldPoints; sceneGeometry.eye.posteriorChamber.fovea];
     pointLabels = [pointLabels; 'fovea'];
+    eyeWorldPoints = [eyeWorldPoints; sceneGeometry.eye.posteriorChamber.opticDisc];
+    pointLabels = [pointLabels; 'opticDisc'];
     
     % Define points around the perimeter of the iris
     nIrisPerimPoints = p.Results.nIrisPerimPoints;
