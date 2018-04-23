@@ -575,40 +575,44 @@ switch p.Results.species
         %   length and parapapillary zones. The Beijing Eye Study 2011."
         %   PloS one 10.9 (2015): e0138701.
         %
-        % We set the distance bewteen the fovea and the center of the optic
-        % disc to be 26.50 retinal degrees of azimuth, and 2.60 retinal
-        % degrees of elevation. These values are derived as follows:
+        % We determine the distance in degrees of retinal arc that has a
+        % visual field width of 16.6 degrees, corresponding to the distance
+        % of the center of the physiologic blind spot from fixation:
+        %
+        %   Kabanarou, S. A., et al. "Psychophysical mapping of the blind
+        %   spot: A validation study." Investigative Ophthalmology & Visual
+        %   Science 43.13 (2002): 3806-3806.
+        %
+        % We assume that the optic disc and the fovea are equidistant from
+        % the posterior chamber apex, and that the posterior chamber is
+        % radially symmetric.
         %{
-            % Distance in mm between the center of the optic disc and fovea
-            % for an emmetropic eye. I use the Jonas 2015 median value.
-            % Note that the mean sperhical ametropia of their population
-            % was very close to emmetropic.
-            retinalArcMm = 4.74;
-            % Computer the distance in retinal degrees corresponding to
-            % this distance in mm, assuming that the optic disc and the 
-            % fovea are equidistant from the posterior chamber apex, and
-            % that the posterior chamber is radially symmetric.
-            eye = modelEyeParameters();
-            ellipticIntegral=@(theta) sqrt(1-sqrt(1-eye.posteriorChamber.radii(2)^2/eye.posteriorChamber.radii(1)^2)^2*(sin(theta)).^2);
-            arcLength = @(theta1,theta2) eye.posteriorChamber.radii(1).*integral(ellipticIntegral,theta1, theta2);
-            myObj = @(x) (retinalArcMm/2 - arcLength(0,x)).^2;
-            totalAngle = 2*rad2deg(fminsearch(myObj,0));
-            fprintf('Distance between the fovea and the center of the optic disc in retinal degrees: %4.2f \n', totalAngle);
-            % Decompose this into azimuth and elevation components, using
-            % the fact that the polar angle (relative to the nasal 
-            % horizontal meridian) of the line connecting the fovea and the
-            % optic disc is 5.6°:
-            %	K Rohrschneider. Determination of the Location of the Fovea
-            %	on the Fundus. Invest. Ophthalmol. Vis. Sci. 
-            %   2004;45(9):3257-3258
-            % 
-            elevationAngle = sind(5.6)*totalAngle;
-            azimuthAngle = cosd(5.6)*totalAngle;
+            % Find the azimuthal arc in retina deg, centerd on the apex
+            % that covers 16.6 deg of visual field
+            alphaAngle = @(eye) eye.alpha(1);
+            myObj = @(x) (16.6 - 2*alphaAngle(modelEyeParameters('foveaAngle',[x/2,0,0])))^2;
+            retinalArcDeg = fminsearch(myObj,23);
+            fprintf('Distance between the fovea and the center of the optic disc in retinal degrees: %4.2f \n', retinalArcDeg);
+        %}
+        % We then decompose this into azimuth and elevation components,
+        % using the fact that the polar angle (relative to the nasal
+        % horizontal meridian) of the line connecting the fovea and the
+        % optic disc is 5.6°:
+        %
+        %	K Rohrschneider. Determination of the Location of the Fovea
+        %	on the Fundus. Invest. Ophthalmol. Vis. Sci. 
+        %   2004;45(9):3257-3258
+        %
+        %{
+            elevationAngle = sind(5.6)*retinalArcDeg;
+            azimuthAngle = cosd(5.6)*retinalArcDeg;
             fprintf('Distance between the fovea and the center of the optic disc in retinal degrees, azimuth: %4.2f, elevation: %4.2f \n',azimuthAngle,elevationAngle);
-            % Observe that the increase in the size of the posterior
-            % chamber with axial length, coupled with a constant separation
-            % of retinal degrees, produces a distance in mm that increases
-            % similar to the empirical results of Jonas 2015
+        %}
+        % Observe that the increase in the size of the posterior
+	    % chamber with axial length, coupled with a constant separation
+        % of retinal degrees, produces a distance in mm that increases
+        % similar to the empirical results of Jonas 2015:
+        %{
             distances = [];
             for axialLength = 19:29
                 eye = modelEyeParameters('axialLength',axialLength);
@@ -617,10 +621,12 @@ switch p.Results.species
                 distances = [distances arcLength(-deg2rad(totalAngle/2),deg2rad(totalAngle/2))];
             end
             linearCoefficients = polyfit((19:29)', distances', 1);
-            fprintf('The relationship between axial length and optic disc-fovea distance in our model is: distance [mm] = %4.2f + %4.2f * axialLength\n',linearCoefficients(2),linearCoefficients(1));
-            fprintf('  Compare to the Jonas 2015 empirical result of 0.04 + 0.21 * axialLength \n')
+            fprintf('The relationship between axial length and optic disc-fovea distance in our model is:\n');
+            fprintf('\tDistance [mm] = %4.2f + %4.2f * axialLength\n',linearCoefficients(2),linearCoefficients(1));
+            fprintf('Compare to the Jonas 2015 fit to empirical data:\n');
+            fprintf('\tDistance [mm] = 0.04 + 0.21 * axialLength \n')
         %}
-        opticDisc_WRT_foveaDegRetina = [-26.50, -2.60, 0];
+        opticDisc_WRT_foveaDegRetina = [-23.19, -2.27, 0];
         
         % We next require the position of the fovea with respect to the
         % optic axis in the emmetropic eye. We identify the position (in
@@ -715,7 +721,7 @@ switch p.Results.species
         if ~isempty(p.Results.foveaAngle)
             fovea_WRT_opticAxisDegRetina = p.Results.foveaAngle;
         end
-        
+
         % Calculate the foveal position in eyeWorld coordinates.
         phi = -fovea_WRT_opticAxisDegRetina(1);
         theta = -fovea_WRT_opticAxisDegRetina(2);
