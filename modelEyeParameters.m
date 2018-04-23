@@ -634,8 +634,9 @@ switch p.Results.species
         % corresponding position of the fovea w.r.t. the the optical axis
         % of the eye (adjusted for eye laterality).
         %{
+            eye = modelEyeParameters();
             % These are the alpha angles that we wish to hit for emmetropia
-            targetAlphaAngle = [5.8  2.5878  0];
+            targetAlphaAngle = [5.8  2.64052  0];
             myComputedAlphaAzi = @(eye) eye.alpha(1);
             myObj = @(x) (targetAlphaAngle(1) - myComputedAlphaAzi(modelEyeParameters('foveaAngle',[x 0 0])))^2;
             aziFoveaEmmetropic = fminsearch(myObj,9)
@@ -643,7 +644,7 @@ switch p.Results.species
             myObj = @(x) (targetAlphaAngle(2) - myComputedAlphaEle(modelEyeParameters('foveaAngle',[aziFoveaEmmetropic x 0])))^2;
             eleFoveaEmmetropic = fminsearch(myObj,2)
         %}
-        fovea_WRT_opticAxisDegRetina_emmetrope = [9.145 4.100 0];
+        fovea_WRT_opticAxisDegRetina_emmetrope = [8.1378 3.7065 0];
         
         % This allows us to compute, for the emmetropic eye, the position
         % of the optic disc relative to the optical axis
@@ -662,7 +663,7 @@ switch p.Results.species
         % the perimeter of the emmetropic posterior chamber:
         %{
             % Perimetric length of the emmetropic posterior chamber
-            % eye = modelEyeParameters()
+            eye = modelEyeParameters();
             ellipticIntegral_p1p2=@(theta) sqrt(1-sqrt(1-eye.posteriorChamber.radii(2)^2/eye.posteriorChamber.radii(1)^2)^2*(sin(theta)).^2);
             ellipticIntegral_p1p3=@(theta) sqrt(1-sqrt(1-eye.posteriorChamber.radii(3)^2/eye.posteriorChamber.radii(1)^2)^2*(sin(theta)).^2);
             arcLength_p1p2 = @(theta1,theta2) eye.posteriorChamber.radii(1).*integral(ellipticIntegral_p1p2,theta1, theta2);
@@ -708,68 +709,105 @@ switch p.Results.species
         opticDisc_WRT_opticalAxis = opticDisc_WRT_opticalAxis_emmetrope - opticDiscShiftDeg;
         fovea_WRT_opticAxisDegRetina = fovea_WRT_opticAxisDegRetina_emmetrope - opticDiscShiftDeg;
 
-        % If a foveaAngle key-value pair was passed, over-ride the computed
+        % If a foveaAngle key-value pair was passed, override the computed
         % fovea angle here. This is used primarily during model
         % development.
         if ~isempty(p.Results.foveaAngle)
             fovea_WRT_opticAxisDegRetina = p.Results.foveaAngle;
         end
         
-        % Now calculate the foveal position in eyeWorld coordinates. Create
-        % a rotation matrix to bring the eyeWorld (p1p2p3) axes to be
-        % w.r.t. the fovea, accounting for the tilted axis of the posterior
-        % chamber.
-        angles = -fovea_WRT_opticAxisDegRetina;        
-        R3 = [cosd(angles(1)) -sind(angles(1)) 0; sind(angles(1)) cosd(angles(1)) 0; 0 0 1];
-        R2 = [cosd(angles(2)) 0 sind(angles(2)); 0 1 0; -sind(angles(2)) 0 cosd(angles(2))];
-        R1 = [1 0 0; 0 cosd(angles(3)) -sind(angles(3)); 0 sind(angles(3)) cosd(angles(3))];
-        rotMat = R1 * R2 * R3;
+        % Calculate the foveal position in eyeWorld coordinates.
+        phi = -fovea_WRT_opticAxisDegRetina(1);
+        theta = -fovea_WRT_opticAxisDegRetina(2);
+        x = eye.posteriorChamber.radii(1) * cosd(theta) * cosd(phi);
+        y = eye.posteriorChamber.radii(2) * cosd(theta) * sind(phi);
+        z = eye.posteriorChamber.radii(3) * sind(theta);
+                eye.posteriorChamber.fovea = [-x y -z] + eye.posteriorChamber.center;
         
-        % Obtain the position of the apex of the posterior chamber
-        % ellipsoid in the rotated frame (for which the fovea is at the
-        % apex)
-        rotPlane = rotMat * [0; 1; 0];
-        [p1p2_Aye, p1p2_Bye]=EllipsoidPlaneIntersection(rotPlane(1),rotPlane(2),rotPlane(3),0,eye.posteriorChamber.radii(1),eye.posteriorChamber.radii(2),eye.posteriorChamber.radii(3));
-        rotPlane = rotMat * [0; 0; 1];
-        [~, Bye]=EllipsoidPlaneIntersection(rotPlane(1),rotPlane(2),rotPlane(3),0,p1p2_Bye, p1p2_Aye,eye.posteriorChamber.radii(3));
-        foveaCoordRotFrame = [-Bye 0 0];
+        % Calculate the optic disc position in eyeWorld coordinates.
+        phi = -opticDisc_WRT_opticalAxis(1);
+        theta = -opticDisc_WRT_opticalAxis(2);
+        x = eye.posteriorChamber.radii(1) * cosd(theta) * cosd(phi);
+        y = eye.posteriorChamber.radii(2) * cosd(theta) * sind(phi);
+        z = eye.posteriorChamber.radii(3) * sind(theta);        
+        eye.posteriorChamber.opticDisc = [-x y -z] + eye.posteriorChamber.center;
 
-        % Now rotate this coordinate location back to the original axes.
-        % This gives us the coordinates of the fovea in the canonical
-        % eyeWorld coordinate space.
-        angles = fovea_WRT_opticAxisDegRetina;
-        R3 = [cosd(angles(1)) -sind(angles(1)) 0; sind(angles(1)) cosd(angles(1)) 0; 0 0 1];
-        R2 = [cosd(angles(2)) 0 sind(angles(2)); 0 1 0; -sind(angles(2)) 0 cosd(angles(2))];
-        R1 = [1 0 0; 0 cosd(angles(3)) -sind(angles(3)); 0 sind(angles(3)) cosd(angles(3))];
-        rotMat = R1 * R2 * R3;
-        eye.posteriorChamber.fovea = (rotMat * foveaCoordRotFrame')'+eye.posteriorChamber.center;
         
-        % Repeat this calculation for the optic disc center location
-        angles = -opticDisc_WRT_opticalAxis;        
-        R3 = [cosd(angles(1)) -sind(angles(1)) 0; sind(angles(1)) cosd(angles(1)) 0; 0 0 1];
-        R2 = [cosd(angles(2)) 0 sind(angles(2)); 0 1 0; -sind(angles(2)) 0 cosd(angles(2))];
-        R1 = [1 0 0; 0 cosd(angles(3)) -sind(angles(3)); 0 sind(angles(3)) cosd(angles(3))];
-        rotMat = R1 * R2 * R3;
+        %% Alpha
+        % We now calculate alpha, which is the angle (in degrees) between
+        % the optical and visual axes of the eye. We use the names
+        % and greek letter designations for eye axes from Atchison & Smith:
+        %
+        %   Atchison, David A., George Smith, and George Smith. "Optics of
+        %   the human eye." (2000): 34-35.
+        %
+        % A related measurement is kappa, which is the angle between the
+        % pupil and visual axes. As the optical and pupil axes of the our
+        % model eye are aligned, we can use kappa and alpha values
+        % interchangably.
+        % 
+        % The visual axis is displaced nasally and superiorly within the
+        % visual field relative to the optical axis. We adopt the
+        % convention that alpha is defined in head-fixed coordinates. Thus,
+        % positive values for the right eye, and negative values for the
+        % left eye, are more nasal. Positive values for vertical alpha are
+        % upward.
+        %
+        % A source for an estimate of kappa comes from Mathur 2013:
+        %
+        %	Mathur, Ankit, Julia Gehrmann, and David A. Atchison. "Pupil
+        %	shape as viewed along the horizontal visual field." Journal of
+        %	vision 13.6 (2013): 3-3.
+        %
+        % They measured the shape of the entrance pupil as a function of
+        % viewing angle relative to the fixation point of the eye. Their
+        % data from the right eye is well fit by a horizontal kappa of 5.3
+        % degrees (see TEST_Mathur2013.m).
+        %
+        % While a horizontal kappa of ~5 degrees is a consistent finding,
+        % measurements of vertical kappa differ:
+        %
+        %   Hashemi, Hassan, et al. "Distribution of angle kappa
+        %   measurements with Orbscan II in a population-based survey."
+        %   Journal of Refractive Surgery 26.12 (2010): 966-971.
+        %
+        %   Gharaee, Hamid, et al. "Angle kappa measurements: normal values
+        %   in healthy iranian population obtained with the Orbscan II."
+        %   Iranian Red Crescent Medical Journal 17.1 (2015).
+        %
+        % We note that there is evidence that the vertical kappa value can
+        % vary based upon the subject being in a sittng or supine position.
+        % Tscherning measured an upward alpha of 2-3 degrees, although
+        % this varied amongst subjects:
+        %
+        %   Tscherning, Marius Hans Erik. Physiologic Optics: Dioptrics of
+        %   the Eye, Functions of the Retina Ocular Movements and Binocular
+        %   Vision. Keystone Publishing Company, 1920.
+        %
+        % Until better evidene is available, we adopt a vertical kappa of
+        % 2.3 degrees for the emmetropic model eye, as this value best
+        % fits the Mathur 2013 data.
+        %
+        % Measured kappa has been found to depend upon axial length:
+        %
+        %   Tabernero, Juan, et al. "Mechanism of compensation of
+        %   aberrations in the human eye." JOSA A 24.10 (2007): 3274-3283.
+        %
+        % Tabernero 2007 report a mean horizontal kappa of 5 degrees in
+        % emmetropes, and their Equation 6 expresses kappa (technically
+        % alpha, the angle w.r.t. the optical axis) as a function of axial
+        % length. 
+        %
+        % In this model, alpha is determined by the visual axis, which
+        % itself is defined by the foveal position.
+        if isempty(p.Results.alphaAngle)
+            eye.alpha(1) = atand((eye.posteriorChamber.fovea(2) - eye.lens.nodalPoint.rear(2)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint.rear(1)));
+            eye.alpha(2) = -atand((eye.posteriorChamber.fovea(3) - eye.lens.nodalPoint.rear(3)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint.rear(1)));
+            eye.alpha(3) = 0;
+        else
+            eye.alpha = p.Results.alphaAngle;
+        end
         
-        % Obtain the position of the apex of the posterior chamber
-        % ellipsoid in the rotated frame (for which the fovea is at the
-        % apex)
-        rotPlane = rotMat * [0; 1; 0];
-        [p1p2_Aye, p1p2_Bye]=EllipsoidPlaneIntersection(rotPlane(1),rotPlane(2),rotPlane(3),0,eye.posteriorChamber.radii(1),eye.posteriorChamber.radii(2),eye.posteriorChamber.radii(3));
-        rotPlane = rotMat * [0; 0; 1];
-        [~, Bye]=EllipsoidPlaneIntersection(rotPlane(1),rotPlane(2),rotPlane(3),0,p1p2_Bye, p1p2_Aye,eye.posteriorChamber.radii(3));
-        foveaCoordRotFrame = [-Bye 0 0];
-
-        % Now rotate this coordinate location back to the original axes.
-        % This gives us the coordinates of the fovea in the canonical
-        % eyeWorld coordinate space.
-        angles = opticDisc_WRT_opticalAxis;
-        R3 = [cosd(angles(1)) -sind(angles(1)) 0; sind(angles(1)) cosd(angles(1)) 0; 0 0 1];
-        R2 = [cosd(angles(2)) 0 sind(angles(2)); 0 1 0; -sind(angles(2)) 0 cosd(angles(2))];
-        R1 = [1 0 0; 0 cosd(angles(3)) -sind(angles(3)); 0 sind(angles(3)) cosd(angles(3))];
-        rotMat = R1 * R2 * R3;
-        eye.posteriorChamber.opticDisc = (rotMat * foveaCoordRotFrame')'+eye.posteriorChamber.center;
-         
 
         %% Rotation centers
         % The rotation center of the eye is often treated as a single,
@@ -868,82 +906,6 @@ switch p.Results.species
         eye.rotationCenters.tor = eye.rotationCenters.tor .* (eye.posteriorChamber.radii./postChamberRadiiEmetrope);
 
         
-        %% Alpha
-        % We now calculate alpha, which is the angle (in degrees) between
-        % the optical and visual axes of the eye. We use the names
-        % and greek letter designations for eye axes from Atchison & Smith:
-        %
-        %   Atchison, David A., George Smith, and George Smith. "Optics of
-        %   the human eye." (2000): 34-35.
-        %
-        % A related measurement is kappa, which is the angle between the
-        % pupil and visual axes. As the optical and pupil axes of the our
-        % model eye are aligned, we can use kappa and alpha values
-        % interchangably.
-        % 
-        % The visual axis is displaced nasally and superiorly within the
-        % visual field relative to the optical axis. We adopt the
-        % convention that alpha is defined in head-fixed coordinates. Thus,
-        % positive values for the right eye, and negative values for the
-        % left eye, are more nasal. Positive values for vertical alpha are
-        % upward.
-        %
-        % A source for an estimate of kappa comes from Mathur 2013:
-        %
-        %	Mathur, Ankit, Julia Gehrmann, and David A. Atchison. "Pupil
-        %	shape as viewed along the horizontal visual field." Journal of
-        %	vision 13.6 (2013): 3-3.
-        %
-        % They measured the shape of the entrance pupil as a function of
-        % viewing angle relative to the fixation point of the eye. Their
-        % data from the right eye is well fit by a horizontal kappa of 5.3
-        % degrees (see TEST_Mathur2013.m).
-        %
-        % While a horizontal kappa of ~5 degrees is a consistent finding,
-        % measurements of vertical kappa differ:
-        %
-        %   Hashemi, Hassan, et al. "Distribution of angle kappa
-        %   measurements with Orbscan II in a population-based survey."
-        %   Journal of Refractive Surgery 26.12 (2010): 966-971.
-        %
-        %   Gharaee, Hamid, et al. "Angle kappa measurements: normal values
-        %   in healthy iranian population obtained with the Orbscan II."
-        %   Iranian Red Crescent Medical Journal 17.1 (2015).
-        %
-        % We note that there is evidence that the vertical kappa value can
-        % vary based upon the subject being in a sittng or supine position.
-        % Tscherning measured an upward alpha of 2-3 degrees, although
-        % this varied amongst subjects:
-        %
-        %   Tscherning, Marius Hans Erik. Physiologic Optics: Dioptrics of
-        %   the Eye, Functions of the Retina Ocular Movements and Binocular
-        %   Vision. Keystone Publishing Company, 1920.
-        %
-        % Until better evidene is available, we adopt a vertical kappa of
-        % 2.3 degrees for the emmetropic model eye, as this value best
-        % fits the Mathur 2013 data.
-        %
-        % Measured kappa has been found to depend upon axial length:
-        %
-        %   Tabernero, Juan, et al. "Mechanism of compensation of
-        %   aberrations in the human eye." JOSA A 24.10 (2007): 3274-3283.
-        %
-        % Tabernero 2007 report a mean horizontal kappa of 5 degrees in
-        % emmetropes, and their Equation 6 expresses kappa (technically
-        % alpha, the angle w.r.t. the optical axis) as a function of axial
-        % length. 
-        %
-        % In this model, alpha is deter,ined by the visual axis, which
-        % itself is defined by the foveal position.
-        if isempty(p.Results.alphaAngle)
-            eye.alpha(1) = atand((eye.posteriorChamber.fovea(2) - eye.lens.nodalPoint.rear(2)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint.rear(1)));
-            eye.alpha(2) = -atand((eye.posteriorChamber.fovea(3) - eye.lens.nodalPoint.rear(3)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint.rear(1)));
-            eye.alpha(3) = 0;
-        else
-            eye.alpha = p.Results.alphaAngle;
-        end
-        
-         
         %% Refractive indices
         % Obtain refractive index values for this spectral domain.
         eye.index.cornea = returnRefractiveIndex( 'cornea', p.Results.spectralDomain );
