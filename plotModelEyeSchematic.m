@@ -109,13 +109,14 @@ plotHyperbola(ep,p.Results.plotColor,lensRange)
 ep = ellipse_ex2im([eye.lens.back.center([PdimA PdimB]) eye.lens.back.radii([PdimA PdimB]) 0]);
 plotHyperbola(ep,p.Results.plotColor,lensRange)
 
-%% Add a 2mm radius pupil, center of rotation, iris boundary, and fovea
+%% Add a 2mm radius pupil, center of rotation, iris boundary, fovea, and optic disc
 plot([eye.pupil.center(PdimA) eye.pupil.center(PdimA)],[-2 2],['-' p.Results.plotColor]);
 plot(eye.rotationCenters.azi(PdimA),eye.rotationCenters.azi(PdimB),['>' p.Results.plotColor])
 plot(eye.rotationCenters.ele(PdimA),eye.rotationCenters.ele(PdimB),['^' p.Results.plotColor])
 plot(eye.iris.center(PdimA),eye.iris.center(PdimB)+eye.iris.radius,['x' p.Results.plotColor])
 plot(eye.iris.center(PdimA),eye.iris.center(PdimB)-eye.iris.radius,['x' p.Results.plotColor])
 plot(eye.posteriorChamber.fovea(PdimA),eye.posteriorChamber.fovea(PdimB),['*' p.Results.plotColor])
+plot(eye.posteriorChamber.opticDisc(PdimA),eye.posteriorChamber.opticDisc(PdimB),['o' p.Results.plotColor])
 
 %% Plot the cornealApex
 sg.eye = eye;
