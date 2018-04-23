@@ -116,7 +116,7 @@ plot(eye.rotationCenters.ele(PdimA),eye.rotationCenters.ele(PdimB),['^' p.Result
 plot(eye.iris.center(PdimA),eye.iris.center(PdimB)+eye.iris.radius,['x' p.Results.plotColor])
 plot(eye.iris.center(PdimA),eye.iris.center(PdimB)-eye.iris.radius,['x' p.Results.plotColor])
 plot(eye.posteriorChamber.fovea(PdimA),eye.posteriorChamber.fovea(PdimB),['*' p.Results.plotColor])
-plot(eye.posteriorChamber.opticDisc(PdimA),eye.posteriorChamber.opticDisc(PdimB),['o' p.Results.plotColor])
+plot(eye.posteriorChamber.opticDisc(PdimA),eye.posteriorChamber.opticDisc(PdimB),['x' p.Results.plotColor])
 
 %% Plot the cornealApex
 sg.eye = eye;
