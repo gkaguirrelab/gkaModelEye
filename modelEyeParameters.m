@@ -209,10 +209,9 @@ switch p.Results.species
         % axis that connects a fixation point with the center of curvature
         % of the cornea. We convert those angles here to be relative to the
         % optic axis of the eye. To do so, we first assume that the
-        % keratometric axis is equal to the fixation axis [MAY WANT TO ADD
-        % A CONVERSION STEP FOR THIS]. Next, we add the Navarro
-        % measurements to the alpha angle values that we have for the
-        % model.
+        % keratometric axis is equal to the fixation axis. Next, we add the
+        % Navarro measurements to the alpha angle values that we have for
+        % the model.
         %{
             % Navarro values for the displacement of the corneal axis from
             % keratometric axis for the right eye (in degrees)
@@ -235,6 +234,7 @@ switch p.Results.species
         else
             eye.cornea.axis = p.Results.corneaAxis;
         end
+        
         
         %% Pupil
         % We position the pupil plane at the depth of the anterior point of
