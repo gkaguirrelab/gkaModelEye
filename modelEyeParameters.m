@@ -270,7 +270,7 @@ switch p.Results.species
             % Wyatt reported an eccentricity of the pupil of 0.21 under
             % dark conditions. We find that using that value produces
             % model results that disagree with Malthur 2013. We have
-            % adopted an upper value of 0.21 instead. We also use the 
+            % adopted an upper value of 0.16 instead. We also use the 
             % convention of a negative eccentricity for a horizontal major
             % axis and a positive eccentricity for vertical.
             entranceEccen = [-0.12 0.16];
