@@ -544,53 +544,21 @@ switch p.Results.species
             [(-posteriorChamberApexDepth - eye.posteriorChamber.radii(1)) 0 0];
                 
         
-        %% Optic disc and fovea
-        % Despite substantial differences in posterior chamber size, the
-        % visual field position of the physiologic blind spot is highly
-        % consistent across individuals. This suggests that the distance
-        % (in mm) between the optic disc and the fovea increases
-        % commensurately with increasing posterior chamber size, so that
-        % the distance between these locations in retinal degrees remains
-        % roughly constant. Conversely, the angle between the visual and
-        % optical axes of the eye (alpha) is found to be systematically
-        % decreased with increasing axial length. Tabernero modeled this
-        % effect by assuming that the axial elongation of the eye does not
-        % alter the distance of the fovea from the optic axis in the
-        % horizontal dimension. As a consequence, the angle between this
-        % foveal location and the nodal point of the lens would be decrease
-        % as the tangent of axial length:
+        %% Optic disc, fovea, and axes
+        % The model establishes the position of the fovea and then sets the
+        % optic disc at a constant distance from the fovea in units of
+        % retinal degrees. The lines that connect these points on the fovea
+        % to the posterior nodal point of the eye define the alpha and mu
+        % angles respectively. The difference between these gives the
+        % position of the blind spot.
         %
-        %   Tabernero, Juan, et al. "Mechanism of compensation of
-        %   aberrations in the human eye." JOSA A 24.10 (2007): 3274-3283.
-        %
-        % However, this model underestimates the observed decrease in
-        % alpha, and has the limitation that it asymptotes at a positive,
-        % non-zero number, in disagreement with empirical measures.
-        %
-        % The model I adopt is one in which the optic disc has a constant
-        % distance from the fovea in units of retinal degrees. Therefore,
-        % growth of the eye increases the distance between these
-        % structures, as has been reported:
-        %
-        %   Jonas, Rahul Arvo, et al. "Optic disc-fovea distance, axial
-        %   length and parapapillary zones. The Beijing Eye Study 2011."
-        %   PloS one 10.9 (2015): e0138701.
-        %
-        % We determine the distance in degrees of retinal arc that has a
-        % visual field width of 16.6 degrees, corresponding to the distance
-        % of the center of the physiologic blind spot from fixation:
-        %
-        %   Kabanarou, S. A., et al. "Psychophysical mapping of the blind
-        %   spot: A validation study." Investigative Ophthalmology & Visual
-        %   Science 43.13 (2002): 3806-3806.
-        %
-
-        % Find the azimuthal arc in retina deg that produces a blind spot position
-        % in the horizontal and vertical directions that is equal to specified
-        % values from the literature. Values taken from Safren 1993 for their dim
-        % stimulus, under the assumption that this will be most accurate given the
-        % minimization of light scatter. We model the fovea as being 3x closer to
-        % the optical axis than is the optic disc.
+        % Find the azimuthal arc in retina deg that produces a blind spot
+        % position in the horizontal and vertical directions that is equal
+        % to specified values from the literature. Values taken from Safren
+        % 1993 for their dim stimulus, under the assumption that this will
+        % be most accurate given the minimization of light scatter. We
+        % model the fovea as being 3x closer to the optical axis than is
+        % the optic disc.
         %{
             targetBlindSpotAngle = [16.02 1.84 0];
             blindSpotAngle = @(eye) eye.axes.mu.degField - eye.axes.alpha.degField;
@@ -599,14 +567,19 @@ switch p.Results.species
             retinalArcDeg = fmincon(myObj,[20 4],[],[],[],[],[],[],[],options);
             fprintf('Distance between the fovea and the center of the optic disc in retinal degrees: azimuth = %4.4f; elevation = %4.4f \n\n', retinalArcDeg([1 2]));
         %}
-        opticDisc_WRT_foveaDegRetina = [-22.4993, -2.5587 , 0];
+        switch eyeLaterality
+            case 'Right'
+                opticDisc_WRT_foveaDegRetina = [-22.4993, -2.5587 , 0];
+            case 'Left'
+                opticDisc_WRT_foveaDegRetina = [22.4993, -2.5587 , 0];
+        end        
         
         % We next require the position of the fovea with respect to the
         % optic axis in the emmetropic eye. We identify the position (in
         % retinal degrees) of the fovea that results in a visual axis that
         % has resulting alpha angles that match empirical results.  We
         % assume an azimuth alpha of 5.8 degrees for an emmetropic eye
-        % (Figure 8 of Mathur 2013). We assume an elevation alpha of 2.3
+        % (Figure 8 of Mathur 2013). We assume an elevation alpha of 2.29
         % degrees, as this value, when adjusted to account for the longer
         % axial length of the subjects in the Mathur study, best fits the
         % Mathur data. Given these angles, we then calculate the
@@ -623,8 +596,13 @@ switch p.Results.species
             myObj = @(x) (targetAlphaAngle(2) - myComputedAlphaEle(modelEyeParameters('foveaAngle',[aziFoveaEmmetropic x 0])))^2;
             eleFoveaEmmetropic = fminsearch(myObj,2)
         %}
-        fovea_WRT_opticAxisDegRetina_emmetrope = [8.1378 3.2136 0];
-                
+        switch eyeLaterality
+            case 'Right'
+                fovea_WRT_opticAxisDegRetina_emmetrope = [8.1378 3.2136 0];
+            case 'Left'
+                fovea_WRT_opticAxisDegRetina_emmetrope = [-8.1378 3.2136 0];
+        end                
+
         % In our model, the fovea moves towards the apex of the posterior
         % chamber as the eye becomes closer to spherical. We implement this
         % effect by calculating the ratio of the posterior chamber axes.
@@ -661,6 +639,7 @@ switch p.Results.species
         ellipticIntegral_p1p3=@(theta) sqrt(1-sqrt(1-eye.posteriorChamber.radii(3)^2/eye.posteriorChamber.radii(1)^2)^2*(sin(theta)).^2);
         arcLength_p1p2 = @(theta1,theta2) eye.posteriorChamber.radii(1).*integral(ellipticIntegral_p1p2,theta1, theta2);
         arcLength_p1p3 = @(theta1,theta2) eye.posteriorChamber.radii(1).*integral(ellipticIntegral_p1p3,theta1, theta2);
+
         % For the calculation, the first theta value is zero, as we are
         % calculating distance from the posterior chamber apex (i.e., the
         % intersection of the optical axis with the retina).
@@ -690,77 +669,6 @@ switch p.Results.species
         eye.axes.mu.degField(1) = atand((eye.posteriorChamber.opticDisc(2) - eye.lens.nodalPoint.rear(2)) / (eye.posteriorChamber.opticDisc(1) - eye.lens.nodalPoint.rear(1)));
         eye.axes.mu.degField(2) = -atand((eye.posteriorChamber.opticDisc(3) - eye.lens.nodalPoint.rear(3)) / (eye.posteriorChamber.opticDisc(1) - eye.lens.nodalPoint.rear(1)));
         eye.axes.mu.degField(3) = 0;
-
-        
-        
-        
-        %% Alpha
-        % We now calculate alpha, which is the angle (in degrees) between
-        % the optical and visual axes of the eye. We use the names
-        % and greek letter designations for eye axes from Atchison & Smith:
-        %
-        %   Atchison, David A., George Smith, and George Smith. "Optics of
-        %   the human eye." (2000): 34-35.
-        %
-        % A related measurement is kappa, which is the angle between the
-        % pupil and visual axes. As the optical and pupil axes of the our
-        % model eye are aligned, we can use kappa and alpha values
-        % interchangably.
-        % 
-        % The visual axis is displaced nasally and superiorly within the
-        % visual field relative to the optical axis. We adopt the
-        % convention that alpha is defined in head-fixed coordinates. Thus,
-        % positive values for the right eye, and negative values for the
-        % left eye, are more nasal. Positive values for vertical alpha are
-        % upward.
-        %
-        % A source for an estimate of kappa comes from Mathur 2013:
-        %
-        %	Mathur, Ankit, Julia Gehrmann, and David A. Atchison. "Pupil
-        %	shape as viewed along the horizontal visual field." Journal of
-        %	vision 13.6 (2013): 3-3.
-        %
-        % They measured the shape of the entrance pupil as a function of
-        % viewing angle relative to the fixation point of the eye. Their
-        % data from the right eye is well fit by a horizontal kappa of 5.3
-        % degrees (see TEST_Mathur2013.m).
-        %
-        % While a horizontal kappa of ~5 degrees is a consistent finding,
-        % measurements of vertical kappa differ:
-        %
-        %   Hashemi, Hassan, et al. "Distribution of angle kappa
-        %   measurements with Orbscan II in a population-based survey."
-        %   Journal of Refractive Surgery 26.12 (2010): 966-971.
-        %
-        %   Gharaee, Hamid, et al. "Angle kappa measurements: normal values
-        %   in healthy iranian population obtained with the Orbscan II."
-        %   Iranian Red Crescent Medical Journal 17.1 (2015).
-        %
-        % We note that there is evidence that the vertical kappa value can
-        % vary based upon the subject being in a sittng or supine position.
-        % Tscherning measured an upward alpha of 2-3 degrees, although
-        % this varied amongst subjects:
-        %
-        %   Tscherning, Marius Hans Erik. Physiologic Optics: Dioptrics of
-        %   the Eye, Functions of the Retina Ocular Movements and Binocular
-        %   Vision. Keystone Publishing Company, 1920.
-        %
-        % Until better evidene is available, we adopt a vertical kappa of
-        % 2.3 degrees for the emmetropic model eye, as this value best
-        % fits the Mathur 2013 data.
-        %
-        % Measured kappa has been found to depend upon axial length:
-        %
-        %   Tabernero, Juan, et al. "Mechanism of compensation of
-        %   aberrations in the human eye." JOSA A 24.10 (2007): 3274-3283.
-        %
-        % Tabernero 2007 report a mean horizontal kappa of 5 degrees in
-        % emmetropes, and their Equation 6 expresses kappa (technically
-        % alpha, the angle w.r.t. the optical axis) as a function of axial
-        % length. 
-        %
-        % In this model, alpha is determined by the visual axis, which
-        % itself is defined by the foveal position.
         
 
         %% Rotation centers
