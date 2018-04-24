@@ -614,15 +614,16 @@ switch p.Results.species
         % similar to the empirical results of Jonas 2015:
         %{
             distances = [];
+            SR = @(d) (23.58-d)*0.299;
             for axialLength = 19:29
-                eye = modelEyeParameters('axialLength',axialLength);
+                eye = modelEyeParameters('sphericalAmetropia',SR(axialLength));
                 ellipticIntegral=@(theta) sqrt(1-sqrt(1-eye.posteriorChamber.radii(2)^2/eye.posteriorChamber.radii(1)^2)^2*(sin(theta)).^2);
                 arcLength = @(theta1,theta2) eye.posteriorChamber.radii(1).*integral(ellipticIntegral,theta1, theta2);
-                distances = [distances arcLength(-deg2rad(totalAngle/2),deg2rad(totalAngle/2))];
+                distances = [distances arcLength(-deg2rad(retinalArcDeg/2),deg2rad(retinalArcDeg/2))];
             end
             linearCoefficients = polyfit((19:29)', distances', 1);
             fprintf('The relationship between axial length and optic disc-fovea distance in our model is:\n');
-            fprintf('\tDistance [mm] = %4.2f + %4.2f * axialLength\n',linearCoefficients(2),linearCoefficients(1));
+            fprintf('\tDistance [mm] = %4.3f + %4.3f * axialLength\n',linearCoefficients(2),linearCoefficients(1));
             fprintf('Compare to the Jonas 2015 fit to empirical data:\n');
             fprintf('\tDistance [mm] = 0.04 + 0.21 * axialLength \n')
         %}
