@@ -130,6 +130,12 @@ b = eye.lens.nodalPoint.rear(PdimB) -  (eye.lens.nodalPoint.rear(PdimA) * m);
 xRange = xlim;
 plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
 
+%% Plot the blind spot axis
+m = (eye.posteriorChamber.opticDisc(PdimB) - eye.lens.nodalPoint.rear(PdimB)) / (eye.posteriorChamber.opticDisc(PdimA) - eye.lens.nodalPoint.rear(PdimA));
+b = eye.lens.nodalPoint.rear(PdimB) -  (eye.lens.nodalPoint.rear(PdimA) * m);
+xRange = xlim;
+plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
+
 
 %% Reference axis
 plot(xRange,[0 0],['-' p.Results.plotColor]);
