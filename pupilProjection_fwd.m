@@ -104,61 +104,6 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-6)
 %}
 %{
-    %% Plot the pupil ellipse for various eye poses
-    % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry();
-    % Prepare a figure
-    figure
-    sensorResolution=sceneGeometry.cameraIntrinsic.sensorResolution;
-    blankFrame = zeros(fliplr(sensorResolution))+0.5;
-    imshow(blankFrame, 'Border', 'tight');
-    hold on
-    axis off
-    axis equal
-    xlim([0 sensorResolution(1)]);
-    ylim([0 sensorResolution(2)]);
-    % Loop over eye poses and plot
-    for azi = -35:35:35
-        for ele = -35:35:35
-            eyePose = [azi ele 0 1];
-            % Obtain the pupil ellipse parameters in transparent format
-            pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
-            pFitImplicit = ellipse_ex2im(ellipse_transparent2ex(pupilEllipseOnImagePlane));
-            fh=@(x,y) pFitImplicit(1).*x.^2 +pFitImplicit(2).*x.*y +pFitImplicit(3).*y.^2 +pFitImplicit(4).*x +pFitImplicit(5).*y +pFitImplicit(6);
-            fimplicit(fh,[1, sensorResolution(1), 1, sensorResolution(2)],'Color', 'g','LineWidth',1);
-            axis off;
-        end
-    end
-    hold off
-%}
-%{
-    %% Display a 2D image of a slightly myopic left eye wearing a contact
-    % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry('eyeLaterality','left','sphericalAmetropia',-2,'contactLens',-2);
-    % Define an eyePose with azimuth, elevation, torsion, and pupil radius
-    eyePose = [-40 -5 0 3];
-    % Perform the projection and request the full eye model
-    [~, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose,sceneGeometry,'fullEyeModelFlag',true, 'nIrisPerimPoints', 20);
-    % Define some settings for display
-    eyePartLabels = {'posteriorChamber' 'irisPerimeter' 'pupilPerimeter' 'anteriorChamber'};
-    plotColors = {'.w' '.b' '*g' '.y'};
-    sensorResolution=sceneGeometry.cameraIntrinsic.sensorResolution;
-    blankFrame = zeros(fliplr(sensorResolution))+0.5;
-    % Prepare a figure
-    figure
-    imshow(blankFrame, 'Border', 'tight');
-    hold on
-    axis off
-    axis equal
-    xlim([0 sensorResolution(1)]);
-    ylim([0 sensorResolution(2)]);
-    % Plot each anatomical component
-    for pp = 1:length(eyePartLabels)
-    	idx = strcmp(pointLabels,eyePartLabels{pp});
-        plot(imagePoints(idx,1), imagePoints(idx,2), plotColors{pp})
-    end
-%}
-%{
     %% Display a 3D plot of a right eye
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
