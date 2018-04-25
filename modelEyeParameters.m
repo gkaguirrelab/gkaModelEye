@@ -221,16 +221,16 @@ switch p.Results.species
             fixationAxisWRTcornealAxis = [2.35 0.85 0.02];
             % specify our alpha angles
             eye = modelEyeParameters();
-            fixationAxisWRTopticalAxis = eye.axes.alpha;
+            fixationAxisWRTopticalAxis = eye.axes.alpha.degField;
             % Now obtain the corneal axes relative to optical axis
             cornealAxisWRTopticalAxis = fixationAxisWRTopticalAxis - fixationAxisWRTcornealAxis            
         %}
         if isempty(p.Results.corneaAxis)
             switch eyeLaterality
                 case 'Right'
-                    eye.cornea.axis = [3.4582    1.4499   -0.0200];
+                    eye.cornea.axis = [3.4467    1.4400   -0.0200];
                 case 'Left'
-                    eye.cornea.axis = [-3.4582    1.4499   -0.0200];
+                    eye.cornea.axis = [-3.4467    1.4400   -0.0200];
             end
         else
             eye.cornea.axis = p.Results.corneaAxis;
