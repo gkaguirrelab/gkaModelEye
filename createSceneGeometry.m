@@ -37,28 +37,25 @@ function sceneGeometry = createSceneGeometry(varargin)
 %           camera image in pixels, along the X and Y dimensions,
 %           respectively.
 %
-%  'cameraExtrinsic' - A structure that defines the spatial position of the
-%       camera w.r.t. to eye. Sub-fields:
+%  'cameraPosition' - A structure that defines the spatial position of the
+%       camera w.r.t. to world coordinates. This is used to assemble the
+%       camera extrinsic matrix. Sub-fields:
 %
-%      'translation' - A 3x1 vector of the form [x; y; z], with the values
-%           specifying the location (horizontal, vertical, and depth,
-%           respectively) of the principle offset point of the camera in mm
-%           relative to the scene coordinate system. We define the origin
-%           of the scene coordinate system to be x=0, y=0 along the optical
+%      'translation' - A 3x1 vector of the form [horizontal; vertical; and
+%           depth] in units of mm, of the nodal point of the camera
+%           relative to the world coordinate system. We define the origin
+%           of the world coordinate system to be x=0, y=0 along the optical
 %           axis of the eye, and z=0 to be the apex of the corneal surface.
 %
-%      'rotationZ' - Scalar in units of degrees. This is used to create the
-%           camera rotation matrix. The rotation matrix specifies the
-%           rotation of the camera relative to the axes of the world
-%           coordinate system. Because eye rotations are set have a value
-%           of zero when the camera axis is aligned with the pupil axis of
-%           the eye, the camera rotation around the X and Y axes of the
-%           coordinate system are fixed at zero. Rotation about the Z axis
-%           is meaningful, as the model eye has different rotation
-%           properties in the azimuthal and elevational directions, and has
-%           a non circular exit pupil. We specify the camera rotation
-%           around the Z axis in degrees. In pupilProjection_fwd, this is
-%           used to construct the rotation matrix.
+%      'torsion' - Scalar in units of degrees that specifies the rotational
+%           position of the camera relative to the origin of the world
+%           coordinate space. Because eye rotations are set have a value of
+%           zero when the camera axis is aligned with the pupil axis of the
+%           eye, the camera rotation around the X and Y axes of the
+%           coordinate system are not used. Rotation about the Z axis
+%           (torsion) is meaningful, as the model eye has different
+%           rotation properties in the azimuthal and elevational
+%           directions, and has a non circular exit pupil.
 %
 %      'primaryPosition' - A 1x2 vector of [eyeAzimuth, eyeElevation] at
 %           which the eye is in primary position (as defined by Listing's
@@ -130,9 +127,8 @@ function sceneGeometry = createSceneGeometry(varargin)
 %  'sceneGeometryFileName' - Full path to file 
 %  'intrinsicCameraMatrix' - 3x3 matrix
 %  'radialDistortionVector' - 1x2 vector of radial distortion parameters
-%  'cameraRotationZ'      - Scalar.
-%  'extrinsicTranslationVector' - 3x1 vector
-%  'primaryPosition'      - 1x3 vector
+%  'cameraTranslation'    - 3x1 vector
+%  'cameraRotation'       - 1x3 vector
 %  'constraintTolerance'  - Scalar. Range 0-1. Typical value 0.01 - 0.03
 %  'contactLens'          - Scalar or 1x2 vector, with values for the lens
 %                           refraction in diopters, and (optionally) the
@@ -163,13 +159,13 @@ function sceneGeometry = createSceneGeometry(varargin)
 %
 % Examples:
 %{
-    % Create a scene geometry file for a myopic eye wearing a contact lens.
+    % Create a sceneGeometry file for a myopic eye wearing a contact lens.
     % The key-value sphericalAmetropia is passed to modelEyeParameters
     % within the routine
     sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'contactLens',-2);
 %}
 %{
-    % Create a scene geometry file for a hyperopic eye wearing spectacles
+    % Create a sceneGeometry file for a hyperopic eye wearing spectacles
     % that provide appropriate correction when underwater.
     sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',2,'medium','water');
     % Plot a figure that traces a ray arising from the optical axis at the
@@ -187,8 +183,8 @@ p.addParameter('sceneGeometryFileName','', @(x)(isempty(x) | ischar(x)));
 p.addParameter('intrinsicCameraMatrix',[2600 0 320; 0 2600 240; 0 0 1],@isnumeric);
 p.addParameter('sensorResolution',[640 480],@isnumeric);
 p.addParameter('radialDistortionVector',[0 0],@isnumeric);
-p.addParameter('extrinsicTranslationVector',[0; 0; 120],@isnumeric);
-p.addParameter('cameraRotationZ',0,@isnumeric);
+p.addParameter('cameraTranslation',[0; 0; 120],@isnumeric);
+p.addParameter('cameraTorsion',0,@isnumeric);
 p.addParameter('constraintTolerance',0.02,@isscalar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
@@ -206,9 +202,9 @@ sceneGeometry.cameraIntrinsic.radialDistortion = p.Results.radialDistortionVecto
 sceneGeometry.cameraIntrinsic.sensorResolution = p.Results.sensorResolution;
 
 %% cameraExtrinsic
-sceneGeometry.cameraExtrinsic.translation = p.Results.extrinsicTranslationVector;
-sceneGeometry.cameraExtrinsic.rotationZ = p.Results.cameraRotationZ;
-sceneGeometry.cameraExtrinsic.primaryPosition = [0,0];
+sceneGeometry.cameraPosition.translation = p.Results.cameraTranslation;
+sceneGeometry.cameraPosition.torsion = p.Results.cameraTorsion;
+sceneGeometry.cameraPosition.primaryPosition = [0,0];
 
 %% eye
 sceneGeometry.eye = modelEyeParameters('spectralDomain',p.Results.spectralDomain,varargin{:});

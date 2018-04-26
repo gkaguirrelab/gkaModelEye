@@ -104,8 +104,8 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     % the axial cross-section of the cornea (units in mm)
     sceneGeometry = createSceneGeometry();
     outputRay = rayTraceCenteredSurfaces([-3.7 2], deg2rad(-10), sceneGeometry.refraction.opticalSystem.p1p2, true);
-    % Compare the output to value calculated on April 10, 2018
-    outputRayCached = [-0.151947109615718   1.381824292230910; 0.802861112858012   1.084601718565053];
+    % Compare the output to value calculated on April 26, 2018
+    outputRayCached = [-0.151794716650242   1.381796757705020;   0.803013716435367   1.084574860616994];
     assert ( max(max(abs(outputRayCached - outputRay))) < 1e-6)
 %}
 %{

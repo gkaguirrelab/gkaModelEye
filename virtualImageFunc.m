@@ -1,4 +1,4 @@
-function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( eyeWorldPoint, eyePose, extrinsicTranslationVector, rotationCenters, opticalSystem_p1p2, opticalSystem_p1p3 )
+function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( eyeWorldPoint, eyePose, cameraPositionTranslation, rotationCenters, opticalSystem_p1p2, opticalSystem_p1p3 )
 % Returns the virtual image location of a point in eyeWorld coordinates
 %
 % Syntax:
@@ -20,7 +20,7 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( ey
 %                           Azimuth, elevation, and torsion are in units of
 %                           head-centered (extrinsic) degrees. The pupil
 %                           radius value is unused by this routine.
-%   extrinsicTranslationVector - Equal to sceneGeometry.cameraExtrinsic.
+%   cameraPositionTranslation - Equal to sceneGeometry.cameraPosition.
 %                           translation
 %   rotationCenters       - Equal to sceneGeometry.eye.rotationCenters
 %   opticalSystem_p1p2, opticalSystem_p1p3 - Equal to sceneGeometry.
@@ -42,13 +42,13 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( ey
     % ahead, and the camera in its default location.
     sceneGeometry = createSceneGeometry('forceMATLABVirtualImageFunc',true);
     % Assemble the args for the virtualImageFunc
-    args = {sceneGeometry.cameraExtrinsic.translation, ...
+    args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.opticalSystem.p1p2, ...
     	sceneGeometry.refraction.opticalSystem.p1p3};
     [virtualEyeWorldPoint, nodalPointIntersectError] = sceneGeometry.refraction.handle( [-3.7 2 0], [0 0 0 2], args{:} );
     % Test output against cached value
-    virtualEyeWorldPointCached = [ -3.700000000000000   2.260297326476055  -0.000000817841759];
+    virtualEyeWorldPointCached = [-3.700000000000000   2.260311180204983   0.000000000000000];
     assert(max(abs(virtualEyeWorldPoint - virtualEyeWorldPointCached)) < 1e-6)
 %}
 
@@ -70,7 +70,7 @@ warning('off','rayTraceCenteredSurfaces:nonIntersectingRay');
 % the camera and the point at which a ray intersects the plane that
 % contains the camera, with the ray departing from the eyeWorld point at
 % angle theta in the p1p2 plane.
-cameraNodeDistanceError2D_p1p2 = @(theta_p1p2) calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2, eyePose, extrinsicTranslationVector, rotationCenters, opticalSystem_p1p2);
+cameraNodeDistanceError2D_p1p2 = @(theta_p1p2) calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2, eyePose, cameraPositionTranslation, rotationCenters, opticalSystem_p1p2);
 
 % Set fminsearch options to tolerate an error of 1e-2, and to make changes
 % in theta as small as 1e-6.
@@ -110,7 +110,7 @@ end
 %% Find the p1p3 theta
 % Given this p1p2 theta, we now find the p1p3 theta that further reduces
 % the distance to the nodal point.
-cameraNodeDistanceError3D = @(theta_p1p3) calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, theta_p1p3, eyePose, extrinsicTranslationVector, rotationCenters, opticalSystem_p1p2, opticalSystem_p1p3);
+cameraNodeDistanceError3D = @(theta_p1p3) calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, theta_p1p3, eyePose, cameraPositionTranslation, rotationCenters, opticalSystem_p1p2, opticalSystem_p1p3);
 
 % Set fminsearch options to tolerate an error of 1e-2, and to make changes
 % in theta as small as 1e-6.
@@ -170,7 +170,7 @@ end % virtualImageFunc -- MAIN
 
 
 %% calcCameraNodeDistanceError2D_p1p2
-function distance = calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2, eyePose, extrinsicTranslationVector, rotationCenters, opticalSystem_p1p2)
+function distance = calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2, eyePose, cameraPositionTranslation, rotationCenters, opticalSystem_p1p2)
 % 2D distance of ray intersection on camera plane from camera node
 %
 % Syntax:
@@ -205,6 +205,7 @@ function distance = calcCameraNodeDistanceError2D_p1p2(eyeWorldPoint, theta_p1p2
 %                           nan given the particular path of the ray
 %                           through the optical system.
 %   eyePose
+%   cameraPositionTranslation
 %   rotationCenters
 %   traceOpticalSystemFuncHandle
 %
@@ -287,20 +288,20 @@ outputRaySceneWorld_p1p2 = outputRayHeadWorld_p1p2(:,[2 3 1]);
 % the plane that contains the camera
 slope_xZ =(outputRaySceneWorld_p1p2(2,1)-outputRaySceneWorld_p1p2(1,1))/(outputRaySceneWorld_p1p2(2,3)-outputRaySceneWorld_p1p2(1,3));
 slope_yZ =(outputRaySceneWorld_p1p2(2,2)-outputRaySceneWorld_p1p2(1,2))/(outputRaySceneWorld_p1p2(2,3)-outputRaySceneWorld_p1p2(1,3));
-cameraPlaneX = outputRaySceneWorld_p1p2(1,1)+((extrinsicTranslationVector(3)-outputRaySceneWorld_p1p2(1,3))*slope_xZ);
-cameraPlaneY = outputRaySceneWorld_p1p2(1,2)+((extrinsicTranslationVector(3)-outputRaySceneWorld_p1p2(1,3))*slope_yZ);
+cameraPlaneX = outputRaySceneWorld_p1p2(1,1)+((cameraPositionTranslation(3)-outputRaySceneWorld_p1p2(1,3))*slope_xZ);
+cameraPlaneY = outputRaySceneWorld_p1p2(1,2)+((cameraPositionTranslation(3)-outputRaySceneWorld_p1p2(1,3))*slope_yZ);
 
 % Compute the Euclidean distance between the point of intersection and the
 % nodal point of the camera.
-distance = sqrt((extrinsicTranslationVector(1)-cameraPlaneX)^2 + ...
-        (extrinsicTranslationVector(2)-cameraPlaneY)^2 );
+distance = sqrt((cameraPositionTranslation(1)-cameraPlaneX)^2 + ...
+        (cameraPositionTranslation(2)-cameraPlaneY)^2 );
 
 end % calcCameraNodeDistanceError2D_p1p2
 
 
 
 %% calcCameraNodeDistanceError3D
-function distance = calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, theta_p1p3, eyePose, extrinsicTranslationVector, rotationCenters, opticalSystem_p1p2, opticalSystem_p1p3)
+function distance = calcCameraNodeDistanceError3D(eyeWorldPoint, theta_p1p2, theta_p1p3, eyePose, cameraPositionTranslation, rotationCenters, opticalSystem_p1p2, opticalSystem_p1p3)
 % 3D distance of ray intersection on camera plane from camera node
 %
 % Syntax:
@@ -393,13 +394,13 @@ outputRaySceneWorld3D = outputRayHeadWorld3D(:,[2 3 1]);
 % the plane that contains the camera
 slope_xZ =(outputRaySceneWorld3D(2,1)-outputRaySceneWorld3D(1,1))/(outputRaySceneWorld3D(2,3)-outputRaySceneWorld3D(1,3));
 slope_yZ =(outputRaySceneWorld3D(2,2)-outputRaySceneWorld3D(1,2))/(outputRaySceneWorld3D(2,3)-outputRaySceneWorld3D(1,3));
-cameraPlaneX = outputRaySceneWorld3D(1,1)+((extrinsicTranslationVector(3)-outputRaySceneWorld3D(1,3))*slope_xZ);
-cameraPlaneY = outputRaySceneWorld3D(1,2)+((extrinsicTranslationVector(3)-outputRaySceneWorld3D(1,3))*slope_yZ);
+cameraPlaneX = outputRaySceneWorld3D(1,1)+((cameraPositionTranslation(3)-outputRaySceneWorld3D(1,3))*slope_xZ);
+cameraPlaneY = outputRaySceneWorld3D(1,2)+((cameraPositionTranslation(3)-outputRaySceneWorld3D(1,3))*slope_yZ);
 
 % Compute the Euclidean distance between the point of intersection and the
 % nodal point of the camera.
-distance = sqrt((extrinsicTranslationVector(1)-cameraPlaneX)^2 + ...
-        (extrinsicTranslationVector(2)-cameraPlaneY)^2 );
+distance = sqrt((cameraPositionTranslation(1)-cameraPlaneX)^2 + ...
+        (cameraPositionTranslation(2)-cameraPlaneY)^2 );
 
 end % calcCameraNodeDistanceError3D
 

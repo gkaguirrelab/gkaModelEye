@@ -1,4 +1,4 @@
-function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoints, pointLabels, nodalPointIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
+function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyeWorldPoints, pointLabels, nodalPointIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
 % Project the pupil circle to an ellipse on the image plane
 %
 % Syntax:
@@ -65,8 +65,8 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
 %   imagePoints           - An nx2 matrix that specifies the x, y location
 %                           on the image plane for each of the eyeWorld
 %                           points.
-%   sceneWorldPoints      - An nx3 matrix of the coordinates of the
-%                           points of the eye model in the sceneWorld
+%   worldPoints           - An nx3 matrix of the coordinates of the
+%                           points of the eye model in the world
 %                           coordinate frame. If fullEyeModel is set to
 %                           false, then there will only be points for the
 %                           pupil perimeter. If fullEyeModel is true, then
@@ -100,7 +100,7 @@ function [pupilEllipseOnImagePlane, imagePoints, sceneWorldPoints, eyeWorldPoint
     % Obtain the pupil ellipse parameters in transparent format
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
     % Test against 4/15/2018 cached result for eyePose [-10 5 0 3]
-    pupilEllipseOnImagePlaneCached = [0.027449574316713e+4   0.022183443169719e+4   1.758736766639561e+4   0.000020274195253e+4   0.000212596262636e+4];
+    pupilEllipseOnImagePlaneCached = [0.027449566296487e+4   0.022183436868965e+4   1.758756396656080e+4   0.000020273979929e+4   0.000212598790915e+4];
     assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-6)
 %}
 %{
@@ -205,7 +205,7 @@ pupilRadius = eyePose(4);
 nPupilPerimPoints = p.Results.nPupilPerimPoints;
 
 
-%% Define an eye in eyeWorld coordinates
+%% Define an eye in eye coordinates
 % This coordinate frame is in mm units and has the dimensions (p1,p2,p3).
 % The diagram is of a cartoon pupil, being viewed directly from the front.
 %
@@ -385,7 +385,9 @@ if isfield(sceneGeometry,'refraction')
     % If this field is not set to empty, proceed    
     if ~isempty(sceneGeometry.refraction)
         % Assemble the static args for the virtualImageFunc
-        args = {sceneGeometry.cameraExtrinsic.translation, ...
+        cpt = sceneGeometry.cameraPosition.translation;
+        cpt(1:2) = -cpt(1:2)*4;
+        args = {cpt, ...
                 sceneGeometry.eye.rotationCenters, ...
                 sceneGeometry.refraction.opticalSystem.p1p2, ...
                 sceneGeometry.refraction.opticalSystem.p1p3};
@@ -485,7 +487,7 @@ if p.Results.fullEyeModelFlag && p.Results.removeOccultedPoints
 end
 
 
-%% Project the headWorld points to sceneWorld coordinates.
+%% Project the headWorld points to world coordinates.
 % This coordinate frame is in mm units and has the dimensions (X,Y,Z).
 % The diagram is of a cartoon head (taken from Leszek Swirski), being
 % viewed from above:
@@ -511,10 +513,10 @@ end
 
 % Re-arrange the head world coordinate frame to transform to the scene
 % world coordinate frame
-sceneWorldPoints = headWorldPoints(:,[2 3 1]);
+worldPoints = headWorldPoints(:,[2 3 1]);
 
 
-%% Project the sceneWorld points to the image plane
+%% Project the world coordinate points to the image plane
 % This coordinate frame is in units of pixels, and has the dimensions
 % [x, y]:
 %
@@ -530,25 +532,32 @@ sceneWorldPoints = headWorldPoints(:,[2 3 1]);
 
 % If the sceneGeometry is lacking a cameraIntrinsic or cameraIntrinsic,
 % then return
-if ~isfield(sceneGeometry,'cameraExtrinsic') || ~isfield(sceneGeometry,'cameraIntrinsic')
+if ~isfield(sceneGeometry,'cameraPosition') || ~isfield(sceneGeometry,'cameraIntrinsic')
     imagePoints = [];
     pupilEllipseOnImagePlane=nan(1,5);
     pupilFitError = nan;
     return
 end
 
-% Create the extrinsicRotationMatrix. The model specifies only the camera
-% rotation about the Z axis of the sceneWorld coordinate system.
-extrinsicRotationMatrix = ...
-    [cosd(sceneGeometry.cameraExtrinsic.rotationZ)	-sind(sceneGeometry.cameraExtrinsic.rotationZ)	0; ...
-    sind(sceneGeometry.cameraExtrinsic.rotationZ)     cosd(sceneGeometry.cameraExtrinsic.rotationZ)     0; ...
-    0                                       0                                       1];
+% Create the camera position rotation matrix. This is the rotation matrix
+% for the position of the camera with respect to the world coordinate
+% system. Only camera torsion is supported.
+cameraRotationMatrix = ...
+     [cosd(sceneGeometry.cameraPosition.torsion)	-sind(sceneGeometry.cameraPosition.torsion)	0; ...
+    sind(sceneGeometry.cameraPosition.torsion)     cosd(sceneGeometry.cameraPosition.torsion)     0; ...
+    0                                   0                                       1];
 
-% Create the projectionMatrix
-projectionMatrix = ...
-    sceneGeometry.cameraIntrinsic.matrix * ...
-    [extrinsicRotationMatrix, ...
-    sceneGeometry.cameraExtrinsic.translation];
+% Create the extrinsic matrix. The sceneGeometry structure specifies the
+% translation and rotation parameters of camera in world coordinates (i.e.,
+% the sceneGeometry structure specifies the camera pose). The extrinsic
+% matrix is equal to [R t; 0 1], where R is transpose of the
+% cameraRotationMatrix, and t = -RC, where C is the camerra translation in
+% world coordinates
+cameraExtrinsicMatrix = [transpose(cameraRotationMatrix) -transpose(cameraRotationMatrix)*sceneGeometry.cameraPosition.translation];
+
+% The projection matrix is the cameraInstrinsic matrix times the
+% cameraExtrinsic matrix.
+projectionMatrix = sceneGeometry.cameraIntrinsic.matrix * cameraExtrinsicMatrix;
 
 % What is our total number of points to project?
 nEyeWorldPoints = size(eyeWorldPoints,1);
@@ -556,7 +565,7 @@ nEyeWorldPoints = size(eyeWorldPoints,1);
 % Project the sceneWorld points to the image plane and scale. The
 % sceneWorld points have a column of ones added to support the
 % multiplication with a combined rotation and translation matrix
-tmpImagePoints=(projectionMatrix*[sceneWorldPoints, ones(nEyeWorldPoints,1)]')';
+tmpImagePoints=(projectionMatrix*[worldPoints, ones(nEyeWorldPoints,1)]')';
 imagePointsPreDistortion=zeros(nEyeWorldPoints,2);
 imagePointsPreDistortion(:,1) = ...
     tmpImagePoints(:,1)./tmpImagePoints(:,3);

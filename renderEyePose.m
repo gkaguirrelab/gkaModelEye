@@ -44,7 +44,26 @@ function [figHandle, renderedFrame] = renderEyePose(eyePose, sceneGeometry, vara
         end
     end
 %}
-
+%{
+    %% Demonstrate the effect of camera position translation
+    sceneGeometry=createSceneGeometry();
+    % Define an eyePose with azimuth, elevation, torsion, and pupil radius
+    eyePose = [0 0 0 3];
+    renderEyePose(eyePose, sceneGeometry);
+    % Adjust the position in the positice x and y direction
+    sceneGeometry.cameraPosition.translation = sceneGeometry.cameraPosition.translation + [2; 2; 0];
+    renderEyePose(eyePose, sceneGeometry);
+%}
+%{
+    %% Demonstrate the effect of positive camera position torsion
+    sceneGeometry=createSceneGeometry();
+    % Define an eyePose with azimuth, elevation, torsion, and pupil radius
+    eyePose = [0 0 0 3];
+    renderEyePose(eyePose, sceneGeometry);
+    % Adjust the camera torsion and replot
+    sceneGeometry.cameraPosition.torsion = sceneGeometry.cameraPosition.torsion + 45;
+    renderEyePose(eyePose, sceneGeometry);
+%}
 
 %% input parser
 p = inputParser; p.KeepUnmatched = true;
@@ -83,7 +102,7 @@ xlim([0 imageSizeX]);
 ylim([0 imageSizeY]);
 
 % Obtain the pupilProjection of the model eye to the image plane
-[pupilEllipseParams, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nIrisPerimPoints',20, 'removeOccultedPoints', false);
+[pupilEllipseParams, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nIrisPerimPoints',20);
 
 % Loop through the point labels present in the eye model
 for pp = 1:length(p.Results.modelEyeLabelNames)
