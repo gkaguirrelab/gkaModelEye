@@ -41,9 +41,12 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyeWorldPoints, po
 % Optional key/value pairs:
 %  'fullEyeModelFlag'     - Logical. Determines if the full posterior and
 %                           anterior chamber eye model will be created.
-%  'nPupilPerimPoints'    - The number of points that are distributed
-%                           around the pupil circle. A minimum of 5 is
-%                           required to uniquely specify the image ellipse.
+%  'nPupilPerimPoints'    - Scalar. The number of points that are 
+%                           distributed around the pupil circle. A minimum
+%                           of 5 is required to uniquely specify the image
+%                           ellipse.
+%  'pupilPerimPhase'      - Scalar. The phase (in radians) of the position
+%                           of the pupil perimeter points.
 %  'nIrisPerimPoints'     - The number of points that are distributed
 %                           around the iris circle. A minimum of 5 is
 %                           required to uniquely specify the image ellipse.
@@ -176,6 +179,7 @@ p.addRequired('sceneGeometry',@isstruct);
 % Optional
 p.addParameter('fullEyeModelFlag',false,@islogical);
 p.addParameter('nPupilPerimPoints',5,@(x)(isnumeric(x) && x>4));
+p.addParameter('pupilPerimPhase',0,@isnumeric);
 p.addParameter('nIrisPerimPoints',5,@isnumeric);
 p.addParameter('posteriorChamberEllipsoidPoints',30,@isnumeric);
 p.addParameter('anteriorChamberEllipsoidPoints',30,@isnumeric);
@@ -234,7 +238,7 @@ exitPupilEllipse = [sceneGeometry.eye.pupil.center(2) , ...
     abs(exitPupilEccenFunc(pupilRadius)),...
     sceneGeometry.eye.pupil.thetas(1+(exitPupilEccenFunc(pupilRadius)>0))];
 % Obtain the points on the perimeter of the ellipse
-[p2p, p3p] = ellipsePerimeterPoints( exitPupilEllipse, nPupilPerimPoints );
+[p2p, p3p] = ellipsePerimeterPoints( exitPupilEllipse, nPupilPerimPoints, p.Results.pupilPerimPhase );
 % Place these points into the eyeWorld coordinates
 eyeWorldPoints(1:nPupilPerimPoints,3) = p3p;
 eyeWorldPoints(1:nPupilPerimPoints,2) = p2p;
