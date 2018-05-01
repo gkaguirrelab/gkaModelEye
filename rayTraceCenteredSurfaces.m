@@ -10,7 +10,7 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
 %       Elagha, Hassan A. "Generalized formulas for ray-tracing and
 %       longitudinal spherical aberration." JOSA A 34.3 (2017): 335-343.
 %
-%   Our implementation assumes a set of elliptical surfaces, with each
+%   The implementation assumes a set of elliptical surfaces, with each
 %   surface having its center positioned on the optical axis. The initial
 %   state of the ray is specified by its two-dimensional coordinates and by
 %   the angle (theta) that it makes with the optical axis. By convention,
