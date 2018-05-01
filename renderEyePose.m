@@ -110,7 +110,7 @@ xlim([0 imageSizeX]);
 ylim([0 imageSizeY]);
 
 % Obtain the pupilProjection of the model eye to the image plane
-[pupilEllipseParams, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nIrisPerimPoints',20);
+[pupilEllipseParams, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nPupilPerimPoints',6, 'nIrisPerimPoints',20);
 
 % Loop through the point labels present in the eye model
 for pp = 1:length(p.Results.modelEyeLabelNames)

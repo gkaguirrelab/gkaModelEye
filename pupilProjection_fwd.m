@@ -136,6 +136,17 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyeWorldPoints, po
     axis equal
 %}
 %{
+    %% Test the accuracy of the ellipse fit to the pupil boundary
+    sceneGeometry=createSceneGeometry();
+    aziVals = -45:5:45;
+    for aa = 1:length(aziVals)
+        eyePose = [aziVals(aa) -3 0 3];
+        [pupilEllipseOnImagePlane, ~, ~, ~, ~, ~, pupilFitError(aa)] = pupilProjection_fwd(eyePose, adjustedSceneGeometry,'nPupilPerimPoints',10);
+    end
+    figure
+    plot(aziVals,pupilFitError,'.r');
+%}
+%{
     %% Calculate the time required for the forward projection
     % Make sure there is a compiled virtualImageFunc
     compileVirtualImageFunc
