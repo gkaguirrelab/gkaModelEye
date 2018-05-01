@@ -36,13 +36,20 @@ function [figHandle, renderedFrame] = renderEyePose(eyePose, sceneGeometry, vara
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Prepare a figure
-    figure
+    renderEyePose([0 0 0 2],sceneGeometry,'modelEyeLabelNames',{'pupilPerimeter'},'modelEyePlotColors',{'.g'});
     for azi = -35:35:35
         for ele = -35:35:35
-            eyePose = [azi ele 0 1];
+            eyePose = [azi ele 0 2];
             renderEyePose(eyePose,sceneGeometry,'newFigure',false,'modelEyeLabelNames',{'pupilPerimeter'},'modelEyePlotColors',{'.g'});
         end
     end
+%}
+%{
+    %% Show the effect of eye torsion
+    % Obtain a default sceneGeometry structure
+    sceneGeometry=createSceneGeometry();
+    renderEyePose([0 0 0 2],sceneGeometry,'modelEyeLabelNames',{'pupilPerimeter'},'modelEyePlotColors',{'.g'});
+    renderEyePose([0 0 45 2],sceneGeometry,'modelEyeLabelNames',{'pupilPerimeter'},'modelEyePlotColors',{'.g'});
 %}
 %{
     %% Demonstrate the effect of camera position translation
@@ -51,7 +58,7 @@ function [figHandle, renderedFrame] = renderEyePose(eyePose, sceneGeometry, vara
     eyePose = [0 0 0 3];
     renderEyePose(eyePose, sceneGeometry);
     % Adjust the position in the positice x and y direction
-    sceneGeometry.cameraPosition.translation = sceneGeometry.cameraPosition.translation + [2; 2; 0];
+    sceneGeometry.cameraPosition.translation = sceneGeometry.cameraPosition.translation + [5; 5; 0];
     renderEyePose(eyePose, sceneGeometry);
 %}
 %{
@@ -74,6 +81,7 @@ p.addRequired('sceneGeometry',@isstruct);
 
 % Optional
 p.addParameter('newFigure',true,@islogical);
+p.addParameter('showPupilTextLabels',true,@islogical);
 p.addParameter('modelEyeLabelNames', {'aziRotationCenter', 'eleRotationCenter', 'posteriorChamber' 'irisPerimeter' 'pupilPerimeter' 'anteriorChamber' 'cornealApex'}, @iscell);
 p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' '.b' '*g' '.y' '*y'}, @iscell);
 
@@ -107,9 +115,9 @@ ylim([0 imageSizeY]);
 % Loop through the point labels present in the eye model
 for pp = 1:length(p.Results.modelEyeLabelNames)
     idx = strcmp(pointLabels,p.Results.modelEyeLabelNames{pp});
+    plot(imagePoints(idx,1), imagePoints(idx,2), p.Results.modelEyePlotColors{pp})
     if strcmp(p.Results.modelEyeLabelNames{pp},'pupilPerimeter')
-        % Just before we plot the pupil perimeter points, add the
-        % pupil fit ellipse
+        % Add the pupil fit ellipse
         pFitImplicit = ellipse_ex2im(ellipse_transparent2ex(pupilEllipseParams));
         fh=@(x,y) pFitImplicit(1).*x.^2 +pFitImplicit(2).*x.*y +pFitImplicit(3).*y.^2 +pFitImplicit(4).*x +pFitImplicit(5).*y +pFitImplicit(6);
         % superimpose the ellipse using fimplicit or ezplot (ezplot
@@ -123,8 +131,13 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
             set(plotHandle, 'Color', p.Results.pupilColor)
             set(plotHandle,'LineWidth',1);
         end
+        % Put text labels for the pupil perimeter points so that we can
+        % follow them through rotations and translations to validate the
+        % projection model
+        if p.Results.showPupilTextLabels
+            text(imagePoints(idx,1), imagePoints(idx,2), num2str(find(idx)));
+        end
     end
-    plot(imagePoints(idx,1), imagePoints(idx,2), p.Results.modelEyePlotColors{pp})
 end
 hold off
 

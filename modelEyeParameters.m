@@ -162,7 +162,7 @@ switch p.Results.species
             radiiNavFront = [14.26   10.43   10.27];
             radiiNavFrontCorrected = @(D) radiiNavFront.* (D.*radiusScalerPerD+1);
             % Report the ratio of the Atchison and Navarro axial radii
-            % for the front surface of the corneal; we use this below.
+            % for the front surface of the cornea; we use this below.
             atchNavScaler = a(0) ./ radiiNavFront(1)
         %}
         % Atchison finds that the back surface of cornea does not vary by
@@ -192,9 +192,9 @@ switch p.Results.species
             targetBackHorizToAxNav = backHorizToAxAtch / frontHorizToAxAtch * frontHorizToAxNav;
             radiiNavBackCorrected = [a a*targetBackHorizToAxNav a*targetBackHorizToAxNav]./atchNavScaler
         %}
-        eye.cornea.front.radii = [14.26    10.43    10.27] .* ...
+        eye.cornea.front.radii = [14.26   10.43   10.27] .* ...
             ((p.Results.sphericalAmetropia .* -0.0028)+1);
-        eye.cornea.back.radii = [13.7716    9.3027    9.3027];
+        eye.cornea.back.radii = [ 13.7716    9.3027    9.3027];
         
         % We set the center of the cornea front surface ellipsoid so that
         % the axial apex is at position [0, 0, 0]
@@ -235,7 +235,7 @@ switch p.Results.species
         else
             eye.cornea.axis = p.Results.corneaAxis;
         end
-        
+
         
         %% Pupil
         % We position the pupil plane at the depth of the anterior point of
@@ -569,9 +569,9 @@ switch p.Results.species
         %}
         switch eyeLaterality
             case 'Right'
-                opticDisc_WRT_foveaDegRetina = [-22.4993, -2.5587 , 0];
+                opticDisc_WRT_foveaDegRetina = [-22.4993, 2.5587 ,0];
             case 'Left'
-                opticDisc_WRT_foveaDegRetina = [22.4993, -2.5587 , 0];
+                opticDisc_WRT_foveaDegRetina = [22.4993, 2.5587 ,0];
         end        
         
         % We next require the position of the fovea with respect to the
@@ -598,9 +598,9 @@ switch p.Results.species
         %}
         switch eyeLaterality
             case 'Right'
-                fovea_WRT_opticAxisDegRetina_emmetrope = [8.1378 3.2136 0];
+                fovea_WRT_opticAxisDegRetina_emmetrope = [8.1378 -3.2136 0];
             case 'Left'
-                fovea_WRT_opticAxisDegRetina_emmetrope = [-8.1378 3.2136 0];
+                fovea_WRT_opticAxisDegRetina_emmetrope = [-8.1378 -3.2136 0];
         end                
 
         % In our model, the fovea moves towards the apex of the posterior
@@ -664,10 +664,10 @@ switch p.Results.species
 
         % Calcuate the mu and alpha values in deg of visual field
         eye.axes.alpha.degField(1) = atand((eye.posteriorChamber.fovea(2) - eye.lens.nodalPoint.rear(2)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint.rear(1)));
-        eye.axes.alpha.degField(2) = -atand((eye.posteriorChamber.fovea(3) - eye.lens.nodalPoint.rear(3)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint.rear(1)));
+        eye.axes.alpha.degField(2) = -(-atand((eye.posteriorChamber.fovea(3) - eye.lens.nodalPoint.rear(3)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint.rear(1))));
         eye.axes.alpha.degField(3) = 0;
         eye.axes.mu.degField(1) = atand((eye.posteriorChamber.opticDisc(2) - eye.lens.nodalPoint.rear(2)) / (eye.posteriorChamber.opticDisc(1) - eye.lens.nodalPoint.rear(1)));
-        eye.axes.mu.degField(2) = -atand((eye.posteriorChamber.opticDisc(3) - eye.lens.nodalPoint.rear(3)) / (eye.posteriorChamber.opticDisc(1) - eye.lens.nodalPoint.rear(1)));
+        eye.axes.mu.degField(2) = -(-atand((eye.posteriorChamber.opticDisc(3) - eye.lens.nodalPoint.rear(3)) / (eye.posteriorChamber.opticDisc(1) - eye.lens.nodalPoint.rear(1))));
         eye.axes.mu.degField(3) = 0;
         
 
@@ -738,7 +738,7 @@ switch p.Results.species
             case 'Left'
                 eye.rotationCenters.azi = [-14.7 -0.79 0];
         end
-        eye.rotationCenters.ele = [-12.0 0 -0.33];
+        eye.rotationCenters.ele = [-12.0 0 0.33];
         eye.rotationCenters.tor = [0 0 0];
         
         % Spherical ametropia is correlated with the axial length of the

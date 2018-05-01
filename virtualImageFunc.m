@@ -158,7 +158,6 @@ warning(warnState);
 % Extract the origin of the ray, which is the virtual image eyeWorld point
 virtualEyeWorldPoint = virtualImageRay(1,:);
 
-
 end % virtualImageFunc -- MAIN
 
 
@@ -230,9 +229,9 @@ end
 outputRayEyeWorld_p1p2=[outputRayEyeWorld2D_p1p2(1,1) outputRayEyeWorld2D_p1p2(1,2) eyeWorldPoint(3);...
     outputRayEyeWorld2D_p1p2(2,1) outputRayEyeWorld2D_p1p2(2,2) eyeWorldPoint(3)];
 
-% Prepare to rotate the outputRay into the sceneWorld coordinates
+% Prepare to rotate the outputRay into the world coordinates
 RotAzi = [cosd(eyePose(1)) -sind(eyePose(1)) 0; sind(eyePose(1)) cosd(eyePose(1)) 0; 0 0 1];
-RotEle = [cosd(eyePose(2)) 0 sind(eyePose(2)); 0 1 0; -sind(eyePose(2)) 0 cosd(eyePose(2))];
+RotEle = [cosd(-eyePose(2)) 0 sind(-eyePose(2)); 0 1 0; -sind(-eyePose(2)) 0 cosd(-eyePose(2))];
 RotTor = [1 0 0; 0 cosd(eyePose(3)) -sind(eyePose(3)); 0 sind(eyePose(3)) cosd(eyePose(3))];
 
 % Copy eyeWorld rays over the HeadWorld variables
@@ -281,15 +280,15 @@ end
 
 % Re-arrange the head world coordinate frame to transform to the scene
 % world coordinate frame
-outputRaySceneWorld_p1p2 = outputRayHeadWorld_p1p2(:,[2 3 1]);
+outputRayWorldCoords_p1p2 = outputRayHeadWorld_p1p2(:,[2 3 1]);
 
 % Obtain an expression for X and Y distances between the nodal point of the
-% camera in the sceneWorld plane and the point at which the ray will strike
-% the plane that contains the camera
-slope_xZ =(outputRaySceneWorld_p1p2(2,1)-outputRaySceneWorld_p1p2(1,1))/(outputRaySceneWorld_p1p2(2,3)-outputRaySceneWorld_p1p2(1,3));
-slope_yZ =(outputRaySceneWorld_p1p2(2,2)-outputRaySceneWorld_p1p2(1,2))/(outputRaySceneWorld_p1p2(2,3)-outputRaySceneWorld_p1p2(1,3));
-cameraPlaneX = outputRaySceneWorld_p1p2(1,1)+((cameraPositionTranslation(3)-outputRaySceneWorld_p1p2(1,3))*slope_xZ);
-cameraPlaneY = outputRaySceneWorld_p1p2(1,2)+((cameraPositionTranslation(3)-outputRaySceneWorld_p1p2(1,3))*slope_yZ);
+% camera in the world coordinates and the point at which the ray will
+% strike the plane that contains the camera
+slope_xZ =(outputRayWorldCoords_p1p2(2,1)-outputRayWorldCoords_p1p2(1,1))/(outputRayWorldCoords_p1p2(2,3)-outputRayWorldCoords_p1p2(1,3));
+slope_yZ =(outputRayWorldCoords_p1p2(2,2)-outputRayWorldCoords_p1p2(1,2))/(outputRayWorldCoords_p1p2(2,3)-outputRayWorldCoords_p1p2(1,3));
+cameraPlaneX = outputRayWorldCoords_p1p2(1,1)+((cameraPositionTranslation(3)-outputRayWorldCoords_p1p2(1,3))*slope_xZ);
+cameraPlaneY = outputRayWorldCoords_p1p2(1,2)+((cameraPositionTranslation(3)-outputRayWorldCoords_p1p2(1,3))*slope_yZ);
 
 % Compute the Euclidean distance between the point of intersection and the
 % nodal point of the camera.
@@ -342,7 +341,7 @@ outputRayEyeWorld3D=[outputRayEyeWorld2D_p1p2(1,1) outputRayEyeWorld2D_p1p2(1,2)
 
 % prepare to rotate the outputRay into the sceneWorld coordinates
 RotAzi = [cosd(eyePose(1)) -sind(eyePose(1)) 0; sind(eyePose(1)) cosd(eyePose(1)) 0; 0 0 1];
-RotEle = [cosd(eyePose(2)) 0 sind(eyePose(2)); 0 1 0; -sind(eyePose(2)) 0 cosd(eyePose(2))];
+RotEle = [cosd(-eyePose(2)) 0 sind(-eyePose(2)); 0 1 0; -sind(-eyePose(2)) 0 cosd(-eyePose(2))];
 RotTor = [1 0 0; 0 cosd(eyePose(3)) -sind(eyePose(3)); 0 sind(eyePose(3)) cosd(eyePose(3))];
 
 % Copy over the outputRay from eye to head world
@@ -479,6 +478,5 @@ outputRayEyeWorld3D(1,:) = [outputRayEyeWorld2D_p1p2(1,1) outputRayEyeWorld2D_p1
 outputRayEyeWorld3D(2,:) = [outputRayEyeWorld2D_p1p2(2,1) outputRayEyeWorld2D_p1p2(2,2) outputRayEyeWorld2D_p1p3(2,2)];
 
 end % calcVirtualImageRay
-
 
 

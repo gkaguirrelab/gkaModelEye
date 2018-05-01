@@ -22,9 +22,9 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyeWorldPoints, po
 %   the Fick coordinate sysem). Azimuth, Elevation of [0,0] corresponds to
 %   the position of the eye when a line that connects the center of
 %   rotation of the eye with the center of the pupil is normal to the image
-%   plane. Positive rotations correspond to rightward, upward, translation
-%   of the pupil center in the image. Torsion of zero corresponds to the
-%   torsion of the eye when it is in primary position.
+%   plane. Positive rotations correspond to rightward / upward (+x, -y)
+%   translation of the pupil center in the image. Torsion of zero
+%   corresponds to the torsion of the eye when it is in primary position.
 %
 %   Units - Eye rotations are in units of degrees. However, the units of
 %   theta in the transparent ellipse parameters are radians. This is in
@@ -216,9 +216,9 @@ nPupilPerimPoints = p.Results.nPupilPerimPoints;
 %
 %                 |
 %     ^         __|__
-%  -  |        /     \
+%  +  |        /     \
 % p3  -  -----(   +   )-----
-%  +  |        \_____/
+%  -  |        \_____/
 %     v           |
 %                 |
 %
@@ -227,6 +227,7 @@ nPupilPerimPoints = p.Results.nPupilPerimPoints;
 % For the right eye, negative values on the p2 dimension are more temporal,
 % and positive values are more nasal. Positive values of p3 are downward,
 % and negative values are upward
+
 
 %% Define points around the elliptical exit pupil
 % The eccentricity of the exit pupil is given by a stored function
@@ -314,7 +315,7 @@ if p.Results.fullEyeModelFlag
     % in the axis of the corneal ellipsoid w.r.t. the optical axis
     angles = sceneGeometry.eye.cornea.axis;
     R3 = [cosd(angles(1)) -sind(angles(1)) 0; sind(angles(1)) cosd(angles(1)) 0; 0 0 1];
-    R2 = [cosd(angles(2)) 0 sind(angles(2)); 0 1 0; -sind(angles(2)) 0 cosd(angles(2))];
+    R2 = [cosd(-angles(2)) 0 sind(-angles(2)); 0 1 0; -sind(-angles(2)) 0 cosd(-angles(2))];
     R1 = [1 0 0; 0 cosd(angles(3)) -sind(angles(3)); 0 sind(angles(3)) cosd(angles(3))];
     anteriorChamberPoints = ((R1*R2*R3)*(anteriorChamberPoints-sceneGeometry.eye.cornea.front.center)')'+sceneGeometry.eye.cornea.front.center;
     
@@ -385,9 +386,7 @@ if isfield(sceneGeometry,'refraction')
     % If this field is not set to empty, proceed    
     if ~isempty(sceneGeometry.refraction)
         % Assemble the static args for the virtualImageFunc
-        cpt = sceneGeometry.cameraPosition.translation;
-        cpt(1:2) = -cpt(1:2)*4;
-        args = {cpt, ...
+        args = {sceneGeometry.cameraPosition.translation, ...
                 sceneGeometry.eye.rotationCenters, ...
                 sceneGeometry.refraction.opticalSystem.p1p2, ...
                 sceneGeometry.refraction.opticalSystem.p1p3};
@@ -409,52 +408,13 @@ if isfield(sceneGeometry,'refraction')
 end
 
 
-%% Project the eyeWorld points to headWorld coordinates.
-% This coordinate frame is in mm units and has the dimensions (h1,h2,h3).
-% The diagram is of a cartoon eye, being viewed directly from the front.
-%
-%  h1 values negative --> towards the head, positive towards the camera
-%
-%         h2
-%    0,0 ---->
-%     |
-%  h3 |
-%     v
-%
-%               |
-%             __|__
-%            /  _  \
-%    -------(  (_)  )-------  h2 (horizontal axis of the head)
-%            \_____/          rotation about h2 causes pure vertical
-%               |             eye movement
-%               |
-%
-%               h3
-%   (vertical axis of the head)
-%  rotation about h3 causes pure
-%     horizontal eye movement
-%
-%
-%
-% Position [0,-,-] indicates the front surface of the eye.
-% Position [-,0,0] indicates the h2 / h3 position of the pupil axis of
-% the eye when it is normal to the image plane.
-%
-% We will convert from this coordinate frame to that of the camera scene
-% later.
-
-
-%% Copy the eyeWorld points into headWorld
-headWorldPoints=eyeWorldPoints;
-
-
 %% Define the eye rotation matrix
 % Assemble a rotation matrix from the head-fixed Euler angle rotations. In
 % the head-centered world coordinate frame, positive azimuth, elevation and
-% torsion values correspond to leftward, downward and clockwise (as seen
+% torsion values correspond to rightward, upward and clockwise (as seen
 % from the perspective of the subject) eye movements
 R.azi = [cosd(eyeAzimuth) -sind(eyeAzimuth) 0; sind(eyeAzimuth) cosd(eyeAzimuth) 0; 0 0 1];
-R.ele = [cosd(eyeElevation) 0 sind(eyeElevation); 0 1 0; -sind(eyeElevation) 0 cosd(eyeElevation)];
+R.ele = [cosd(-eyeElevation) 0 sind(-eyeElevation); 0 1 0; -sind(-eyeElevation) 0 cosd(-eyeElevation)];
 R.tor = [1 0 0; 0 cosd(eyeTorsion) -sind(eyeTorsion); 0 sind(eyeTorsion) cosd(eyeTorsion)];
 
 
@@ -470,8 +430,8 @@ rotOrder = {'tor','ele','azi'};
 % accomodate having rotation centers that differ by Euler angle.
 rotatePointsIdx = ~contains(pointLabels,'Rotation');
 for rr=1:3
-    headWorldPoints(rotatePointsIdx,:) = ...
-        (R.(rotOrder{rr})*(headWorldPoints(rotatePointsIdx,:)-sceneGeometry.eye.rotationCenters.(rotOrder{rr}))')'+sceneGeometry.eye.rotationCenters.(rotOrder{rr});
+    eyeWorldPoints(rotatePointsIdx,:) = ...
+        (R.(rotOrder{rr})*(eyeWorldPoints(rotatePointsIdx,:)-sceneGeometry.eye.rotationCenters.(rotOrder{rr}))')'+sceneGeometry.eye.rotationCenters.(rotOrder{rr});
 end
 
 % If we are projecting a full eye model, and the 'removeOccultedPoints' is
@@ -479,29 +439,30 @@ end
 % posterior to the most posterior of the centers of rotation of the eye,
 % and thus would not be visible to the camera.
 if p.Results.fullEyeModelFlag && p.Results.removeOccultedPoints
-    retainIdx = strcmp(pointLabels,'posteriorChamber') .* (headWorldPoints(:,1) >= min([sceneGeometry.eye.rotationCenters.azi(1) sceneGeometry.eye.rotationCenters.ele(1)]));
+    retainIdx = strcmp(pointLabels,'posteriorChamber') .* (eyeWorldPoints(:,1) >= min([sceneGeometry.eye.rotationCenters.azi(1) sceneGeometry.eye.rotationCenters.ele(1)]));
     retainIdx = logical(retainIdx + ~strcmp(pointLabels,'posteriorChamber'));
     eyeWorldPoints = eyeWorldPoints(retainIdx,:);
-    headWorldPoints = headWorldPoints(retainIdx,:);
     pointLabels = pointLabels(retainIdx);
 end
 
 
-%% Project the headWorld points to world coordinates.
+%% Switch axes to world coordinates.
 % This coordinate frame is in mm units and has the dimensions (X,Y,Z).
 % The diagram is of a cartoon head (taken from Leszek Swirski), being
 % viewed from above:
 %
-%   |
-%   |    .-.
-%   |   |   | <- Head
-%   |   `^u^'
-% Z |      :V <- Camera    (As seen from above)
-%   |      :
-%   |      :
-%  \|/     o <- Target
+%    ^
+%    |
+%    |    .-.
+% -Z |   |   | <- Head
+%    +   `^u^'
+% +Z |      
+%    |      
+%    |      W <- Camera    (As seen from above)
+%    V     
 %
-%     ----------> X
+%     <-----+----->
+%        -X   +X
 %
 % +X = right
 % +Y = up
@@ -511,9 +472,8 @@ end
 % pupil center when the line that connects the center of rotation of the
 % eye and the pupil center are normal to the image plane.
 
-% Re-arrange the head world coordinate frame to transform to the scene
-% world coordinate frame
-worldPoints = headWorldPoints(:,[2 3 1]);
+% Re-arrange the eyeWorldPoints to transform to the world coordinate frame
+worldPoints = eyeWorldPoints(:,[2 3 1]);
 
 
 %% Project the world coordinate points to the image plane
@@ -547,10 +507,14 @@ cameraRotationMatrix = ...
     sind(sceneGeometry.cameraPosition.torsion)     cosd(sceneGeometry.cameraPosition.torsion)     0; ...
     0                                   0                                       1];
 
+% We need to post-multiply the camera rotation matrix by a matrix that
+% reverses the Y and Z axes.
+cameraRotationMatrix = cameraRotationMatrix * [1 0 0; 0 -1 0; 0 0 -1];
+
 % Create the extrinsic matrix. The sceneGeometry structure specifies the
 % translation and rotation parameters of camera in world coordinates (i.e.,
 % the sceneGeometry structure specifies the camera pose). The extrinsic
-% matrix is equal to [R t; 0 1], where R is transpose of the
+% matrix is equal to [R t], where R is transpose of the
 % cameraRotationMatrix, and t = -RC, where C is the camerra translation in
 % world coordinates
 cameraExtrinsicMatrix = [transpose(cameraRotationMatrix) -transpose(cameraRotationMatrix)*sceneGeometry.cameraPosition.translation];
@@ -565,12 +529,12 @@ nEyeWorldPoints = size(eyeWorldPoints,1);
 % Project the sceneWorld points to the image plane and scale. The
 % sceneWorld points have a column of ones added to support the
 % multiplication with a combined rotation and translation matrix
-tmpImagePoints=(projectionMatrix*[worldPoints, ones(nEyeWorldPoints,1)]')';
+cameraPoints=(projectionMatrix*[worldPoints, ones(nEyeWorldPoints,1)]')';
 imagePointsPreDistortion=zeros(nEyeWorldPoints,2);
 imagePointsPreDistortion(:,1) = ...
-    tmpImagePoints(:,1)./tmpImagePoints(:,3);
+    cameraPoints(:,1)./cameraPoints(:,3);
 imagePointsPreDistortion(:,2) = ...
-    tmpImagePoints(:,2)./tmpImagePoints(:,3);
+    cameraPoints(:,2)./cameraPoints(:,3);
 
 
 %% Apply radial lens distortion

@@ -27,7 +27,12 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %{
     % Basic call for an axial view plot in a new window with black lines
     eye = modelEyeParameters;
-    plotModelEyeSchematic(eye)
+    plotModelEyeSchematic(eye);
+%}
+%{
+    % Basic call for a sagittal view plot in a new window with black lines
+    eye = modelEyeParameters;
+    plotModelEyeSchematic(eye,'view','sag');
 %}
 %{
     % Two panel plot with axial and sagittal views for eyes with 0 and -10
@@ -85,7 +90,6 @@ switch p.Results.view
         PdimB = 3;
         SdimA = 3;
         SdimB = 2;
-        set(gca,'Ydir','reverse')
         rotationField = 'ele';
         titleString = 'Sagittal';
         yLabelString = 'inferior <----> superior';

@@ -329,7 +329,7 @@ function rotRadii = ellipsesFromEllipsoid(radii,angles)
 angles = -angles;
 
 R.azi = [cosd(angles(1)) -sind(angles(1)) 0; sind(angles(1)) cosd(angles(1)) 0; 0 0 1];
-R.ele = [cosd(angles(2)) 0 sind(angles(2)); 0 1 0; -sind(angles(2)) 0 cosd(angles(2))];
+R.ele = [cosd(-angles(2)) 0 sind(-angles(2)); 0 1 0; -sind(-angles(2)) 0 cosd(-angles(2))];
 R.tor = [1 0 0; 0 cosd(angles(3)) -sind(angles(3)); 0 sind(angles(3)) cosd(angles(3))];
 
 rotMat = R.tor * R.ele * R.azi;
@@ -337,14 +337,15 @@ rotMat = R.tor * R.ele * R.azi;
 % Obtain the semi-axes of the ellipses in each of the planes p1p2 and p1p3
 
 % p1p2
-rotPlane = rotMat * [0; 1; 0];
+rotPlane = rotMat * [0; 0; 1];
 [Aye,Bye]=EllipsoidPlaneIntersection(rotPlane(1),rotPlane(2),rotPlane(3),0,radii(1),radii(2),radii(3));
-rotRadii(1:2) = [Aye,Bye];
+
+rotRadii([1 2]) = [Aye, Bye];
 
 % p1p3
-rotPlane = rotMat * [0; 0; 1];
+rotPlane = rotMat * [0; 1; 0];
 [~,Bye]=EllipsoidPlaneIntersection(rotPlane(1),rotPlane(2),rotPlane(3),0,radii(1),radii(2),radii(3));
+rotRadii([3]) = Bye;
 
-rotRadii(3) = Bye;
 
 end
