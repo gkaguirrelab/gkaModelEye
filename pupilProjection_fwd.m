@@ -136,26 +136,6 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyeWorldPoints, po
     axis equal
 %}
 %{
-    %% Calculate the ray tracing error for some random poses
-    % Make sure there is a compiled virtualImageFunc
-    compileVirtualImageFunc
-    % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry();
-    % Perform 100 forward projections with randomly selected eye poses
-    nPoses = 100;
-    eyePoses=[(rand(nPoses,1)-0.5)*45, (rand(nPoses,1)-0.5)*40, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
-    clear nodalPointIntersectError
-    for pp = 1:nPoses
-    	[~,~,~,~,~,nodalPointIntersectError(:,pp)]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
-    end
-    % Observe that the ray trace nodal error, while small, grows as a
-    % function of the rotation of the eye.
-    figure
-    plot(sqrt(eyePoses(:,1).^2+eyePoses(:,2).^2),median(nodalPointIntersectError),'.r')
-    xlabel('Euclidean rotation distance [deg]');
-    ylabel('Ray trace nodal error [mm]');
-%}
-%{
     %% Calculate the time required for the forward projection
     % Make sure there is a compiled virtualImageFunc
     compileVirtualImageFunc
