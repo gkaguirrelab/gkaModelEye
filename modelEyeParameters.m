@@ -195,7 +195,7 @@ switch p.Results.species
         eye.cornea.front.radii = [14.26   10.43   10.27] .* ...
             ((p.Results.sphericalAmetropia .* -0.0028)+1);
         eye.cornea.back.radii = [ 13.7716    9.3027    9.3027];
-        
+
         % We set the center of the cornea front surface ellipsoid so that
         % the axial apex is at position [0, 0, 0]
         eye.cornea.front.center = [-eye.cornea.front.radii(1) 0 0];
