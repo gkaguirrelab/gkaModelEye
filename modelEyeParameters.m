@@ -102,6 +102,7 @@ switch p.Results.species
     %% Human eye
     case {'human','Human','HUMAN'}
                 
+
         %% Cornea
         % We model the cornea as an ellipsoid, taking the "canonical
         % representation" parameters from Table 1 of Navarro 2006:
@@ -195,9 +196,9 @@ switch p.Results.species
         eye.cornea.front.radii = [14.26   10.43   10.27] .* ...
             ((p.Results.sphericalAmetropia .* -0.0028)+1);
         eye.cornea.back.radii = [ 13.7716    9.3027    9.3027];
-
+        
         % We set the center of the cornea front surface ellipsoid so that
-        % the axial apex is at position [0, 0, 0]
+        % the axial apex (prior to rotation) is at position [0, 0, 0]
         eye.cornea.front.center = [-eye.cornea.front.radii(1) 0 0];
                 
         % The center of the back cornea ellipsoid is positioned so that
@@ -239,9 +240,18 @@ switch p.Results.species
         
         %% Pupil
         % We position the pupil plane at the depth of the anterior point of
-        % the lens. The coordinate space of the model eye is defined w.r.t.
-        % the center of the pupil, so the p2 and p3 values are zero
-        eye.pupil.center = [-3.7 0 0];
+        % the cycloplegic lens. The anterior chamber depth in young
+        % subjects after cycloplegia is 3.7 m:
+        %
+        %   Cheung, Sin Wan, et al. "Effect of cycloplegia on axial length
+        %   and anterior chamber depth measurements in children." Clinical
+        %   and Experimental Optometry 92.6 (2009): 476-481.
+        %
+        % Adding the corneal thickness of 0.55 mm gives us an anterior
+        % pupil depth of 4.25 mm. The coordinate space of the model eye is
+        % defined w.r.t. the center of the pupil, so the p2 and p3 values
+        % are zero
+        eye.pupil.center = [-4.25 0 0];
         
         % The exit pupil of the eye is elliptical. Further, the
         % eccentricity and theta of the exit pupil ellipse changes with
@@ -274,7 +284,7 @@ switch p.Results.species
             % adopted an upper value of 0.16 instead. We also use the 
             % convention of a negative eccentricity for a horizontal major
             % axis and a positive eccentricity for vertical.
-            entranceEccen = [-0.12 0.16];
+            entranceEccen = [-0.12 0.18];
             % Prepare scene geometry and eye pose aligned with visual axis
             sceneGeometry = createSceneGeometry();
             % Fix the exit pupil eccentricity at 0
@@ -283,15 +293,15 @@ switch p.Results.species
             % Obtain the pupil area in the image for each entrance radius
             % assuming no ray tracing
             sceneGeometry.refraction = [];
-            pupilImage = pupilProjection_fwd([-sceneGeometry.eye.axes.alpha(1), -sceneGeometry.eye.axes.alpha(2), 0, entranceRadius(1)],sceneGeometry);
+            pupilImage = pupilProjection_fwd([-sceneGeometry.eye.axes.alpha.degField(1), -sceneGeometry.eye.axes.alpha.degField(2), 0, entranceRadius(1)],sceneGeometry);
             exitArea(1) = pupilImage(3);
-            pupilImage = pupilProjection_fwd([-sceneGeometry.eye.axes.alpha(1), -sceneGeometry.eye.axes.alpha(2), 0, entranceRadius(2)],sceneGeometry);
+            pupilImage = pupilProjection_fwd([-sceneGeometry.eye.axes.alpha.degField(1), -sceneGeometry.eye.axes.alpha.degField(2), 0, entranceRadius(2)],sceneGeometry);
             exitArea(2) = pupilImage(3);
             % Add the ray tracing function to the sceneGeometry
             sceneGeometry = createSceneGeometry();
             % Search across exit pupil radii to find the values that match
             % the observed entrance areas.
-            myPupilEllipse = @(radius) pupilProjection_fwd([-sceneGeometry.eye.axes.alpha(1), -sceneGeometry.eye.axes.alpha(2), 0, radius],sceneGeometry);
+            myPupilEllipse = @(radius) pupilProjection_fwd([-sceneGeometry.eye.axes.alpha.degField(1), -sceneGeometry.eye.axes.alpha.degField(2), 0, radius],sceneGeometry);
             myArea = @(ellipseParams) ellipseParams(3);
             myObj = @(radius) (myArea(myPupilEllipse(radius))-exitArea(1)).^2;
             exitRadius(1) = fminunc(myObj, entranceRadius(1));
@@ -302,13 +312,13 @@ switch p.Results.species
             place = {'eye' 'pupil' 'eccenFcnString'};
             sceneGeometry.eye.pupil.thetas = [0, 0];
             mySceneGeom = @(eccen) setfield(sceneGeometry,place{:},['@(x) ' num2str(eccen)]);
-            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.alpha(1), -sceneGeometry.eye.axes.alpha(2), 0, exitRadius(1)],mySceneGeom(eccen));
+            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.alpha.degField(1), -sceneGeometry.eye.axes.alpha.degField(2), 0, exitRadius(1)],mySceneGeom(eccen));
             myEccen = @(ellipseParams) ellipseParams(4);
             myObj = @(eccen) 1e4*(myEccen(myPupilEllipse(eccen))-abs(entranceEccen(1))).^2;
             exitEccen(1) = -fminsearch(myObj, 0.1);
             sceneGeometry.eye.pupil.thetas = [pi/2, pi/2];
             mySceneGeom = @(eccen) setfield(sceneGeometry,place{:},['@(x) ' num2str(eccen)]);
-            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.alpha(1), -sceneGeometry.eye.axes.alpha(2), 0, exitRadius(2)],mySceneGeom(eccen));
+            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.alpha.degField(1), -sceneGeometry.eye.axes.alpha.degField(2), 0, exitRadius(2)],mySceneGeom(eccen));
             myEccen = @(ellipseParams) ellipseParams(4);
             myObj = @(eccen) 1e4*(myEccen(myPupilEllipse(eccen))-abs(entranceEccen(2))).^2;
             exitEccen(2) = fminsearch(myObj, 0.2);        
@@ -328,16 +338,16 @@ switch p.Results.species
         %}
         % Specify the params and equation that defines the exit pupil
         % ellipse. This can be invoked as a function using str2func.
-        eye.pupil.eccenParams = [-1.766 4.713 0.154 0.145]; 
+        eye.pupil.eccenParams = [-1.807 4.645 0.049 0.127]; 
         eye.pupil.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',eye.pupil.eccenParams(1),eye.pupil.eccenParams(2),eye.pupil.eccenParams(3),eye.pupil.eccenParams(4)); 
 
         % The theta values of the exit pupil ellipse for eccentricities
         % less than, and greater than, zero.
         switch eyeLaterality
             case 'Right'
-                eye.pupil.thetas = [0  pi*4/7];
+                eye.pupil.thetas = [0  3/7*pi];
             case 'Left'
-                eye.pupil.thetas = [0  pi*3/7];
+                eye.pupil.thetas = [0  4/7*pi/2];
         end
         
         
@@ -405,9 +415,9 @@ switch p.Results.species
         % ellipse.
         switch eyeLaterality
             case 'Right'
-                eye.iris.center = [-3.7 0.35 0.35];
+                eye.iris.center = [-4.25 0.35 0.35];
             case 'Left'
-                eye.iris.center = [-3.7 -0.35 0.35];
+                eye.iris.center = [-4.25 -0.35 0.35];
         end
         
         
@@ -440,7 +450,7 @@ switch p.Results.species
         b = eye.lens.front.R / (eye.lens.front.Q - 1 );
         eye.lens.front.radii(1) = b;
         eye.lens.front.radii(2:3) = a;
-        eye.lens.front.center = [-3.7-eye.lens.front.radii(1) 0 0];
+        eye.lens.front.center = [-4.25-eye.lens.front.radii(1) 0 0];
         
         eye.lens.back.R = -5.9;
         eye.lens.back.Q = -2;
@@ -448,7 +458,7 @@ switch p.Results.species
         b = eye.lens.back.R / (eye.lens.back.Q - 1 );
         eye.lens.back.radii(1) = b;
         eye.lens.back.radii(2:3) = a;
-        eye.lens.back.center = [-7.3-eye.lens.back.radii(1) 0 0];
+        eye.lens.back.center = [-7.85-eye.lens.back.radii(1) 0 0];
         
         % We specify the location of a nodal point so that this can be used
         % for displaying eye axes. Values taken from the Gullstrand-LeGrand
@@ -579,7 +589,7 @@ switch p.Results.species
         % retinal degrees) of the fovea that results in a visual axis that
         % has resulting alpha angles that match empirical results.  We
         % assume an azimuth alpha of 5.8 degrees for an emmetropic eye
-        % (Figure 8 of Mathur 2013). We assume an elevation alpha of 2.29
+        % (Figure 8 of Mathur 2013). We assume an elevation alpha of 2.425
         % degrees, as this value, when adjusted to account for the longer
         % axial length of the subjects in the Mathur study, best fits the
         % Mathur data. Given these angles, we then calculate the
@@ -588,7 +598,7 @@ switch p.Results.species
         %{
             eye = modelEyeParameters();
             % These are the alpha angles that we wish to hit for emmetropia
-            targetAlphaAngle = [5.8  2.29  0];
+            targetAlphaAngle = [5.8  2.425  0];
             myComputedAlphaAzi = @(eye) eye.axes.alpha.degField(1);
             myObj = @(x) (targetAlphaAngle(1) - myComputedAlphaAzi(modelEyeParameters('foveaAngle',[x 0 0])))^2;
             aziFoveaEmmetropic = fminsearch(myObj,9)
@@ -598,9 +608,9 @@ switch p.Results.species
         %}
         switch eyeLaterality
             case 'Right'
-                fovea_WRT_opticAxisDegRetina_emmetrope = [8.1378 -3.2136 0];
+                fovea_WRT_opticAxisDegRetina_emmetrope = [8.1378 -3.4030 0];
             case 'Left'
-                fovea_WRT_opticAxisDegRetina_emmetrope = [-8.1378 -3.2136 0];
+                fovea_WRT_opticAxisDegRetina_emmetrope = [-8.1378 -3.4030 0];
         end                
 
         % In our model, the fovea moves towards the apex of the posterior
