@@ -25,13 +25,9 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %
 % Examples:
 %{
-    % Basic call for an axial view plot in a new window with black lines
+    % Basic call for an axial and sagittal view plot in new windows
     eye = modelEyeParameters;
     plotModelEyeSchematic(eye);
-%}
-%{
-    % Basic call for a sagittal view plot in a new window with black lines
-    eye = modelEyeParameters;
     plotModelEyeSchematic(eye,'view','sag');
 %}
 %{
@@ -84,7 +80,7 @@ switch p.Results.view
         xLabelString = 'posterior <----> anterior';
         postChamberRange = [-30, -7, -15, 15];
         corneaRange = [eye.pupil.center(1), 5, -15, 15];
-        lensRange = [-10, 0, -5, 5];
+        lensRange = [-10, -2.5, -5, 5];
     case {'sagittal','Sagittal','Sag','sag','Vertical','vertical','vert'}
         PdimA = 1;
         PdimB = 3;
@@ -96,7 +92,7 @@ switch p.Results.view
         xLabelString = 'posterior <----> anterior';
         postChamberRange = [-30, -7, -15, 15];
         corneaRange = [eye.pupil.center(1), 5, -15, 15];
-        lensRange = [-10, 0, -5, 5];       
+        lensRange = [-10, -2.5, -5, 5];       
     otherwise
         error('Not a recognized view for the schematic eye');
 end
