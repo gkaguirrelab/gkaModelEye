@@ -41,7 +41,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %       camera w.r.t. to world coordinates. This is used to assemble the
 %       camera extrinsic matrix. Sub-fields:
 %
-%      'translation' - A 3x1 vector of the form [horizontal; vertical; and
+%      'translation' - A 3x1 vector of the form [horizontal; vertical;
 %           depth] in units of mm, of the nodal point of the camera
 %           relative to the world coordinate system. We define the origin
 %           of the world coordinate system to be x=0, y=0 along the optical
@@ -69,7 +69,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %       modelEyeParameters.
 %
 %  'refraction' - A structure that identifies the function to be used
-%       to compute the virtual image location of eyeWorldPoints subject to
+%       to compute the virtual image location of eyePoints subject to
 %       refraction by the optical system (cornea and corrective lenses, if
 %       any). The MATLAB virtualImageFunc is specified if the compiled MEX
 %       version is not available. Sub-fields:
@@ -142,13 +142,14 @@ function sceneGeometry = createSceneGeometry(varargin)
 %                           empty, no spectacle is added to the model.
 %  'medium'               - String, options include:
 %                           {'air','water','vacuum'}. This sets the index
-%                           of refraction of the medium between the eye an
+%                           of refraction of the medium between the eye and
 %                           the camera.
 %  'aqueousRefractiveIndex' - Scalar. This can be set to over-ride the
-%                           default index for the aqueous. An inaccurate
-%                           value is used as it decreases the refractive
-%                           power of the peripheral cornea, and brings the
-%                           results in line with Mathur et al.
+%                           default index for the aqueous. If an inaccurate
+%                           value (1.225) is used, the refractive power of
+%                           the peripheral cornea is decreased, bringing
+%                           the behavior of the model in line with Mathur
+%                           et al 2013.
 %  'spectralDomain'       - String, options include {'vis','nir'}.
 %                           This is the light domain within which imaging
 %                           is being performed. The refractive indices vary
@@ -170,13 +171,15 @@ function sceneGeometry = createSceneGeometry(varargin)
     sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'contactLens',-2);
 %}
 %{
-    % Create a sceneGeometry file for a hyperopic eye wearing spectacles
-    % that provide appropriate correction when underwater.
-    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',2,'medium','water');
+    % Create a sceneGeometry file for a myopic eye wearing spectacles
+    % of appropriate correction. Place the system under water, and imaged
+    % in the visible range
+    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2,'medium','water','spectralDomain','vis');
     % Plot a figure that traces a ray arising from the optical axis at the
-    % pupil plane, departing at 15 degrees.    
+    % pupil plane, departing at 15 degrees.
+    clear figureFlag
     figureFlag.zLim = [-15 20]; figureFlag.hLim = [-10 10];
-    rayTraceCenteredSurfaces([-3.7 2], deg2rad(15), sceneGeometry.refraction.opticalSystem.p1p2,figureFlag);
+    rayTraceCenteredSurfaces([sceneGeometry.eye.pupil.center(1) 2], deg2rad(15), sceneGeometry.refraction.opticalSystem.p1p2,figureFlag);
 %}
 
 
@@ -207,13 +210,16 @@ sceneGeometry.cameraIntrinsic.matrix = p.Results.intrinsicCameraMatrix;
 sceneGeometry.cameraIntrinsic.radialDistortion = p.Results.radialDistortionVector;
 sceneGeometry.cameraIntrinsic.sensorResolution = p.Results.sensorResolution;
 
+
 %% cameraExtrinsic
 sceneGeometry.cameraPosition.translation = p.Results.cameraTranslation;
 sceneGeometry.cameraPosition.torsion = p.Results.cameraTorsion;
 sceneGeometry.cameraPosition.primaryPosition = [0,0];
 
+
 %% eye
 sceneGeometry.eye = modelEyeParameters('spectralDomain',p.Results.spectralDomain,varargin{:});
+
 
 %% refraction - handle and path
 % Handle to the function; use the MEX version if available
@@ -227,14 +233,16 @@ end
 
 %% refraction - optical system
 
-% Assemble the opticalSystem. First get the refractive index of the medium
-% between the eye and the camera
+% Obtain the refractive index of the medium between the eye and the camera
+% and the tearfilm
 mediumRefractiveIndex = returnRefractiveIndex( p.Results.medium, p.Results.spectralDomain );
 tearRefractiveIndex = returnRefractiveIndex( 'tears', p.Results.spectralDomain );
+tearFilmThickness = 0.0030;
+
+% Substitute a custom aqueous refractive index if supplied
 if ~isempty(p.Results.aqueousRefractiveIndex)
     sceneGeometry.eye.index.aqueous = p.Results.aqueousRefractiveIndex;
 end
-tearFilmThickness = 0.0030;
 
 % The center of the cornea front surface is at a position equal to its
 % radius of curvature, thus placing the apex of the front corneal surface
@@ -307,6 +315,7 @@ sceneGeometry.refraction.opticalSystem.p1p3 = [sceneGeometry.refraction.opticalS
 
 %% constraintTolerance
 sceneGeometry.constraintTolerance = p.Results.constraintTolerance;
+
 
 %% meta
 sceneGeometry.meta.createSceneGeometry = p.Results;

@@ -2,7 +2,7 @@ function compileVirtualImageFunc( varargin )
 % Compiles the virtualImageFunc and saves it to disk
 %
 % Syntax:
-%  virtualImageFuncStruct = compileVirtualImageFunc( sceneGeometry, varargin )
+%  compileVirtualImageFunc( varargin )
 %
 % Description:
 %   This routine produces a compiled mex file for virtualImageFunc, saves
@@ -13,7 +13,7 @@ function compileVirtualImageFunc( varargin )
 %
 %       /toolboxes/transparentTrack/code/bin' 
 %
-%   Calls to the compiled virtualImageFuncMex execute roughly ~13x faster
+%   Calls to the compiled virtualImageFuncMex execute roughly ~30x faster
 %   than the native virtualImageFunc routine.
 %
 % Inputs:
@@ -40,10 +40,10 @@ function compileVirtualImageFunc( varargin )
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.opticalSystem.p1p2, ...
     	sceneGeometry.refraction.opticalSystem.p1p3};
-    [virtualEyeWorldPoint, nodalPointIntersectError] = sceneGeometry.refraction.handle( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
+    [virtualEyePoint, nodalPointIntersectError] = sceneGeometry.refraction.handle( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
     % Test output against cached value
-    virtualEyeWorldPointCached = [-4.250000000000000   2.299520562547075   0.000000000000001];
-    assert(max(abs(virtualEyeWorldPoint - virtualEyeWorldPointCached)) < 1e-6)
+    virtualEyePointCached = [-4.250000000000000   2.299520562547075   0.000000000000001];
+    assert(max(abs(virtualEyePoint - virtualEyePointCached)) < 1e-6)
 %}
 %{
     % Compare computation time for MATLAB and compiled C code
@@ -147,9 +147,6 @@ args = [dynamicArgs, staticArgs{:}];
 initialDir = cd(compileDir);
 % Compile the mex file
 codegen -o virtualImageFuncMex virtualImageFunc -args args
-% Identify the compiled mex file, the suffix of which will vary
-% depending upon the operating system
-fileLocation = dir('virtualImageFuncMex.*');
 % Clean up the compile dir
 rmdir('codegen', 's');
 % Refresh the path to add the compiled function
