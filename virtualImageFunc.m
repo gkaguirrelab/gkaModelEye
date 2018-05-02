@@ -46,9 +46,9 @@ function [virtualEyeWorldPoint, nodalPointIntersectError] = virtualImageFunc( ey
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.opticalSystem.p1p2, ...
     	sceneGeometry.refraction.opticalSystem.p1p3};
-    [virtualEyeWorldPoint, nodalPointIntersectError] = sceneGeometry.refraction.handle( [-3.7 2 0], [0 0 0 2], args{:} );
+    [virtualEyeWorldPoint, nodalPointIntersectError] = sceneGeometry.refraction.handle( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
     % Test output against cached value
-    virtualEyeWorldPointCached = [-3.700000000000000   2.260311180204983   0.000000000000000];
+    virtualEyeWorldPointCached = [-4.250000000000000   2.299520562547075   0.000000000000001];
     assert(max(abs(virtualEyeWorldPoint - virtualEyeWorldPointCached)) < 1e-6)
 %}
 %{

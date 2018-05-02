@@ -102,10 +102,10 @@ function [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCentered
     %% Pupil through cornea
     % A model of the passage of a point on the pupil perimeter through
     % the axial cross-section of the cornea (units in mm)
-    sceneGeometry = createSceneGeometry();
-    outputRay = rayTraceCenteredSurfaces([-3.7 2], deg2rad(-10), sceneGeometry.refraction.opticalSystem.p1p2, true);
+    sceneGeometry = createSceneGeometry('aqueousRefractiveIndex',[]);
+    outputRay = rayTraceCenteredSurfaces([sceneGeometry.eye.pupil.center(1) 2], deg2rad(-15), sceneGeometry.refraction.opticalSystem.p1p2, true);
     % Compare the output to value calculated on April 26, 2018
-    outputRayCached = [-0.151794716650242   1.381796757705020;   0.803013716435367   1.084574860616994];
+    outputRayCached = [-0.052350606943506   0.882953893324114;   0.869847276998802   0.496235568373862];
     assert ( max(max(abs(outputRayCached - outputRay))) < 1e-6)
 %}
 %{

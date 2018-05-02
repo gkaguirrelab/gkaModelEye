@@ -102,8 +102,8 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyeWorldPoints, po
     eyePose = [-10 5 0 3];
     % Obtain the pupil ellipse parameters in transparent format
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
-    % Test against 4/15/2018 cached result for eyePose [-10 5 0 3]
-    pupilEllipseOnImagePlaneCached = [0.027449566296487e+4   0.022183436868965e+4   1.758756396656080e+4   0.000020273979929e+4   0.000212598790915e+4];
+    % Test against cached result
+    pupilEllipseOnImagePlaneCached = [0.027903058011752e+4   0.022474914194671e+4   1.576773633880742e+4   0.000026011471871e+4   0.000190947179958e+4];
     assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-6)
 %}
 %{
@@ -142,9 +142,10 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyeWorldPoints, po
     %% Test the accuracy of the ellipse fit to the pupil boundary
     sceneGeometry=createSceneGeometry();
     aziVals = -45:5:45;
+    pupilFitError = [];
     for aa = 1:length(aziVals)
         eyePose = [aziVals(aa) -3 0 3];
-        [pupilEllipseOnImagePlane, ~, ~, ~, ~, ~, pupilFitError(aa)] = pupilProjection_fwd(eyePose, adjustedSceneGeometry,'nPupilPerimPoints',10);
+        [pupilEllipseOnImagePlane, ~, ~, ~, ~, ~, pupilFitError(aa)] = pupilProjection_fwd(eyePose, sceneGeometry,'nPupilPerimPoints',6);
     end
     figure
     plot(aziVals,pupilFitError,'.r');

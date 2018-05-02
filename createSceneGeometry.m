@@ -194,7 +194,7 @@ p.addParameter('constraintTolerance',0.02,@isscalar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('medium','air',@ischar);
-p.addParameter('aqueousRefractiveIndex',1.225,@(x)(isempty(x) | isnumeric(x)));
+p.addParameter('aqueousRefractiveIndex',[],@(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectralDomain','nir',@ischar);
 p.addParameter('forceMATLABVirtualImageFunc',false,@islogical);
 
