@@ -1,5 +1,5 @@
 function [figHandle, renderedFrame] = renderEyePose(eyePose, sceneGeometry, varargin)
-% Creates an image of the eye for a given eyePose
+% Creates an image of the eye for a given eyePose and sceneGeometry
 %
 % Syntax:
 %  figHandle = renderEyePose(eyePose, sceneGeometry)
@@ -100,6 +100,8 @@ blankFrame = zeros(imageSizeY,imageSizeX)+0.5;
 if p.Results.newFigure
     figHandle = figure;
     imshow(blankFrame, 'Border', 'tight');
+else
+    figHandle = gcf;
 end
 
 % Prepare the figure
