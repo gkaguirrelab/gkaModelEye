@@ -47,6 +47,11 @@ switch material
     case 'water'
         % https://en.wikipedia.org/wiki/Optical_properties_of_water_and_ice
         ns = [1.333 1.347];
+    case 'tears'
+        % Patel, Sudi, Karen E. Boyd, and Janet Burns. "Age, stability of
+        % the precorneal tear film and the refractive index of tears."
+        % Contact Lens and Anterior Eye 23.2 (2000): 44-47.
+        ns = [1.33769 1.347];
     case 'vitreous'
         % Sardar, Dhiraj K., et al. "Optical properties of ocular tissues
         % in the near infrared region." Lasers in medical science 22.1
@@ -56,17 +61,17 @@ switch material
         % The refractive index of the lens of the eye varies along a
         % gradient in thickness. Until such time as I implement these
         % values properly, I will leave the index undefined.
-        % See Atchison 2006 for discussion of this.
         ns = [nan nan];
     case 'aqueous'
         % Sardar, Dhiraj K., et al. "Optical properties of ocular tissues
         % in the near infrared region." Lasers in medical science 22.1
         % (2007): 46-52.
-        ns = [1.348 1.337];
+        ns = [1.336 1.337];
     case 'cornea'
-        % I cannot find a measurement of the index of refraction of the
-        % cornea in NIR. Amazing. Using the visible value.
-        ns = [1.376 1.376];
+        % Escudero-Sanz, Isabel, and Rafael Navarro. "Off-axis aberrations
+        % of a wide-angle schematic eye model." JOSA A 16.8 (1999):
+        % 1881-1891. Using the 589nm and 632 nm values.
+        ns = [1.376 1.3747];
     case 'hydrogel'
         % Childs, Andre, et al. "Fabricating customized hydrogel contact
         % lens." Scientific reports 6 (2016): 34905.
