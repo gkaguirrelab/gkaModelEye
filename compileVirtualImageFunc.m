@@ -139,8 +139,7 @@ sceneGeometry = createSceneGeometry();
 dynamicArgs = {[0,0,0], [0,0,0,0]};
 staticArgs = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.opticalSystem.p1p2, ...
-    	sceneGeometry.refraction.opticalSystem.p1p3};
+    	sceneGeometry.refraction.opticalSystem};
 
 args = [dynamicArgs, staticArgs{:}];
 % Change to the compile directory

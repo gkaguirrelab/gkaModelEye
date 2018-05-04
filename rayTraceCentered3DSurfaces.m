@@ -106,8 +106,8 @@ function [outputRay, azimuths, elevations, intersectionCoords] = rayTraceCentere
     %% Pupil through cornea
     % A model of the passage of a point on the pupil perimeter through
     % the axial cross-section of the cornea (units in mm)
-    sceneGeometry = createSceneGeometry('aqueousRefractiveIndex',[]);
-    outputRay = rayTraceCenteredSurfaces([sceneGeometry.eye.pupil.center(1) 2], deg2rad(-15), sceneGeometry.refraction.opticalSystem.p1p2, true);
+    sceneGeometry = createSceneGeometry();
+    [outputRay, thetas, phis, intersectionCoords] = rayTraceCentered3DSurfaces([sceneGeometry.eye.pupil.center(1) 2], [deg2rad(-15) 0], sceneGeometry.refraction.opticalSystem, true);
     % Compare the output to value calculated on April 26, 2018
     outputRayCached = [-0.052350606943506   0.882953893324114;   0.869847276998802   0.496235568373862];
     assert ( max(max(abs(outputRayCached - outputRay))) < 1e-6)
@@ -260,8 +260,8 @@ else
     azimuths(1)=angleInitial(1);
     elevations(1)=angleInitial(2);
 end
-relativeIndices = zeros(nSurfaces,2);
-relativeIndices(1,:) = [1 1];
+relativeIndices = zeros(nSurfaces,1);
+relativeIndices(1,:) = 1;
 
 % Build the local optical system. Replace the center and radius of the
 % first surface with the point of intersection of the initial ray with the
@@ -400,7 +400,7 @@ if figureFlag.show
             subplot(3,3,4:6);
             finalRay = [intersectionCoords(nSurfaces,[1 3]); [intersectionCoords(nSurfaces,1)+(3/norm_p1p3) intersectionCoords(nSurfaces,3)+(3*slope_phi/norm_p1p3)]];
             plot([finalRay(1,1) finalRay(2,1)],[finalRay(1,2) finalRay(2,2)],'-r');
-            plot(intersectionCoords(1,1),intersectionCoords(1,2),'xr');
+            plot(intersectionCoords(1,1),intersectionCoords(1,3),'xr');
         else
             finalRay = [intersectionCoords(nSurfaces,[1 2]); [intersectionCoords(nSurfaces,1)+(3/norm_p1p2) intersectionCoords(nSurfaces,2)+(3*slope_theta/norm_p1p2)]];
             plot([finalRay(1,1) finalRay(2,1)],[finalRay(1,2) finalRay(2,2)],'-r');
@@ -536,7 +536,7 @@ ellipsoidRadii = abs(ellipsoidRadii);
 % of the ray, and t is the weight on that unit vector direction
 
 % convert aziuth and elevation to theta and phi
-theta=acos(cos(elevation)*cos(azimuth));
+theta=acos(cos(elevation)*cos(azimuth))*sign(azimuth);
 phi=atan(tan(elevation)/sin(azimuth));
 
 ray = createLine3d(coordsIn([1 3 2]),theta,phi);
@@ -604,7 +604,6 @@ if isinf(D) || isnan(D)
     D = 0;
 end
 [ellipseRadii_p1p2(1),ellipseRadii_p1p2(2)]=EllipsoidPlaneIntersection(A,B,C,0,ellipsoidRadii(1),ellipsoidRadii(2),ellipsoidRadii(3));
-ellipseRadii_p1p2 = real(ellipseRadii_p1p2);
 
 % The radii of the ellipse that lies within the p1p3 plane when the ray is
 % diverging from the optical axis into the p2 dimension by angle azimuth
@@ -614,7 +613,6 @@ if isinf(D) || isnan(D)
     D = 0;
 end
 [ellipseRadii_p1p3(1),ellipseRadii_p1p3(2)]=EllipsoidPlaneIntersection(A,B,C,0,ellipsoidRadii(1),ellipsoidRadii(2),ellipsoidRadii(3));
-ellipseRadii_p1p3 = real(ellipseRadii_p1p3);
 
 % Calculate the radius of curvature encountered by the ray.
 % p1p2 plane
