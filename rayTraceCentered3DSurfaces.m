@@ -98,8 +98,8 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceCen
     figureFlag=true;
     opticalSystem=[nan nan 1; 22 10 1.2; 9 -8 1; 34 12 1.5; 20 -10 1.0];
     [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceCentered3DSurfaces(coords, angleInitial, opticalSystem, figureFlag);
-    for ii=1:length(thetas)
-        fprintf('theta%d: %f \n',ii-1,rad2deg(thetas(ii)));
+    for ii=1:length(angles_p1p2)
+        fprintf('theta%d: %f \n',ii-1,rad2deg(angles_p1p2(ii)));
     end
     elaghaThetasDeg = [17.309724 9.479589 4.143784 -5.926743 -26.583586];
     assert(max(abs(angles_p1p2' - deg2rad(elaghaThetasDeg)))<1e-5);
@@ -155,6 +155,7 @@ coder.extrinsic('warning','legend','strseq')
 % If a value was not passed for figureFlag, set to false.
 if nargin==3
     figureFlag.show = false;
+    figureFlag.axsag = false;
     figureFlag.new = false;
     figureFlag.refLine = false;
     figureFlag.surfaces = false;
@@ -177,6 +178,7 @@ if nargin==4
         temp=figureFlag;
         clear figureFlag
         figureFlag.show = true;
+        figureFlag.axsag = false;
         figureFlag.new = true;
         figureFlag.refLine = true;
         figureFlag.surfaces = true;
@@ -197,6 +199,7 @@ if nargin==4
         if figureFlag
             clear figureFlag
             figureFlag.show = true;
+            figureFlag.axsag = false;
             figureFlag.new = true;
             figureFlag.refLine = true;
             figureFlag.surfaces = true;
@@ -210,6 +213,7 @@ if nargin==4
         else
             clear figureFlag
             figureFlag.show = false;
+            figureFlag.axsag = false;
             figureFlag.new = false;
             figureFlag.refLine = false;
             figureFlag.surfaces = false;
@@ -258,6 +262,15 @@ end
 relativeIndices = zeros(nSurfaces,1);
 relativeIndices(1,:) = 1;
 
+% The solution is undefined for initial angles of zero. Detect if zeros
+% were passed and if so set the value to realmin
+if angles_p1p2==0
+    angles_p1p2=realmin;
+end
+if angles_p1p3==0
+    angles_p1p3=realmin;
+end
+
 % Build the local optical system. Replace the center and radius of the
 % first surface with the point of intersection of the initial ray with the
 % optical axis, and set the radius to zero.
@@ -279,6 +292,10 @@ end
 
 % Initialize the figure
 if figureFlag.show
+    % Determine if we are plotting the p1p2 only, or both p1 and p3
+    if nDims == 5 || length(angleInitial)==2 || figureFlag.axsag
+        figureFlag.axsag = true;
+    end
     if figureFlag.new
         if figureFlag.legend
             figure
@@ -292,7 +309,7 @@ if figureFlag.show
         else
         end
     end
-    if nDims == 5
+    if figureFlag.axsag
         subplot(3,3,4:6);
         hold on
         axis equal
@@ -322,9 +339,22 @@ for ii = 2:nSurfaces
         return
     end
     
-    % Calculate the sin of the angle of incidence
-    aVals_p1p2(ii) = sign(opticalSystem(ii,2))*sin(angles_p1p2(ii-1) + atan((opticalSystem(ii,3)^2*(intersectionCoords(ii,1)-opticalSystem(ii,1)))./(opticalSystem(ii,2)^2*intersectionCoords(ii,2)))+pi/2);
-    aVals_p1p3(ii) = sign(opticalSystem(ii,2))*sin(angles_p1p3(ii-1) + atan((opticalSystem(ii,4)^2*(intersectionCoords(ii,1)-opticalSystem(ii,1)))./(opticalSystem(ii,2)^2*intersectionCoords(ii,3)))+pi/2);
+    % Calculate the sin of the angle of incidence; need to reflect the
+    % value if the intersection is below the optical axis
+    % p1p2
+
+    ai = angles_p1p2(ii-1) + atan((opticalSystem(ii,3)^2*(intersectionCoords(ii,1)-opticalSystem(ii,1)))./(opticalSystem(ii,2)^2*intersectionCoords(ii,2)))+pi/2;
+    if intersectionCoords(ii,2) < 0
+        ai = ai - pi;
+    end
+    aVals_p1p2(ii) = sign(opticalSystem(ii,2))*sin(ai);
+
+    % p1p3
+    ai = angles_p1p3(ii-1) + atan((opticalSystem(ii,4)^2*(intersectionCoords(ii,1)-opticalSystem(ii,1)))./(opticalSystem(ii,2)^2*intersectionCoords(ii,3)))+pi/2;
+    if intersectionCoords(ii,3) < 0
+        ai = ai - pi;
+    end
+    aVals_p1p3(ii) = sign(opticalSystem(ii,2))*sin(ai);
     
     % The relative refractive index of the prior medium to the medium of
     % the surface that the ray is now impacting
@@ -345,7 +375,7 @@ for ii = 2:nSurfaces
     if figureFlag.show
         % add this lens surface
         if figureFlag.surfaces
-            if nDims==5
+            if figureFlag.axsag
                 subplot(3,3,1:3);
                 plotLensArc([opticalSystem(ii,1) ellipseRadii_p1p2])
                 subplot(3,3,4:6);
@@ -356,13 +386,13 @@ for ii = 2:nSurfaces
         end
         % plot the line for the path of the ray
         if figureFlag.rayLines
-            if nDims==5
+            if figureFlag.axsag
                 subplot(3,3,1:3);
-            plot([intersectionCoords(ii-1,1) intersectionCoords(ii,1)],[intersectionCoords(ii-1,2) intersectionCoords(ii,2)],'-r');
+                plot([intersectionCoords(ii-1,1) intersectionCoords(ii,1)],[intersectionCoords(ii-1,2) intersectionCoords(ii,2)],'-r');
                 subplot(3,3,4:6);
-            plot([intersectionCoords(ii-1,1) intersectionCoords(ii,1)],[intersectionCoords(ii-1,3) intersectionCoords(ii,3)],'-r');
+                plot([intersectionCoords(ii-1,1) intersectionCoords(ii,1)],[intersectionCoords(ii-1,3) intersectionCoords(ii,3)],'-r');
             else
-            plot([intersectionCoords(ii-1,1) intersectionCoords(ii,1)],[intersectionCoords(ii-1,2) intersectionCoords(ii,2)],'-r');
+                plot([intersectionCoords(ii-1,1) intersectionCoords(ii,1)],[intersectionCoords(ii-1,2) intersectionCoords(ii,2)],'-r');
             end
         end
     end
@@ -382,7 +412,7 @@ if figureFlag.show
     % Plot the ray path, which is a triple-length output ray. Also, add a
     % mark to indicate the initial coordinates of the ray
     if figureFlag.rayLines
-        if nDims==5
+        if figureFlag.axsag
             subplot(3,3,1:3);
             finalRay = [intersectionCoords(nSurfaces,[1 2]); [intersectionCoords(nSurfaces,1)+(3/norm_p1p2) intersectionCoords(nSurfaces,2)+(3*slope_theta/norm_p1p2)]];
             plot([finalRay(1,1) finalRay(2,1)],[finalRay(1,2) finalRay(2,2)],'-r');
@@ -399,7 +429,7 @@ if figureFlag.show
     end
     % Plot the output unit ray vector
     if figureFlag.finalUnitRay
-        if nDims==5
+        if figureFlag.axsag
             subplot(3,3,1:3);
             plot([outputRay(1,1) outputRay(2,1)],[outputRay(1,2) outputRay(2,2)],'-g');
             subplot(3,3,4:6);
@@ -413,7 +443,7 @@ if figureFlag.show
         yl = [min([intersectionCoords(:,1); opticalSystem(:,1)]),max([intersectionCoords(:,1); opticalSystem(:,1)])];
         yl(1) = yl(1)-(yl(1)/3)*sign(yl(1));
         yl(2) = yl(2)+yl(1)/3*sign(yl(1));
-        if nDims==5
+        if figureFlag.axsag
             subplot(3,3,1:3);
             plot(yl,[0,0],'-k');
             subplot(3,3,4:6);
@@ -424,7 +454,7 @@ if figureFlag.show
     end
     % Add some labels
     if figureFlag.textLabels
-        if nDims==5
+        if figureFlag.axsag
             subplot(3,3,1:3);
             yl = max(abs(intersectionCoords(:,2)));
             yPos = zeros(nSurfaces,1)-(yl/2);
@@ -444,10 +474,9 @@ if figureFlag.show
         hSub = subplot(3,3,8);
         plot(nan, nan,'-r');
         hold on
-        plot(nan, nan,'-b');
         plot(nan, nan,'-g');
         set(hSub, 'Visible', 'off');
-        legend({'ray path','final virtual ray','output unit ray vector'},'Location','north', 'Orientation','vertical');
+        legend({'ray path','output unit ray vector'},'Location','north', 'Orientation','vertical');
     end
     hold off
 end
@@ -508,8 +537,6 @@ function [ coordsOut, ellipseRadii_p1p2, ellipseRadii_p1p3 ] = rayIntersectEllip
 
 % Initialize return variables
 coordsOut = [nan, nan, nan];
-curvature_p1p2 = nan;
-curvature_p1p3 = nan;
 ellipseRadii_p1p2 = [nan nan];
 ellipseRadii_p1p3 = [nan nan];
 
