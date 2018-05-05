@@ -76,22 +76,16 @@ function sceneGeometry = createSceneGeometry(varargin)
 %           
 %          'handle'       - Handle for the function.
 %          'path'         - Full path to the function.
-%          'opticalSystem' - A structure with the sub-fields 'p1p2' and
-%                           'p1p3', each of which is an 10x4 matrix. The
-%                           first m rows contain information regarding the
-%                           m surfaces of the cornea, and any corrective
-%                           lenses, into a format needed for ray tracing.
-%                           The trailing (10-m) rows contain nans. The
-%                           optical system must be a fixed size matrix so
-%                           that the compiled virtualImageFuncMex is able
-%                           to pre-allocate variables. The nan rows are
-%                           later stripped by the rayTraceCenteredSurfaces
-%                           function. The p1p2 and p1p3 sub-fields
-%                           correspond to the two planes in eyeWorld
-%                           coordinates. This allows the model to account
-%                           for optical surfaces having a different
-%                           elliptical cross section in the axial and
-%                           sagittal dimension.
+%          'opticalSystem' - A 10x5 matrix. The first m rows contain
+%                           information regarding the m surfaces of the
+%                           cornea, and any corrective lenses, into a
+%                           format needed for ray tracing. The trailing
+%                           (10-m) rows contain nans. The optical system
+%                           must be a fixed size matrix so that the
+%                           compiled virtualImageFuncMex is able to
+%                           pre-allocate variables. The nan rows are later
+%                           stripped by the rayTraceCenteredSurfaces
+%                           function.
 %
 %  'lenses' - An optional structure that describes the properties of 
 %       refractive lenses that are present between the eye and the camera.
@@ -172,8 +166,8 @@ function sceneGeometry = createSceneGeometry(varargin)
     % Plot a figure that traces a ray arising from the optical axis at the
     % pupil plane, departing at 15 degrees.
     clear figureFlag
-    figureFlag.zLim = [-15 20]; figureFlag.hLim = [-10 10];
-    rayTraceCenteredSurfaces([sceneGeometry.eye.pupil.center(1) 2], deg2rad(15), sceneGeometry.refraction.opticalSystem.p1p2,figureFlag);
+    figureFlag.p1Lim = [-15 20]; figureFlag.p2Lim = [-10 10]; figureFlag.p3Lim = [-10 10];
+    rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1) 2], deg2rad(15), sceneGeometry.refraction.opticalSystem,figureFlag);
 %}
 
 
@@ -229,8 +223,6 @@ end
 % Obtain the refractive index of the medium between the eye and the camera
 % and the tearfilm
 mediumRefractiveIndex = returnRefractiveIndex( p.Results.medium, p.Results.spectralDomain );
-tearRefractiveIndex = returnRefractiveIndex( 'tears', p.Results.spectralDomain );
-tearFilmThickness = 0.0030;
 
 % The center of the cornea front surface is at a position equal to its
 % radius of curvature, thus placing the apex of the front corneal surface
@@ -253,20 +245,15 @@ sceneGeometry.refraction.opticalSystem = [nan, nan, nan, nan, sceneGeometry.eye.
     -sceneGeometry.eye.cornea.back.radii(1)-cornealThickness, -corneaBackRotRadii(1), -corneaBackRotRadii(2), -corneaBackRotRadii(3), sceneGeometry.eye.index.cornea; ...
     -sceneGeometry.eye.cornea.front.radii(1), -corneaFrontRotRadii(1), -corneaFrontRotRadii(2), -corneaFrontRotRadii(3), mediumRefractiveIndex];
 
-%  tearRefractiveIndex; ...
-%    -sceneGeometry.eye.cornea.front.radii(1)+tearFilmThickness, -corneaFrontRotRadii(1), -corneaFrontRotRadii(2), -corneaFrontRotRadii(3), 
-
 %% Lenses
 % Add a contact lens if requested
 if ~isempty(p.Results.contactLens)
     switch length(p.Results.contactLens)
         case 1
             lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', p.Results.spectralDomain );
-            [sceneGeometry.refraction.opticalSystem.p1p2, ~] = addContactLens(sceneGeometry.refraction.opticalSystem.p1p2, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex);
-            [sceneGeometry.refraction.opticalSystem.p1p3, pOutFun] = addContactLens(sceneGeometry.refraction.opticalSystem.p1p3, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex);
+            [sceneGeometry.refraction.opticalSystem, pOutFun] = addContactLens(sceneGeometry.refraction.opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex);
         case 2
-            [sceneGeometry.refraction.opticalSystem.p1p2, ~] = addContactLens(sceneGeometry.refraction.opticalSystem.p1p2, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2));
-            [sceneGeometry.refraction.opticalSystem.p1p3, pOutFun] = addContactLens(sceneGeometry.refraction.opticalSystem.p1p3, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2));
+            [sceneGeometry.refraction.opticalSystem, pOutFun] = addContactLens(sceneGeometry.refraction.opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2));
         otherwise
             error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
     end
@@ -278,14 +265,11 @@ if ~isempty(p.Results.spectacleLens)
     switch length(p.Results.spectacleLens)
         case 1
             lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', p.Results.spectralDomain );
-            [sceneGeometry.refraction.opticalSystem.p1p2, ~] = addSpectacleLens(sceneGeometry.refraction.opticalSystem.p1p2, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex);
-            [sceneGeometry.refraction.opticalSystem.p1p3, pOutFun] = addSpectacleLens(sceneGeometry.refraction.opticalSystem.p1p3, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex);
+            [sceneGeometry.refraction.opticalSystem, pOutFun] = addSpectacleLens(sceneGeometry.refraction.opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex);
         case 2
-            [sceneGeometry.refraction.opticalSystem.p1p2, ~] = addSpectacleLens(sceneGeometry.refraction.opticalSystem.p1p2, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2));
-            [sceneGeometry.refraction.opticalSystem.p1p3, pOutFun] = addSpectacleLens(sceneGeometry.refraction.opticalSystem.p1p3, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2));
+            [sceneGeometry.refraction.opticalSystem, pOutFun] = addSpectacleLens(sceneGeometry.refraction.opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2));
         case 3
-            [sceneGeometry.refraction.opticalSystem.p1p2, ~] = addSpectacleLens(sceneGeometry.refraction.opticalSystem.p1p2, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3));
-            [sceneGeometry.refraction.opticalSystem.p1p3, pOutFun] = addSpectacleLens(sceneGeometry.refraction.opticalSystem.p1p3, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3));
+            [sceneGeometry.refraction.opticalSystem, pOutFun] = addSpectacleLens(sceneGeometry.refraction.opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3));
         otherwise
             error('The key-value pair spectacleLens is limited to three elements: [refractionDiopters, refractionIndex, vertexDistance]');
     end
