@@ -603,7 +603,9 @@ D = coordsOut(2)/((coordsOut(1)-ellipsoidCenter(1))*A);
 if isinf(D) || isnan(D)
     D = 0;
 end
+ellipseRadii_p1p2 = [complex(0) complex(0)];
 [ellipseRadii_p1p2(1),ellipseRadii_p1p2(2)]=EllipsoidPlaneIntersection(A,B,C,0,ellipsoidRadii(1),ellipsoidRadii(2),ellipsoidRadii(3));
+ellipseRadii_p1p2 = real(ellipseRadii_p1p2);
 
 % The radii of the ellipse that lies within the p1p3 plane when the ray is
 % diverging from the optical axis into the p2 dimension by angle azimuth
@@ -612,19 +614,22 @@ D = coordsOut(3)/((coordsOut(1)-ellipsoidCenter(1))*A);
 if isinf(D) || isnan(D)
     D = 0;
 end
+ellipseRadii_p1p3 = [complex(0) complex(0)];
 [ellipseRadii_p1p3(1),ellipseRadii_p1p3(2)]=EllipsoidPlaneIntersection(A,B,C,0,ellipsoidRadii(1),ellipsoidRadii(2),ellipsoidRadii(3));
+ellipseRadii_p1p3 = real(ellipseRadii_p1p3);
 
 % Calculate the radius of curvature encountered by the ray.
 % p1p2 plane
-t = acos((coordsOut(1)-ellipsoidCenter(1))/ellipseRadii_p1p2(1));
+t = real(acos(complex((coordsOut(1)-ellipsoidCenter(1))/ellipseRadii_p1p2(1))));
 curvature_p1p2 = radiiSign*((ellipseRadii_p1p2(1)^2*sin(t)^2 + ellipseRadii_p1p2(2)^2*cos(t)^2)^(3/2))/(ellipseRadii_p1p2(1)*ellipseRadii_p1p2(2));
 % p1p3 plane
-t = acos((coordsOut(1)-ellipsoidCenter(1))/ellipseRadii_p1p3(1));
+t = real(acos(complex((coordsOut(1)-ellipsoidCenter(1))/ellipseRadii_p1p3(1))));
 curvature_p1p3 = radiiSign*((ellipseRadii_p1p3(1)^2*sin(t)^2 + ellipseRadii_p1p3(2)^2*cos(t)^2)^(3/2))/(ellipseRadii_p1p3(1)*ellipseRadii_p1p3(2));
 
 % Adjust the ellipse radii for the sign of the input radii and return these
 ellipseRadii_p1p2 = ellipseRadii_p1p2 * radiiSign;
 ellipseRadii_p1p3 = ellipseRadii_p1p3 * radiiSign;
+
 
 end
 
