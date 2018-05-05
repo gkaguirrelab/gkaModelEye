@@ -240,18 +240,9 @@ switch p.Results.species
         
         %% Pupil
         % We position the pupil plane at the depth of the anterior point of
-        % the cycloplegic lens. The anterior chamber depth in young
-        % subjects after cycloplegia is 3.7 m:
-        %
-        %   Cheung, Sin Wan, et al. "Effect of cycloplegia on axial length
-        %   and anterior chamber depth measurements in children." Clinical
-        %   and Experimental Optometry 92.6 (2009): 476-481.
-        %
-        % Adding the corneal thickness of 0.55 mm gives us an anterior
-        % pupil depth of 4.25 mm. The coordinate space of the model eye is
-        % defined w.r.t. the center of the pupil, so the p2 and p3 values
-        % are zero
-        eye.pupil.center = [-4.25 0 0];
+        % the lens. The coordinate space of the model eye is defined w.r.t.
+        % the center of the pupil, so the p2 and p3 values are zero
+        eye.pupil.center = [-3.7 0 0];
         
         % The exit pupil of the eye is elliptical. Further, the
         % eccentricity and theta of the exit pupil ellipse changes with
@@ -450,7 +441,7 @@ switch p.Results.species
         b = eye.lens.front.R / (eye.lens.front.Q - 1 );
         eye.lens.front.radii(1) = b;
         eye.lens.front.radii(2:3) = a;
-        eye.lens.front.center = [-4.25-eye.lens.front.radii(1) 0 0];
+        eye.lens.front.center = [-3.7-eye.lens.front.radii(1) 0 0];
         
         eye.lens.back.R = -5.9;
         eye.lens.back.Q = -2;
@@ -458,7 +449,7 @@ switch p.Results.species
         b = eye.lens.back.R / (eye.lens.back.Q - 1 );
         eye.lens.back.radii(1) = b;
         eye.lens.back.radii(2:3) = a;
-        eye.lens.back.center = [-7.85-eye.lens.back.radii(1) 0 0];
+        eye.lens.back.center = [-7.3-eye.lens.back.radii(1) 0 0];
         
         % We specify the location of a nodal point so that this can be used
         % for displaying eye axes. Values taken from the Gullstrand-LeGrand

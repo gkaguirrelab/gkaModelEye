@@ -144,12 +144,6 @@ function sceneGeometry = createSceneGeometry(varargin)
 %                           {'air','water','vacuum'}. This sets the index
 %                           of refraction of the medium between the eye and
 %                           the camera.
-%  'aqueousRefractiveIndex' - Scalar. This can be set to over-ride the
-%                           default index for the aqueous. If an inaccurate
-%                           value (1.225) is used, the refractive power of
-%                           the peripheral cornea is decreased, bringing
-%                           the behavior of the model in line with Mathur
-%                           et al 2013.
 %  'spectralDomain'       - String, options include {'vis','nir'}.
 %                           This is the light domain within which imaging
 %                           is being performed. The refractive indices vary
@@ -197,7 +191,6 @@ p.addParameter('constraintTolerance',0.02,@isscalar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('medium','air',@ischar);
-p.addParameter('aqueousRefractiveIndex',[],@(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectralDomain','nir',@ischar);
 p.addParameter('forceMATLABVirtualImageFunc',false,@islogical);
 
@@ -239,11 +232,6 @@ mediumRefractiveIndex = returnRefractiveIndex( p.Results.medium, p.Results.spect
 tearRefractiveIndex = returnRefractiveIndex( 'tears', p.Results.spectralDomain );
 tearFilmThickness = 0.0030;
 
-% Substitute a custom aqueous refractive index if supplied
-if ~isempty(p.Results.aqueousRefractiveIndex)
-    sceneGeometry.eye.index.aqueous = p.Results.aqueousRefractiveIndex;
-end
-
 % The center of the cornea front surface is at a position equal to its
 % radius of curvature, thus placing the apex of the front corneal surface
 % at a z position of zero. The back surface is shifted back to produce
@@ -263,8 +251,10 @@ corneaFrontRotRadii=ellipsesFromEllipsoid(sceneGeometry.eye.cornea.front.radii,s
 % (sagittal) plane of the eye.
 sceneGeometry.refraction.opticalSystem = [nan, nan, nan, nan, sceneGeometry.eye.index.aqueous; ...
     -sceneGeometry.eye.cornea.back.radii(1)-cornealThickness, -corneaBackRotRadii(1), -corneaBackRotRadii(2), -corneaBackRotRadii(3), sceneGeometry.eye.index.cornea; ...
-    -sceneGeometry.eye.cornea.front.radii(1), -corneaFrontRotRadii(1), -corneaFrontRotRadii(2), -corneaFrontRotRadii(3), tearRefractiveIndex; ...
-    -sceneGeometry.eye.cornea.front.radii(1)+tearFilmThickness, -corneaFrontRotRadii(1), -corneaFrontRotRadii(2), -corneaFrontRotRadii(3), mediumRefractiveIndex];
+    -sceneGeometry.eye.cornea.front.radii(1), -corneaFrontRotRadii(1), -corneaFrontRotRadii(2), -corneaFrontRotRadii(3), mediumRefractiveIndex];
+
+%  tearRefractiveIndex; ...
+%    -sceneGeometry.eye.cornea.front.radii(1)+tearFilmThickness, -corneaFrontRotRadii(1), -corneaFrontRotRadii(2), -corneaFrontRotRadii(3), 
 
 %% Lenses
 % Add a contact lens if requested

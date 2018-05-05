@@ -89,8 +89,8 @@ virtualEyePoint = nan(1,3);
 % Set some parameters for the search
 nodalErrorTolerance = 1e-4;
 searchIterTolerance = 6;
-theta_p1p2 = 1e-4;
-theta_p1p3 = 1e-4;
+angle_p1p2 = 1e-4;
+angle_p1p3 = 1e-4;
 searchingFlag = true;
 searchIter = 0;
 
@@ -108,10 +108,10 @@ badTraceFlag = false;
 while searchingFlag
 
     % The distance error function for searching across p1p2 theta values
-    cameraNodeDistanceError_p1p2 = @(thetaX) calcCameraNodeDistanceError(eyePoint, thetaX, theta_p1p3, eyePose, cameraPositionTranslation, rotationCenters, opticalSystem);
+    cameraNodeDistanceError_p1p2 = @(angleX) calcCameraNodeDistanceError(eyePoint, angleX, angle_p1p3, eyePose, cameraPositionTranslation, rotationCenters, opticalSystem);
 
     % Perform the search
-    [theta_p1p2,~]=fminsearch(@myObj_p1p2,theta_p1p2,options);
+    [angle_p1p2,~]=fminsearch(@myObj_p1p2,angle_p1p2,options);
 
     % Detect if we hit a bad ray trace. We will tolerate a bad trace if the
     % solution theta is very close to zero (within an order of magnitude of
@@ -119,7 +119,7 @@ while searchingFlag
     % at zero, so bad ray traces occur when we search for thetas close to
     % zero. If we have encountered a bad ray trace away from zero, exit the
     % routine.
-    if badTraceFlag && theta_p1p2 > (TolX*10)
+    if badTraceFlag && angle_p1p2 > (TolX*10)
         virtualEyePoint = nan(1,3);
         nodalPointIntersectError = Inf;
         % Restore the warning state
@@ -130,13 +130,13 @@ while searchingFlag
     end
     
     % The distance error function for searching across p1p3 theta values    
-    cameraNodeDistanceError_p1p3 = @(thetaX) calcCameraNodeDistanceError(eyePoint, theta_p1p2, thetaX, eyePose, cameraPositionTranslation, rotationCenters, opticalSystem);
+    cameraNodeDistanceError_p1p3 = @(angleX) calcCameraNodeDistanceError(eyePoint, angle_p1p2, angleX, eyePose, cameraPositionTranslation, rotationCenters, opticalSystem);
 
     % Perform the search
-    [theta_p1p3,nodalPointIntersectError]=fminsearch(@myObj_p1p3,theta_p1p3,options);
+    [angle_p1p3,nodalPointIntersectError]=fminsearch(@myObj_p1p3,angle_p1p3,options);
 
     % Detect if we hit a bad ray trace.
-    if badTraceFlag && theta_p1p3 > (TolX*10)
+    if badTraceFlag && angle_p1p3 > (TolX*10)
         virtualEyePoint = nan(1,3);
         nodalPointIntersectError = Inf;
         % Restore the warning state
@@ -172,8 +172,7 @@ end
 %% Obtain the virtual image location
 % With both theta values calculated, now obtain the virtual image
 % ray arising from the pupil plane that reflects the corneal optics
-%virtualImageRay = calcVirtualImageRay(eyePoint, theta_p1p2, theta_p1p3, opticalSystem);
-outputRayEyeWorld = rayTraceCentered3DSurfaces(eyePoint, [theta_p1p2, theta_p1p3], opticalSystem);
+outputRayEyeWorld = calcVirtualImageRay(eyePoint, angle_p1p2, angle_p1p3, opticalSystem);
 
 % Restore the warning state
 warning(warnState);
@@ -370,21 +369,13 @@ end
 
 % Adjust the p1 (optical axis) position of the ray to have an initial
 % position at the depth of the pupil
-slope =(outputRayEyeWorld2D_p1p2(2,2)-outputRayEyeWorld2D_p1p2(1,2))/(outputRayEyeWorld2D_p1p2(2,1)-outputRayEyeWorld2D_p1p2(1,1));
-zOffset=outputRayEyeWorld2D_p1p2(1,1)-eyePoint(1);
-outputRayEyeWorld2D_p1p2(:,1)=outputRayEyeWorld2D_p1p2(:,1)-zOffset;
-outputRayEyeWorld2D_p1p2(:,2)=outputRayEyeWorld2D_p1p2(:,2)-(zOffset*slope);
+slope_p1p2 =(outputRayEyeWorld(2,2)-outputRayEyeWorld(1,2))/(outputRayEyeWorld(2,1)-outputRayEyeWorld(1,1));
+slope_p1p3 =(outputRayEyeWorld(2,3)-outputRayEyeWorld(1,3))/(outputRayEyeWorld(2,1)-outputRayEyeWorld(1,1));
+zOffset=outputRayEyeWorld(1,1)-eyePoint(1);
+outputRayEyeWorld(:,1)=outputRayEyeWorld(:,1)-zOffset;
+outputRayEyeWorld(:,2)=outputRayEyeWorld(:,2)-(zOffset*slope_p1p2);
+outputRayEyeWorld(:,3)=outputRayEyeWorld(:,3)-(zOffset*slope_p1p3);
 
-slope =(outputRayEyeWorld2D_p1p3(2,2)-outputRayEyeWorld2D_p1p3(1,2))/(outputRayEyeWorld2D_p1p3(2,1)-outputRayEyeWorld2D_p1p3(1,1));
-zOffset=outputRayEyeWorld2D_p1p3(1,1)-eyePoint(1);
-outputRayEyeWorld2D_p1p3(:,1)=outputRayEyeWorld2D_p1p3(:,1)-zOffset;
-outputRayEyeWorld2D_p1p3(:,2)=outputRayEyeWorld2D_p1p3(:,2)-(zOffset*slope);
-
-outputRayEyeWorld = zeros(2,3);
-
-% Combine the two dimensions into a single, 3D ray
-outputRayEyeWorld(1,:) = [outputRayEyeWorld2D_p1p2(1,1) outputRayEyeWorld2D_p1p2(1,2) outputRayEyeWorld2D_p1p3(1,2)];
-outputRayEyeWorld(2,:) = [outputRayEyeWorld2D_p1p2(2,1) outputRayEyeWorld2D_p1p2(2,2) outputRayEyeWorld2D_p1p3(2,2)];
 
 end % calcVirtualImageRay
 

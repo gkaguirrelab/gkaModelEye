@@ -55,8 +55,7 @@ function compileVirtualImageFunc( varargin )
     % Assemble the args for the virtualImageFunc
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.opticalSystem.p1p2, ...
-    	sceneGeometry.refraction.opticalSystem.p1p3};
+    	sceneGeometry.refraction.opticalSystem};
     tic
     for ii=1:nComputes
         virtualImageFunc( [-3.7 2 0], [0 0 0 2], args{:} );

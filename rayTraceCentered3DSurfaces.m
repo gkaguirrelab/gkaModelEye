@@ -1,4 +1,4 @@
-function [outputRay, azimuths, elevations, intersectionCoords] = rayTraceCentered3DSurfaces(coordsInitial, angleInitial, opticalSystemIn, figureFlag)
+function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceCentered3DSurfaces(coordsInitial, angleInitial, opticalSystemIn, figureFlag)
 % Returns the position and angle of a resultant ray w.r.t. the optical axis
 %
 % Syntax:
@@ -94,23 +94,22 @@ function [outputRay, azimuths, elevations, intersectionCoords] = rayTraceCentere
     % with those given on page 340, section C.
     clear figureFlag
     coords = [0 0];
-    theta = deg2rad(17.309724);
+    angleInitial = deg2rad(17.309724);
     figureFlag=true;
     opticalSystem=[nan nan 1; 22 10 1.2; 9 -8 1; 34 12 1.5; 20 -10 1.0];
-    [outputRay, thetas, phis, intersectionCoords] = rayTraceCentered3DSurfaces(coords, theta, opticalSystem, figureFlag);
+    [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceCentered3DSurfaces(coords, angleInitial, opticalSystem, figureFlag);
     for ii=1:length(thetas)
         fprintf('theta%d: %f \n',ii-1,rad2deg(thetas(ii)));
     end
+    elaghaThetasDeg = [17.309724 9.479589 4.143784 -5.926743 -26.583586];
+    assert(max(abs(angles_p1p2' - deg2rad(elaghaThetasDeg)))<1e-5);
 %}
 %{
     %% Pupil through cornea
     % A model of the passage of a point on the pupil perimeter through
     % the axial cross-section of the cornea (units in mm)
     sceneGeometry = createSceneGeometry();
-    [outputRay, thetas, phis, intersectionCoords] = rayTraceCentered3DSurfaces([sceneGeometry.eye.pupil.center(1) 2], [deg2rad(-15) 0], sceneGeometry.refraction.opticalSystem, true);
-    % Compare the output to value calculated on April 26, 2018
-    outputRayCached = [-0.052350606943506   0.882953893324114;   0.869847276998802   0.496235568373862];
-    assert ( max(max(abs(outputRayCached - outputRay))) < 1e-6)
+    [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceCentered3DSurfaces([sceneGeometry.eye.pupil.center(1) 2], [deg2rad(-15) 0], sceneGeometry.refraction.opticalSystem, true);
 %}
 
 %{
@@ -242,23 +241,19 @@ aVals_p1p2 = zeros(nSurfaces,1);
 aVals_p1p2(1,:) = 1;
 aVals_p1p3 = zeros(nSurfaces,1);
 aVals_p1p3(1,:) = 1;
-curvature_p1p2 = zeros(nSurfaces,1);
-curvature_p1p3 = zeros(nSurfaces,1);
-curvatureCenters_p1p2 = zeros(nSurfaces,1);
-curvatureCenters_p1p3 = zeros(nSurfaces,1);
 intersectionCoords=zeros(nSurfaces,3);
 if length(coordsInitial)==2
     intersectionCoords(1,:)=[coordsInitial 0];
 else
     intersectionCoords(1,:)=coordsInitial;
 end
-azimuths = zeros(nSurfaces,1);
-elevations = zeros(nSurfaces,1);
+angles_p1p2 = zeros(nSurfaces,1);
+angles_p1p3 = zeros(nSurfaces,1);
 if length(angleInitial)==1
-    azimuths(1)=angleInitial;
+    angles_p1p2(1)=angleInitial;
 else
-    azimuths(1)=angleInitial(1);
-    elevations(1)=angleInitial(2);
+    angles_p1p2(1)=angleInitial(1);
+    angles_p1p3(1)=angleInitial(2);
 end
 relativeIndices = zeros(nSurfaces,1);
 relativeIndices(1,:) = 1;
@@ -318,39 +313,34 @@ end
 for ii = 2:nSurfaces
 
     % Obtain the coordinate at which the ray intersects the next surface,
-    % and the radius of curvature of the surface at that point in the p1p2
-    % and p1p3 planes
-    [ intersectionCoords(ii,:), curvature_p1p2(ii), curvature_p1p3(ii), ellipseRadii_p1p2, ellipseRadii_p1p3 ] = rayIntersectEllipsoid( intersectionCoords(ii-1,:), azimuths(ii-1), elevations(ii-1), [opticalSystem(ii,2) opticalSystem(ii,3) opticalSystem(ii,4)], [opticalSystem(ii,1) 0 0] );
+    % and (for display purposes) the radii of the ellipse in this
+    % coordinate space.
+    [ intersectionCoords(ii,:), ellipseRadii_p1p2, ellipseRadii_p1p3 ] = rayIntersectEllipsoid( intersectionCoords(ii-1,:), angles_p1p2(ii-1), angles_p1p3(ii-1), [opticalSystem(ii,2) opticalSystem(ii,3) opticalSystem(ii,4)], [opticalSystem(ii,1) 0 0] );
     % Check if the ray missed (or was tangenital to) the surface
-    if isnan(curvature_p1p2(ii)) || isnan(curvature_p1p3(ii))
+    if isnan(intersectionCoords(ii,1)) || isnan(intersectionCoords(ii,1))
         warning('rayTraceCenteredSurfaces:nonIntersectingRay','Ray did not intersect surface %d. Returning.',ii);
         return
     end
-    % Find the curvature center, which is the position along the optical
-    % axis for this surface, given the curvature encountered by the ray.
-    curvatureCenters_p1p2(ii) = opticalSystem(ii,1)-opticalSystem(ii,2)+curvature_p1p2(ii);
-    curvatureCenters_p1p3(ii) = opticalSystem(ii,1)-opticalSystem(ii,3)+curvature_p1p3(ii);
-    % The distance between the center of curvature of the current lens
-    % surface and the center of curvature of the prior lens surface
-    d_p1p2 = curvatureCenters_p1p2(ii)-curvatureCenters_p1p2(ii-1);
-    d_p1p3 = curvatureCenters_p1p3(ii)-curvatureCenters_p1p3(ii-1);
+    
+    % Calculate the sin of the angle of incidence
+    aVals_p1p2(ii) = sign(opticalSystem(ii,2))*sin(angles_p1p2(ii-1) + atan((opticalSystem(ii,3)^2*(intersectionCoords(ii,1)-opticalSystem(ii,1)))./(opticalSystem(ii,2)^2*intersectionCoords(ii,2)))+pi/2);
+    aVals_p1p3(ii) = sign(opticalSystem(ii,2))*sin(angles_p1p3(ii-1) + atan((opticalSystem(ii,4)^2*(intersectionCoords(ii,1)-opticalSystem(ii,1)))./(opticalSystem(ii,2)^2*intersectionCoords(ii,3)))+pi/2);
+    
     % The relative refractive index of the prior medium to the medium of
     % the surface that the ray is now impacting
     relativeIndices(ii)=opticalSystem(ii-1,end)/opticalSystem(ii,end);
-    % Equation 54 of Elagha
-    aVals_p1p2(ii) = ...
-        (1/curvature_p1p2(ii))*(relativeIndices(ii-1).*aVals_p1p2(ii-1).*curvature_p1p2(ii-1)+d_p1p2.*sin(azimuths(ii-1)));
-    aVals_p1p3(ii) = ...
-        (1/curvature_p1p3(ii))*(relativeIndices(ii-1).*aVals_p1p3(ii-1).*curvature_p1p3(ii-1)+d_p1p3.*sin(elevations(ii-1)));
+    
     % Check if the incidence angle is above the critical angle for the
     % relative refractive index at the surface interface.
     if abs((aVals_p1p2(ii)*relativeIndices(ii))) > 1 || abs((aVals_p1p3(ii)*relativeIndices(ii))) > 1
         warning('rayTraceCenteredSurfaces:criticalAngle','Angle of incidence for surface %d greater than critical angle. Returning.',ii);
         return
     end
+    
     % Find the angle of the ray after it enters the current surface
-    azimuths(ii) = azimuths(ii-1) - asin(aVals_p1p2(ii)) + asin(aVals_p1p2(ii).*relativeIndices(ii));
-    elevations(ii) = elevations(ii-1) - asin(aVals_p1p3(ii)) + asin(aVals_p1p3(ii).*relativeIndices(ii));
+    angles_p1p2(ii) = angles_p1p2(ii-1) - real(asin(complex(aVals_p1p2(ii)))) + real(asin(complex(aVals_p1p2(ii).*relativeIndices(ii))));
+    angles_p1p3(ii) = angles_p1p3(ii-1) - real(asin(complex(aVals_p1p3(ii)))) + real(asin(complex(aVals_p1p3(ii).*relativeIndices(ii))));
+
     % Update the plot
     if figureFlag.show
         % add this lens surface
@@ -381,8 +371,8 @@ end
 
 %% Finish and clean up
 % Assemble an output which is the unit vector for the final ray
-slope_theta = tan(azimuths(nSurfaces)+pi);
-slope_phi = tan(elevations(nSurfaces)+pi);
+slope_theta = tan(angles_p1p2(nSurfaces)+pi);
+slope_phi = tan(angles_p1p3(nSurfaces)+pi);
 norm_p1p2 = sqrt(slope_theta^2+1);
 norm_p1p3 = sqrt(slope_theta^2+1);
 outputRay = [intersectionCoords(nSurfaces,:); [intersectionCoords(nSurfaces,1)+(1/norm_p1p2) intersectionCoords(nSurfaces,2)+(slope_theta/norm_p1p2) intersectionCoords(nSurfaces,3)+(slope_phi/norm_p1p3)]];
@@ -476,7 +466,7 @@ plot(opticalSystem(1)+xp,yp,'-k');
 end
 
 
-function [ coordsOut, curvature_p1p2, curvature_p1p3, ellipseRadii_p1p2, ellipseRadii_p1p3 ] = rayIntersectEllipsoid( coordsIn, azimuth, elevation, ellipsoidRadii, ellipsoidCenter )
+function [ coordsOut, ellipseRadii_p1p2, ellipseRadii_p1p3 ] = rayIntersectEllipsoid( coordsIn, angle_p1p2, angle_p1p3, ellipsoidRadii, ellipsoidCenter )
 % Returns coords and curvature at intersection of a ray and an ellipsoid
 %
 % Syntax:
@@ -535,9 +525,9 @@ ellipsoidRadii = abs(ellipsoidRadii);
 % Where P is the point of origin of the ray, u is the unit vector direction
 % of the ray, and t is the weight on that unit vector direction
 
-% convert aziuth and elevation to theta and phi
-theta=acos(cos(elevation)*cos(azimuth))*sign(azimuth);
-phi=atan(tan(elevation)/sin(azimuth));
+% convert the fixed angles to theta and phi
+theta=acos(cos(angle_p1p3)*cos(angle_p1p2))*sign(angle_p1p2);
+phi=atan(tan(angle_p1p3)/sin(angle_p1p2));
 
 ray = createLine3d(coordsIn([1 3 2]),theta,phi);
 ray = ray([1 3 2 6 4 5]);
@@ -591,14 +581,12 @@ else
     coordsOut = coordsOutAB(leftIdx,:);
 end
 
-% Now find the curvature of the ellipsoid at the intersection. To do so, we
-% obtain the radii of the ellipse in the orthogonal planes of the rotated
+% Obtain the radii of the ellipse in the orthogonal planes of the rotated
 % ray for the theta (p1p2) and phi (p1p3) angles.
-
 
 % The radii of the ellipse that lies within the p1p2 plane when the ray is
 % diverging from the optical axis into the p3 dimension by angle elevation
-A = tan(elevation); B = 0; C = 1;
+A = tan(angle_p1p3); B = 0; C = 1;
 D = coordsOut(2)/((coordsOut(1)-ellipsoidCenter(1))*A);
 if isinf(D) || isnan(D)
     D = 0;
@@ -609,7 +597,7 @@ ellipseRadii_p1p2 = real(ellipseRadii_p1p2);
 
 % The radii of the ellipse that lies within the p1p3 plane when the ray is
 % diverging from the optical axis into the p2 dimension by angle azimuth
-A = tan(azimuth); B = 1; C = 0;
+A = tan(angle_p1p2); B = 1; C = 0;
 D = coordsOut(3)/((coordsOut(1)-ellipsoidCenter(1))*A);
 if isinf(D) || isnan(D)
     D = 0;
@@ -618,17 +606,21 @@ ellipseRadii_p1p3 = [complex(0) complex(0)];
 [ellipseRadii_p1p3(1),ellipseRadii_p1p3(2)]=EllipsoidPlaneIntersection(A,B,C,0,ellipsoidRadii(1),ellipsoidRadii(2),ellipsoidRadii(3));
 ellipseRadii_p1p3 = real(ellipseRadii_p1p3);
 
-% Calculate the radius of curvature encountered by the ray.
-% p1p2 plane
-t = real(acos(complex((coordsOut(1)-ellipsoidCenter(1))/ellipseRadii_p1p2(1))));
-curvature_p1p2 = radiiSign*((ellipseRadii_p1p2(1)^2*sin(t)^2 + ellipseRadii_p1p2(2)^2*cos(t)^2)^(3/2))/(ellipseRadii_p1p2(1)*ellipseRadii_p1p2(2));
-% p1p3 plane
-t = real(acos(complex((coordsOut(1)-ellipsoidCenter(1))/ellipseRadii_p1p3(1))));
-curvature_p1p3 = radiiSign*((ellipseRadii_p1p3(1)^2*sin(t)^2 + ellipseRadii_p1p3(2)^2*cos(t)^2)^(3/2))/(ellipseRadii_p1p3(1)*ellipseRadii_p1p3(2));
-
 % Adjust the ellipse radii for the sign of the input radii and return these
 ellipseRadii_p1p2 = ellipseRadii_p1p2 * radiiSign;
 ellipseRadii_p1p3 = ellipseRadii_p1p3 * radiiSign;
+
+
+% This code would calculate the radius of curvature encountered by the ray,
+% but this is not needed for the computation.
+%{
+    % p1p2 plane
+    t = real(acos(complex((coordsOut(1)-ellipsoidCenter(1))/ellipseRadii_p1p2(1))));
+    curvature_p1p2 = radiiSign*((ellipseRadii_p1p2(1)^2*sin(t)^2 + ellipseRadii_p1p2(2)^2*cos(t)^2)^(3/2))/(ellipseRadii_p1p2(1)*ellipseRadii_p1p2(2));
+    % p1p3 plane
+    t = real(acos(complex((coordsOut(1)-ellipsoidCenter(1))/ellipseRadii_p1p3(1))));
+    curvature_p1p3 = radiiSign*((ellipseRadii_p1p3(1)^2*sin(t)^2 + ellipseRadii_p1p3(2)^2*cos(t)^2)^(3/2))/(ellipseRadii_p1p3(1)*ellipseRadii_p1p3(2));
+%}
 
 
 end
