@@ -98,9 +98,6 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
     figureFlag=true;
     opticalSystem=[nan nan 1; 22 10 1.2; 9 -8 1; 34 12 1.5; 20 -10 1.0];
     [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids(coords, angleInitial, opticalSystem, figureFlag);
-    for ii=1:length(angles_p1p2)
-        fprintf('theta%d: %f \n',ii-1,rad2deg(angles_p1p2(ii)));
-    end
     elaghaThetasDeg = [17.309724 9.479589 4.143784 -5.926743 -26.583586];
     assert(max(abs(angles_p1p2' - deg2rad(elaghaThetasDeg)))<1e-5);
 %}
@@ -164,8 +161,9 @@ if nargin==3
     figureFlag.finalUnitRay = true;
     figureFlag.textLabels = false;
     figureFlag.legend = false;
-    figureFlag.zLim = [];
-    figureFlag.hLim = [];
+    figureFlag.p1Lim = [];
+    figureFlag.p2Lim = [];
+    figureFlag.p3Lim = [];
 end
 
 % A value was passed for figureFlag
@@ -187,8 +185,9 @@ if nargin==4
         figureFlag.finalUnitRay = true;
         figureFlag.textLabels = true;
         figureFlag.legend = true;
-        figureFlag.zLim = [];
-        figureFlag.hLim = [];
+            figureFlag.p1Lim = [];
+            figureFlag.p2Lim = [];
+            figureFlag.p3Lim = [];
         names = fieldnames(temp);
         for nn = 1:length(names)
             figureFlag.(names{nn})=temp.(names{nn});
@@ -208,8 +207,9 @@ if nargin==4
             figureFlag.finalUnitRay = true;
             figureFlag.textLabels = true;
             figureFlag.legend = true;
-            figureFlag.zLim = [];
-            figureFlag.hLim = [];
+            figureFlag.p1Lim = [];
+            figureFlag.p2Lim = [];
+            figureFlag.p3Lim = [];
         else
             clear figureFlag
             figureFlag.show = false;
@@ -222,8 +222,9 @@ if nargin==4
             figureFlag.finalUnitRay = false;
             figureFlag.textLabels = false;
             figureFlag.legend = false;
-            figureFlag.zLim = [];
-            figureFlag.hLim = [];
+            figureFlag.p1Lim = [];
+            figureFlag.p2Lim = [];
+            figureFlag.p3Lim = [];
         end
     end
 end
@@ -293,7 +294,7 @@ end
 % Initialize the figure
 if figureFlag.show
     % Determine if we are plotting the p1p2 only, or both p1 and p3
-    if nDims == 5 || length(angleInitial)==2 || figureFlag.axsag
+    if nDims == 5 || length(angleInitial)==2 || figureFlag.axsag || ~isempty(figureFlag.p3Lim)
         figureFlag.axsag = true;
     end
     if figureFlag.new
@@ -303,25 +304,38 @@ if figureFlag.show
         else
             figure
         end
-    else
-        if figureFlag.legend
-            subplot(3,3,1:6);
-        else
-        end
     end
     if figureFlag.axsag
         subplot(3,3,4:6);
+        xlabel('p1 position [mm]');
+        ylabel('p3 position [mm]');
         hold on
         axis equal
         subplot(3,3,1:3);
     end
+    xlabel('p1 position [mm]');
+    ylabel('p2 position [mm]');
     hold on
     axis equal
-    if ~isempty(figureFlag.zLim)
-        xlim(figureFlag.zLim);
+    if ~isempty(figureFlag.p1Lim)
+        if figureFlag.axsag
+            subplot(3,3,4:6);
+            xlim(figureFlag.p1Lim);
+            subplot(3,3,1:3);
+        end
+        xlim(figureFlag.p1Lim);
     end
-    if ~isempty(figureFlag.hLim)
-        ylim(figureFlag.hLim);
+    if ~isempty(figureFlag.p2Lim)
+        if figureFlag.axsag
+            subplot(3,3,1:3);
+            ylim(figureFlag.p2Lim);
+        else
+            ylim(figureFlag.p2Lim);
+        end
+    end
+    if ~isempty(figureFlag.p3Lim)
+        subplot(3,3,4:6);
+        ylim(figureFlag.p3Lim);
     end
 end
 
@@ -475,8 +489,10 @@ if figureFlag.show
         plot(nan, nan,'-r');
         hold on
         plot(nan, nan,'-g');
+        plot(nan, nan,'xr');
+        plot(nan, nan,'+k');
         set(hSub, 'Visible', 'off');
-        legend({'ray path','output unit ray vector'},'Location','north', 'Orientation','vertical');
+        legend({'ray path','output unit ray vector','ray initial position','centers of curvature'},'Location','north', 'Orientation','vertical');
     end
     hold off
 end
@@ -496,30 +512,30 @@ end
 
 
 function [ coordsOut, ellipseRadii_p1p2, ellipseRadii_p1p3 ] = rayIntersectEllipsoid( coordsIn, angle_p1p2, angle_p1p3, ellipsoidRadii, ellipsoidCenter )
-% Returns coords and curvature at intersection of a ray and an ellipsoid
+% Returns the point of intersection of a ray and an ellipsoid
 %
 % Syntax:
-%  [intersectionCoords, curvature] = calcEllipseIntersect(coordsInitial, theta, ellipseCenterZ, ellipseRadii )
+%  [ coordsOut, ellipseRadii_p1p2, ellipseRadii_p1p3 ] = rayIntersectEllipsoid( coordsIn, angle_p1p2, angle_p1p3, ellipsoidRadii, ellipsoidCenter )
 %
 % Description:
 %   Implements trigonometric operations to identify the point at which a
-%   line intersects an ellipse, and returns the curvature of the ellipse at
-%   the point of contact.
+%   line intersects an ellipse, and returns the radii of the ellipse within
+%   the frame of reference of the ray at the point of intersection
 %
 % Inputs:
 %   coordsInitial         - 2x1 vector, with the values corresponding to
 %                           the z-position and height of the initial
 %                           position of the ray.
-%   theta                 - Scalar in radians. A value of zero is aligned
+%   angle_p1p2, angle_p1p3 - Scalars in radians. A value of zero is aligned
 %                           with the optical axis. Values between 0 and pi
 %                           direct the ray to diverge "upwards" away from
 %                           the axis.
-%   ellipseCenterZ        - Scalar in mm. The position of the center of the
-%                           elliptical surface on the z-axis
-%   ellipseRadii          - A 2x1 vector in mm, with the values
-%                           corresponding to the radii of the ellipitical
-%                           surface along the z and height axes,
-%                           respectively.
+%   ellipsoidRadii        - A 3x1 vector in mm, with the values
+%                           corresponding to the radii of the ellipsoid in
+%                           the p1, p2, and p3 dimensions.
+%   ellipsoidCenter       - A 3x1 vector in mm, with the values
+%                           corresponding to the position of the center of
+%                           the ellipsoid in the p1, p2, and p3 dimensions.
 %
 % Outputs:
 %   intersectionCoords    - 2x1 vector with the values corresponding to the
