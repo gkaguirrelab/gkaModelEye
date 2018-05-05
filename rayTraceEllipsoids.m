@@ -1,8 +1,8 @@
-function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceCentered3DSurfaces(coordsInitial, angleInitial, opticalSystemIn, figureFlag)
+function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids(coordsInitial, angleInitial, opticalSystemIn, figureFlag)
 % Returns the position and angle of a resultant ray w.r.t. the optical axis
 %
 % Syntax:
-%  [outputRay, thetas, imageCoords, intersectionCoords] = rayTraceCenteredSurfaces(coordsInitial, thetaInitial, opticalSystemIn, figureFlag)
+%  [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids(coordsInitial, angleInitial, opticalSystemIn, figureFlag)
 %
 % Description:
 %   This routine implements a 3D version of the generalized ray tracing
@@ -97,7 +97,7 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceCen
     angleInitial = deg2rad(17.309724);
     figureFlag=true;
     opticalSystem=[nan nan 1; 22 10 1.2; 9 -8 1; 34 12 1.5; 20 -10 1.0];
-    [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceCentered3DSurfaces(coords, angleInitial, opticalSystem, figureFlag);
+    [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids(coords, angleInitial, opticalSystem, figureFlag);
     for ii=1:length(angles_p1p2)
         fprintf('theta%d: %f \n',ii-1,rad2deg(angles_p1p2(ii)));
     end
@@ -109,7 +109,7 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceCen
     % A model of the passage of a point on the pupil perimeter through
     % the axial cross-section of the cornea (units in mm)
     sceneGeometry = createSceneGeometry();
-    [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceCentered3DSurfaces([sceneGeometry.eye.pupil.center(1) 2], [deg2rad(-15) 0], sceneGeometry.refraction.opticalSystem, true);
+    [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1) 2], [deg2rad(-15) 0], sceneGeometry.refraction.opticalSystem, true);
 %}
 
 %{
@@ -125,7 +125,7 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceCen
     figureFlag.textLabels = false;
     for theta = -35:70:35
         for pupilRadius = -2:4:2
-            rayTraceCenteredSurfaces([sceneGeometry.eye.pupil.center(1) pupilRadius], theta, sceneGeometry.refraction.opticalSystem.p1p2, figureFlag);
+            rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1) pupilRadius], theta, sceneGeometry.refraction.opticalSystem.p1p2, figureFlag);
         end
     end
 %}
@@ -136,13 +136,13 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceCen
     % This ray will not intersect the surface. The function issues
     % warning and returns an empty outputRay
     theta = deg2rad(45);
-    outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem);
+    outputRay = rayTraceEllipsoids(coords, theta, opticalSystem);
     % Make the index of refraction of the surface very high
     opticalSystem=[nan nan 5; 20 10 1.0];
     % This ray encounters total internal reflection. The function issues
     % warning and returns an empty outputRay
     theta = deg2rad(15);
-    outputRay = rayTraceCenteredSurfaces(coords, theta, opticalSystem);
+    outputRay = rayTraceEllipsoids(coords, theta, opticalSystem);
 %}
 
 

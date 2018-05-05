@@ -240,7 +240,7 @@ function distance = calcCameraNodeDistanceError(eyePoint, theta_p1p2, theta_p1p3
 
 
 % Ray trace for these thetas
-outputRayEyeWorld = rayTraceCentered3DSurfaces(eyePoint, [theta_p1p2, theta_p1p3], opticalSystem);
+outputRayEyeWorld = rayTraceEllipsoids(eyePoint, [theta_p1p2, theta_p1p3], opticalSystem);
 
 % If we received a ray-trace error, then return Inf for the distance
 if isempty(outputRayEyeWorld)
@@ -359,7 +359,7 @@ function [outputRayEyeWorld] = calcVirtualImageRay(eyePoint, theta_p1p2, theta_p
 
 
 % Ray trace for these thetas
-outputRayEyeWorld = rayTraceCentered3DSurfaces(eyePoint, [theta_p1p2, theta_p1p3], opticalSystem);
+outputRayEyeWorld = rayTraceEllipsoids(eyePoint, [theta_p1p2, theta_p1p3], opticalSystem);
 
 % If we received a ray-trace error, then return nans for output ray
 if isempty(outputRayEyeWorld) || isempty(outputRayEyeWorld)
