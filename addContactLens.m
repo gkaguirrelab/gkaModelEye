@@ -45,17 +45,17 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
     %   Bennett, Edward S., and Barry A. Weissman, eds. Clinical contact 
     %   lens practice. Lippincott Williams & Wilkins, 2005. Chapter 7A, 
     %   "Optical phenomena of contact lenses", WJ Benjamin. p130
-    opticalSystemIn = [nan nan nan 1.3760;  -7.8  -7.8   -7.8   1.0];
+    opticalSystemIn = [nan nan nan nan 1.3760; -7.8  -7.8  -7.8  -7.8  1.0];
     % The curvature of the front surface of the contact lens should be
     % -9.56. We obtain a slightly lower value (9.5468) as we do not model
     % the effect of the pre-lens tear film.
-    opticalSystemOut = addContactLens(opticalSystemIn, -10, 'lensRefractiveIndex', 1.43 )
+    opticalSystemOut = addContactLens(opticalSystemIn, -10, 'lensRefractiveIndex', 1.43 );
     assert(abs(opticalSystemOut(end,2) - -9.56)<0.1);
 %}
 %{
     %% Contact lens added to correct myopia
     sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'contactLens',-2);
-    rayTraceCenteredSurfaces([-3.7,0],deg2rad(-15),sceneGeometry.refraction.opticalSystem.p1p2,true);
+    rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1),0],deg2rad(-15),sceneGeometry.refraction.opticalSystem,true);
 %}
 
 
@@ -139,9 +139,6 @@ if lensRefractionDiopters > 0
     % Calculate the location of the center of curvature for the front lens.
     frontCenter = frontCurvature + (frontCurvature-backCurvature);
     
-    % Store the lens front surface in the optical system. We set the
-    % curvature along the orthogonal axis equal to the corneal curvature 
-    opticalSystemOut(end+1,:)=[frontCenter frontCurvature frontCurvature mediumRefractiveIndex];
 else
     % This is a minus lens for the correction of myopia.
     % It will be thinnest at the center of the lens on the optical axis.
@@ -169,8 +166,9 @@ else
     % Calculate the location of the center of curvature for the front lens.
     frontCenter = frontCurvature + p.Results.minimumLensThickness;
 
-    % Add the surfaces to the optical system
-    opticalSystemOut(end+1,:)=[frontCenter frontCurvature frontCurvature mediumRefractiveIndex];
 end
+
+% Add the contact lens to the optical system
+opticalSystemOut(end+1,:)=[frontCenter frontCurvature frontCurvature frontCurvature mediumRefractiveIndex];
 
 end % function - addContactLens

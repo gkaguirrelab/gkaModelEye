@@ -16,7 +16,7 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %                           surfaces in the model, including the initial
 %                           position of the ray. Each row contains the
 %                           values:
-%                               [center, radiusZ, radiusH, refractiveIndex]
+%                               [center, radius_p1, radius_p2, radius_p3, refractiveIndex]
 %                           that define an elliptical lens.
 %   lensRefractionDiopters - Scalar. Refractive power in units of 
 %                           diopters. A negative value specifies a lens
@@ -46,9 +46,10 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
     %% Spectacle lens added to correct myopia
     sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2);
     clear figureFlag
-    figureFlag.zLim = [-20 20];
-    figureFlag.hLim = [-15 15];
-    rayTraceCenteredSurfaces([-3.7,0],deg2rad(-15),sceneGeometry.refraction.opticalSystem.p1p2,figureFlag);
+    figureFlag.p1Lim = [-20 20];
+    figureFlag.p2Lim = [-15 15];
+    figureFlag.p3Lim = [-15 15];
+    rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1),0],deg2rad(-15),sceneGeometry.refraction.opticalSystem,figureFlag);
 %}
 
 %% input parser
@@ -134,8 +135,6 @@ if lensRefractionDiopters > 0
     % clear the remaining symbolic params
     clear x
     
-    % Store the lens front surface in the optical system
-    opticalSystemOut(end+1,:)=[frontCurvature+lensVertexDistance+thickness frontCurvature frontCurvature mediumRefractiveIndex];
 else
     % This is a minus lens for the correction of myopia. It has a
     % relatively flat front surface and a more curved back surface. It will
@@ -158,10 +157,10 @@ else
     backCenter = lensVertexDistance+backCurvature;
     frontCenter = lensVertexDistance+frontCurvature+p.Results.minimumLensThickness;
     
-    % Add the surfaces to the optical system
-    opticalSystemOut(end+1,:)=[backCenter backCurvature backCurvature lensRefractiveIndex];
-    opticalSystemOut(end+1,:)=[frontCenter frontCurvature frontCurvature mediumRefractiveIndex];
-
 end % positive or negative lens
+
+% Add the surfaces to the optical system
+opticalSystemOut(end+1,:)=[backCenter backCurvature backCurvature backCurvature lensRefractiveIndex];
+opticalSystemOut(end+1,:)=[frontCenter frontCurvature frontCurvature frontCurvature mediumRefractiveIndex];
 
 end % function - addSpectacleLens
