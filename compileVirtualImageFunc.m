@@ -2,7 +2,7 @@ function compileVirtualImageFunc( varargin )
 % Compiles the virtualImageFunc and saves it to disk
 %
 % Syntax:
-%  compileVirtualImageFunc( varargin )
+%  compileVirtualImageFunc
 %
 % Description:
 %   This routine produces a compiled mex file for virtualImageFunc, saves

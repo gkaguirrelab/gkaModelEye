@@ -152,8 +152,6 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %}
 %{
     %% Calculate the time required for the forward projection
-    % Make sure there is a compiled virtualImageFunc
-    compileVirtualImageFunc
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Generate some randomly selected eye poses

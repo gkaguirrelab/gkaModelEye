@@ -106,8 +106,6 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
 %}
 %{
     %% Calculate the time required for the inverse projection
-    % Compile the virtualImageFunction
-    compileVirtualImageFunc
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Generate ellipses for some randomly selected eye poses
