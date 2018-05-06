@@ -84,7 +84,7 @@ nodalPointIntersectError = Inf;
 virtualEyePoint = nan(1,3);
 
 % Set some parameters for the search
-nodalErrorTolerance = 1e-5;
+nodalErrorTolerance = 1e-4;
 searchIterTolerance = 6;
 searchIter = 0;
 searchingFlag = true;
