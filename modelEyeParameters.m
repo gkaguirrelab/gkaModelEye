@@ -37,12 +37,12 @@ function eye = modelEyeParameters( varargin )
 %                           to fit the proportions predicted by the
 %                           Atchison model for the specified degree of
 %                           ametropia.
-%  'alphaAngle'           - 1x4 vector. This is the angle of the visual
+%  'visualAxis'           - 1x4 vector. This is the angle of the visual
 %                           axis w.r.t. to optical axis. The values are
-%                           [azimuth, elevation, torsion]. An eyePose of:
-%                             [-alpha(1), -alpha(2), -alpha(3), radius]
-%                           aligns the visual axis of the eye with the
-%                           optical axis of the camera.
+%                           [azimuth, elevation, torsion]. An eyePose that
+%                           is the negative of the visual axis rotation
+%                           values aligns the visual axis of the eye with
+%                           the optical axis of the camera.
 %  'eyeLaterality'        - A text string that specifies which eye (left,
 %                           right) to model. Allowed values (in any case)
 %                           are {'left','right','L','R','OS','OD'}
@@ -75,10 +75,9 @@ p = inputParser; p.KeepUnmatched = true;
 % Optional
 p.addParameter('sphericalAmetropia',0,@isscalar);
 p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
-p.addParameter('alphaAngle',[],@(x)(isempty(x) || isnumeric(x)));
-p.addParameter('foveaAngle',[],@(x)(isempty(x) || isnumeric(x)));
-p.addParameter('opticDiscAngle',[],@(x)(isempty(x) || isnumeric(x)));
-p.addParameter('corneaAxis',[],@(x)(isempty(x) || isnumeric(x)));
+p.addParameter('visualAxis',[],@(x)(isempty(x) || isnumeric(x)));
+p.addParameter('opticDiscAxis',[],@(x)(isempty(x) || isnumeric(x)));
+p.addParameter('cornealAxis',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
 p.addParameter('spectralDomain','nir',@ischar);
@@ -242,11 +241,11 @@ switch p.Results.species
             fixationAxisWRTcornealAxis = [2.35 0.85 0.02];
             % specify our alpha angles
             eye = modelEyeParameters();
-            fixationAxisWRTopticalAxis = eye.axes.alpha.degField;
+            fixationAxisWRTopticalAxis = eye.axes.visual.degField;
             % Now obtain the corneal axes relative to optical axis
             cornealAxisWRTopticalAxis = fixationAxisWRTopticalAxis - fixationAxisWRTcornealAxis            
         %}
-        if isempty(p.Results.corneaAxis)
+        if isempty(p.Results.cornealAxis)
             switch eyeLaterality
                 case 'Right'
                     eye.cornea.axis = [3.4467    1.4400   -0.0200];
@@ -254,7 +253,7 @@ switch p.Results.species
                     eye.cornea.axis = [-3.4467    1.4400   -0.0200];
             end
         else
-            eye.cornea.axis = p.Results.corneaAxis;
+            eye.cornea.axis = p.Results.cornealAxis;
         end
 
         
@@ -305,15 +304,15 @@ switch p.Results.species
             % Obtain the pupil area in the image for each entrance radius
             % assuming no ray tracing
             sceneGeometry.refraction = [];
-            pupilImage = pupilProjection_fwd([-sceneGeometry.eye.axes.alpha.degField(1), -sceneGeometry.eye.axes.alpha.degField(2), 0, entranceRadius(1)],sceneGeometry);
+            pupilImage = pupilProjection_fwd([-sceneGeometry.eye.axes.visual.degField(1), -sceneGeometry.eye.axes.visual.degField(2), 0, entranceRadius(1)],sceneGeometry);
             exitArea(1) = pupilImage(3);
-            pupilImage = pupilProjection_fwd([-sceneGeometry.eye.axes.alpha.degField(1), -sceneGeometry.eye.axes.alpha.degField(2), 0, entranceRadius(2)],sceneGeometry);
+            pupilImage = pupilProjection_fwd([-sceneGeometry.eye.axes.visual.degField(1), -sceneGeometry.eye.axes.visual.degField(2), 0, entranceRadius(2)],sceneGeometry);
             exitArea(2) = pupilImage(3);
             % Add the ray tracing function to the sceneGeometry
             sceneGeometry = createSceneGeometry();
             % Search across exit pupil radii to find the values that match
             % the observed entrance areas.
-            myPupilEllipse = @(radius) pupilProjection_fwd([-sceneGeometry.eye.axes.alpha.degField(1), -sceneGeometry.eye.axes.alpha.degField(2), 0, radius],sceneGeometry);
+            myPupilEllipse = @(radius) pupilProjection_fwd([-sceneGeometry.eye.axes.visual.degField(1), -sceneGeometry.eye.axes.visual.degField(2), 0, radius],sceneGeometry);
             myArea = @(ellipseParams) ellipseParams(3);
             myObj = @(radius) (myArea(myPupilEllipse(radius))-exitArea(1)).^2;
             exitRadius(1) = fminunc(myObj, entranceRadius(1));
@@ -324,13 +323,13 @@ switch p.Results.species
             place = {'eye' 'pupil' 'eccenFcnString'};
             sceneGeometry.eye.pupil.thetas = [0, 0];
             mySceneGeom = @(eccen) setfield(sceneGeometry,place{:},['@(x) ' num2str(eccen)]);
-            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.alpha.degField(1), -sceneGeometry.eye.axes.alpha.degField(2), 0, exitRadius(1)],mySceneGeom(eccen));
+            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.visual.degField(1), -sceneGeometry.eye.axes.visual.degField(2), 0, exitRadius(1)],mySceneGeom(eccen));
             myEccen = @(ellipseParams) ellipseParams(4);
             myObj = @(eccen) 1e4*(myEccen(myPupilEllipse(eccen))-abs(entranceEccen(1))).^2;
             exitEccen(1) = -fminsearch(myObj, 0.1);
             sceneGeometry.eye.pupil.thetas = [pi/2, pi/2];
             mySceneGeom = @(eccen) setfield(sceneGeometry,place{:},['@(x) ' num2str(eccen)]);
-            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.alpha.degField(1), -sceneGeometry.eye.axes.alpha.degField(2), 0, exitRadius(2)],mySceneGeom(eccen));
+            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.visual.degField(1), -sceneGeometry.eye.axes.visual.degField(2), 0, exitRadius(2)],mySceneGeom(eccen));
             myEccen = @(ellipseParams) ellipseParams(4);
             myObj = @(eccen) 1e4*(myEccen(myPupilEllipse(eccen))-abs(entranceEccen(2))).^2;
             exitEccen(2) = fminsearch(myObj, 0.2);        
@@ -367,6 +366,7 @@ switch p.Results.species
         % Define the iris radius. One study measured the horizontal visible
         % iris diameter (HVID) in 200 people, and found a mean of 11.8 with
         % a range of 10.2 - 13.0.
+        %
         %    PJ Caroline & MP Andrew. "The Effect of Corneal Diameter on
         %    Soft Lens Fitting, Part 1" Contact Lens Spectrum, Issue: April
         %    2002
@@ -566,13 +566,24 @@ switch p.Results.species
             [(-posteriorChamberApexDepth - eye.posteriorChamber.radii(1)) 0 0];
                 
         
-        %% Optic disc, fovea, and axes
+        %% Axes - optical
+        % Eye axes are specified as rotations (in degrees) within the eye
+        % world coordinate frame for azimuth, elevation, and rotation. Axes
+        % are defined relative to the optical axis, which itself is set to
+        % be aligned with the p1 dimension of the eye world coordinate
+        % frame.
+        eye.axes.optical.degRetina = [0 0 0];
+        eye.axes.optical.mmRetina = [0 0 0];
+        eye.axes.optical.degField = [0 0 0];
+
+
+        %% Axes - visual and blind spot
         % The model establishes the position of the fovea and then sets the
         % optic disc at a constant distance from the fovea in units of
         % retinal degrees. The lines that connect these points on the fovea
-        % to the posterior nodal point of the eye define the alpha and mu
-        % angles respectively. The difference between these gives the
-        % position of the blind spot.
+        % to the posterior nodal point of the eye define the visual and
+        % blind spot axes, respectively. The difference between these gives
+        % the position of the blind spot relative to fixation.
         %
         % Find the azimuthal arc in retina deg that produces a blind spot
         % position in the horizontal and vertical directions that is equal
@@ -583,11 +594,12 @@ switch p.Results.species
         % the optic disc.
         %{
             targetBlindSpotAngle = [16.02 1.84 0];
-            blindSpotAngle = @(eye) eye.axes.mu.degField - eye.axes.alpha.degField;
-            myObj = @(x) sum((blindSpotAngle(modelEyeParameters('opticDiscAngle',[3/4*x(1),x(2)/2,0],'foveaAngle',-[1/4*x(1),x(2)/2,0])) - targetBlindSpotAngle).^2);
+            blindSpotAngle = @(eye) eye.axes.opticDisc.degField - eye.axes.visual.degField;
+            myObj = @(x) sum((blindSpotAngle(modelEyeParameters('opticDiscAxis',[3/4*x(1),x(2)/2,0],'visualAxis',-[1/4*x(1),x(2)/2,0])) - targetBlindSpotAngle).^2);
             options = optimoptions('fmincon','Display','off');
             retinalArcDeg = fmincon(myObj,[20 4],[],[],[],[],[],[],[],options);
-            fprintf('Distance between the fovea and the center of the optic disc in retinal degrees: azimuth = %4.4f; elevation = %4.4f \n\n', retinalArcDeg([1 2]));
+            fprintf('Distance between the fovea and the center of the optic disc in retinal degrees in the right eye:\n');
+            fprintf('\tazimuth = %4.4f; elevation = %4.4f \n\n', retinalArcDeg([1 2]));
         %}
         switch eyeLaterality
             case 'Right'
@@ -601,7 +613,7 @@ switch p.Results.species
         % retinal degrees) of the fovea that results in a visual axis that
         % has resulting alpha angles that match empirical results.  We
         % assume an azimuth alpha of 5.8 degrees for an emmetropic eye
-        % (Figure 8 of Mathur 2013). We assume an elevation alpha of 2.425
+        % (Figure 8 of Mathur 2013). We assume an elevation alpha of 2.5
         % degrees, as this value, when adjusted to account for the longer
         % axial length of the subjects in the Mathur study, best fits the
         % Mathur data. Given these angles, we then calculate the
@@ -609,13 +621,13 @@ switch p.Results.species
         % of the eye (adjusted for eye laterality).
         %{
             eye = modelEyeParameters();
-            % These are the alpha angles that we wish to hit for emmetropia
+            % These are the visual axis angles for an emmetropic eye
             targetAlphaAngle = [5.8  2.5  0];
-            myComputedAlphaAzi = @(eye) eye.axes.alpha.degField(1);
-            myObj = @(x) (targetAlphaAngle(1) - myComputedAlphaAzi(modelEyeParameters('foveaAngle',[x 0 0])))^2;
+            myComputedAlphaAzi = @(eye) eye.axes.visual.degField(1);
+            myObj = @(x) (targetAlphaAngle(1) - myComputedAlphaAzi(modelEyeParameters('visualAxis',[x 0 0])))^2;
             aziFoveaEmmetropic = fminsearch(myObj,9)
-            myComputedAlphaEle = @(eye) eye.axes.alpha.degField(2);
-            myObj = @(x) (targetAlphaAngle(2) - myComputedAlphaEle(modelEyeParameters('foveaAngle',[aziFoveaEmmetropic x 0])))^2;
+            myComputedAlphaEle = @(eye) eye.axes.visual.degField(2);
+            myObj = @(x) (targetAlphaAngle(2) - myComputedAlphaEle(modelEyeParameters('visualAxis',[aziFoveaEmmetropic x 0])))^2;
             eleFoveaEmmetropic = fminsearch(myObj,2)
         %}
         switch eyeLaterality
@@ -638,25 +650,26 @@ switch p.Results.species
         foveaPostionScaler(1) = (1-eye.posteriorChamber.radii(1)/eye.posteriorChamber.radii(2))/0.111716335829885;
         foveaPostionScaler(2) = (1-eye.posteriorChamber.radii(1)/eye.posteriorChamber.radii(3))/0.105571718627770;
         foveaPostionScaler(3) = 1;
-        eye.axes.alpha.degRetina = fovea_WRT_opticAxisDegRetina_emmetrope.*foveaPostionScaler;
+        eye.axes.visual.degRetina = fovea_WRT_opticAxisDegRetina_emmetrope.*foveaPostionScaler;
         
         % The optic disc maintains a fixed distance (in retinal degrees)
         % from the fovea
-        eye.axes.mu.degRetina = opticDisc_WRT_foveaDegRetina + eye.axes.alpha.degRetina;
+        eye.axes.opticDisc.degRetina = opticDisc_WRT_foveaDegRetina + eye.axes.visual.degRetina;
 
-        % If a foveaAngle or opticDiscAngle key-value pair was passed,
+        % If a visualAxis or opticDiscAxis key-value pair was passed,
         % override the computed value. This is used primarily during model
         % development.
-        if ~isempty(p.Results.foveaAngle)
-            eye.axes.alpha.degRetina = p.Results.foveaAngle;
+        if ~isempty(p.Results.visualAxis)
+            eye.axes.visual.degRetina = p.Results.visualAxis;
         end
-        if ~isempty(p.Results.opticDiscAngle)
-            eye.axes.mu.degRetina = p.Results.opticDiscAngle;
+        if ~isempty(p.Results.opticDiscAxis)
+            eye.axes.opticDisc.degRetina = p.Results.opticDiscAxis;
         end
         
-        % Calculate the alpha and mu values in mm of retina. This requires
-        % the elliptic integral. The parameter "theta" has a value of zero
-        % at the apex of the ellipse along the axial dimension (p1).
+        % Calculate the foveal and optic disc positions in terms of mm of
+        % retina. This requires the elliptic integral. The parameter
+        % "theta" has a value of zero at the apex of the ellipse along the
+        % axial dimension (p1).
         ellipticIntegral_p1p2=@(theta) sqrt(1-sqrt(1-eye.posteriorChamber.radii(2)^2/eye.posteriorChamber.radii(1)^2)^2*(sin(theta)).^2);
         ellipticIntegral_p1p3=@(theta) sqrt(1-sqrt(1-eye.posteriorChamber.radii(3)^2/eye.posteriorChamber.radii(1)^2)^2*(sin(theta)).^2);
         arcLength_p1p2 = @(theta1,theta2) eye.posteriorChamber.radii(1).*integral(ellipticIntegral_p1p2,theta1, theta2);
@@ -665,32 +678,39 @@ switch p.Results.species
         % For the calculation, the first theta value is zero, as we are
         % calculating distance from the posterior chamber apex (i.e., the
         % intersection of the optical axis with the retina).
-        eye.axes.alpha.mmRetina = [arcLength_p1p2(0,deg2rad(eye.axes.alpha.degRetina(1))), arcLength_p1p3(0,deg2rad(eye.axes.alpha.degRetina(2))), 0];
-        eye.axes.mu.mmRetina = [arcLength_p1p2(0,deg2rad(eye.axes.mu.degRetina(1))), arcLength_p1p3(0,deg2rad(eye.axes.mu.degRetina(2))), 0];
+        eye.axes.visual.mmRetina = [arcLength_p1p2(0,deg2rad(eye.axes.visual.degRetina(1))), arcLength_p1p3(0,deg2rad(eye.axes.visual.degRetina(2))), 0];
+        eye.axes.opticDisc.mmRetina = [arcLength_p1p2(0,deg2rad(eye.axes.opticDisc.degRetina(1))), arcLength_p1p3(0,deg2rad(eye.axes.opticDisc.degRetina(2))), 0];
         
         % Calculate the foveal position in eyeWorld coordinates.
-        phi = -eye.axes.alpha.degRetina(1);
-        theta = -eye.axes.alpha.degRetina(2);
+        phi = -eye.axes.visual.degRetina(1);
+        theta = -eye.axes.visual.degRetina(2);
         x = eye.posteriorChamber.radii(1) * cosd(theta) * cosd(phi);
         y = eye.posteriorChamber.radii(2) * cosd(theta) * sind(phi);
         z = eye.posteriorChamber.radii(3) * sind(theta);
-                eye.posteriorChamber.fovea = [-x y -z] + eye.posteriorChamber.center;
+        % Note this location in the posterior chamber field
+        eye.posteriorChamber.fovea = [-x y -z] + eye.posteriorChamber.center;
         
         % Calculate the optic disc position in eyeWorld coordinates.
-        phi = -eye.axes.mu.degRetina(1);
-        theta = -eye.axes.mu.degRetina(2);
+        phi = -eye.axes.opticDisc.degRetina(1);
+        theta = -eye.axes.opticDisc.degRetina(2);
         x = eye.posteriorChamber.radii(1) * cosd(theta) * cosd(phi);
         y = eye.posteriorChamber.radii(2) * cosd(theta) * sind(phi);
         z = eye.posteriorChamber.radii(3) * sind(theta);        
+        % Note this location in the posterior chamber field
         eye.posteriorChamber.opticDisc = [-x y -z] + eye.posteriorChamber.center;
 
-        % Calcuate the mu and alpha values in deg of visual field
-        eye.axes.alpha.degField(1) = atand((eye.posteriorChamber.fovea(2) - eye.lens.nodalPoint.rear(2)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint.rear(1)));
-        eye.axes.alpha.degField(2) = -(-atand((eye.posteriorChamber.fovea(3) - eye.lens.nodalPoint.rear(3)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint.rear(1))));
-        eye.axes.alpha.degField(3) = 0;
-        eye.axes.mu.degField(1) = atand((eye.posteriorChamber.opticDisc(2) - eye.lens.nodalPoint.rear(2)) / (eye.posteriorChamber.opticDisc(1) - eye.lens.nodalPoint.rear(1)));
-        eye.axes.mu.degField(2) = -(-atand((eye.posteriorChamber.opticDisc(3) - eye.lens.nodalPoint.rear(3)) / (eye.posteriorChamber.opticDisc(1) - eye.lens.nodalPoint.rear(1))));
-        eye.axes.mu.degField(3) = 0;
+        % Calcuate the optic disc and visual axes in deg of visual field,
+        % using the rear nodal point of th eye. For the visual axis, these
+        % values correspond to alpha / kappa, the angles between the visual
+        % and optical /pupillary axes. The difference between the visual
+        % and optic disc axes specifies the location of the physiologic
+        % blind spot relative to fixation.
+        eye.axes.visual.degField(1) = atand((eye.posteriorChamber.fovea(2) - eye.lens.nodalPoint.rear(2)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint.rear(1)));
+        eye.axes.visual.degField(2) = -(-atand((eye.posteriorChamber.fovea(3) - eye.lens.nodalPoint.rear(3)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint.rear(1))));
+        eye.axes.visual.degField(3) = 0;
+        eye.axes.opticDisc.degField(1) = atand((eye.posteriorChamber.opticDisc(2) - eye.lens.nodalPoint.rear(2)) / (eye.posteriorChamber.opticDisc(1) - eye.lens.nodalPoint.rear(1)));
+        eye.axes.opticDisc.degField(2) = -(-atand((eye.posteriorChamber.opticDisc(3) - eye.lens.nodalPoint.rear(3)) / (eye.posteriorChamber.opticDisc(1) - eye.lens.nodalPoint.rear(1))));
+        eye.axes.opticDisc.degField(3) = 0;
         
 
         %% Rotation centers
