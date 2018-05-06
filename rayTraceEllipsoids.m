@@ -349,7 +349,7 @@ for ii = 2:nSurfaces
     [ intersectionCoords(ii,:), ellipseRadii_p1p2, ellipseRadii_p1p3 ] = rayIntersectEllipsoid( intersectionCoords(ii-1,:), angles_p1p2(ii-1), angles_p1p3(ii-1), [opticalSystem(ii,2) opticalSystem(ii,3) opticalSystem(ii,4)], [opticalSystem(ii,1) 0 0] );
     % Check if the ray missed (or was tangenital to) the surface
     if isnan(intersectionCoords(ii,1)) || isnan(intersectionCoords(ii,1))
-        warning('rayTraceCenteredSurfaces:nonIntersectingRay','Ray did not intersect surface %d. Returning.',ii);
+        warning('rayTraceEllipsoids:nonIntersectingRay','Ray did not intersect surface %d. Returning.',ii);
         return
     end
     
@@ -377,7 +377,7 @@ for ii = 2:nSurfaces
     % Check if the incidence angle is above the critical angle for the
     % relative refractive index at the surface interface.
     if abs((aVals_p1p2(ii)*relativeIndices(ii))) > 1 || abs((aVals_p1p3(ii)*relativeIndices(ii))) > 1
-        warning('rayTraceCenteredSurfaces:criticalAngle','Angle of incidence for surface %d greater than critical angle. Returning.',ii);
+        warning('rayTraceEllipsoids:criticalAngle','Angle of incidence for surface %d greater than critical angle. Returning.',ii);
         return
     end
     
@@ -559,7 +559,7 @@ ellipseRadii_p1p3 = [nan nan];
 % Store the sign of the radius values. They radii must have the same sign.
 radiiSign = sign(ellipsoidRadii(1));
 if ~all(radiiSign == radiiSign(1))
-    error('rayTraceCenteredSurfaces:incompatibleConvexity','The radii of the elliptical lens surface must have the same sign.');
+    error('rayTraceEllipsoids:incompatibleConvexity','The radii of the elliptical lens surface must have the same sign.');
 end
 % Convert the radii to their absolute values
 ellipsoidRadii = abs(ellipsoidRadii);
