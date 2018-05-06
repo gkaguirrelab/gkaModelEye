@@ -197,6 +197,26 @@ switch p.Results.species
             ((p.Results.sphericalAmetropia .* -0.0028)+1);
         eye.cornea.back.radii = [ 13.7716    9.3027    9.3027];
         
+        % Code here to calculate the Navarro 1985 corneal parameters that
+        % were used by Fedtke 2010 in her simulation. These may be used for
+        % comparison.
+        %{
+            % cornea front
+            R = 7.72;
+            Q = -0.26;
+            a = R ./ (Q+1);
+            b = R .* sqrt(1./(Q+1));
+            [a b b]
+            % cornea back
+            R = 6.5;
+            Q = 0;
+            a = R ./ (Q+1);
+            b = R .* sqrt(1./(Q+1));
+            [a b b]
+            eye.cornea.front.radii = [10.4324    8.9743    8.9743];
+            eye.cornea.back.radii = [6.5000    6.5000    6.5000];
+        %}
+        
         % We set the center of the cornea front surface ellipsoid so that
         % the axial apex (prior to rotation) is at position [0, 0, 0]
         eye.cornea.front.center = [-eye.cornea.front.radii(1) 0 0];
@@ -240,9 +260,10 @@ switch p.Results.species
         
         %% Pupil
         % We position the pupil plane at the depth of the anterior point of
-        % the lens. The coordinate space of the model eye is defined w.r.t.
-        % the center of the pupil, so the p2 and p3 values are zero
-        eye.pupil.center = [-3.7 0 0];
+        % the lens, assuming cycloplegia. The coordinate space of the model
+        % eye is defined w.r.t. the center of the pupil, so the p2 and p3
+        % values are zero
+        eye.pupil.center = [-4 0 0];
         
         % The exit pupil of the eye is elliptical. Further, the
         % eccentricity and theta of the exit pupil ellipse changes with
@@ -272,7 +293,7 @@ switch p.Results.species
             % Wyatt reported an eccentricity of the pupil of 0.21 under
             % dark conditions. We find that using that value produces
             % model results that disagree with Malthur 2013. We have
-            % adopted an upper value of 0.16 instead. We also use the 
+            % adopted an upper value of 0.18 instead. We also use the 
             % convention of a negative eccentricity for a horizontal major
             % axis and a positive eccentricity for vertical.
             entranceEccen = [-0.12 0.18];
@@ -329,7 +350,7 @@ switch p.Results.species
         %}
         % Specify the params and equation that defines the exit pupil
         % ellipse. This can be invoked as a function using str2func.
-        eye.pupil.eccenParams = [-1.807 4.645 0.049 0.127]; 
+        eye.pupil.eccenParams = [-1.743 4.787 0.122 0.117]; 
         eye.pupil.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',eye.pupil.eccenParams(1),eye.pupil.eccenParams(2),eye.pupil.eccenParams(3),eye.pupil.eccenParams(4)); 
 
         % The theta values of the exit pupil ellipse for eccentricities
@@ -388,7 +409,7 @@ switch p.Results.species
         %}
         % We use this true iris size and then subject the iris perimeter
         % points to refraction
-        eye.iris.radius = 5.56;
+        eye.iris.radius = 5.54;
         
         % We are aware of some reports that the iris is shifted slightly
         % temporally and upward with respect to the pupil center:
@@ -406,9 +427,9 @@ switch p.Results.species
         % ellipse.
         switch eyeLaterality
             case 'Right'
-                eye.iris.center = [-4.25 0.35 0.35];
+                eye.iris.center = [-4 0.35 0.35];
             case 'Left'
-                eye.iris.center = [-4.25 -0.35 0.35];
+                eye.iris.center = [-4 -0.35 0.35];
         end
         
         
@@ -441,7 +462,7 @@ switch p.Results.species
         b = eye.lens.front.R / (eye.lens.front.Q - 1 );
         eye.lens.front.radii(1) = b;
         eye.lens.front.radii(2:3) = a;
-        eye.lens.front.center = [-3.7-eye.lens.front.radii(1) 0 0];
+        eye.lens.front.center = [eye.pupil.center(1)-eye.lens.front.radii(1) 0 0];
         
         eye.lens.back.R = -5.9;
         eye.lens.back.Q = -2;
@@ -449,7 +470,7 @@ switch p.Results.species
         b = eye.lens.back.R / (eye.lens.back.Q - 1 );
         eye.lens.back.radii(1) = b;
         eye.lens.back.radii(2:3) = a;
-        eye.lens.back.center = [-7.3-eye.lens.back.radii(1) 0 0];
+        eye.lens.back.center = [eye.pupil.center(1)-3.6-eye.lens.back.radii(1) 0 0];
         
         % We specify the location of a nodal point so that this can be used
         % for displaying eye axes. Values taken from the Gullstrand-LeGrand
@@ -589,7 +610,7 @@ switch p.Results.species
         %{
             eye = modelEyeParameters();
             % These are the alpha angles that we wish to hit for emmetropia
-            targetAlphaAngle = [5.8  2.425  0];
+            targetAlphaAngle = [5.8  2.5  0];
             myComputedAlphaAzi = @(eye) eye.axes.alpha.degField(1);
             myObj = @(x) (targetAlphaAngle(1) - myComputedAlphaAzi(modelEyeParameters('foveaAngle',[x 0 0])))^2;
             aziFoveaEmmetropic = fminsearch(myObj,9)
@@ -599,9 +620,9 @@ switch p.Results.species
         %}
         switch eyeLaterality
             case 'Right'
-                fovea_WRT_opticAxisDegRetina_emmetrope = [8.1378 -3.4030 0];
+                fovea_WRT_opticAxisDegRetina_emmetrope = [8.1378 -3.5083 0];
             case 'Left'
-                fovea_WRT_opticAxisDegRetina_emmetrope = [-8.1378 -3.4030 0];
+                fovea_WRT_opticAxisDegRetina_emmetrope = [-8.1378 -3.5083 0];
         end                
 
         % In our model, the fovea moves towards the apex of the posterior
