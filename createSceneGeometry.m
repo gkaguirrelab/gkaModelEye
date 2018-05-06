@@ -216,6 +216,9 @@ if exist('virtualImageFuncMex')==3 && ~p.Results.forceMATLABVirtualImageFunc
 else
     sceneGeometry.refraction.handle = @virtualImageFunc;
     sceneGeometry.refraction.path = which('virtualImageFunc');
+    if ~p.Results.forceMATLABVirtualImageFunc
+        warning('createSceneGeometry:noCompiledVirtualImageFunc','A compiled virtualImageFunc was not found. Using the native MATLAB version, which is 30x slower');
+    end
 end
 
 %% refraction - optical system
