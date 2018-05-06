@@ -82,6 +82,8 @@ p.addRequired('sceneGeometry',@isstruct);
 % Optional
 p.addParameter('newFigure',true,@islogical);
 p.addParameter('showPupilTextLabels',false,@islogical);
+p.addParameter('nPupilPerimPoints',8,@isnumeric);
+p.addParameter('nIrisPerimPoints',20,@isnumeric);
 p.addParameter('removeOccultedPoints',true,@islogical);
 p.addParameter('modelEyeLabelNames', {'aziRotationCenter', 'eleRotationCenter', 'posteriorChamber' 'irisPerimeter' 'pupilPerimeter' 'anteriorChamber' 'cornealApex'}, @iscell);
 p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' '.b' '*g' '.y' '*y'}, @iscell);
@@ -112,7 +114,7 @@ xlim([0 imageSizeX]);
 ylim([0 imageSizeY]);
 
 % Obtain the pupilProjection of the model eye to the image plane
-[pupilEllipseParams, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nPupilPerimPoints',5, 'nIrisPerimPoints',20,'removeOccultedPoints',p.Results.removeOccultedPoints);
+[pupilEllipseParams, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nPupilPerimPoints',p.Results.nPupilPerimPoints, 'nIrisPerimPoints',p.Results.nIrisPerimPoints,'removeOccultedPoints',p.Results.removeOccultedPoints);
 
 % Loop through the point labels present in the eye model
 for pp = 1:length(p.Results.modelEyeLabelNames)
