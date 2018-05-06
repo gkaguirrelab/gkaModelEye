@@ -32,21 +32,25 @@ function compileVirtualImageFunc( varargin )
 %
 % Examples:
 %{
-    % Basic example with a compiled virtualImageFunc
+    % Confirm that compiled and native virtualImageFunc yield same value
+    sceneGeometry = createSceneGeometry('forceMATLABVirtualImageFunc',true);
+    % Assemble the args for the virtualImageFunc
+    args = {sceneGeometry.cameraPosition.translation, ...
+    	sceneGeometry.eye.rotationCenters, ...
+    	sceneGeometry.refraction.opticalSystem};
+    virtualEyePointNative = sceneGeometry.refraction.handle( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
     compileVirtualImageFunc
     sceneGeometry = createSceneGeometry();
     % Assemble the args for the virtualImageFunc
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.opticalSystem};
-    [virtualEyePoint, nodalPointIntersectError] = sceneGeometry.refraction.handle( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
-    % Test output against cached value
-    virtualEyePointCached = [-3.700000000000000   2.264920419052283   0.000000000000000];
-    assert(max(abs(virtualEyePoint - virtualEyePointCached)) < 1e-6)
+    virtualEyePointCompiled = sceneGeometry.refraction.handle( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
+    % Test if the outputds agree
+    assert(max(abs(virtualEyePointNative - virtualEyePointCompiled)) < 1e-6)
 %}
 %{
-    % Compare computation time for MATLAB and compiled C code
-    % Turn off warning that we are replacing the compiled func
+    % Compare computation time for MATLAB and compiled code
     nComputes = 100;
     fprintf('\nTime to execute virtualImageFunc (average over %d projections):\n',nComputes);
     % Native function
