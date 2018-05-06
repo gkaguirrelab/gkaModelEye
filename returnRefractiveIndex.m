@@ -66,7 +66,7 @@ switch material
         % Sardar, Dhiraj K., et al. "Optical properties of ocular tissues
         % in the near infrared region." Lasers in medical science 22.1
         % (2007): 46-52.
-        ns = [1.336 1.337];
+        ns = [1.3335 1.337];
     case 'cornea'
         % Escudero-Sanz, Isabel, and Rafael Navarro. "Off-axis aberrations
         % of a wide-angle schematic eye model." JOSA A 16.8 (1999):
