@@ -265,11 +265,11 @@ relativeIndices(1,:) = 1;
 
 % The solution is undefined for initial angles of zero. Detect if zeros
 % were passed and if so set the value to realmin
-if angles_p1p2==0
-    angles_p1p2=realmin;
+if angles_p1p2(1)==0
+    angles_p1p2(1)=realmin;
 end
-if angles_p1p3==0
-    angles_p1p3=realmin;
+if angles_p1p3(1)==0
+    angles_p1p3(1)=realmin;
 end
 
 % Build the local optical system. Replace the center and radius of the
