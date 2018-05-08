@@ -262,10 +262,10 @@ switch p.Results.species
         % the lens, assuming cycloplegia. The coordinate space of the model
         % eye is defined w.r.t. the center of the pupil, so the p2 and p3
         % values are zero
-        eye.pupil.center = [-4 0 0];
+        eye.pupil.center = [-4.0 0 0];
         
-        % The exit pupil of the eye is elliptical. Further, the
-        % eccentricity and theta of the exit pupil ellipse changes with
+        % The actual pupil of the eye is elliptical. Further, the
+        % eccentricity and theta of the actual pupil ellipse changes with
         % pupil dilation:
         %
         %   Wyatt, Harry J. "The form of the human pupil." Vision Research
@@ -274,18 +274,18 @@ switch p.Results.species
         % Wyatt reported the average ellipse parameters for the entrance
         % pupil (with the visual axis aligned with camera axis) under dim
         % and bright light conditions. We calculate the corresponding
-        % parameters of the exit pupil on the optical axis. We then fit a
+        % parameters of the actual pupil on the optical axis. We then fit a
         % hyperbolic tangent (sigmoidal) function to the the eccentricity
-        % of the exit pupil as a function of the exit pupil radius. The
+        % of the actual pupil as a function of the actual pupil radius. The
         % theta values observed by Wyatt were close to vertically
         % orientated in the dark, and horizontally oriented in the light.
         % We find that a slight tilt away from vertical for the dilated
         % pupil allows our model to fit the Mathur 2013 obliquity component
-        % perfectly. When the exit pupil eccentricity is below zero, the
+        % perfectly. When the actual pupil eccentricity is below zero, the
         % theta is set to zero (horizontal), and above zero value it is set
         % to ~pi/2 (vertical). In the forward model, we take the absolute
-        % value of the eccentricity returned by the parameters for the exit
-        % pupil eccentrivity.
+        % value of the eccentricity returned by the parameters for the
+        % actual pupil eccentrivity.
         %{
             % Observed entrance pupil diameters reported in Wyatt 1995.
             entranceRadius = [3.09/2 4.93/2];
@@ -298,61 +298,61 @@ switch p.Results.species
             entranceEccen = [-0.12 0.18];
             % Prepare scene geometry and eye pose aligned with visual axis
             sceneGeometry = createSceneGeometry();
-            % Fix the exit pupil eccentricity at 0
+            % Fix the actual pupil eccentricity at 0
             sceneGeometry.eye.pupil.eccenFcnString = '@(x) 0';
             sceneGeometry.eye.pupil.thetas = [0, 0];
             % Obtain the pupil area in the image for each entrance radius
             % assuming no ray tracing
             sceneGeometry.refraction = [];
             pupilImage = pupilProjection_fwd([-sceneGeometry.eye.axes.visual.degField(1), -sceneGeometry.eye.axes.visual.degField(2), 0, entranceRadius(1)],sceneGeometry);
-            exitArea(1) = pupilImage(3);
+            actualArea(1) = pupilImage(3);
             pupilImage = pupilProjection_fwd([-sceneGeometry.eye.axes.visual.degField(1), -sceneGeometry.eye.axes.visual.degField(2), 0, entranceRadius(2)],sceneGeometry);
-            exitArea(2) = pupilImage(3);
+            actualArea(2) = pupilImage(3);
             % Add the ray tracing function to the sceneGeometry
             sceneGeometry = createSceneGeometry();
-            % Search across exit pupil radii to find the values that match
+            % Search across actual pupil radii to find the values that match
             % the observed entrance areas.
             myPupilEllipse = @(radius) pupilProjection_fwd([-sceneGeometry.eye.axes.visual.degField(1), -sceneGeometry.eye.axes.visual.degField(2), 0, radius],sceneGeometry);
             myArea = @(ellipseParams) ellipseParams(3);
-            myObj = @(radius) (myArea(myPupilEllipse(radius))-exitArea(1)).^2;
-            exitRadius(1) = fminunc(myObj, entranceRadius(1));
-            myObj = @(radius) (myArea(myPupilEllipse(radius))-exitArea(2)).^2;
-            exitRadius(2) = fminunc(myObj, entranceRadius(2));
-            % Now find the exit pupil eccentricity that produces the
+            myObj = @(radius) (myArea(myPupilEllipse(radius))-actualArea(1)).^2;
+            actualRadius(1) = fminunc(myObj, entranceRadius(1));
+            myObj = @(radius) (myArea(myPupilEllipse(radius))-actualArea(2)).^2;
+            actualRadius(2) = fminunc(myObj, entranceRadius(2));
+            % Now find the actual pupil eccentricity that produces the
             % observed entrance pupil eccentricity
             place = {'eye' 'pupil' 'eccenFcnString'};
             sceneGeometry.eye.pupil.thetas = [0, 0];
             mySceneGeom = @(eccen) setfield(sceneGeometry,place{:},['@(x) ' num2str(eccen)]);
-            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.visual.degField(1), -sceneGeometry.eye.axes.visual.degField(2), 0, exitRadius(1)],mySceneGeom(eccen));
+            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.visual.degField(1), -sceneGeometry.eye.axes.visual.degField(2), 0, actualRadius(1)],mySceneGeom(eccen));
             myEccen = @(ellipseParams) ellipseParams(4);
             myObj = @(eccen) 1e4*(myEccen(myPupilEllipse(eccen))-abs(entranceEccen(1))).^2;
-            exitEccen(1) = -fminsearch(myObj, 0.1);
+            actualEccen(1) = -fminsearch(myObj, 0.1);
             sceneGeometry.eye.pupil.thetas = [pi/2, pi/2];
             mySceneGeom = @(eccen) setfield(sceneGeometry,place{:},['@(x) ' num2str(eccen)]);
-            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.visual.degField(1), -sceneGeometry.eye.axes.visual.degField(2), 0, exitRadius(2)],mySceneGeom(eccen));
+            myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.visual.degField(1), -sceneGeometry.eye.axes.visual.degField(2), 0, actualRadius(2)],mySceneGeom(eccen));
             myEccen = @(ellipseParams) ellipseParams(4);
             myObj = @(eccen) 1e4*(myEccen(myPupilEllipse(eccen))-abs(entranceEccen(2))).^2;
-            exitEccen(2) = fminsearch(myObj, 0.2);        
+            actualEccen(2) = fminsearch(myObj, 0.2);        
             % We then interpolate the observed values, assuming that the
             % observed values are close to asymptote
-            exitRadiusInterp = [exitRadius(1)-.5 exitRadius(1) mean(exitRadius) exitRadius(2) exitRadius(2)+.5];
-            exitEccenInterp = [exitEccen(1)/0.96 exitEccen(1) mean(exitEccen) exitEccen(2) exitEccen(2)/0.96];
+            actualRadiusInterp = [actualRadius(1)-.5 actualRadius(1) mean(actualRadius) actualRadius(2) actualRadius(2)+.5];
+            actualEccenInterp = [actualEccen(1)/0.96 actualEccen(1) mean(actualEccen) actualEccen(2) actualEccen(2)/0.96];
             % Fit a hand-tuned sigmoidal function
-            sigFit = @(scaleX, shiftY, scaleY, x) (tanh((x-mean(exitRadius)).*scaleX)+shiftY)*scaleY;
-            fitEccen = fit(exitRadiusInterp',exitEccenInterp',sigFit);
-            fprintf('eye.pupil.eccenParams = [-%4.3f %4.3f %4.3f %4.3f];\n',mean(exitRadius),fitEccen.scaleX,fitEccen.shiftY,fitEccen.scaleY);
+            sigFit = @(scaleX, shiftY, scaleY, x) (tanh((x-mean(actualRadius)).*scaleX)+shiftY)*scaleY;
+            fitEccen = fit(actualRadiusInterp',actualEccenInterp',sigFit);
+            fprintf('eye.pupil.eccenParams = [-%4.3f %4.3f %4.3f %4.3f];\n',mean(actualRadius),fitEccen.scaleX,fitEccen.shiftY,fitEccen.scaleY);
             % Plot the fit
             figure
-            plot(exitRadiusInterp,exitEccenInterp,'kx');
+            plot(actualRadiusInterp,actualEccenInterp,'kx');
             hold on
             plot(0.5:.1:3,fitEccen(0.5:.1:3),'-r');        
         %}
-        % Specify the params and equation that defines the exit pupil
+        % Specify the params and equation that defines the actual pupil
         % ellipse. This can be invoked as a function using str2func.
         eye.pupil.eccenParams = [-1.743 4.787 0.122 0.117]; 
         eye.pupil.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',eye.pupil.eccenParams(1),eye.pupil.eccenParams(2),eye.pupil.eccenParams(3),eye.pupil.eccenParams(4)); 
 
-        % The theta values of the exit pupil ellipse for eccentricities
+        % The theta values of the actual pupil ellipse for eccentricities
         % less than, and greater than, zero.
         switch eyeLaterality
             case 'Right'
@@ -883,10 +883,10 @@ switch p.Results.species
         % corneal thickness to properly position the pupil plane.
         eye.pupil.center = [-4.877 0 0];
         
-        % We assume that the canine exit pupil is circular
+        % We assume that the canine actual pupil is circular
         eye.pupil.eccenParams = []; 
         eye.pupil.eccenFcnString = sprintf('@(x) 0'); 
-        % The theta values of the exit pupil ellipse for eccentricities
+        % The theta values of the actual pupil ellipse for eccentricities
         % less than and greater than zero.
         eye.pupil.thetas = [0  0];
         
