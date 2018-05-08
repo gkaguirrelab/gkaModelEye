@@ -52,7 +52,7 @@ function [figHandle, renderedFrame] = renderEyePose(eyePose, sceneGeometry, vara
     renderEyePose([0 0 45 2],sceneGeometry,'modelEyeLabelNames',{'pupilPerimeter'},'modelEyePlotColors',{'.g'});
 %}
 %{
-    %% Demonstrate the effect of camera position translation
+    %% Demonstrate the effect of camera translation
     sceneGeometry=createSceneGeometry();
     % Define an eyePose with azimuth, elevation, torsion, and pupil radius
     eyePose = [0 0 0 3];
@@ -70,6 +70,15 @@ function [figHandle, renderedFrame] = renderEyePose(eyePose, sceneGeometry, vara
     % Adjust the camera torsion and replot
     sceneGeometry.cameraPosition.torsion = sceneGeometry.cameraPosition.torsion + 45;
     renderEyePose(eyePose, sceneGeometry,'showPupilTextLabels',true);
+%}
+%{
+    %% Demonstrate the effect of iris thickness
+    sceneGeometry=createSceneGeometry();
+    % Define an eyePose with azimuth, elevation, torsion, and pupil radius
+    eyePose = [-50 0 0 3];
+    renderEyePose(eyePose,sceneGeometry,'modelEyeLabelNames',{'pupilPerimeter'},'modelEyePlotColors',{'.g'});
+    sceneGeometry.eye.pupil.center(1) = sceneGeometry.eye.pupil.center(1)-0.3;
+    renderEyePose(eyePose,sceneGeometry,'newFigure',false,'modelEyeLabelNames',{'pupilPerimeter'},'modelEyePlotColors',{'.r'});
 %}
 
 %% input parser
@@ -113,8 +122,17 @@ axis equal
 xlim([0 imageSizeX]);
 ylim([0 imageSizeY]);
 
+% Silence a ray tracing warning that can occur when the eye is rotated at a
+% large angle and points in the iris (and sometimes pupil) encounter
+% internal reflection
+warnState = warning();
+warning('Off','rayTraceEllipsoids:criticalAngle');
+
 % Obtain the pupilProjection of the model eye to the image plane
 [pupilEllipseParams, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nPupilPerimPoints',p.Results.nPupilPerimPoints, 'nIrisPerimPoints',p.Results.nIrisPerimPoints,'removeOccultedPoints',p.Results.removeOccultedPoints);
+
+% Restore the warning state
+warning(warnState);
 
 % Loop through the point labels present in the eye model
 for pp = 1:length(p.Results.modelEyeLabelNames)
@@ -124,15 +142,15 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
         % Add the pupil fit ellipse
         pFitImplicit = ellipse_ex2im(ellipse_transparent2ex(pupilEllipseParams));
         fh=@(x,y) pFitImplicit(1).*x.^2 +pFitImplicit(2).*x.*y +pFitImplicit(3).*y.^2 +pFitImplicit(4).*x +pFitImplicit(5).*y +pFitImplicit(6);
-        % superimpose the ellipse using fimplicit or ezplot (ezplot
+        % Superimpose the ellipse using fimplicit or ezplot (ezplot
         % is the fallback option for older Matlab versions)
         if exist('fimplicit','file')==2
-            fimplicit(fh,[1, imageSizeX, 1, imageSizeY],'Color', 'g','LineWidth',1);
+            fimplicit(fh,[1, imageSizeX, 1, imageSizeY],'Color', p.Results.modelEyePlotColors{pp}(2),'LineWidth',1);
             set(gca,'position',[0 0 1 1],'units','normalized')
             axis off;
         else
             plotHandle=ezplot(fh,[1, imageSizeX, 1, imageSizeY]);
-            set(plotHandle, 'Color', p.Results.pupilColor)
+            set(plotHandle, 'Color', p.Results.modelEyePlotColors{pp}(2))
             set(plotHandle,'LineWidth',1);
         end
         % Put text labels for the pupil perimeter points so that we can
