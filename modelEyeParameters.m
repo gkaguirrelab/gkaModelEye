@@ -427,11 +427,15 @@ switch p.Results.species
         % ellipse.
         switch eyeLaterality
             case 'Right'
-                eye.iris.center = [-4 0.35 0.35];
+                eye.iris.center = [eye.pupil.center(1) 0.35 0.35];
             case 'Left'
-                eye.iris.center = [-4 -0.35 0.35];
+                eye.iris.center = [eye.pupil.center(1) -0.35 0.35];
         end
         
+        % The iris has a thickness, and this influences the size of the
+        % entrance pupil, as when the eye is rotated w.r.t. the camera the
+        % anterior and posterior edges of the iris are seen.
+        eye.iris.thickness = 0.3;
         
         %% Lens
         % Although the lens does not influence the pupil tracking, we
