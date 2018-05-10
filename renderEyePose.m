@@ -36,8 +36,8 @@ function [figHandle, renderedFrame] = renderEyePose(eyePose, sceneGeometry, vara
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Prepare a figure
-    modelEyeLabelNames = {'pupilPerimeterBack' 'pupilPerimeterBack_hidden' 'pupilPerimeterFront' 'pupilPerimeterFront_hidden' 'pupilEllipse' };
-	modelEyePlotColors = {'*r' 'xr' '*g' 'xg' '.y'};    
+    modelEyeLabelNames = {'pupilPerimeterBack_hidden' 'pupilPerimeterBack' 'pupilEllipse' 'pupilPerimeterFront_hidden' 'pupilPerimeterFront'};
+	modelEyePlotColors = {'xr' '*r' '-y' 'xg' '*g'};    
     renderEyePose([0 0 0 2], sceneGeometry,'modelEyeLabelNames',modelEyeLabelNames,'modelEyePlotColors',modelEyePlotColors);
     for azi = -35:35:35
         for ele = -35:35:35
@@ -47,20 +47,11 @@ function [figHandle, renderedFrame] = renderEyePose(eyePose, sceneGeometry, vara
     end
 %}
 %{
-    %% Show the back, front, and combined pupil ellipse
-    sceneGeometry=createSceneGeometry();
-    eyePose = [-30 -5 0 3];
-    % Define the label names and plot colors
-    modelEyeLabelNames = {'pupilPerimeterBack' 'pupilPerimeterBack_hidden' 'pupilPerimeterFront' 'pupilPerimeterFront_hidden' 'pupilEllipse' };
-	modelEyePlotColors = {'*r' 'xr' '*g' 'xg' '.y'};
-    renderEyePose(eyePose, sceneGeometry,'modelEyeLabelNames',modelEyeLabelNames,'modelEyePlotColors',modelEyePlotColors);
-%}
-%{
     %% Show the effect of eye torsion
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
-    renderEyePose([0 0 0 3], sceneGeometry,'showPupilTextLabels',true);
-    renderEyePose([0 0 45 3], sceneGeometry,'showPupilTextLabels',true);
+    renderEyePose([0 0 0 3], sceneGeometry,'showPupilTextLabels',true,'nPupilPerimPoints',5);
+    renderEyePose([0 0 45 3], sceneGeometry,'showPupilTextLabels',true,'nPupilPerimPoints',5);
 %}
 %{
     %% Demonstrate the effect of camera translation
@@ -77,10 +68,10 @@ function [figHandle, renderedFrame] = renderEyePose(eyePose, sceneGeometry, vara
     sceneGeometry=createSceneGeometry();
     % Define an eyePose with azimuth, elevation, torsion, and pupil radius
     eyePose = [0 0 0 3];
-    renderEyePose(eyePose, sceneGeometry,'showPupilTextLabels',true);
+    renderEyePose(eyePose, sceneGeometry,'showPupilTextLabels',true,'nPupilPerimPoints',5);
     % Adjust the camera torsion and replot
     sceneGeometry.cameraPosition.torsion = sceneGeometry.cameraPosition.torsion + 45;
-    renderEyePose(eyePose, sceneGeometry,'showPupilTextLabels',true);
+    renderEyePose(eyePose, sceneGeometry,'showPupilTextLabels',true,'nPupilPerimPoints',5);
 %}
 
 
@@ -96,8 +87,8 @@ p.addParameter('newFigure',true,@islogical);
 p.addParameter('showPupilTextLabels',false,@islogical);
 p.addParameter('nPupilPerimPoints',8,@isnumeric);
 p.addParameter('nIrisPerimPoints',20,@isnumeric);
-p.addParameter('modelEyeLabelNames', {'aziRotationCenter', 'eleRotationCenter', 'posteriorChamber' 'irisPerimeter' 'pupilPerimeterFront' 'pupilPerimeterBack' 'pupilEllipse' 'anteriorChamber' 'cornealApex'}, @iscell);
-p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' '.b' '*g' '*g' '.g' '.y' '*y'}, @iscell);
+p.addParameter('modelEyeLabelNames', {'aziRotationCenter', 'eleRotationCenter', 'posteriorChamber' 'irisPerimeter' 'pupilPerimeterBack' 'pupilEllipse' 'pupilPerimeterFront' 'anteriorChamber' 'cornealApex'}, @iscell);
+p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' '.b' '*g' '-g' '*g' '.y' '*y'}, @iscell);
 
 % parse
 p.parse(eyePose, sceneGeometry, varargin{:})
@@ -160,7 +151,7 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
         plot(imagePoints(idx,1), imagePoints(idx,2), p.Results.modelEyePlotColors{pp})
         % If we are plotting the pupil perimeter points, see if we would
         % like to label them
-        if p.Results.showPupilTextLabels && or(strcmp(p.Results.modelEyeLabelNames{pp},'pupilPerimeterFront'),strcmp(p.Results.modelEyeLabelNames{pp},'pupilPerimeterBack') )
+        if p.Results.showPupilTextLabels && strcmp(p.Results.modelEyeLabelNames{pp},'pupilPerimeterFront')
             % Put text labels for the pupil perimeter points so that we can follow
             % them through rotations and translations to validate the projection
             % model

@@ -99,7 +99,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
     % Obtain the pupil ellipse parameters in transparent format
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
     % Test against cached result
-    pupilEllipseOnImagePlaneCached = [0.027882084468391e4 0.022419008831363e4   1.564653262580187e4   0.000024846189627e4 0.000188727559347e4];
+    pupilEllipseOnImagePlaneCached = [0.027839072157472   0.022398611861105   1.548090054525043   0.000025800693977   0.000191192670464].*1e4;
     assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-6)
 %}
 %{
@@ -221,9 +221,9 @@ nPupilPerimPoints = p.Results.nPupilPerimPoints;
 %% Define points around the elliptical actual pupil
 % The eccentricity of the actual pupil is given by a stored function
 actualPupilEccenFunc = str2func(sceneGeometry.eye.pupil.eccenFcnString);
-% Determine the parameters of the ellipse that defines the actual
-% pupil in the plane of the pupil. The absolute value of actualPupilEccenFunc
-% gives the eccentricity. The theta of the theta of the actual pupil switches
+% Determine the parameters of the ellipse that defines the actual pupil in
+% the plane of the pupil. The absolute value of actualPupilEccenFunc gives
+% the eccentricity. The theta of the theta of the actual pupil switches
 % from horizontal to vertical when the pupil passes the circular radius
 % point (0).
 actualPupilEllipse = [sceneGeometry.eye.pupil.center(2) , ...
@@ -235,20 +235,20 @@ actualPupilEllipse = [sceneGeometry.eye.pupil.center(2) , ...
 [p2p, p3p] = ellipsePerimeterPoints( actualPupilEllipse, nPupilPerimPoints, p.Results.pupilPerimPhase );
 % Place these points into the eyeWorld coordinates, and create a front
 % pupil perimeter
-pupilBackPoints(1:nPupilPerimPoints,3) = p3p;
-pupilBackPoints(1:nPupilPerimPoints,2) = p2p;
-pupilBackPoints(1:nPupilPerimPoints,1) = sceneGeometry.eye.pupil.center(1)-sceneGeometry.eye.iris.thickness/2;
-eyePoints = pupilBackPoints;
-% Create labels for the pupilPerimeter points
-tmpLabels = cell(nPupilPerimPoints, 1);
-tmpLabels(:) = {'pupilPerimeterBack'};
-pointLabels = tmpLabels;
-% Add the back pupil perimeter
 pupilFrontPoints(1:nPupilPerimPoints,3) = p3p;
 pupilFrontPoints(1:nPupilPerimPoints,2) = p2p;
 pupilFrontPoints(1:nPupilPerimPoints,1) = sceneGeometry.eye.pupil.center(1)+sceneGeometry.eye.iris.thickness/2;
-eyePoints = [eyePoints; pupilFrontPoints];
+eyePoints = pupilFrontPoints;
+% Create labels for the pupilPerimeter points
+tmpLabels = cell(nPupilPerimPoints, 1);
 tmpLabels(:) = {'pupilPerimeterFront'};
+pointLabels = tmpLabels;
+% Add the back pupil perimeter
+pupilBackPoints(1:nPupilPerimPoints,3) = p3p;
+pupilBackPoints(1:nPupilPerimPoints,2) = p2p;
+pupilBackPoints(1:nPupilPerimPoints,1) = sceneGeometry.eye.pupil.center(1)-sceneGeometry.eye.iris.thickness/2;
+eyePoints = [eyePoints; pupilBackPoints];
+tmpLabels(:) = {'pupilPerimeterBack'};
 pointLabels = [pointLabels; tmpLabels];
 
 
@@ -580,7 +580,7 @@ if eyePose(4) > 0
         % point (front or back) is farther from the center of the ellipse
         % and then mark this point as hidden.
         centerDistance = sqrt(sum(((imagePoints(logical(pupilPerimIdxFront+pupilPerimIdxBack),:)-mean([p1(1:2);p2(1:2)])).^2),2));
-        hideBack = (centerDistance(1:nPupilPerimPoints)-centerDistance(nPupilPerimPoints+1:nPupilPerimPoints*2))>0;
+        hideBack = (centerDistance(1:nPupilPerimPoints)-centerDistance(nPupilPerimPoints+1:nPupilPerimPoints*2))<0;
         idx = pupilPerimIdxBack;
         idx(pupilPerimIdxBack)=hideBack;
         pointLabels(idx) = strcat(pointLabels(idx),'_hidden');
