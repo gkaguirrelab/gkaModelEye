@@ -37,12 +37,6 @@ function eye = modelEyeParameters( varargin )
 %                           to fit the proportions predicted by the
 %                           Atchison model for the specified degree of
 %                           ametropia.
-%  'visualAxis'           - 1x4 vector. This is the angle of the visual
-%                           axis w.r.t. to optical axis. The values are
-%                           [azimuth, elevation, torsion]. An eyePose that
-%                           is the negative of the visual axis rotation
-%                           values aligns the visual axis of the eye with
-%                           the optical axis of the camera.
 %  'eyeLaterality'        - A text string that specifies which eye (left,
 %                           right) to model. Allowed values (in any case)
 %                           are {'left','right','L','R','OS','OD'}
@@ -53,6 +47,14 @@ function eye = modelEyeParameters( varargin )
 %                           This is the wavelength domain within which
 %                           imaging is being performed. The refractive
 %                           indices vary based upon this choice.
+%  'visualAxisDegRetina'  - 1x3 vector. This is the position of the fovea 
+%                           w.r.t. to optical axis in degrees of retina.
+%                           The values are [azimuth, elevation, torsion].
+%                           Used in model development.
+%  'opticDiscAxisDegRegina'  - 1x3 vector. This is the position of the  
+%                           optic disc w.r.t. to optical axis in degrees of
+%                           retina. The values are [azimuth, elevation,
+%                           torsion]. Used in model development.
 %
 % Outputs:
 %   eye                   - A structure with fields that contain the values
@@ -75,12 +77,12 @@ p = inputParser; p.KeepUnmatched = true;
 % Optional
 p.addParameter('sphericalAmetropia',0,@isscalar);
 p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
-p.addParameter('visualAxis',[],@(x)(isempty(x) || isnumeric(x)));
-p.addParameter('opticDiscAxis',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('cornealAxis',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
 p.addParameter('spectralDomain','nir',@ischar);
+p.addParameter('visualAxisDegRetina',[],@(x)(isempty(x) || isnumeric(x)));
+p.addParameter('opticDiscAxisDegRetina',[],@(x)(isempty(x) || isnumeric(x)));
 
 % parse
 p.parse(varargin{:})
@@ -248,9 +250,9 @@ switch p.Results.species
         if isempty(p.Results.cornealAxis)
             switch eyeLaterality
                 case 'Right'
-                    eye.cornea.axis = [3.4467    1.4400   -0.0200];
+                    eye.cornea.axis = [3.4460    1.6500   -0.0200];
                 case 'Left'
-                    eye.cornea.axis = [-3.4467    1.4400   -0.0200];
+                    eye.cornea.axis = [-3.4460    1.6500   -0.0200];
             end
         else
             eye.cornea.axis = p.Results.cornealAxis;
@@ -331,7 +333,7 @@ switch p.Results.species
         %}
         % We use this true iris size and then subject the iris perimeter
         % points to refraction
-        eye.iris.radius = 5.54;
+        eye.iris.radius = 5.57;
 
         
         %% Pupil
@@ -340,7 +342,7 @@ switch p.Results.species
         eye.pupil.center = [eye.iris.center(1) 0 0];
         
         % The actual pupil of the eye is elliptical. Further, the
-        % eccentricity and theta of the actual pupil ellipse changes with
+        % eccentricity and theta of the entrance pupil ellipse changes with
         % pupil dilation:
         %
         %   Wyatt, Harry J. "The form of the human pupil." Vision Research
@@ -424,7 +426,7 @@ switch p.Results.species
         %}
         % Specify the params and equation that defines the actual pupil
         % ellipse. This can be invoked as a function using str2func.
-        eye.pupil.eccenParams = [-1.743 4.787 0.122 0.117]; 
+        eye.pupil.eccenParams = [-1.749 -4.770 0.099 -0.145]; 
         eye.pupil.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',eye.pupil.eccenParams(1),eye.pupil.eccenParams(2),eye.pupil.eccenParams(3),eye.pupil.eccenParams(4)); 
 
         % The theta values of the actual pupil ellipse for eccentricities
@@ -433,7 +435,7 @@ switch p.Results.species
             case 'Right'
                 eye.pupil.thetas = [0  3/7*pi];
             case 'Left'
-                eye.pupil.thetas = [0  4/7*pi/2];
+                eye.pupil.thetas = [0  4/7*pi];
         end
         
         
@@ -597,9 +599,9 @@ switch p.Results.species
         % model the fovea as being 3x closer to the optical axis than is
         % the optic disc.
         %{
-            targetBlindSpotAngle = [16.02 1.84 0];
+            targetBlindSpotAngle = [-16.02 -1.84 0];
             blindSpotAngle = @(eye) eye.axes.opticDisc.degField - eye.axes.visual.degField;
-            myObj = @(x) sum((blindSpotAngle(modelEyeParameters('opticDiscAxis',[3/4*x(1),x(2)/2,0],'visualAxis',-[1/4*x(1),x(2)/2,0])) - targetBlindSpotAngle).^2);
+            myObj = @(x) sum((blindSpotAngle(modelEyeParameters('opticDiscAxisDegRetina',[3/4*x(1),x(2)/2,0],'visualAxisDegRetina',-[1/4*x(1),x(2)/2,0])) - targetBlindSpotAngle).^2);
             options = optimoptions('fmincon','Display','off');
             retinalArcDeg = fmincon(myObj,[20 4],[],[],[],[],[],[],[],options);
             fprintf('Distance between the fovea and the center of the optic disc in retinal degrees in the right eye:\n');
@@ -628,10 +630,10 @@ switch p.Results.species
             % These are the visual axis angles for an emmetropic eye
             targetAlphaAngle = [5.8  2.5  0];
             myComputedAlphaAzi = @(eye) eye.axes.visual.degField(1);
-            myObj = @(x) (targetAlphaAngle(1) - myComputedAlphaAzi(modelEyeParameters('visualAxis',[x 0 0])))^2;
+            myObj = @(x) (targetAlphaAngle(1) - myComputedAlphaAzi(modelEyeParameters('visualAxisDegRetina',[x 0 0])))^2;
             aziFoveaEmmetropic = fminsearch(myObj,9)
             myComputedAlphaEle = @(eye) eye.axes.visual.degField(2);
-            myObj = @(x) (targetAlphaAngle(2) - myComputedAlphaEle(modelEyeParameters('visualAxis',[aziFoveaEmmetropic x 0])))^2;
+            myObj = @(x) (targetAlphaAngle(2) - myComputedAlphaEle(modelEyeParameters('visualAxisDegRetina',[aziFoveaEmmetropic x 0])))^2;
             eleFoveaEmmetropic = fminsearch(myObj,2)
         %}
         switch eyeLaterality
@@ -660,14 +662,14 @@ switch p.Results.species
         % from the fovea
         eye.axes.opticDisc.degRetina = opticDisc_WRT_foveaDegRetina + eye.axes.visual.degRetina;
 
-        % If a visualAxis or opticDiscAxis key-value pair was passed,
+        % If a visualAxisDegRetina or opticDiscAxisDegRetina key-value pair was passed,
         % override the computed value. This is used primarily during model
         % development.
-        if ~isempty(p.Results.visualAxis)
-            eye.axes.visual.degRetina = p.Results.visualAxis;
+        if ~isempty(p.Results.visualAxisDegRetina)
+            eye.axes.visual.degRetina = p.Results.visualAxisDegRetina;
         end
-        if ~isempty(p.Results.opticDiscAxis)
-            eye.axes.opticDisc.degRetina = p.Results.opticDiscAxis;
+        if ~isempty(p.Results.opticDiscAxisDegRetina)
+            eye.axes.opticDisc.degRetina = p.Results.opticDiscAxisDegRetina;
         end
         
         % Calculate the foveal and optic disc positions in terms of mm of
@@ -704,7 +706,7 @@ switch p.Results.species
         eye.posteriorChamber.opticDisc = [-x y -z] + eye.posteriorChamber.center;
 
         % Calcuate the optic disc and visual axes in deg of visual field,
-        % using the rear nodal point of th eye. For the visual axis, these
+        % using the rear nodal point of the eye. For the visual axis, these
         % values correspond to alpha / kappa, the angles between the visual
         % and optical /pupillary axes. The difference between the visual
         % and optic disc axes specifies the location of the physiologic
