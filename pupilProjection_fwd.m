@@ -577,8 +577,8 @@ if eyePose(4) > 0
         pupilEllipseOnImagePlane=nan(1,5);
     else
         % For each position on the perimeter of the pupil, determine which
-        % point (front or back) is farther from the center of the ellipse and
-        % then mark this point as hidden.
+        % point (front or back) is farther from the center of the ellipse
+        % and then mark this point as hidden.
         centerDistance = sqrt(sum(((imagePoints(logical(pupilPerimIdxFront+pupilPerimIdxBack),:)-mean([p1(1:2);p2(1:2)])).^2),2));
         hideBack = (centerDistance(1:nPupilPerimPoints)-centerDistance(nPupilPerimPoints+1:nPupilPerimPoints*2))>0;
         idx = pupilPerimIdxBack;
