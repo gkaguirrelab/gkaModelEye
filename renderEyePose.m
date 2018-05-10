@@ -36,11 +36,13 @@ function [figHandle, renderedFrame] = renderEyePose(eyePose, sceneGeometry, vara
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Prepare a figure
-    renderEyePose([0 0 0 2],sceneGeometry,'modelEyeLabelNames',{'pupilPerimeterBack','pupilPerimeterFront','pupilEllipse'},'modelEyePlotColors',{'*r','*g','.y'});
+    modelEyeLabelNames = {'pupilPerimeterBack' 'pupilPerimeterBack_hidden' 'pupilPerimeterFront' 'pupilPerimeterFront_hidden' 'pupilEllipse' };
+	modelEyePlotColors = {'*r' 'xr' '*g' 'xg' '.y'};    
+    renderEyePose([0 0 0 2], sceneGeometry,'modelEyeLabelNames',modelEyeLabelNames,'modelEyePlotColors',modelEyePlotColors);
     for azi = -35:35:35
         for ele = -35:35:35
             eyePose = [azi ele 0 2];
-            renderEyePose(eyePose,sceneGeometry,'newFigure',false,'modelEyeLabelNames',{'pupilPerimeterBack','pupilPerimeterFront','pupilEllipse'},'modelEyePlotColors',{'*r','*g','.y'});
+            renderEyePose(eyePose, sceneGeometry,'newFigure',false,'modelEyeLabelNames',modelEyeLabelNames,'modelEyePlotColors',modelEyePlotColors);
         end
     end
 %}
@@ -49,9 +51,8 @@ function [figHandle, renderedFrame] = renderEyePose(eyePose, sceneGeometry, vara
     sceneGeometry=createSceneGeometry();
     eyePose = [-30 -5 0 3];
     % Define the label names and plot colors
-    modelEyeLabelNames = {'pupilPerimeterBack' 'pupilPerimeterBack_hidden'
-    'pupilPerimeterFront' 'pupilPerimeterFront_hidden' 'pupilEllipse' };
-	modelEyePlotColors = {'*r' '*r' '*g' '*g' '.y'};
+    modelEyeLabelNames = {'pupilPerimeterBack' 'pupilPerimeterBack_hidden' 'pupilPerimeterFront' 'pupilPerimeterFront_hidden' 'pupilEllipse' };
+	modelEyePlotColors = {'*r' 'xr' '*g' 'xg' '.y'};
     renderEyePose(eyePose, sceneGeometry,'modelEyeLabelNames',modelEyeLabelNames,'modelEyePlotColors',modelEyePlotColors);
 %}
 %{

@@ -262,7 +262,7 @@ switch p.Results.species
         % the lens, assuming cycloplegia. The coordinate space of the model
         % eye is defined w.r.t. the center of the pupil, so the p2 and p3
         % values are zero
-        eye.pupil.center = [-4.0 0 0];
+        eye.pupil.center = [-4 0 0];
         
         % The actual pupil of the eye is elliptical. Further, the
         % eccentricity and theta of the actual pupil ellipse changes with
@@ -435,7 +435,7 @@ switch p.Results.species
         % The iris has a thickness, and this influences the size of the
         % entrance pupil, as when the eye is rotated w.r.t. the camera the
         % anterior and posterior edges of the iris are seen.
-        eye.iris.thickness = 0.3;
+        eye.iris.thickness = 0.15;
         
         %% Lens
         % Although the lens does not influence the pupil tracking, we

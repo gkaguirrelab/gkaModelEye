@@ -137,7 +137,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %{
     %% Test the accuracy of the ellipse fit to the pupil boundary
     sceneGeometry=createSceneGeometry();
-    aziVals = -45:5:45;
+    aziVals = -60:5:60;
     pupilFitError = [];
     for aa = 1:length(aziVals)
         eyePose = [aziVals(aa) -3 0 3];
@@ -248,12 +248,8 @@ pupilFrontPoints(1:nPupilPerimPoints,3) = p3p;
 pupilFrontPoints(1:nPupilPerimPoints,2) = p2p;
 pupilFrontPoints(1:nPupilPerimPoints,1) = sceneGeometry.eye.pupil.center(1)+sceneGeometry.eye.iris.thickness/2;
 eyePoints = [eyePoints; pupilFrontPoints];
-tmpLabels = cell(nPupilPerimPoints, 1);
 tmpLabels(:) = {'pupilPerimeterFront'};
 pointLabels = [pointLabels; tmpLabels];
-% Add the center of projection
-eyePoints = [eyePoints; 0 0 0];
-pointLabels = [pointLabels; 'centerOfProjection'];
 
 
 %% Define full eye model
@@ -569,68 +565,39 @@ imagePoints = (imagePointsNormalizedDistorted .* [sceneGeometry.cameraIntrinsic.
 %% Obtain the pupil ellipse
 % Proceed with fitting if we have a non-zero pupil radius
 if eyePose(4) > 0
-% First obtain the ellipse fit to the front and back pupil perimeters
-pupilPerimIdx = strcmp(pointLabels,'pupilPerimeterFront');
-p1 = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
-pupilPerimIdx = strcmp(pointLabels,'pupilPerimeterBack');
-p2 = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
-
-% Find the points of intersection of the two ellipses.
-% GtoA returns the elements of the homogeneous conic matrix in the order:
-%  conic:  Ax^2 + Bxy + Cy^2 +Dx + Ey + F = 0
-%  [A,B,C,D,E,F]
-A1 = GtoA(ellipse_transparent2ex(p1));
-A2 = GtoA(ellipse_transparent2ex(p2));
-
-% Assemble into the matrix form expected by intersectConics, which is:
-% m = [A C D; C B E; D E F] that represents the equation
-% A x^2 + B y^2 + 2C xy + 2D x + 2Ey + F = 0
-E1 = [A1(1) A1(2)/2 A1(4)/2; A1(2)/2 A1(3) A1(5)/2; A1(4)/2 A1(5)/2 A1(6)];
-E2 = [A2(1) A2(2)/2 A2(4)/2; A2(2)/2 A2(3) A2(5)/2; A2(4)/2 A2(5)/2 A2(6)];
-
-% Calculate the intersection points
-P = intersectConics(E1, E2);
-
-% P will be returned as empty if the two ellipses are non-intersecting,
-% which can occur at low azimuth and elevation values. In this case, the
-% back pupil perimeter defines the appearance of the entrance pupil.
-if isempty(P)
-    hideIdx = find(strcmp(pointLabels,'pupilPerimeterFront'));
-    pointLabels(hideIdx) = strcat(pointLabels(hideIdx),'_hidden');
-else
-    % Determine which combination of front and back pupil perimeter points
-    % contribute to the entrance pupil.
-    P = (P(1:2,:)./P(3,:))';
-    x0 = P(1,1);
-    y0 = P(1,2);
-    x1 = P(2,1);
-    y1 = P(2,2);
-    
-    % Label as hidden the pupil perimeter back points that are on the same side
-    % of the intersection line as the center of projection, and the front
-    % perimeter points on the far side of the intersection line.
-    CoP = imagePoints(strcmp(pointLabels,'centerOfProjection'),:);
-    pSlope = (y1-y0)/(x1-x0);
-    pIntercept = y0-x0*pSlope;
-    pEq = @(x,y) sign((pSlope.*x -y + pIntercept));
-    sameSide = pEq(imagePoints(:,1),imagePoints(:,2)) == pEq(CoP(1),CoP(2));
-    hideIdx = find(strcmp(pointLabels,'pupilPerimeterBack') .* sameSide + ...
-        strcmp(pointLabels,'pupilPerimeterFront') .* ~sameSide);
-    pointLabels(hideIdx) = strcat(pointLabels(hideIdx),'_hidden');
-end
-
-% Perform the pupil fit on the combined set of perimeter points that are
-% visible
-pupilPerimIdx = logical(strcmp(pointLabels,{'pupilPerimeterFront'}) + ...
-    strcmp(pointLabels,{'pupilPerimeterBack'}));
-[pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
-
+    % First obtain the ellipse fit to the front and back pupil perimeters
+    pupilPerimIdxFront = strcmp(pointLabels,'pupilPerimeterFront');
+    p1 = pupilEllipseFit(imagePoints(pupilPerimIdxFront,:));
+    pupilPerimIdxBack = strcmp(pointLabels,'pupilPerimeterBack');
+    p2 = pupilEllipseFit(imagePoints(pupilPerimIdxBack,:));
+    if any(isnan(p1)) || any(isnan(p2))
+        % If we are unable to fit an ellipse to the front or back pupil
+        % perimeter, then exit with nans
+        pupilFitError = nan;
+        pupilEllipseOnImagePlane=nan(1,5);
+    else
+        % For each position on the perimeter of the pupil, determine which
+        % point (front or back) is farther from the center of the ellipse and
+        % then mark this point as hidden.
+        centerDistance = sqrt(sum(((imagePoints(logical(pupilPerimIdxFront+pupilPerimIdxBack),:)-mean([p1(1:2);p2(1:2)])).^2),2));
+        hideBack = (centerDistance(1:nPupilPerimPoints)-centerDistance(nPupilPerimPoints+1:nPupilPerimPoints*2))>0;
+        idx = pupilPerimIdxBack;
+        idx(pupilPerimIdxBack)=hideBack;
+        pointLabels(idx) = strcat(pointLabels(idx),'_hidden');
+        idx = pupilPerimIdxFront;
+        idx(pupilPerimIdxFront)=~hideBack;
+        pointLabels(idx) = strcat(pointLabels(idx),'_hidden');
+        % Fit an ellipse to the non-hidden pupil perimeter points
+        pupilPerimIdx = logical(strcmp(pointLabels,{'pupilPerimeterFront'}) + ...
+            strcmp(pointLabels,{'pupilPerimeterBack'}));
+        [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
+    end
 else
     pupilFitError = nan;
     pupilEllipseOnImagePlane=nan(1,5);
 end
 
-    
+
 end % pupilProjection_fwd
 
 
