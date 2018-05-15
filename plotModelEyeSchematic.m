@@ -125,14 +125,14 @@ idx = find(strcmp(pointLabels,'cornealApex'));
 plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColor]);
 
 %% Plot the visual axis
-m = (eye.posteriorChamber.fovea(PdimB) - eye.lens.nodalPoint.rear(PdimB)) / (eye.posteriorChamber.fovea(PdimA) - eye.lens.nodalPoint.rear(PdimA));
-b = eye.lens.nodalPoint.rear(PdimB) -  (eye.lens.nodalPoint.rear(PdimA) * m);
+m = (eye.posteriorChamber.fovea(PdimB) - eye.lens.nodalPoint(PdimB)) / (eye.posteriorChamber.fovea(PdimA) - eye.lens.nodalPoint(PdimA));
+b = eye.lens.nodalPoint(PdimB) -  (eye.lens.nodalPoint(PdimA) * m);
 xRange = xlim;
 plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
 
 %% Plot the blind spot axis
-m = (eye.posteriorChamber.opticDisc(PdimB) - eye.lens.nodalPoint.rear(PdimB)) / (eye.posteriorChamber.opticDisc(PdimA) - eye.lens.nodalPoint.rear(PdimA));
-b = eye.lens.nodalPoint.rear(PdimB) -  (eye.lens.nodalPoint.rear(PdimA) * m);
+m = (eye.posteriorChamber.opticDisc(PdimB) - eye.lens.nodalPoint(PdimB)) / (eye.posteriorChamber.opticDisc(PdimA) - eye.lens.nodalPoint(PdimA));
+b = eye.lens.nodalPoint(PdimB) -  (eye.lens.nodalPoint(PdimA) * m);
 xRange = xlim;
 plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
 

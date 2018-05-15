@@ -257,7 +257,7 @@ switch p.Results.species
         else
             eye.cornea.axis = p.Results.cornealAxis;
         end
-
+        
         
         %% Iris
         % The iris has a thickness. This thickness influences the
@@ -439,52 +439,6 @@ switch p.Results.species
         end
         
         
-        %% Lens
-        % Although the lens does not influence the pupil tracking, we
-        % include it here to support an illustration of a complete eye
-        % model. The front and back surfaces of the lens are modeled as
-        % hyperbolas. This simplified model does not model the gradient in
-        % refractive index across the extent of the lens, and therefore
-        % does not support ray tracing. All values taken from Atchison
-        % 2006.
-        % To convert R and Q to radii of a hyperbola:
-        %   R = b^2/a
-        %	Q = (a^2 / b^2) + 1
-        % Therefore, given R and Q, we can obtain a and b, which correspond
-        % to the radii of the ellipsoid model, with a corresponding to the
-        % axial dimension, and b to the horizontal and verical dimensions.
-        % Checking my algebra here:
-        %{
-            syms a b R Q
-            eqn1 = R == a^2/b;
-            eqn2 = Q == (a^2 / b^2) + 1;
-            solution = solve([eqn1, eqn2]);
-            solution.a
-            solution.b
-        %}
-        eye.lens.front.R = 11.48;
-        eye.lens.front.Q = -5;
-        a = eye.lens.front.R * sqrt(abs( 1 / (eye.lens.front.Q - 1 ) )) * sign(eye.lens.front.Q);
-        b = eye.lens.front.R / (eye.lens.front.Q - 1 );
-        eye.lens.front.radii(1) = b;
-        eye.lens.front.radii(2:3) = a;
-        eye.lens.front.center = [eye.pupil.center(1)-eye.lens.front.radii(1) 0 0];
-        
-        eye.lens.back.R = -5.9;
-        eye.lens.back.Q = -2;
-        a = eye.lens.back.R * sqrt(abs( 1 / (eye.lens.back.Q - 1 ) )) * sign(eye.lens.back.Q);
-        b = eye.lens.back.R / (eye.lens.back.Q - 1 );
-        eye.lens.back.radii(1) = b;
-        eye.lens.back.radii(2:3) = a;
-        eye.lens.back.center = [eye.pupil.center(1)-3.6-eye.lens.back.radii(1) 0 0];
-        
-        % We specify the location of a nodal point so that this can be used
-        % for displaying eye axes. Values taken from the Gullstrand-LeGrand
-        % eye model
-        eye.lens.nodalPoint.front = [-7.200 0 0];
-        eye.lens.nodalPoint.rear = [-7.513 0 0];
-        
-        
         %% Posterior chamber
         % Atchison 2006 provides radii of curvature and asphericities for a
         % biconic model of the posterior chamber, with these values varying
@@ -570,7 +524,54 @@ switch p.Results.species
         % Set the depth of the center of the posterior chamber
         eye.posteriorChamber.center = ...
             [(-posteriorChamberApexDepth - eye.posteriorChamber.radii(1)) 0 0];
-                
+
+        
+        %% Lens
+        % Although the lens does not influence the pupil tracking, we
+        % include it here to support an illustration of a complete eye
+        % model. The front and back surfaces of the lens are modeled as
+        % hyperbolas. This simplified model does not model the gradient in
+        % refractive index across the extent of the lens, and therefore
+        % does not support ray tracing. All values taken from Atchison
+        % 2006.
+        % To convert R and Q to radii of a hyperbola:
+        %   R = b^2/a
+        %	Q = (a^2 / b^2) + 1
+        % Therefore, given R and Q, we can obtain a and b, which correspond
+        % to the radii of the ellipsoid model, with a corresponding to the
+        % axial dimension, and b to the horizontal and verical dimensions.
+        % Checking my algebra here:
+        %{
+            syms a b R Q
+            eqn1 = R == a^2/b;
+            eqn2 = Q == (a^2 / b^2) + 1;
+            solution = solve([eqn1, eqn2]);
+            solution.a
+            solution.b
+        %}
+        eye.lens.front.R = 11.48;
+        eye.lens.front.Q = -5;
+        a = eye.lens.front.R * sqrt(abs( 1 / (eye.lens.front.Q - 1 ) )) * sign(eye.lens.front.Q);
+        b = eye.lens.front.R / (eye.lens.front.Q - 1 );
+        eye.lens.front.radii(1) = b;
+        eye.lens.front.radii(2:3) = a;
+        eye.lens.front.center = [eye.pupil.center(1)-eye.lens.front.radii(1) 0 0];
+        
+        eye.lens.back.R = -5.9;
+        eye.lens.back.Q = -2;
+        a = eye.lens.back.R * sqrt(abs( 1 / (eye.lens.back.Q - 1 ) )) * sign(eye.lens.back.Q);
+        b = eye.lens.back.R / (eye.lens.back.Q - 1 );
+        eye.lens.back.radii(1) = b;
+        eye.lens.back.radii(2:3) = a;
+        eye.lens.back.center = [eye.pupil.center(1)-3.6-eye.lens.back.radii(1) 0 0];
+        
+        % I specify the location of a single nodal point to support
+        % calculation of the visual axis. The nodal point is positioned so
+        % that it is 17.2 mm distant from the posterior pole of the
+        % posterior chamber in the emmetropic eye. This distance will grow
+        % with increasing axial length.
+        eye.lens.nodalPoint = [-(eye.axialLength-17.2) 0 0];
+        
         
         %% Axes - optical
         % Eye axes are specified as rotations (in degrees) within the eye
@@ -599,6 +600,8 @@ switch p.Results.species
         % model the fovea as being 3x closer to the optical axis than is
         % the optic disc.
         %{
+            % Position of the blind spot in degrees of visual field
+            % relative to fixation 
             targetBlindSpotAngle = [-16.02 -1.84 0];
             blindSpotAngle = @(eye) eye.axes.opticDisc.degField - eye.axes.visual.degField;
             myObj = @(x) sum((blindSpotAngle(modelEyeParameters('opticDiscAxisDegRetina',[3/4*x(1),x(2)/2,0],'visualAxisDegRetina',-[1/4*x(1),x(2)/2,0])) - targetBlindSpotAngle).^2);
@@ -609,9 +612,9 @@ switch p.Results.species
         %}
         switch eyeLaterality
             case 'Right'
-                opticDisc_WRT_foveaDegRetina = [-22.4993, 2.5587 ,0];
+                opticDisc_WRT_foveaDegRetina = [-24.0898, 2.7362 ,0];
             case 'Left'
-                opticDisc_WRT_foveaDegRetina = [22.4993, 2.5587 ,0];
+                opticDisc_WRT_foveaDegRetina = [24.0898, 2.7362 ,0];
         end        
         
         % We next require the position of the fovea with respect to the
@@ -638,20 +641,20 @@ switch p.Results.species
         %}
         switch eyeLaterality
             case 'Right'
-                fovea_WRT_opticAxisDegRetina_emmetrope = [8.1378 -3.5083 0];
+                fovea_WRT_opticAxisDegRetina_emmetrope = [8.7120 -3.7540 0];
             case 'Left'
-                fovea_WRT_opticAxisDegRetina_emmetrope = [-8.1378 -3.5083 0];
+                fovea_WRT_opticAxisDegRetina_emmetrope = [-8.7120 -3.7540 0];
         end                
 
         % In our model, the fovea moves towards the apex of the posterior
         % chamber as the eye becomes closer to spherical. We implement this
         % effect by calculating the ratio of the posterior chamber axes.
         %{
-            eye = modelEyeParameters('sphericalAmetropia',0);
-            format long
-            eccen_p1p2 = (1-eye.posteriorChamber.radii(1)/eye.posteriorChamber.radii(2))
-            eccen_p1p3 = (1-eye.posteriorChamber.radii(1)/eye.posteriorChamber.radii(3))
-            format
+        format long
+        probeEye = modelEyeParameters('sphericalAmetropia',0);
+        eccen_p1p2 = (1-probeEye.posteriorChamber.radii(1)/probeEye.posteriorChamber.radii(2))
+        eccen_p1p3 = (1-probeEye.posteriorChamber.radii(1)/probeEye.posteriorChamber.radii(3))
+        format
         %}        
         foveaPostionScaler(1) = (1-eye.posteriorChamber.radii(1)/eye.posteriorChamber.radii(2))/0.111716335829885;
         foveaPostionScaler(2) = (1-eye.posteriorChamber.radii(1)/eye.posteriorChamber.radii(3))/0.105571718627770;
@@ -711,11 +714,11 @@ switch p.Results.species
         % and optical /pupillary axes. The difference between the visual
         % and optic disc axes specifies the location of the physiologic
         % blind spot relative to fixation.
-        eye.axes.visual.degField(1) = atand((eye.posteriorChamber.fovea(2) - eye.lens.nodalPoint.rear(2)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint.rear(1)));
-        eye.axes.visual.degField(2) = -(-atand((eye.posteriorChamber.fovea(3) - eye.lens.nodalPoint.rear(3)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint.rear(1))));
+        eye.axes.visual.degField(1) = atand((eye.posteriorChamber.fovea(2) - eye.lens.nodalPoint(2)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint(1)));
+        eye.axes.visual.degField(2) = -(-atand((eye.posteriorChamber.fovea(3) - eye.lens.nodalPoint(3)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint(1))));
         eye.axes.visual.degField(3) = 0;
-        eye.axes.opticDisc.degField(1) = atand((eye.posteriorChamber.opticDisc(2) - eye.lens.nodalPoint.rear(2)) / (eye.posteriorChamber.opticDisc(1) - eye.lens.nodalPoint.rear(1)));
-        eye.axes.opticDisc.degField(2) = -(-atand((eye.posteriorChamber.opticDisc(3) - eye.lens.nodalPoint.rear(3)) / (eye.posteriorChamber.opticDisc(1) - eye.lens.nodalPoint.rear(1))));
+        eye.axes.opticDisc.degField(1) = atand((eye.posteriorChamber.opticDisc(2) - eye.lens.nodalPoint(2)) / (eye.posteriorChamber.opticDisc(1) - eye.lens.nodalPoint(1)));
+        eye.axes.opticDisc.degField(2) = -(-atand((eye.posteriorChamber.opticDisc(3) - eye.lens.nodalPoint(3)) / (eye.posteriorChamber.opticDisc(1) - eye.lens.nodalPoint(1))));
         eye.axes.opticDisc.degField(3) = 0;
         
 

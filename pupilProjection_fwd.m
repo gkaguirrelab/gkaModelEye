@@ -269,8 +269,8 @@ if p.Results.fullEyeModelFlag
     pointLabels = [pointLabels; 'eleRotationCenter'];
     eyePoints = [eyePoints; 0 0 0];
     pointLabels = [pointLabels; 'opticalAxisOrigin'];
-    eyePoints = [eyePoints; sceneGeometry.eye.lens.nodalPoint.rear];
-    pointLabels = [pointLabels; 'nodalPointRear'];
+    eyePoints = [eyePoints; sceneGeometry.eye.lens.nodalPoint];
+    pointLabels = [pointLabels; 'nodalPoint'];
     eyePoints = [eyePoints; sceneGeometry.eye.posteriorChamber.fovea];
     pointLabels = [pointLabels; 'fovea'];
     eyePoints = [eyePoints; sceneGeometry.eye.posteriorChamber.opticDisc];
