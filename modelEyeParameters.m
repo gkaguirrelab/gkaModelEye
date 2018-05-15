@@ -488,10 +488,9 @@ switch p.Results.species
         %}
         postChamberRadiiEmetrope = [10.1760 11.4558 11.3771];
         postChamberRadiiAmetropiaSlope = [-0.1495 -0.0393 -0.0864];
-        
         eye.posteriorChamber.radii = ...
             postChamberRadiiEmetrope + postChamberRadiiAmetropiaSlope.* p.Results.sphericalAmetropia;
-        
+
         % Our model holds the depth of the anterior chamber constant.
         % Atchison found that anterior chamber depth does not vary with
         % spherical ametropia, although this is not a consistent finding:
@@ -566,11 +565,10 @@ switch p.Results.species
         eye.lens.back.center = [eye.pupil.center(1)-3.6-eye.lens.back.radii(1) 0 0];
         
         % I specify the location of a single nodal point to support
-        % calculation of the visual axis. The nodal point is positioned so
-        % that it is 17.2 mm distant from the posterior pole of the
-        % posterior chamber in the emmetropic eye. This distance will grow
-        % with increasing axial length.
-        eye.lens.nodalPoint = [-(eye.axialLength-17.2) 0 0];
+        % calculation of the visual axis. The nodal point is placed at a
+        % depth of 7.2 mm, which is mid point of the nodal points specified
+        % in the Gullstrand-Emsley simplified schematic eye
+        eye.lens.nodalPoint = [-7.2 0 0];
         
         
         %% Axes - optical
@@ -612,9 +610,9 @@ switch p.Results.species
         %}
         switch eyeLaterality
             case 'Right'
-                opticDisc_WRT_foveaDegRetina = [-24.0898, 2.7362 ,0];
+                opticDisc_WRT_foveaDegRetina = [-22.9384, 2.6078 ,0];
             case 'Left'
-                opticDisc_WRT_foveaDegRetina = [24.0898, 2.7362 ,0];
+                opticDisc_WRT_foveaDegRetina = [22.9384, 2.6078 ,0];
         end        
         
         % We next require the position of the fovea with respect to the
@@ -641,9 +639,9 @@ switch p.Results.species
         %}
         switch eyeLaterality
             case 'Right'
-                fovea_WRT_opticAxisDegRetina_emmetrope = [8.7120 -3.7540 0];
+                fovea_WRT_opticAxisDegRetina_emmetrope = [8.2964 -3.5762 0];
             case 'Left'
-                fovea_WRT_opticAxisDegRetina_emmetrope = [-8.7120 -3.7540 0];
+                fovea_WRT_opticAxisDegRetina_emmetrope = [-8.2964 -3.5762 0];
         end                
 
         % In our model, the fovea moves towards the apex of the posterior
@@ -679,10 +677,10 @@ switch p.Results.species
         % retina. This requires the elliptic integral. The parameter
         % "theta" has a value of zero at the apex of the ellipse along the
         % axial dimension (p1).
-        ellipticIntegral_p1p2=@(theta) sqrt(1-sqrt(1-eye.posteriorChamber.radii(2)^2/eye.posteriorChamber.radii(1)^2)^2*(sin(theta)).^2);
-        ellipticIntegral_p1p3=@(theta) sqrt(1-sqrt(1-eye.posteriorChamber.radii(3)^2/eye.posteriorChamber.radii(1)^2)^2*(sin(theta)).^2);
-        arcLength_p1p2 = @(theta1,theta2) eye.posteriorChamber.radii(1).*integral(ellipticIntegral_p1p2,theta1, theta2);
-        arcLength_p1p3 = @(theta1,theta2) eye.posteriorChamber.radii(1).*integral(ellipticIntegral_p1p3,theta1, theta2);
+        ellipticIntegral_p1p2=@(theta) sqrt(1-sqrt(1-eye.posteriorChamber.radii(2).^2/eye.posteriorChamber.radii(1).^2)^2.*(sin(theta)).^2);
+        ellipticIntegral_p1p3=@(theta) sqrt(1-sqrt(1-eye.posteriorChamber.radii(3).^2/eye.posteriorChamber.radii(1).^2)^2.*(sin(theta)).^2);
+        arcLength_p1p2 = @(theta1,theta2) eye.posteriorChamber.radii(1).*integral(ellipticIntegral_p1p2, theta1, theta2);
+        arcLength_p1p3 = @(theta1,theta2) eye.posteriorChamber.radii(1).*integral(ellipticIntegral_p1p3, theta1, theta2);
 
         % For the calculation, the first theta value is zero, as we are
         % calculating distance from the posterior chamber apex (i.e., the
@@ -709,7 +707,7 @@ switch p.Results.species
         eye.posteriorChamber.opticDisc = [-x y -z] + eye.posteriorChamber.center;
 
         % Calcuate the optic disc and visual axes in deg of visual field,
-        % using the rear nodal point of the eye. For the visual axis, these
+        % using the nodal point of the eye. For the visual axis, these
         % values correspond to alpha / kappa, the angles between the visual
         % and optical /pupillary axes. The difference between the visual
         % and optic disc axes specifies the location of the physiologic
