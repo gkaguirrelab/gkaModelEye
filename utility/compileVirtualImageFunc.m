@@ -11,7 +11,7 @@ function compileVirtualImageFunc( varargin )
 %
 %   The default save location is within userpath(), at:
 %
-%       /toolboxes/transparentTrack/code/bin' 
+%       /toolboxes/gkaModelEye/bin' 
 %
 %   Calls to the compiled virtualImageFuncMex execute roughly ~30x faster
 %   than the native virtualImageFunc routine.
@@ -80,7 +80,7 @@ function compileVirtualImageFunc( varargin )
 p = inputParser;
 
 % Optional
-p.addParameter('functionDirPath',fullfile(userpath(),'toolboxes','transparentTrack/code/bin'),@(x) ischar(x));
+p.addParameter('functionDirPath',fullfile(userpath(),'toolboxes','gkaModelEye/bin'),@(x) ischar(x));
 p.addParameter('replaceExistingFunc',false,@islogical);
 
 % parse
