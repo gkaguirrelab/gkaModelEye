@@ -5,7 +5,7 @@ If you need to compile the mex function for your system, issue the command `comp
 
 The compiled function is placed by default in the directory:
 ```
-fullfile(userpath(),'toolboxes','transparentTrack/code/bin')
+fullfile(userpath(),'toolboxes','gkaModelEye','bin')
 ```
 
 If your have transparentTrack in some other location, you can specify the bin directory in the compile call by using:
