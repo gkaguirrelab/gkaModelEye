@@ -34,3 +34,4 @@ A good place to get started is to try rendering the model eye for a few views. E
     eyePose = [-30 -5 0 3];
     renderEyePose(eyePose, sceneGeometry);
 ```
+To install and configure gkaModelEye, first install toolboxToolbox (tBtB), which provides for declarative dependency management for Matlab (https://github.com/ToolboxHub/ToolboxToolbox). Once tBtB is installed, transparentTrack (and all its dependencies) will be installed and readied for use with the command `tbUse('gkaModelEye')`. If you do not wish to use tBtB, add the quadfit toolbox to your path (https://www.mathworks.com/matlabcentral/fileexchange/45356-fitting-quadratic-curves-and-surfaces). Additionally, to automatically run all examples, the ExampleTest toolbox is needed (https://github.com/isetbio/ExampleTestToolbox.git)
