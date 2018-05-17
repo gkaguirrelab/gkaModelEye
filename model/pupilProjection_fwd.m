@@ -99,7 +99,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
     % Obtain the pupil ellipse parameters in transparent format
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
     % Test against cached result
-    pupilEllipseOnImagePlaneCached = [0.027839072157472   0.022398611861105   1.548090054525043   0.000025800693977   0.000191192670464].*1e4;
+    pupilEllipseOnImagePlaneCached = [0.027839132089926   0.022398638702744   1.547917599920448   0.000025771313824   0.000191221941167].*1e4;
     assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-6)
 %}
 %{

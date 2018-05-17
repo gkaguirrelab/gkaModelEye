@@ -44,7 +44,7 @@ function [virtualEyePoint, nodalPointIntersectError] = virtualImageFunc( eyePoin
     	sceneGeometry.refraction.opticalSystem};
     virtualEyePoint = sceneGeometry.refraction.handle( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
     % Test output against cached value
-    virtualEyePointCached = [-3.925000000000000   2.283853191210627   0.000000000000000];
+    virtualEyePointCached = [-3.925000000000000   2.283721948935265   0.000000000000000];
     assert(max(abs(virtualEyePoint - virtualEyePointCached)) < 1e-6)
 %}
 %{
