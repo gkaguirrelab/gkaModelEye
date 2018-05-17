@@ -25,5 +25,5 @@ rayTraceCenteredSurfaces
 
 Every function has associated examples in the header comments. This command issued in the MATLAB console will test all examples:
 ```
-	[names,status] = RunExamples(fullfile(userpath(),'toolboxes','transparentTrack','code','modelEye'))
+	[names,status] = RunExamples(fullfile(userpath(),'toolboxes','gkaModelEye'))
 ```
