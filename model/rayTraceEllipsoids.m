@@ -5,27 +5,27 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
 %  [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids(coordsInitial, angleInitial, opticalSystemIn, figureFlag)
 %
 % Description:
-%   This routine implements a 3D version of the generalized ray tracing
-%   equations of:
+%   This routine implements a 3D skew ray tracing through ellipsoidal
+%   surfaces. Some steps of the process are modified versions of the
+%   generalized ray tracing equations of:
 %
 %       Elagha, Hassan A. "Generalized formulas for ray-tracing and
 %       longitudinal spherical aberration." JOSA A 34.3 (2017): 335-343.
 %
-%   The implementation assumes a set of elliptical surfaces, with each
+%   The implementation assumes a set of ellipsoidal surfaces, with each
 %   surface having its center positioned on the optical axis. The initial
-%   state of the ray is specified by its two-dimensional coordinates and by
-%   the angle (theta) that it makes with the optical axis. By convention,
-%   the optical axis is termed "z", and the orthogonal axis is termed
-%   "height". Positive values of z are to the right. A theta of zero
-%   indicates a ray that is parallel to the optical axis. Positive values
-%   of theta correspond to the ray diverging to a position above the
-%   optical axis. Each elliptical surface is specified by a center and a
-%   radius in the z and h dimensions. The center must lie on the optical
-%   axis; positive values place the center to the right of the origin of
-%   the ray. A positive radius presents the ray with a convex surface; a
-%   negative radius presents the ray with a concave surface. The output of
-%   the routine is the position and angle at which the ray (or its reverse
-%   projection) intersects the optical axis.
+%   state of the ray is specified by its 3D coordinates and by the angles
+%   that it makes with the optical axis. By convention, the optical axis is
+%   termed "z", and the orthogonal axis is termed "height". Positive values
+%   of z are to the right. A theta of zero indicates a ray that is parallel
+%   to the optical axis. Positive values of theta correspond to the ray
+%   diverging to a position above the optical axis. Each elliptical surface
+%   is specified by a center and a radius in the z and h dimensions. The
+%   center must lie on the optical axis; positive values place the center
+%   to the right of the origin of the ray. A positive radius presents the
+%   ray with a convex surface; a negative radius presents the ray with a
+%   concave surface. The output of the routine is the position and angle at
+%   which the ray (or its reverse projection) intersects the optical axis.
 %
 % Inputs:
 %   coordsInitial         - A 2x1 orf 3x1 vector, with the values 
@@ -34,8 +34,8 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
 %                           ray.
 %   thetaInitial          - A scalar or 2x1 vector in radians that
 %                           specifies the angle of the ray w.r.t. the
-%                           optical axis in height plane and optionally in
-%                           the depth plabne. A value of zero is aligned
+%                           optical axis in the height plane and optionally
+%                           in the depth plane. A value of zero is aligned
 %                           with the optical axis. Values between 0 and pi
 %                           direct the ray to diverge "upwards" away from
 %                           the axis.
@@ -75,13 +75,8 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
 %                           from the point in space and has the same theta
 %                           as the ray which emerges from the final surface
 %                           for the input ray.
-%   thetas                - A an mx2 ve in radians with the theta values at
-%                           each surface.
-%   imageCoords           - An mx3 matrix which provides at each surface
-%                           the point at which the resultant ray (or its
-%                           virtual extension) intersects the optical axis.
-%                           The second column of this matrix will contain
-%                           only zeros.
+%   angles_p1p2, angles_p1p3 - An mx1 vector the angle values at each
+%                           surface in radians.
 %   intersectionCoords    - An mx3 matrix that provides at each surface
 %                           the point at which the ray intersects the
 %                           surface.
@@ -108,7 +103,6 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
     sceneGeometry = createSceneGeometry();
     [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1) 2], [deg2rad(-15) 0], sceneGeometry.refraction.opticalSystem, true);
 %}
-
 %{
     %% Pupil through cornea, multiple points and rays
     sceneGeometry = createSceneGeometry();
@@ -120,20 +114,24 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
     clear figureFlag
     figureFlag.new = false;
     figureFlag.textLabels = false;
-    for theta = -35:70:35
+    for theta = -25:50:25
         for pupilRadius = -2:4:2
-            rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1) pupilRadius], theta, sceneGeometry.refraction.opticalSystem.p1p2, figureFlag);
+            rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1) pupilRadius], theta, sceneGeometry.refraction.opticalSystem, figureFlag);
         end
     end
 %}
 %{
-    %% Demo warnings
+    %% Demo non-intersection warning
     coords = [0 0];
     opticalSystem=[nan nan 1.5; 20 10 1.0];
     % This ray will not intersect the surface. The function issues
     % warning and returns an empty outputRay
     theta = deg2rad(45);
     outputRay = rayTraceEllipsoids(coords, theta, opticalSystem);
+%}
+%{
+    %% Demo total internal refraction warning
+    coords = [0 0];
     % Make the index of refraction of the surface very high
     opticalSystem=[nan nan 5; 20 10 1.0];
     % This ray encounters total internal reflection. The function issues
@@ -354,9 +352,7 @@ for ii = 2:nSurfaces
     end
     
     % Calculate the sin of the angle of incidence; need to reflect the
-    % value if the intersection is below the optical axis
-    % p1p2
-
+    % value if the intersection is below the optical axis p1p2
     ai = angles_p1p2(ii-1) + atan((opticalSystem(ii,3)^2*(intersectionCoords(ii,1)-opticalSystem(ii,1)))./(opticalSystem(ii,2)^2*intersectionCoords(ii,2)))+pi/2;
     if intersectionCoords(ii,2) < 0
         ai = ai - pi;
