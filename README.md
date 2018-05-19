@@ -3,7 +3,7 @@ These routines implement a ray-traced model eye in MATLAB. A primary application
 
 The model is described in:
 
-	GK Aguirre (2018) The Entrance Pupil of the Human Eye. bioRxiv.
+	GK Aguirre (2018) The Entrance Pupil of the Human Eye. bioRxiv. https://www.biorxiv.org/content/early/2018/05/18/325548
 
 These routines are used to support model-based eye tracking with transparentTrack: https://github.com/gkaguirrelab/transparentTrack
 
