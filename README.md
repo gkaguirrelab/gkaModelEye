@@ -1,11 +1,11 @@
 # gkaModelEye
-These routines implement a ray-traced model eye in MATLAB routines. A primary application of the model is to describe the entrance pupil in the image plane for a rotated eye. The entrance pupil is described by the parameters of an ellipse fit to the pupil perimeter, and those parameters are given in "transparent" form.
+These routines implement a ray-traced model eye in MATLAB. A primary application of the model is to describe the entrance pupil in the image plane for a rotated eye. The entrance pupil is described by the parameters of an ellipse fit to the pupil perimeter, and those parameters are given in "transparent" form.
 
 The model is described in:
 
 	GK Aguirre (2018) The Entrance Pupil of the Human Eye. bioRxiv.
 
-These routines are support model-based eye tracking with transparentTrack: https://github.com/gkaguirrelab/transparentTrack
+These routines are used to support model-based eye tracking with transparentTrack: https://github.com/gkaguirrelab/transparentTrack
 
 The function `pupilProjection_fwd` implements the forward model of this projection. Inputs to this routine are:
  * `eyePose` which is a vector that describes dynamic aspects of the eye, specifically rotation in degrees of azimuth, elevation, and torsion, and the radius of the pupil aperture in mm.
