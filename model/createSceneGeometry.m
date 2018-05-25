@@ -11,7 +11,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %   The fields are:
 %
 %  'cameraIntrinsic' - A structure that defines the properties of a pinhole
-%       camera model. Sub-fields:
+%       camera. Sub-fields:
 %
 %      'matrix' - A 3x3 matrix of the form:
 %
@@ -21,19 +21,19 @@ function sceneGeometry = createSceneGeometry(varargin)
 %           and y image dimensions, s is the axis skew, and x0, y0 define
 %           the principle offset point. For a camera sensor with square
 %           pixels, fx = fy. Ideally, skew should be zero. The principle
-%           offset point should be in the center of the sensor. Units are
+%           offset point is usually in the center of the sensor. Units are
 %           traditionally in pixels. These values can be empirically
-%           measured for a camera using a calibration approach
+%           measured for a camera using a resectioning approach
 %           (https://www.mathworks.com/help/vision/ref/cameramatrix.html).
-%           Note that the values in the matrix returned by the Matlab
-%           camera calibration routine must be re-arranged to correspond to
-%           the X Y image dimension specifications we use here.
+%           Note that the values in the matrix returned by the MATLAB
+%           camera resectioning routine must be re-arranged to correspond 
+%           to the X Y image dimension specifications used here.
 %       
 %      'radialDistortion' - A 1x2 vector that models the radial distortion
-%           introduced the lens. This is an empirically measured
+%           introduced by the lens. This is an empirically measured
 %           property of the camera system.
 %
-%      'sensorResolution - A 1x2 vector that provides the dimension of the
+%      'sensorResolution' - A 1x2 vector that provides the dimension of the
 %           camera image in pixels, along the X and Y dimensions,
 %           respectively.
 %
@@ -54,7 +54,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %           eye, the camera rotation around the X and Y axes of the
 %           coordinate system are not used. Rotation about the Z axis
 %           (torsion) is meaningful, as the model eye has different
-%           rotation properties in the azimuthal and elevational
+%           movement properties in the azimuthal and elevational
 %           directions, and has a non circular exit pupil.
 %
 %      'primaryPosition' - A 1x2 vector of [eyeAzimuth, eyeElevation] at
@@ -78,14 +78,13 @@ function sceneGeometry = createSceneGeometry(varargin)
 %          'path'         - Full path to the function.
 %          'opticalSystem' - A 10x5 matrix. The first m rows contain
 %                           information regarding the m surfaces of the
-%                           cornea, and any corrective lenses, into a
-%                           format needed for ray tracing. The trailing
-%                           (10-m) rows contain nans. The optical system
-%                           must be a fixed size matrix so that the
-%                           compiled virtualImageFuncMex is able to
-%                           pre-allocate variables. The nan rows are later
-%                           stripped by the rayTraceCenteredSurfaces
-%                           function.
+%                           cornea, and any corrective lenses, in a format
+%                           needed for ray tracing. The trailing (10-m)
+%                           rows contain nans. The variable must be a
+%                           fixed size matrix so that the compiled
+%                           virtualImageFuncMex is able to pre-allocate
+%                           variables. The nan rows are later stripped by
+%                           the rayTraceEllipsoids function.
 %
 %  'lenses' - An optional structure that describes the properties of 
 %       refractive lenses that are present between the eye and the camera.
@@ -93,7 +92,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %       holds the parameters that were used to add a refractive lens to the
 %       optical path.
 %
-%   constraintTolerance - A scalar. This value is used by the function 
+%  'constraintTolerance' - A scalar. This value is used by the function 
 %       pupilProjection_inv. The inverse projection from an ellipse on the
 %       image plane to eye params (azimuth, elevation) imposes a constraint
 %       on how well the solution must match the shape and area of the
@@ -106,11 +105,11 @@ function sceneGeometry = createSceneGeometry(varargin)
 %       that even in a noise-free simulation, it is not possible to
 %       perfectly match ellipse shape and area while matching ellipse
 %       center position, as the shape of the projection of the pupil upon
-%       the image plane deviates from perfectly elliptical due to
-%       perspective effects. We find that a value in the range 0.01 - 0.03
-%       provides an acceptable compromise in empirical data.
+%       the image plane deviates from perfectly elliptical. We find that a
+%       value in the range 0.01 - 0.03 provides an acceptable compromise in
+%       empirical data.
 %
-%   meta - A structure that contains information regarding the creation and
+%  'meta' - A structure that contains information regarding the creation and
 %       modification of the sceneGeometry.
 %
 %
@@ -221,10 +220,10 @@ else
     end
 end
 
+
 %% refraction - optical system
 
 % Obtain the refractive index of the medium between the eye and the camera
-% and the tearfilm
 mediumRefractiveIndex = returnRefractiveIndex( p.Results.medium, p.Results.spectralDomain );
 
 % The center of the cornea front surface is at a position equal to its
@@ -279,7 +278,7 @@ if ~isempty(p.Results.spectacleLens)
     sceneGeometry.lenses.spectacle = pOutFun.Results;
 end
 
-% Pad the optical system with nan rows to reach a fixed 10x4 size
+% Pad the optical system with nan rows to reach a fixed 10x5 size
 sceneGeometry.refraction.opticalSystem = [sceneGeometry.refraction.opticalSystem; ...
     nan(10-size(sceneGeometry.refraction.opticalSystem,1),5)];
 
