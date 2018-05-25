@@ -31,6 +31,44 @@ function [eyePose, RMSE] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
 %                           boundary point in the image to the fitted
 %                           ellipse
 %
+% Examples:
+%{
+    %% Test if we can find the eyePose for a pupil perimeter ellipse
+    % Obtain a default sceneGeometry structure
+    sceneGeometry=createSceneGeometry();
+    % Define in eyePoses the azimuth, elevation, torsion, and pupil radius
+    eyePose = [10 10 0 2];
+    % Obtain the pupil ellipse parameters in transparent format
+    pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
+    % Obtain boundary points for this ellipse
+    [ Xp, Yp ] = ellipsePerimeterPoints( pupilEllipseOnImagePlane );
+    % Recover the eye pose from the pupil boundary
+    tic
+    inverseEyePose = eyePoseEllipseFit(Xp, Yp, sceneGeometry);
+    toc
+    % Report the difference between the input and recovered eyePose
+    fprintf('Test if the absolute error in the eye pose recovered by eyePoseEllipseFit is <1e-3\n');
+    assert(max(abs(eyePose - inverseEyePose)) < 1e-3)
+%}
+%{
+    %% Calculate the time required for the inverse projection
+    % Obtain a default sceneGeometry structure
+    sceneGeometry=createSceneGeometry();
+    % Generate ellipses for some randomly selected eye poses
+    nPoses = 20;
+    eyePoses=[(rand(nPoses,1)-0.5)*20, (rand(nPoses,1)-0.5)*10, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
+    for pp = 1:nPoses
+    	ellipseParams(pp,:) = pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
+    end
+    fprintf('\nTime to compute inverse projection model from pupil perimeter (average over %d projections):\n',nPoses);
+    tic
+    for pp = 1:nPoses
+        [ Xp, Yp ] = ellipsePerimeterPoints( ellipseParams(pp,:) );
+        eyePoseEllipseFit(Xp, Yp, sceneGeometry);
+    end
+    msecPerModel = toc / nPoses * 1000;
+    fprintf('\tUsing pre-compiled ray tracing: %4.2f msecs.\n',msecPerModel);
+%}
 
 
 %% Parse input
@@ -98,8 +136,7 @@ if isempty(p.Results.x0)
     pupilRadiusPixels = max([abs(max(Xp)-min(Xp)) abs(max(Yp)-min(Yp))])/2;
     
     % Probe the forward model at the estimated pose angles to
-    % estimate the pupil radius. Here we do need ray tracing as it
-    % has a substantial influence upon the area of the ellipse.
+    % estimate the pupil radius.
     probeEllipse=pupilProjection_fwd([x0(1) x0(2) x0(3) 2], sceneGeometry);
     pixelsPerMM = sqrt(probeEllipse(3)/pi)/2;
     
@@ -128,7 +165,7 @@ myObj = @(x) objfun(x, Xp, Yp, sceneGeometry);
 options = optimoptions(@fmincon,...
     'Display','off');
 
-% Perform the non-linear search .We sometimes obtain a singular matrix
+% Perform the non-linear search. We sometimes obtain a singular matrix
 % warning here; turn it off temporarily
 warningState = warning;
 warning('off','MATLAB:nearlySingularMatrix');
