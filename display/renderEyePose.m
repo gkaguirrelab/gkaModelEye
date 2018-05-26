@@ -17,11 +17,32 @@ function [figHandle, renderedFrame] = renderEyePose(eyePose, sceneGeometry, vara
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
 %
 % Optional key/value pairs:
-%  'newFigure'            - Logical. Determines if we create a new figure.
+%  'newFigure'            - Logical. Determine if we create a new figure.
+%  'visible'              - Logical. If a new figure is created,
+%                           determines if the figure is visible or not.
+%  'showPupilTextLabels'  - Logical. Determines if the pupil perimeter
+%                           points are labeled with numbers. This is used,
+%                           for example, to illustrate the effects of
+%                           torsion.
+%  'nPupilPerimPoints'    - Scalar. The number of pupil perimeter points.
+%  'nIrisPerimPoints'     - Scalar. The number of iris perimeter points
+%  'modelEyeLabelNames'   - Cell array of character vectors. Identifies the
+%                           elements of the 'pointLabels' variable returned
+%                           by pupilProjection_fwd that are to be plotted.
+%                           A special case is the label 'pupilEllipse',
+%                           which is not an element of pointLabels, but is
+%                           recognized by this routine and prompts the
+%                           plotting of the ellipse fit to the pupil
+%                           perimeter.
+%  'modelEyePlotColors'   - Cell array. Line spec codes for each of the
+%                           elements given in modelEyeLabelNames.
 %
 % Outputs:
-%   figHandle             - Handle to a created figure. Empty if a new
-%                           figure was not requested.
+%   figHandle             - Handle to a created figure.
+%   renderedFrame         - Structure containing the rendered frame. The
+%                           field 'cdata' has the dimensions (X,Y,3), and
+%                           contains the RGB image. The field 'colormap' is
+%                           empty.
 %
 % Examples:
 %{
@@ -59,7 +80,7 @@ function [figHandle, renderedFrame] = renderEyePose(eyePose, sceneGeometry, vara
     % Define an eyePose with azimuth, elevation, torsion, and pupil radius
     eyePose = [0 0 0 3];
     renderEyePose(eyePose, sceneGeometry);
-    % Adjust the position in the positice x and y direction
+    % Adjust the position in the positive x and y direction
     sceneGeometry.cameraPosition.translation = sceneGeometry.cameraPosition.translation + [5; 5; 0];
     renderEyePose(eyePose, sceneGeometry);
 %}
@@ -169,12 +190,5 @@ hold off
 
 % Get the rendered frame
 renderedFrame=getframe(gcf);
-
-% If the figure was not to be visible, close the figure and return and
-% empty figure handle
-if ~p.Results.visible
-    close(figHandle);
-    figHandle = [];
-end
 
 end
