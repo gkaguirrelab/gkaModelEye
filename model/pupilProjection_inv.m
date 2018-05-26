@@ -252,7 +252,7 @@ lastFVal = realmax;
 bestFVal = realmax;
 xLast = []; % Last place pupilProjection_fwd was called
 xBest = []; % The x with the lowest objective function value that meets
-% the constraint tolerance
+            % the constraint tolerance
 shapeErrorAtLast = 0;
 shapeErrorAtBest = 0;
 areaErrorAtLast = 0;
