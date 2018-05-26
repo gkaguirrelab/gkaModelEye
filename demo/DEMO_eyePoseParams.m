@@ -32,21 +32,15 @@ figure(1)
 eyePoses=[-20 20 0 3; 0 20 0 3; 20 20 0 3; -20 0 0 3; 0 0 0 3; 20 0 0 3; -20 -20 0 3; 0 -20 0 3; 20 -20 0 3 ];
 
 for pose = 1:size(eyePoses,1)
-    % Perform the projection and request the full eye model
-    [~, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePoses(pose,:),sceneGeometry,'fullEyeModelFlag',true);
+    % Obtain the rendering of the model for this pose
+    [~, renderedFrame] = renderEyePose(eyePoses(pose,:), sceneGeometry, 'visible', false);
     % plot
     subplot(3,3,pose);
-    imshow(blankFrame, 'Border', 'tight');
-    hold on
+    imshow(renderedFrame.cdata, 'Border', 'tight');
     axis off
     axis equal
     xlim([0 620]);
     ylim([0 480]);
-    % Plot each anatomical component
-    for pp = 1:length(eyePartLabels)-1
-        idx = strcmp(pointLabels,eyePartLabels{pp});
-        plot(imagePoints(idx,1), imagePoints(idx,2), plotColors{pp})
-    end
     title(num2str(eyePoses(pose,:)));
 end
 fprintf(['Figure 1 shows the pose of the eye across positive and negative values\n' ...
