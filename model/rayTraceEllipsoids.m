@@ -130,13 +130,13 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
     outputRay = rayTraceEllipsoids(coords, theta, opticalSystem);
 %}
 %{
-    %% Demo total internal refraction warning
+    %% Demo total internal reflection warning
     coords = [0 0];
     % Make the index of refraction of the surface very high
-    opticalSystem=[nan nan 5; 20 10 1.0];
+    opticalSystem=[nan nan 25.0; 20 10 1];
     % This ray encounters total internal reflection. The function issues
     % warning and returns an empty outputRay
-    theta = deg2rad(15);
+    theta = deg2rad(25);
     outputRay = rayTraceEllipsoids(coords, theta, opticalSystem);
 %}
 
