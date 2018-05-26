@@ -22,6 +22,10 @@ function [eyePose, RMSE] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
 %  'x0'                   - Initial guess for the eyePose.
 %  'eyePoseLB'            - Lower bound on the eyePose
 %  'eyePoseUB'            - Upper bound on the eyePose
+%  'rmseThreshold'        - Scalar that defines the stopping point for the
+%                           search. The default value allows reconstruction
+%                           of eyePose within 0.1% of the veridical,
+%                           simulated value.
 %
 % Outputs:
 %   eyePose               - A 1x4 matrix containing the best fitting eye
@@ -40,15 +44,16 @@ function [eyePose, RMSE] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
     eyePose = [10 10 0 2];
     % Obtain the pupil ellipse parameters in transparent format
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
-    % Obtain boundary points for this ellipse
-    [ Xp, Yp ] = ellipsePerimeterPoints( pupilEllipseOnImagePlane );
+    % Obtain boundary points for this ellipse. We need more than 5 boundary
+    % points, as the pupil perimeter is not exactly elliptical
+    [ Xp, Yp ] = ellipsePerimeterPoints( pupilEllipseOnImagePlane, 6 );
     % Recover the eye pose from the pupil boundary
-    tic
     inverseEyePose = eyePoseEllipseFit(Xp, Yp, sceneGeometry);
-    toc
     % Report the difference between the input and recovered eyePose
-    fprintf('Test if the absolute error in the eye pose recovered by eyePoseEllipseFit is <1e-3\n');
-    assert(max(abs(eyePose - inverseEyePose)) < 1e-3)
+    fprintf('Test if there is less than 0.1 percent absolute error in the recovered eye pose.\n');
+    fitError = abs((eyePose - inverseEyePose)./eyePose);
+    fitError = max(fitError(~isnan(fitError)));
+    assert(fitError < 1e-3);
 %}
 %{
     %% Calculate the time required for the inverse projection
@@ -63,7 +68,7 @@ function [eyePose, RMSE] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
     fprintf('\nTime to compute inverse projection model from pupil perimeter (average over %d projections):\n',nPoses);
     tic
     for pp = 1:nPoses
-        [ Xp, Yp ] = ellipsePerimeterPoints( ellipseParams(pp,:) );
+        [ Xp, Yp ] = ellipsePerimeterPoints( ellipseParams(pp,:), 6 );
         eyePoseEllipseFit(Xp, Yp, sceneGeometry);
     end
     msecPerModel = toc / nPoses * 1000;
@@ -83,6 +88,7 @@ p.addRequired('sceneGeometry',@isstruct);
 p.addParameter('x0',[],@(x)(isempty(x) | isnumeric(x)));
 p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
 p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
+p.addParameter('rmseThreshold',1e-2,@isnumeric);
 
 % Parse and check the parameters
 p.parse(Xp, Yp, sceneGeometry, varargin{:});
@@ -158,53 +164,79 @@ else
 end
 
 
-% Define an anonymous function for the objective
-myObj = @(x) objfun(x, Xp, Yp, sceneGeometry);
+% Define variables used in the nested functions
+lastFVal = realmax;
+bestFVal = realmax;
+xLast = []; % Last place pupilProjection_fwd was called
+xBest = []; % The x with the lowest objective function value that meets
+rmseThreshold = p.Results.rmseThreshold;
 
 % define some search options
 options = optimoptions(@fmincon,...
-    'Display','off');
+    'Display','off', ...
+    'Algorithm','sqp',...
+    'OutputFcn',@outfun);
 
-% Perform the non-linear search. We sometimes obtain a singular matrix
-% warning here; turn it off temporarily
+% Turn off warnings that can arise during the search
 warningState = warning;
-warning('off','MATLAB:nearlySingularMatrix');
-warning('off','MATLAB:singularMatrix');
+warning('off','rayTraceEllipsoids:criticalAngle');
+warning('off','pupilProjection_fwd:ellipseFitFailed');
 
-[eyePose, RMSE, exitFlag] = ...
-    fmincon(myObj, x0, [], [], [], [], eyePoseLB, eyePoseUB, [], options);
+% Perform the search with nested objfun and outfun
+fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, [], options);
+    function fVal = objfun(x)
+        xLast = x;
+        % Obtain the entrance pupil ellipse for this eyePose
+        pupilEllipseOnImagePlane = pupilProjection_fwd(x, sceneGeometry);
+        % Check for the case in which the transparentEllipse contains NAN
+        % values, which can arise if there were an insufficient number of
+        % pupil border points remaining after refraction to define an
+        % ellipse. In this case, we return a realMax value for the fVal.
+        if any(isnan(pupilEllipseOnImagePlane))
+            fVal = realmax;
+        else
+            % This is the RMSE of the distance values of the boundary
+            % points to the ellipse fit.
+            explicitEllipse = ellipse_transparent2ex(pupilEllipseOnImagePlane);
+            fVal = sqrt(nanmean(ellipsefit_distance(Xp,Yp,explicitEllipse).^2));
+        end
+    end % local objective function
 
-% If exitFlag==2, we might be in a local minimum; try again starting from
-% a position close to the point found by the prior search
-if exitFlag == 2
-    x0 = eyePose+[1e-6 1e-6 0 1e-6];
-    [eyePose, RMSE] = ...
-        fmincon(myObj, x0, [], [], [], [], p.Results.eyePoseLB, p.Results.eyePoseUB, [], options);
-end
+    function stop = outfun(~,optimValues,state)
+        stop = false;
+        
+        switch state
+            case 'init'
+                lastFVal = optimValues.fval;
+            case 'iter'
+                lastFVal = optimValues.fval;
+                % Store the current best value for x. This is done as we
+                % observe that fmincon can move away from the best solution
+                % when azimuth and elevation are close to zero. This
+                % behavior has been seen by others:
+                %   https://groups.google.com/forum/#!topic/comp.soft-sys.matlab/SuNzbhEun1Y
+                if lastFVal < bestFVal
+                    bestFVal = lastFVal;
+                    xBest = xLast;
+                end
+                % Test if we are done the search
+                if lastFVal < rmseThreshold
+                    stop = true;
+                end
+            case 'done'
+                % Unused
+            otherwise
+        end
+    end
+
+% Return the best performing values
+eyePose = xBest;
+RMSE = bestFVal;
 
 % Restore the warning state
 warning(warningState);
 
 
 end % eyeParamEllipseFit
-
-
-%% LOCAL FUNCTIONS
-function fVal = objfun(x, Xp,Yp, sceneGeometry)
-% Define the objective function
-transparentEllipse = pupilProjection_fwd(x, sceneGeometry);
-% Check for the case in which the transparentEllipse contains NAN values,
-% which can happen when the eye pose is such that the border of the pupil
-% would not be visible through the cornea. In this case, we return a
-% realMax value for the fVal.
-if any(isnan(transparentEllipse))
-    fVal = realmax;
-else
-    % This is the RMSE of the distance values of the boundary points to
-    % the ellipse fit.
-    explicitEllipse = ellipse_transparent2ex(transparentEllipse);
-    fVal = sqrt(nanmean(ellipsefit_distance(Xp,Yp,explicitEllipse).^2));
-end
-end % local objective function
 
 
