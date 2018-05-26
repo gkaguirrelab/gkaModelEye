@@ -35,12 +35,12 @@ lensRefractionDiopters = [0, -4, 4];
 for dd = 1:length(lensRefractionDiopters)
     
     % Obtain the sceneGeometry and ray tracing functions
-    sceneGeometry{dd} = createSceneGeometry('sphericalAmetropia',0,'spectacleLens',lensRefractionDiopters(dd));
-    % Compile the ray tracing functions
+    sceneGeometry = createSceneGeometry('sphericalAmetropia',0,'spectacleLens',lensRefractionDiopters(dd));
+    sceneGeometry.cameraPosition.translation(3)=60;
     
     for pose = 1:size(eyePoses,1)
         % Perform the projection and request the full eye model
-        [pupilEllipseOnImagePlane, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePoses(pose,:),sceneGeometry{dd});
+        [pupilEllipseOnImagePlane, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePoses(pose,:),sceneGeometry);
         % plot the pupil ellipse
         subplot(1,3,pose);
         if dd==1
@@ -60,3 +60,19 @@ for dd = 1:length(lensRefractionDiopters)
     end
     drawnow
 end
+
+
+%% Present Figure 2 -- Ray trace through a spectacle lens
+
+sceneGeometry = createSceneGeometry('sphericalAmetropia',0,'spectacleLens',-4);
+sceneGeometry.cameraPosition.translation(3)=60;
+
+clear figureFlag
+figureFlag.p1Lim = [-20 20];
+figureFlag.p2Lim = [-15 15];
+figureFlag.axsag = false;
+opticalSystem = sceneGeometry.refraction.opticalSystem(:,[1 2 5]);
+rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1) 2], deg2rad(-15), opticalSystem, figureFlag);
+
+fprintf(['Figure 2 shows a ray traced from a point on the pupil aperture through\n' ...
+    'The cornea and then through a -4 diopter spectacle lens.\n\n']);
