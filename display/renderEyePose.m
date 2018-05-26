@@ -84,6 +84,7 @@ p.addRequired('sceneGeometry',@isstruct);
 
 % Optional
 p.addParameter('newFigure',true,@islogical);
+p.addParameter('visible',true,@islogical);
 p.addParameter('showPupilTextLabels',false,@islogical);
 p.addParameter('nPupilPerimPoints',8,@isnumeric);
 p.addParameter('nIrisPerimPoints',20,@isnumeric);
@@ -102,7 +103,11 @@ blankFrame = zeros(imageSizeY,imageSizeX)+0.5;
 
 % Open a figure
 if p.Results.newFigure
-    figHandle = figure;
+    if p.Results.visible
+        figHandle = figure('Visible', 'on');
+    else
+        figHandle = figure('Visible', 'off');
+    end
     imshow(blankFrame, 'Border', 'tight');
 else
     figHandle = gcf;
@@ -164,5 +169,12 @@ hold off
 
 % Get the rendered frame
 renderedFrame=getframe(gcf);
+
+% If the figure was not to be visible, close the figure and return and
+% empty figure handle
+if ~p.Results.visible
+    close(figHandle);
+    figHandle = [];
+end
 
 end
