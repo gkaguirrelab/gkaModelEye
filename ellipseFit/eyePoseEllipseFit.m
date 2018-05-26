@@ -41,7 +41,7 @@ function [eyePose, RMSE] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Define in eyePoses the azimuth, elevation, torsion, and pupil radius
-    eyePose = [10 10 0 2];
+    eyePose = [20 10 0 2];
     % Obtain the pupil ellipse parameters in transparent format
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
     % Obtain boundary points for this ellipse. We need more than 5 boundary
@@ -174,7 +174,7 @@ rmseThreshold = p.Results.rmseThreshold;
 % define some search options
 options = optimoptions(@fmincon,...
     'Display','off', ...
-    'Algorithm','sqp',...
+    'Algorithm','interior-point',...
     'OutputFcn',@outfun);
 
 % Turn off warnings that can arise during the search
@@ -188,7 +188,7 @@ fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, [], options);
         xLast = x;
         % Obtain the entrance pupil ellipse for this eyePose
         pupilEllipseOnImagePlane = pupilProjection_fwd(x, sceneGeometry);
-        % Check for the case in which the transparentEllipse contains NAN
+        % Check for the case in which the transparentEllipse contains nan
         % values, which can arise if there were an insufficient number of
         % pupil border points remaining after refraction to define an
         % ellipse. In this case, we return a realMax value for the fVal.
@@ -204,7 +204,6 @@ fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, [], options);
 
     function stop = outfun(~,optimValues,state)
         stop = false;
-        
         switch state
             case 'init'
                 lastFVal = optimValues.fval;
