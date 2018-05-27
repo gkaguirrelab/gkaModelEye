@@ -2,7 +2,7 @@ function [eyePose, RMSE] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
 % Fit an image plane ellipse by perspective projection of a pupil circle
 %
 % Syntax:
-%  [eyePose, RMSE] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, rayTraceFuncs)
+%  [eyePose, RMSE] = eyePoseEllipseFit(Xp, Yp, sceneGeometry)
 %
 % Description:
 %   The routine fits points on the image plane based upon the eye
@@ -90,6 +90,8 @@ p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
 p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
 p.addParameter('rmseThresh',1e-2,@isnumeric);
 p.addParameter('repeatSearchThresh',1.0,@isnumeric);
+p.addParameter('searchCount',1,@isnumeric);
+p.addParameter('nMaxSearches',3,@isnumeric);
 
 % Parse and check the parameters
 p.parse(Xp, Yp, sceneGeometry, varargin{:});
@@ -246,18 +248,27 @@ RMSE = bestFVal;
 % Restore the warning state
 warning(warningState);
 
-% If the RMSE is larger than our repeat search threshold, repeat the search
-% using an x0 close to the current solution. This avoids local minima.
-if RMSE > p.Results.repeatSearchThresh
+% If the solution has an RMSE that is larger than repeatSearchThresh, we
+% consider the possibility that the solution represents a local minimum. We
+% repeat the search, passing a value close to the eyePose solution as x0.
+% This process terminates when the search count exceeds nMaxSearches.
+if RMSE > p.Results.repeatSearchThresh && ...
+        p.Results.searchCount <= p.Results.nMaxSearches
     x0 = eyePose;
-    x0(1:2) = x0(1:2)+[0.1 0.1];
-    [eyePose, RMSE] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, ...
+    x0(1:2) = x0(1:2)+[0.1 0.1]./p.Results.searchCount;
+    [eyePose_r, RMSE_r] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, ...
         'x0',x0,...
         'eyePoseLB',p.Results.eyePoseLB,...
         'eyePoseUB',p.Results.eyePoseUB,...
-        'repeatSearchThresh',realmax);
+        'repeatSearchThresh',p.Results.repeatSearchThresh, ...
+        'searchCount', p.Results.searchCount+1);
+    % Keep this solution if it is better
+    if RMSE_r < RMSE
+        eyePose = eyePose_r;
+        RMSE = RMSE_r;
+    end
 end
 
-end % eyeParamEllipseFit
+end % eyePoseEllipseFit
 
 

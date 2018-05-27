@@ -130,6 +130,8 @@ p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
 p.addParameter('centerErrorThresh',1e-4,@isnumeric);
 p.addParameter('constraintTolerance',[],@(x)(isempty(x) | isnumeric(x)));
 p.addParameter('repeatSearchThresh',1.0,@isnumeric);
+p.addParameter('searchCount',1,@isnumeric);
+p.addParameter('nMaxSearches',3,@isnumeric);
 
 % Parse and check the parameters
 p.parse(pupilEllipseOnImagePlane, sceneGeometry, varargin{:});
@@ -367,19 +369,29 @@ end
 
 % If the solution has a center error that is larger than
 % repeatSearchThresh, we consider the possibility that the solution
-% represents a local minimum. We repeat the search once, passing a value
-% close to the eyePose solution as x0.
-if centerError > p.Results.repeatSearchThresh
+% represents a local minimum. We repeat the search, passing a value close
+% to the eyePose solution as x0. This process terminates when the search
+% count exceeds nMaxSearches.
+if centerError > p.Results.repeatSearchThresh && ...
+        p.Results.searchCount <= p.Results.nMaxSearches
     x0 = eyePose;
-    x0(1:2) = x0(1:2)+[0.1 0.1];
-    [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaError] = ...
+    x0(1:2) = x0(1:2)+[0.1 0.1]./p.Results.searchCount;
+    [eyePose_r, bestMatchEllipseOnImagePlane_r, centerError_r, shapeError_r, areaError_r] = ...
         pupilProjection_inv(pupilEllipseOnImagePlane, sceneGeometry, ...
         'x0',x0, ...
         'eyePoseLB',p.Results.eyePoseLB, ...
         'eyePoseUB',p.Results.eyePoseUB, ...
         'centerErrorThresh',p.Results.centerErrorThresh, ...
         'constraintTolerance',p.Results.constraintTolerance, ...
-        'repeatSearchThresh', realmax);
+        'repeatSearchThresh', p.Results.repeatSearchThresh, ...
+        'searchCount', p.Results.searchCount+1);
+    if centerError_r < centerError
+        eyePose = eyePose_r;
+        bestMatchEllipseOnImagePlane = bestMatchEllipseOnImagePlane_r;
+        centerError = centerError_r;
+        shapeError = shapeError_r;
+        areaError = areaError_r;
+    end
 end
 
 end % function -- pupilProjection_inv
