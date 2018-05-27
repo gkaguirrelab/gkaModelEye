@@ -22,7 +22,7 @@ function [eyePose, RMSE] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
 %  'x0'                   - Initial guess for the eyePose.
 %  'eyePoseLB'            - Lower bound on the eyePose
 %  'eyePoseUB'            - Upper bound on the eyePose
-%  'rmseThreshold'        - Scalar that defines the stopping point for the
+%  'rmseThresh'        - Scalar that defines the stopping point for the
 %                           search. The default value allows reconstruction
 %                           of eyePose within 0.1% of the veridical,
 %                           simulated value.
@@ -41,7 +41,7 @@ function [eyePose, RMSE] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Define in eyePoses the azimuth, elevation, torsion, and pupil radius
-    eyePose = [20 10 0 2];
+    eyePose = [-25 25 0 2];
     % Obtain the pupil ellipse parameters in transparent format
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
     % Obtain boundary points for this ellipse. We need more than 5 boundary
@@ -88,10 +88,21 @@ p.addRequired('sceneGeometry',@isstruct);
 p.addParameter('x0',[],@(x)(isempty(x) | isnumeric(x)));
 p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
 p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
-p.addParameter('rmseThreshold',1e-2,@isnumeric);
+p.addParameter('rmseThresh',1e-2,@isnumeric);
+p.addParameter('repeatSearchThresh',1.0,@isnumeric);
 
 % Parse and check the parameters
 p.parse(Xp, Yp, sceneGeometry, varargin{:});
+
+
+% Issue a warning if the bounds do not fully constrain at least one eye
+% rotation parameter. This is because there are multiple combinations of
+% the three axis rotations that can bring an eye to a destination.
+% Typically, the torsion will be constrained with upper and lower bounds of
+% zero, reflecting Listing's Law.
+if sum((p.Results.eyePoseUB(1:3) - p.Results.eyePoseLB(1:3))==0) < 1
+    warning('eyePoseEllipseFit:underconstrainedSearch','The eye pose search across possible eye rotations is underconstrained');
+end
 
 
 %% Set bounds and x0
@@ -169,7 +180,7 @@ lastFVal = realmax;
 bestFVal = realmax;
 xLast = []; % Last place pupilProjection_fwd was called
 xBest = []; % The x with the lowest objective function value that meets
-rmseThreshold = p.Results.rmseThreshold;
+rmseThresh = p.Results.rmseThresh;
 
 % define some search options
 options = optimoptions(@fmincon,...
@@ -219,7 +230,7 @@ fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, [], options);
                     xBest = xLast;
                 end
                 % Test if we are done the search
-                if lastFVal < rmseThreshold
+                if lastFVal < rmseThresh
                     stop = true;
                 end
             case 'done'
@@ -228,13 +239,24 @@ fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, [], options);
         end
     end
 
-% Return the best performing values
+% Store the best performing values
 eyePose = xBest;
 RMSE = bestFVal;
 
 % Restore the warning state
 warning(warningState);
 
+% If the RMSE is larger than our repeat search threshold, repeat the search
+% using an x0 close to the current solution. This avoids local minima.
+if RMSE > p.Results.repeatSearchThresh
+    x0 = eyePose;
+    x0(1:2) = x0(1:2)+[0.1 0.1];
+    [eyePose, RMSE] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, ...
+        'x0',x0,...
+        'eyePoseLB',p.Results.eyePoseLB,...
+        'eyePoseUB',p.Results.eyePoseUB,...
+        'repeatSearchThresh',realmax);
+end
 
 end % eyeParamEllipseFit
 
