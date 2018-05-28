@@ -373,7 +373,7 @@ end
 % to the eyePose solution as x0. This process terminates when the search
 % count exceeds nMaxSearches.
 if centerError > p.Results.repeatSearchThresh && ...
-        p.Results.searchCount <= p.Results.nMaxSearches
+        p.Results.searchCount < p.Results.nMaxSearches
     x0 = eyePose;
     x0(1:2) = x0(1:2)+[0.1 0.1]./p.Results.searchCount;
     [eyePose_r, bestMatchEllipseOnImagePlane_r, centerError_r, shapeError_r, areaError_r] = ...
