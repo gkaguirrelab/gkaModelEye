@@ -130,13 +130,13 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
     outputRay = rayTraceEllipsoids(coords, theta, opticalSystem);
 %}
 %{
-    %% Demo total internal refraction warning
+    %% Demo total internal reflection warning
     coords = [0 0];
     % Make the index of refraction of the surface very high
-    opticalSystem=[nan nan 5; 20 10 1.0];
+    opticalSystem=[nan nan 25.0; 20 10 1];
     % This ray encounters total internal reflection. The function issues
     % warning and returns an empty outputRay
-    theta = deg2rad(15);
+    theta = deg2rad(25);
     outputRay = rayTraceEllipsoids(coords, theta, opticalSystem);
 %}
 
@@ -171,7 +171,7 @@ if nargin==4
     % just specify values for some fields and causes the remainder to have
     % valid values.
     if isstruct(figureFlag)
-        temp=figureFlag;
+        temp = figureFlag;
         clear figureFlag
         figureFlag.show = true;
         figureFlag.axsag = false;
@@ -292,7 +292,7 @@ end
 % Initialize the figure
 if figureFlag.show
     % Determine if we are plotting the p1p2 only, or both p1 and p3
-    if nDims == 5 || length(angleInitial)==2 || figureFlag.axsag || ~isempty(figureFlag.p3Lim)
+    if nDims == 5 || length(angleInitial)==2 || ~isempty(figureFlag.p3Lim)
         figureFlag.axsag = true;
     end
     if figureFlag.new
