@@ -9,15 +9,13 @@ function compileVirtualImageFunc( varargin )
 %   the file at the specified disk location, and places the function on the
 %   MATLAB path.
 %
-%   The default save location is within userpath(), at:
-%
-%       /toolboxes/gkaModelEye/bin' 
+%   The default save location the directory that contains this function.
 %
 %   Calls to the compiled virtualImageFuncMex execute roughly ~30x faster
 %   than the native virtualImageFunc routine.
 %
 % Inputs:
-%   sceneGeometry         - A sceneGeometry structure.
+%   none
 %
 % Optional key/value pairs:
 %  'functionDirPath'      - Character vector. Specifies the location in 
@@ -80,7 +78,7 @@ function compileVirtualImageFunc( varargin )
 p = inputParser;
 
 % Optional
-p.addParameter('functionDirPath',fullfile(userpath(),'toolboxes','gkaModelEye/bin'),@(x) ischar(x));
+p.addParameter('functionDirPath',fileparts(mfilename('fullpath')),@(x) ischar(x));
 p.addParameter('replaceExistingFunc',false,@islogical);
 
 % parse
@@ -92,20 +90,16 @@ functionDirPath = p.Results.functionDirPath;
 % If we have not been asked to replace an existing function, test if the
 % compiled function exists. If so, exit.
 if ~p.Results.replaceExistingFunc
+    % Exist returns 3 for 'MEX-file on your MATLAB search path'
     if exist('virtualImageFuncMex')==3
         return
     end
 end
 
 
-%% Create a directory for the compiled functions
-if ~isempty(functionDirPath)
-    compileDir = functionDirPath;
-    if ~exist(compileDir,'dir')
-        mkdir(compileDir)
-    end
-else
-    compileDir = [];
+%% Error if the function dir does not exist
+if ~exist(functionDirPath,'dir')
+    error('compileVirtualImageFunc:dirDoesNotExist','The specified function directory does not exist.')
 end
 
 
@@ -136,8 +130,8 @@ while notDoneFlag
 end
 
 
-%% Compile virtualImageFunc
-% Define argument variables so the compiler can deduce variable types
+%% Define argument variables
+% This is so the compiler can deduce variable types
 
 % Create a sceneGeometry. We silence the warning that there is not a
 % compiled virtualImageFunc available, as we know this is the case.
@@ -153,14 +147,17 @@ staticArgs = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.refraction.opticalSystem};
 % Assemble the full args
 args = [dynamicArgs, staticArgs{:}];
+
+
+%% Compile and clean up
 % Change to the compile directory
-initialDir = cd(compileDir);
+initialDir = cd(functionDirPath);
 % Compile the mex file
 codegen -o virtualImageFuncMex virtualImageFunc -args args
 % Clean up the compile dir
 rmdir('codegen', 's');
 % Refresh the path to add the compiled function
-addpath(compileDir,'-begin');
+addpath(functionDirPath,'-begin');
 % Change back to the initial directory
 cd(initialDir);
 
