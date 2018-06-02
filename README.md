@@ -1,5 +1,6 @@
 # gkaModelEye
-<img align="left" src="img/renderEyePose.png" height="150">
+<src="img/renderEyePose.png" height="150">
+
 These routines implement a ray-traced model eye in MATLAB. A primary application of the model is to describe the entrance pupil in the image plane for a rotated eye. The entrance pupil is described by the parameters of an ellipse fit to the pupil perimeter, and those parameters are given in "transparent" form (center x, center y, area, non-linear eccentricity, tilt).
 
 The model is described in:
@@ -52,4 +53,7 @@ The components of the model eye are displayed in an axial schematic:
     sceneGeometry=createSceneGeometry();
     plotModelEyeSchematic(sceneGeometry.eye);
 ```
-<img align="center" src="img/plotModelEyeSchematic.png" height="400">
+
+<p align="center">
+	<img src="img/plotModelEyeSchematic.png" height="400">
+</p>
