@@ -38,10 +38,13 @@ Most functions have associated examples in the header comments. This command iss
 	[names,status] = RunExamples(fullfile(userpath(),'toolboxes','gkaModelEye'))
 ```
 
-A good place to get started is to try rendering the model eye for different poses and examining the parameters of the pupil ellipse. This example renders an emmetropic right eye, observed in the near infra-red range, that is rotated to -30 degrees azimuth, -5 degrees elevation, and has a pupil aperture 2 mm in radius.
+A good place start is to render the model eye for different poses and examining the parameters of the pupil ellipse. This example renders an emmetropic right eye, observed in the near infra-red range, that is rotated to -30 degrees azimuth, -5 degrees elevation, and has a pupil aperture 2 mm in radius.
 ```
     sceneGeometry=createSceneGeometry();
     eyePose = [-30 -5 0 2];
     renderEyePose(eyePose, sceneGeometry);
     pupilEllipse = pupilProjection_fwd(eyePose,sceneGeometry);
 ```
+
+[renderEyePose](img/renderEyePose.png)
+[plotModelEyeSchematic](img/plotModelEyeSchematic.png)
