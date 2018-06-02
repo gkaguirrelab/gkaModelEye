@@ -21,7 +21,7 @@ The forward model of the appearance of the pupil and iris accounts for the refra
 
 To install and configure the repository, first install [toolboxToolbox (tBtB)](https://github.com/ToolboxHub/ToolboxToolbox), which provides for declarative dependency management for Matlab. Once tBtB is installed, the code (and all its dependencies) will be installed and readied for use with the command `tbUse('gkaModelEye');`. If you do not wish to use tBtB, add the [quadfit toolbox](https://www.mathworks.com/matlabcentral/fileexchange/45356-fitting-quadratic-curves-and-surfaces) to your path.
 
-A good place start is to render the model eye for different poses and examining the parameters of the pupil ellipse. This example renders an emmetropic right eye, observed in the near infra-red range, that is rotated to -30 degrees azimuth, -5 degrees elevation, and has a pupil aperture 2 mm in radius.
+A good place start is to render the model eye for different poses and examine the parameters of the pupil ellipse. This example renders an emmetropic right eye, observed in the near infra-red range, that is rotated to -30 degrees azimuth, -5 degrees elevation, and has a pupil aperture 2 mm in radius.
 ```
     sceneGeometry=createSceneGeometry();
     eyePose = [-30 -5 0 2];
@@ -29,7 +29,7 @@ A good place start is to render the model eye for different poses and examining 
     pupilEllipse = pupilProjection_fwd(eyePose,sceneGeometry);
 ```
 
-The components of the model eye are displayed in an axial schematic:
+The components of the model eye can be displayed in a cross-section schematic:
 ```
     sceneGeometry=createSceneGeometry();
     plotModelEyeSchematic(sceneGeometry.eye);
