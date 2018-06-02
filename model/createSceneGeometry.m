@@ -6,9 +6,9 @@ function sceneGeometry = createSceneGeometry(varargin)
 %
 % Description:
 %   Using default values and passed key/value pairs, this routine creates a
-%   sceneGeometry structure, with fields that the describe a camera, an
-%   eye, corrective lenses, and the geometric relationship between them.
-%   The fields are:
+%   sceneGeometry structure, with fields that describe a camera, an eye,
+%   corrective lenses, and the geometric relationship between them. The
+%   fields are:
 %
 %  'cameraIntrinsic' - A structure that defines the properties of a pinhole
 %       camera. Sub-fields:
@@ -42,13 +42,14 @@ function sceneGeometry = createSceneGeometry(varargin)
 %       camera extrinsic matrix. Sub-fields:
 %
 %      'translation' - A 3x1 vector of the form [horizontal; vertical;
-%           depth] in units of mm, of the nodal point of the camera
-%           relative to the world coordinate system. We define the origin
-%           of the world coordinate system to be x=0, y=0 along the optical
-%           axis of the eye, and z=0 to be the apex of the corneal surface.
+%           depth] in units of mm. Specifies the location of the nodal
+%           point of the camera relative to the world coordinate system. We
+%           define the origin of the world coordinate system to be x=0, y=0
+%           along the optical axis of the eye with zero rotation, and z=0
+%           to be the apex of the corneal surface.
 %
-%      'torsion' - Scalar in units of degrees that specifies the rotational
-%           position of the camera relative to the origin of the world
+%      'torsion' - Scalar in units of degrees that specifies the torsional
+%           rotation of the camera relative to the origin of the world
 %           coordinate space. Because eye rotations are set have a value of
 %           zero when the camera axis is aligned with the pupil axis of the
 %           eye, the camera rotation around the X and Y axes of the
@@ -58,7 +59,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %           directions, and has a non circular exit pupil.
 %
 %      'primaryPosition' - A 1x2 vector of [eyeAzimuth, eyeElevation] at
-%           which the eye is in primary position (as defined by Listing's
+%           which the eye is in primary position (as defined by Listing*s
 %           Law) and thus has zero torsion.
 %
 %  'eye' - A structure that is returned by the function modelEyeParameters.
@@ -109,8 +110,8 @@ function sceneGeometry = createSceneGeometry(varargin)
 %       value in the range 0.01 - 0.03 provides an acceptable compromise in
 %       empirical data.
 %
-%  'meta' - A structure that contains information regarding the creation and
-%       modification of the sceneGeometry.
+%  'meta' - A structure that contains information regarding the creation 
+%       and modification of the sceneGeometry.
 %
 %
 % Inputs:
@@ -239,13 +240,11 @@ cornealThickness = -sceneGeometry.eye.cornea.back.center(1)-sceneGeometry.eye.co
 corneaBackRotRadii=ellipsesFromEllipsoid(sceneGeometry.eye.cornea.back.radii,sceneGeometry.eye.cornea.axis);
 corneaFrontRotRadii=ellipsesFromEllipsoid(sceneGeometry.eye.cornea.front.radii,sceneGeometry.eye.cornea.axis);
 
-% Build the optical system matrix for the p1p2 and p1p3 planes. We require
-% both as the cornea is not radially symmetric. The p1p2 system is for the
-% horizontal (axial) plane of the eye, and the p1p3 system for the vertical
-% (sagittal) plane of the eye.
+% Build the optical system matrix
 sceneGeometry.refraction.opticalSystem = [nan, nan, nan, nan, sceneGeometry.eye.index.aqueous; ...
     -sceneGeometry.eye.cornea.back.radii(1)-cornealThickness, -corneaBackRotRadii(1), -corneaBackRotRadii(2), -corneaBackRotRadii(3), sceneGeometry.eye.index.cornea; ...
     -sceneGeometry.eye.cornea.front.radii(1), -corneaFrontRotRadii(1), -corneaFrontRotRadii(2), -corneaFrontRotRadii(3), mediumRefractiveIndex];
+
 
 %% Lenses
 % Add a contact lens if requested
