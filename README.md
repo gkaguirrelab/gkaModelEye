@@ -46,5 +46,5 @@ A good place start is to render the model eye for different poses and examining 
     pupilEllipse = pupilProjection_fwd(eyePose,sceneGeometry);
 ```
 
-![renderEyePose](img/renderEyePose.png?v=4&s=200)
-![plotModelEyeSchematic](img/plotModelEyeSchematic.png?v=4&s=200)
+<img src="img/renderEyePose.png" height="200">
+<img src="img/plotModelEyeSchematic.png" height="200">
