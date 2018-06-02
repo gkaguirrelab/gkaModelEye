@@ -1,4 +1,4 @@
-# gkaModelEye
+# Model eye for derivation of the entrance pupil and retinal landmarks
 <img src="img/renderEyePose.png" height="150">
 
 These routines implement a ray-traced model eye in MATLAB. A primary application of the model is to describe the entrance pupil in the image plane for a rotated eye. The entrance pupil is described by the parameters of an ellipse fit to the pupil perimeter, and those parameters are given in "transparent" form (center x, center y, area, non-linear eccentricity, tilt).
@@ -21,6 +21,25 @@ The forward model of the appearance of the pupil and iris accounts for the refra
 
 To install and configure the repository, first install [toolboxToolbox (tBtB)](https://github.com/ToolboxHub/ToolboxToolbox), which provides for declarative dependency management for Matlab. Once tBtB is installed, the code (and all its dependencies) will be installed and readied for use with the command `tbUse('gkaModelEye');`. If you do not wish to use tBtB, add the [quadfit toolbox](https://www.mathworks.com/matlabcentral/fileexchange/45356-fitting-quadratic-curves-and-surfaces) to your path. Additionally, to automatically run all examples, the [ExampleTest toolbox](https://github.com/isetbio/ExampleTestToolbox.git) is needed.
 
+A good place start is to render the model eye for different poses and examining the parameters of the pupil ellipse. This example renders an emmetropic right eye, observed in the near infra-red range, that is rotated to -30 degrees azimuth, -5 degrees elevation, and has a pupil aperture 2 mm in radius.
+```
+    sceneGeometry=createSceneGeometry();
+    eyePose = [-30 -5 0 2];
+    renderEyePose(eyePose, sceneGeometry);
+    pupilEllipse = pupilProjection_fwd(eyePose,sceneGeometry);
+```
+
+The components of the model eye are displayed in an axial schematic:
+```
+    sceneGeometry=createSceneGeometry();
+    plotModelEyeSchematic(sceneGeometry.eye);
+```
+
+<p align="center">
+	<img src="img/plotModelEyeSchematic.png" height="400">
+</p>
+
+
 A hierarchy of the functions is as follows:
 ```
     pupilProjection_inv
@@ -40,20 +59,3 @@ Most functions have associated examples in the header comments. This command iss
 	[names,status] = RunExamples(fullfile(userpath(),'toolboxes','gkaModelEye'))
 ```
 
-A good place start is to render the model eye for different poses and examining the parameters of the pupil ellipse. This example renders an emmetropic right eye, observed in the near infra-red range, that is rotated to -30 degrees azimuth, -5 degrees elevation, and has a pupil aperture 2 mm in radius.
-```
-    sceneGeometry=createSceneGeometry();
-    eyePose = [-30 -5 0 2];
-    renderEyePose(eyePose, sceneGeometry);
-    pupilEllipse = pupilProjection_fwd(eyePose,sceneGeometry);
-```
-
-The components of the model eye are displayed in an axial schematic:
-```
-    sceneGeometry=createSceneGeometry();
-    plotModelEyeSchematic(sceneGeometry.eye);
-```
-
-<p align="center">
-	<img src="img/plotModelEyeSchematic.png" height="400">
-</p>
