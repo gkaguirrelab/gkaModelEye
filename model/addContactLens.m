@@ -9,15 +9,14 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %	optical system with the refractive power specified in the passed
 %	variable. Note that a ray emerging from the eye encounters two concave
 %	surfaces for this lens, so both surfaces will have a negative radius of
-%	curvature for rayTraceCenteredSphericalSurfaces().
+%	curvature for rayTraceEllipsoids().
 %
 % Inputs:
-%   opticalSystemIn       - An mx4 matrix, where m is the number of
+%   opticalSystemIn       - An mx5 matrix, where m is the number of
 %                           surfaces in the model, including the initial
 %                           position of the ray. Each row contains the
 %                           values:
 %                               [center, radiusZ, radiusH, refractiveIndex]
-%                           that define an elliptical lens.
 %   lensRefractionDiopters - Scalar. Refractive power in units of
 %                           diopters. A negative value specifies a lens
 %                           that would be worn by someone with myopia to
@@ -31,7 +30,7 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %                           imaging domains.
 %
 % Outputs:
-%   opticalSystemOut      - An (m+1)x4 matrix, corresponding to the
+%   opticalSystemOut      - An (m+1)x5 matrix, corresponding to the
 %                           opticalSystemIn with the addition of the
 %                           contact lens.
 %   p                     - The parameters returned by the input parser.
@@ -96,7 +95,7 @@ opticalSystemOut(end,end) = lensRefractiveIndex;
 % Our goal is to create a front surface of the contact lens that produces a
 % refractive correction equal to:
 %   cornealSurfaceDiopters + lensRefractionDiopters
-t =0;
+t=0;
 cornealSurfaceCurvature = -((opticalSystemIn(end,2)^2*sin(t)^2 + opticalSystemIn(end,3)^2*cos(t)^2)^(3/2))/(opticalSystemIn(end,2)*opticalSystemIn(end,3));
 cornealSurfaceDiopters = (mediumRefractiveIndex-priorRefractiveIndex)/(cornealSurfaceCurvature/1000);
 
@@ -115,9 +114,9 @@ if lensRefractionDiopters > 0
     % lens-maker's equation, re-arranged to solve for the initial radius of
     % curvature.
     %{
-    syms r1 r2 n m t d
-    lensMakersEqn = (n-m)*(1/r1 - 1/r2 + ((n-m)*t)/(n*r1*r2)) == d;
-    frontCurvatureEqn = isolate(lensMakersEqn,r2)*1000;
+        syms r1 r2 n m t d
+        lensMakersEqn = (n-m)*(1/r1 - 1/r2 + ((n-m)*t)/(n*r1*r2)) == d;
+        frontCurvatureEqn = isolate(lensMakersEqn,r2)*1000;
     % where r1 = back curvature in meters; r2 = front curvature; n = index
     % of refraction of lens material; m = index of refraction of medium
     % (usually the air); t = thickness of the lens at the optical axis in
@@ -151,9 +150,9 @@ else
     % lens-maker's equation, re-arranged to solve for the initial radius of
     % curvature.
     %{
-    syms r1 r2 n m t d
-    lensMakersEqn = (n-m)*(1/r1 - 1/r2 + ((n-m)*t)/(n*r1*r2)) == d;
-    frontCurvatureEqn = isolate(lensMakersEqn,r2)*1000;
+        syms r1 r2 n m t d
+        lensMakersEqn = (n-m)*(1/r1 - 1/r2 + ((n-m)*t)/(n*r1*r2)) == d;
+        frontCurvatureEqn = isolate(lensMakersEqn,r2)*1000;
     % where r1 = back curvature in meters; r2 = front curvature; n = index
     % of refraction of lens material; m = index of refraction of medium
     % (usually the air); t = thickness of the lens at the optical axis in

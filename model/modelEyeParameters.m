@@ -10,23 +10,20 @@ function eye = modelEyeParameters( varargin )
 %
 %   The parameters returned by this routine correspond to the eyeWorld
 %   coordinate space used in pupilProjection_fwd, which is relative to the
-%   optic / pupil axis, with the apex of the cornea set as zero in depth.
-%   The space has the dimensions [depth, horizontal, vertical]; negative
-%   values of depth are towards the back of the eye. The model assumes the
-%   optical and pupil axis of the eye are algined.
+%   optical / pupillary axis, with the apex of the cornea set as zero in
+%   depth. The space has the dimensions [depth, horizontal, vertical];
+%   negative values of depth are towards the back of the eye. The model
+%   assumes the optical and pupil axis of the eye are algined.
 %
 % Inputs:
 %   none
 %
 % Optional key/value pairs:
-%  'sphericalAmetropia'   - Scalar, in units of diopters. The
-%                           dimensions of the posterior chamber of the eye
-%                           (and to a lesser extent the curvature of the
-%                           cornea) change with the observed refractive
-%                           error of the subject. This value is the
-%                           spherical refractive correction for the
-%                           subject. A negative number is the correction
-%                           that would be used for a myopic person.
+%  'sphericalAmetropia'   - Scalar, in units of diopters. Several
+%                           parameters of the model eye are adjusted by the
+%                           spherical refractive error of the eye. A
+%                           negative number is the correction that would be
+%                           used for a myopic person.
 %  'axialLength'          - Scalar. This is the axial length along the 
 %                           optical axis. When set, this fixes the axial
 %                           length of the eye to the passed value in
@@ -42,7 +39,7 @@ function eye = modelEyeParameters( varargin )
 %                           are {'left','right','L','R','OS','OD'}
 %  'species'              - A text string that specifies the species to be
 %                           modeled. Supported values (in any case) are
-%                           {'human'}
+%                           {'human','dog'}
 %  'spectralDomain'       - String, options include {'vis','nir'}.
 %                           This is the wavelength domain within which
 %                           imaging is being performed. The refractive
@@ -140,7 +137,7 @@ switch p.Results.species
         % when Q < 0. Therefore, given R and Q, we can obtain a and b,
         % which correspond to the radii of the ellipsoid model, with a
         % corresponding to the axial dimension, and b to the horizontal and
-        % verical dimensions. Checking my algebra here:
+        % vertical dimensions. Checking my algebra here:
         %{
             syms a b R Q
             eqn1 = R == b^2/a;
@@ -231,7 +228,7 @@ switch p.Results.species
         % corneal ellipsoid relative to the keratometric axis, which is the
         % axis that connects a fixation point with the center of curvature
         % of the cornea. We convert those angles here to be relative to the
-        % optic axis of the eye. To do so, we first assume that the
+        % optical axis of the eye. To do so, we first assume that the
         % keratometric axis is equal to the fixation axis. Next, we add the
         % Navarro measurements to the alpha angle values that we have for
         % the model.
@@ -262,17 +259,19 @@ switch p.Results.species
         %% Iris
         % The iris has a thickness. This thickness influences the
         % properties of the entrance pupil, as when the eye is rotated
-        % w.r.t. the camera either front or back surface of the iris
+        % w.r.t. the camera either the front or back surface of the iris
         % aperture defines the near or far edge of the entrance pupil.
+        % A thickness of 0.15 mm was found to produce an entrance pupil
+        % ellipse that well matches the Mathur 2013 empirical results.
         eye.iris.thickness = 0.15;
 
-        % We position the anterior surface of the iris at the depth of the
-        % anterior point of the lens. We model an eye with zero iris angle,
-        % thus making the iris a plane. We adjust the position of the iris
-        % so that it is centered within the rotated corneal ellipse. This
-        % is consistent with reports that the iris is shifted slightly
-        % upward with respect to the pupil center, although inconsistent
-        % with the report that it is shifted temporally:
+        % We position the anterior surface of the iris at a depth of 3.925
+        % mm, which reflects a cycloplegic eye. We model an eye with zero
+        % iris angle, thus making the iris a plane. We adjust the position
+        % of the iris so that it is centered within the rotated corneal
+        % ellipse. This is consistent with reports that the iris is shifted
+        % slightly upward with respect to the pupil center, although
+        % inconsistent with the report that it is shifted temporally:
         %
         %   ...the typical entrance pupil is decentered
         %   approximately 0.15 mm nasally and 0.1 mm inferior to the
@@ -526,13 +525,12 @@ switch p.Results.species
 
         
         %% Lens
-        % Although the lens does not influence the pupil tracking, we
-        % include it here to support an illustration of a complete eye
-        % model. The front and back surfaces of the lens are modeled as
-        % hyperbolas. This simplified model does not model the gradient in
-        % refractive index across the extent of the lens, and therefore
-        % does not support ray tracing. All values taken from Atchison
-        % 2006.
+        % The lens parameters are included to support an illustration of a
+        % complete eye model. The front and back surfaces of the lens are
+        % modeled as hyperbolas. This simplified model does not model the
+        % gradient in refractive index across the extent of the lens, and
+        % therefore does not support ray tracing. All values taken from
+        % Atchison 2006.
         % To convert R and Q to radii of a hyperbola:
         %   R = b^2/a
         %	Q = (a^2 / b^2) + 1
@@ -590,11 +588,11 @@ switch p.Results.species
         % blind spot axes, respectively. The difference between these gives
         % the position of the blind spot relative to fixation.
         %
-        % Find the azimuthal arc in retina deg that produces a blind spot
+        % Find the azimuthal arc in deg retina that produces a blind spot
         % position in the horizontal and vertical directions that is equal
         % to specified values from the literature. Values taken from Safren
         % 1993 for their dim stimulus, under the assumption that this will
-        % be most accurate given the minimization of light scatter. We
+        % be the most accurate given the minimization of light scatter. We
         % model the fovea as being 3x closer to the optical axis than is
         % the optic disc.
         %{
@@ -648,11 +646,11 @@ switch p.Results.species
         % chamber as the eye becomes closer to spherical. We implement this
         % effect by calculating the ratio of the posterior chamber axes.
         %{
-        format long
-        probeEye = modelEyeParameters('sphericalAmetropia',0);
-        eccen_p1p2 = (1-probeEye.posteriorChamber.radii(1)/probeEye.posteriorChamber.radii(2))
-        eccen_p1p3 = (1-probeEye.posteriorChamber.radii(1)/probeEye.posteriorChamber.radii(3))
-        format
+            format long
+            probeEye = modelEyeParameters('sphericalAmetropia',0);
+            eccen_p1p2 = (1-probeEye.posteriorChamber.radii(1)/probeEye.posteriorChamber.radii(2))
+            eccen_p1p3 = (1-probeEye.posteriorChamber.radii(1)/probeEye.posteriorChamber.radii(3))
+            format
         %}        
         foveaPostionScaler(1) = (1-eye.posteriorChamber.radii(1)/eye.posteriorChamber.radii(2))/0.111716335829885;
         foveaPostionScaler(2) = (1-eye.posteriorChamber.radii(1)/eye.posteriorChamber.radii(3))/0.105571718627770;
@@ -663,9 +661,9 @@ switch p.Results.species
         % from the fovea
         eye.axes.opticDisc.degRetina = opticDisc_WRT_foveaDegRetina + eye.axes.visual.degRetina;
 
-        % If a visualAxisDegRetina or opticDiscAxisDegRetina key-value pair was passed,
-        % override the computed value. This is used primarily during model
-        % development.
+        % If a visualAxisDegRetina or opticDiscAxisDegRetina key-value pair
+        % was passed, override the computed value. This is used primarily
+        % during model development.
         if ~isempty(p.Results.visualAxisDegRetina)
             eye.axes.visual.degRetina = p.Results.visualAxisDegRetina;
         end
@@ -694,6 +692,7 @@ switch p.Results.species
         x = eye.posteriorChamber.radii(1) * cosd(theta) * cosd(phi);
         y = eye.posteriorChamber.radii(2) * cosd(theta) * sind(phi);
         z = eye.posteriorChamber.radii(3) * sind(theta);
+
         % Note this location in the posterior chamber field
         eye.posteriorChamber.fovea = [-x y -z] + eye.posteriorChamber.center;
         
@@ -703,6 +702,7 @@ switch p.Results.species
         x = eye.posteriorChamber.radii(1) * cosd(theta) * cosd(phi);
         y = eye.posteriorChamber.radii(2) * cosd(theta) * sind(phi);
         z = eye.posteriorChamber.radii(3) * sind(theta);        
+
         % Note this location in the posterior chamber field
         eye.posteriorChamber.opticDisc = [-x y -z] + eye.posteriorChamber.center;
 
@@ -768,7 +768,7 @@ switch p.Results.species
         % 
         % The Park & Park result was due to their assumption that all
         % "sight lines" (i.e., rotations of the visual axis of the eye)
-        % pass through the same point in space. Fry & Hill that some
+        % pass through the same point in space. Fry & Hill report that some
         % subjects (2 of 31) show translation of the eye with rotation.
         % Also, there is a small, transient retraction of the eye following
         % a saccade that we do not attempt to model:
@@ -843,10 +843,10 @@ switch p.Results.species
         %% Cornea front surface
         % I cannot find a value for the asphericity, so am using the human
         % value
-        eye.cornea.front.R = 8.375;
-        eye.cornea.front.Q = -0.15;        
-        a = eye.cornea.front.R / ( eye.cornea.front.Q + 1 );
-        b = eye.cornea.front.R * sqrt(1/(eye.cornea.front.Q+1)) ;
+        corneaFrontR = 8.375;
+        corneaFrontQ = -0.15;        
+        a = corneaFrontR / ( corneaFrontQ + 1 );
+        b = corneaFrontR * sqrt(1/(corneaFrontQ+1)) ;
         eye.cornea.front.radii(1) = a;
         eye.cornea.front.radii(2:3) = b;
         
@@ -856,12 +856,12 @@ switch p.Results.species
         
         %% Cornea back surface
         % Asphericity is the human value.
-        eye.cornea.back.R = 8;
-        eye.cornea.back.Q = -0.275;
+        corneaBackR = 8;
+        corneaBackQ = -0.275;
         
         % Compute the radii of the ellipsoid
-        a = eye.cornea.back.R / ( eye.cornea.back.Q + 1 );
-        b = eye.cornea.back.R * sqrt(1/(eye.cornea.back.Q+1)) ;
+        a = corneaBackR / ( corneaBackQ + 1 );
+        b = corneaBackR * sqrt(1/(corneaBackQ+1)) ;
         eye.cornea.back.radii(1) = a;
         eye.cornea.back.radii(2:3) = b;
         
@@ -876,35 +876,37 @@ switch p.Results.species
         % the front and back surface of the cornea at the apex. 
         eye.cornea.back.center = [-0.587-eye.cornea.back.radii(1) 0 0];
         
+        % Lacking information otherwise, the cornea is aligned with the
+        % optical axis
+        eye.cornea.axis = [0 0 0];
 
-        %% Pupil
-        % We position the pupil plane at the depth of the anterior point of
-        % the lens. Table 3 of:
+        
+        %% Iris
+        % An anterior chamber depth of 4.29 mm is given in Table 3 of:
         %
         %   Thomasy, Sara M., et al. "Species differences in the geometry
         %   of the anterior segment differentially affect anterior chamber
         %   cell scoring systems in laboratory animals." Journal of Ocular
         %   Pharmacology and Therapeutics 32.1 (2016): 28-37.
         %
-        % gives an anterior chamber depth of 4.29 mm. We must then add
-        % corneal thickness to properly position the pupil plane.
+        % Adding corneal thickness gives an iris center depth of -4.877.
+        % Apparently the iris plane is tilted substantially in the dog, so
+        % some estimate of this will be needed. Using human value for
+        % thickness.
+        eye.iris.thickness = 0.15;
+        eye.iris.radius = 7;
+       	eye.iris.center = [-4.877 0 0];
+
+        
+        %% Pupil
+        % Centered on iris and optical axis.
         eye.pupil.center = [-4.877 0 0];
         
         % We assume that the canine actual pupil is circular
         eye.pupil.eccenParams = []; 
         eye.pupil.eccenFcnString = sprintf('@(x) 0'); 
-        % The theta values of the actual pupil ellipse for eccentricities
-        % less than and greater than zero.
         eye.pupil.thetas = [0  0];
         
-        
-        %% Iris
-        % Need values for this. Apparently the iris plane is tilted
-        % substantially in the dog, so some estimate of this will be
-        % needed.
-        eye.iris.radius = 7;
-       	eye.iris.center = [-4.877 0 0];
-
 
         %% Posterior chamber
         eye.posteriorChamber.radii = [ 8.25 8.25 8.25];
@@ -925,11 +927,72 @@ switch p.Results.species
             eye.posteriorChamber.radii = eye.posteriorChamber.radii .* scaleFactor;
             eye.axialLength = p.Results.axialLength;
         end
-        
+
         % Set the depth of the center of the posterior chamber
         eye.posteriorChamber.center = ...
             [(-4.2 - eye.posteriorChamber.radii(1)) 0 0];
+
+        % I have not yet implemented fovea and optic disc positioning in
+        % the canine eye, so set these to nan for now
+        eye.posteriorChamber.fovea = [nan nan nan];
+        eye.posteriorChamber.opticDisc = [nan nan nan];
         
+        %% Lens
+        % The lens parameters are included to support an illustration of a
+        % complete eye model. The front and back surfaces of the lens are
+        % modeled as hyperbolas. This simplified model does not model the
+        % gradient in refractive index across the extent of the lens, and
+        % therefore does not support ray tracing. All values taken from
+        % Atchison 2006.
+        % To convert R and Q to radii of a hyperbola:
+        %   R = b^2/a
+        %	Q = (a^2 / b^2) + 1
+        % Therefore, given R and Q, we can obtain a and b, which correspond
+        % to the radii of the ellipsoid model, with a corresponding to the
+        % axial dimension, and b to the horizontal and verical dimensions.
+        % Checking my algebra here:
+        %{
+            syms a b R Q
+            eqn1 = R == a^2/b;
+            eqn2 = Q == (a^2 / b^2) + 1;
+            solution = solve([eqn1, eqn2]);
+            solution.a
+            solution.b
+        %}
+        eye.lens.front.R = 6.945;
+        eye.lens.front.Q = -5;
+        a = eye.lens.front.R * sqrt(abs( 1 / (eye.lens.front.Q - 1 ) )) * sign(eye.lens.front.Q);
+        b = eye.lens.front.R / (eye.lens.front.Q - 1 );
+        eye.lens.front.radii(1) = b;
+        eye.lens.front.radii(2:3) = a;
+        eye.lens.front.center = [eye.pupil.center(1)-eye.lens.front.radii(1) 0 0];
+        
+        eye.lens.back.R = -6.520;
+        eye.lens.back.Q = -2;
+        a = eye.lens.back.R * sqrt(abs( 1 / (eye.lens.back.Q - 1 ) )) * sign(eye.lens.back.Q);
+        b = eye.lens.back.R / (eye.lens.back.Q - 1 );
+        eye.lens.back.radii(1) = b;
+        eye.lens.back.radii(2:3) = a;
+        eye.lens.back.center = [eye.pupil.center(1)-3.6-eye.lens.back.radii(1) 0 0];
+        
+        % I specify the location of a single nodal point to support
+        % calculation of the visual axis. The nodal point is placed at the
+        % depth of the anterior principal point given by 
+        eye.lens.nodalPoint = [-8.907 0 0];        
+        
+        
+        %% Axes
+        % For the canine eye, I treat the optical and visual axes as
+        % aligned. I don't have any information regarding the position of
+        % the optic disc.
+        eye.axes.optical.degRetina = [0 0 0];
+        eye.axes.visual.degRetina = [0 0 0];
+        eye.axes.opticalDisc.degRetina = [0 0 0];
+        
+
+        %% Rotation centers
+        % For lack of better information, these are placed on the optical
+        % axis, 10 mm posterior to the corneal apex.
         eye.rotationCenters.azi = [-10 0 0];
         eye.rotationCenters.ele = [-10 0 0];
         eye.rotationCenters.tor = [0 0 0];

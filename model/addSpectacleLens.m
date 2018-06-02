@@ -9,15 +9,14 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %	optical system with the refractive power specified in the passed
 %	variable. Note that a ray emerging from the eye encounters two concave
 %	surfaces for this lens, so both surfaces will have a negative radius of
-%	curvature for rayTraceCenteredSphericalSurfaces().
+%	curvature for rayTraceEllipsoids().
 %
 % Inputs:
-%   opticalSystemIn       - An mx4 matrix, where m is the number of
+%   opticalSystemIn       - An mx5 matrix, where m is the number of
 %                           surfaces in the model, including the initial
 %                           position of the ray. Each row contains the
 %                           values:
 %                               [center, radius_p1, radius_p2, radius_p3, refractiveIndex]
-%                           that define an elliptical lens.
 %   lensRefractionDiopters - Scalar. Refractive power in units of 
 %                           diopters. A negative value specifies a lens
 %                           that would be worn by someone with myopia to
@@ -36,7 +35,7 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %                           plano face of the lens.
 %
 % Outputs:
-%   opticalSystemOut      - An (m+2)x4 matrix, corresponding to the
+%   opticalSystemOut      - An (m+2)x5 matrix, corresponding to the
 %                           opticalSystemIn with the addition of the
 %                           spectacle lens
 %   p                     - The parameters returned by the input parser.
@@ -89,9 +88,7 @@ if abs(lensRefractionDiopters) < 0.25
     return
 end
 
-% Define a "meniscus" lens with two surfaces. Note that a ray emerging from
-% the eye encounters two concave surfaces, so both will have a negative
-% radius of curvature for rayTraceCenteredSphericalSurfaces()
+% Define a "meniscus" lens with two surfaces.
 if lensRefractionDiopters > 0
     % This is a plus lens for the correction of hyperopia. It has a
     % relatively flat back surface and a more curved front surface.
@@ -132,7 +129,7 @@ if lensRefractionDiopters > 0
     eqn = subs(frontPerimHeight,x,intersectHeight) == subs(backPerimHeight,x,intersectHeight);
     thickness = min(eval(solve(eqn)));
 
-    % clear the remaining symbolic params
+    % Clear the symbolic variables
     clear x
 
     frontCenter = double(subs(frontCenter));

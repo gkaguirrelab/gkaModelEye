@@ -5,10 +5,10 @@ function n = returnRefractiveIndex( material, spectralDomain )
 %  n = returnRefractiveIndex( material, spectralDomain )
 %
 % Description:
-%   The optical model requires the refractive index of several biological
-%   and optical materials. The index of refraction varies by wavelength of
-%   light. This routine returns the index for a specified material for a
-%   specified imaging domain (visual or near infrared).
+%   The ray tracing model requires the refractive index of several
+%   biological and optical materials. The index of refraction varies by
+%   wavelength of light. This routine returns the index for a specified
+%   material for a specified imaging domain (visual or near infrared).
 %
 %   Unless otherwise specified, refractive index in the visible (VIS)
 %   domain is at 589.29 nm (the sodium spectral line), while the index in
@@ -16,8 +16,8 @@ function n = returnRefractiveIndex( material, spectralDomain )
 %   frequency of light emitted by the LED of many active IR cameras.
 %
 % Inputs:
-%   material              - String.
-%   spectralDomain        - String. Valid values are {'VIS','NIR'}.
+%   material              - Char vector.
+%   spectralDomain        - Char vector. Valid values are {'VIS','NIR'}.
 %
 % Outputs:
 %   n                     - The requested index of refraction.

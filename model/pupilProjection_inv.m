@@ -1,12 +1,12 @@
 function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaError] = pupilProjection_inv(pupilEllipseOnImagePlane, sceneGeometry, varargin)
-% Project an ellipse on the image plane to a pupil circle in the scene
+% Determine the eyePose corresponding to an observed entrance pupil ellipse
 %
 % Syntax:
 %  [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaError] = pupilProjection_inv(pupilEllipseOnImagePlane, sceneGeometry)
 %
 % Description:
 %	Given the sceneGeometry and an ellipse on the image plane, this routine
-%   finds parameters of the rotation of the eye and pupil sizes that can
+%   finds parameters of the rotation of the eye and pupil radius that can
 %   best account for the parameters of the ellipse.
 %
 % Notes:
@@ -52,17 +52,29 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
 %                           torsion, pupil radius]. The default values here
 %                           represent the physical limits of the projection
 %                           model for azimuth, elevation, and pupil radius.
-%                           Torsion is constrained to zero by default as
-%                           the ellipse provides no torsion information.
-%  'centerErrorThresh'    - Scalar. Defines one of the two stopping point
+%                           Torsion is constrained to zero by default.
+%  'centerErrorThresh'    - Scalar. The first of two stopping point
 %                           criteria for the search.
-%  'constraintTolerance'  - Defines one of the two stopping point
+%  'constraintTolerance'  - Scalar. The second of two stopping point
 %                           criteria for the search. If passed, this value
 %                           will over-ride the value in the sceneGeometry
 %                           structure.
+%  'repeatSearchThresh'   - Scalar. If a centerError output value is 
+%                           obtained that is greater than this threshold,
+%                           then a repeat search across eyePose values will
+%                           be conducted to account for the possibility
+%                           that the solution obtained was a local minimum.
+%  'nMaxSearches'         - Scalar. The maximum number of searches that the
+%                           routine will conduct as it attempts to avoid
+%                           local minima.
+%  'searchCount'          - Scalar. The number of searches that have been
+%                           conducted so far. This value is modified as
+%                           pupilProjection_inv calls itself recursively.
+%                           It should not be modified by the external
+%                           calling function.
 %
 % Outputs:
-%   eyePose               - A 1x4 vector provides values for [eyeAzimuth,
+%   eyePose               - A 1x4 vector with values for [eyeAzimuth,
 %                           eyeElevation, eyeTorsion, pupilRadius].
 %                           Azimuth, elevation, and torsion are in units of
 %                           head-centered (extrinsic) degrees, and pupil
@@ -71,7 +83,7 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
 %                           parameters of pupil ellipse on the image plane
 %                           cast in transparent form. This is the output of
 %                           the pupilProjection_fwd model for the
-%                           sceneGeometry and the eyePose
+%                           sceneGeometry and the found eyePose.
 %   centerError           - Scalar. The Euclidean distance (in pixels)
 %                           between the [x, y] center of the
 %                           pupilEllipseOnImagePlane and the center of the
@@ -130,8 +142,8 @@ p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
 p.addParameter('centerErrorThresh',1e-4,@isnumeric);
 p.addParameter('constraintTolerance',[],@(x)(isempty(x) | isnumeric(x)));
 p.addParameter('repeatSearchThresh',1.0,@isnumeric);
-p.addParameter('searchCount',1,@isnumeric);
 p.addParameter('nMaxSearches',3,@isnumeric);
+p.addParameter('searchCount',1,@isnumeric);
 
 % Parse and check the parameters
 p.parse(pupilEllipseOnImagePlane, sceneGeometry, varargin{:});
@@ -148,7 +160,7 @@ end
 % rotation parameter. This is because there are multiple combinations of
 % the three axis rotations that can bring an eye to a destination.
 % Typically, the torsion will be constrained with upper and lower bounds of
-% zero, reflecting Listing's Law.
+% zero, reflecting Listing*s Law.
 if sum((p.Results.eyePoseUB(1:3) - p.Results.eyePoseLB(1:3))==0) < 1
     warning('pupilProjection_inv:underconstrainedSearch','The inverse search across possible eye rotations is underconstrained');
 end
@@ -197,7 +209,7 @@ if isempty(p.Results.x0)
     x0(2) = ((CoP(2) - pupilEllipseOnImagePlane(2))/pixelsPerDeg);
     x0(3) = 0;
     
-    % Force the angles within bounds
+    % Force the angles of the x0 guess to be within bounds
     x0=min([eyePoseUB(1:3); x0]);
     x0=max([eyePoseLB(1:3); x0]);    
     
@@ -206,8 +218,8 @@ if isempty(p.Results.x0)
     ellipseAspectRatio = sqrt(1 - (pupilEllipseOnImagePlane(4)^2));
     pupilRadiusPixels = sqrt(pupilEllipseOnImagePlane(3) / (pi * ellipseAspectRatio));
     
-    % Probe the forward model at the estimated pose angles to
-    % estimate the pupil radius.
+    % Probe the forward model at the estimated pose angles to estimate the
+    % pupil radius.
     probeEllipse=pupilProjection_fwd([x0(1) x0(2) x0(3) 2], sceneGeometry);
     pixelsPerMM = sqrt(probeEllipse(3)/pi)/2;
     
@@ -228,7 +240,7 @@ else
     x0 = p.Results.x0;
 end
 
-% Generate a random x0 starting point if x0 contains an inf flag
+% Generate a random x0 starting point if x0 contains an Inf flag
 if any(isinf(x0))
     x0 = (eyePoseUB-eyePoseLB).*rand(1,4)+eyePoseLB;
 end
@@ -270,9 +282,11 @@ options = optimoptions(@fmincon,...
     'OutputFcn',@outfun, ...
     'constraintTolerance',constraintTolerance);
 
-% Call fmincon
+% Call fmincon. Note the use of anonymous functions for the objective and
+% constraint, which nested below.
 fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, @constr, options);
 
+    % Nested objective function
     function fval = objfun(x)
         if ~isequal(x,xLast) % Check if computation is necessary
             ellipseAtLast = pupilProjection_fwd(x, sceneGeometry);
@@ -284,6 +298,7 @@ fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, @constr, options);
             (targetEllipse(2) - ellipseAtLast(2))^2);
     end
 
+    % Nested constraint function
     function [c,ceq] = constr(x)
         if ~isequal(x,xLast) % Check if computation is necessary
             ellipseAtLast = pupilProjection_fwd(x, sceneGeometry);
@@ -318,9 +333,9 @@ fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, @constr, options);
         areaErrorAtLast = ceq;
     end
 
+    % Nested output function
     function stop = outfun(~,optimValues,state)
-        stop = false;
-        
+        stop = false;        
         switch state
             case 'init'
                 lastFVal = optimValues.fval;
@@ -367,15 +382,20 @@ else
     areaError = areaErrorAtBest;
 end
 
-% If the solution has a center error that is larger than
-% repeatSearchThresh, we consider the possibility that the solution
-% represents a local minimum. We repeat the search, passing a value close
-% to the eyePose solution as x0. This process terminates when the search
-% count exceeds nMaxSearches.
+% If the solution has a centerError that is larger than repeatSearchThresh,
+% we consider the possibility that the solution represents a local minimum.
+% We repeat the search, passing a value close to the eyePose solution as
+% x0. This process terminates when the search count exceeds nMaxSearches.
 if centerError > p.Results.repeatSearchThresh && ...
         p.Results.searchCount < p.Results.nMaxSearches
+    % Set the x0 for the next search to be the current eyePose solution
     x0 = eyePose;
+    % Add a bit of offset to the azimuth and elevation of the x0 guess.
+    % Scale this amount of offset by how many searches deep we are.
     x0(1:2) = x0(1:2)+[0.1 0.1]./p.Results.searchCount;
+    % Execute a recursive call to pupilProjection_inv, supplying x0, and
+    % the set of key-value pairs. Importantly, the searchCount value is
+    % iterated.
     [eyePose_r, bestMatchEllipseOnImagePlane_r, centerError_r, shapeError_r, areaError_r] = ...
         pupilProjection_inv(pupilEllipseOnImagePlane, sceneGeometry, ...
         'x0',x0, ...
@@ -385,6 +405,10 @@ if centerError > p.Results.repeatSearchThresh && ...
         'constraintTolerance',p.Results.constraintTolerance, ...
         'repeatSearchThresh', p.Results.repeatSearchThresh, ...
         'searchCount', p.Results.searchCount+1);
+    % If the recursive search was better than the current search, save the
+    % results. The best result across all recursive searches is thus
+    % retained if the recusive stack collapses from exceeding the maximum
+    % allowed number of searches.
     if centerError_r < centerError
         eyePose = eyePose_r;
         bestMatchEllipseOnImagePlane = bestMatchEllipseOnImagePlane_r;

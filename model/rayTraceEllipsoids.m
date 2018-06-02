@@ -5,7 +5,7 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
 %  [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids(coordsInitial, angleInitial, opticalSystemIn, figureFlag)
 %
 % Description:
-%   This routine implements a 3D skew ray tracing through ellipsoidal
+%   This routine implements 3D skew ray tracing through ellipsoidal
 %   surfaces. Some steps of the process are modified versions of the
 %   generalized ray tracing equations of:
 %
@@ -17,8 +17,8 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
 %   state of the ray is specified by its 3D coordinates and by the angles
 %   that it makes with the optical axis. By convention, the optical axis is
 %   termed "z", and the orthogonal axis is termed "height". Positive values
-%   of z are to the right. A theta of zero indicates a ray that is parallel
-%   to the optical axis. Positive values of theta correspond to the ray
+%   of z are to the right. An angle of zero indicates a ray that is parallel
+%   to the optical axis. Positive values of the angle correspond to the ray
 %   diverging to a position above the optical axis. Each elliptical surface
 %   is specified by a center and a radius in the z and h dimensions. The
 %   center must lie on the optical axis; positive values place the center
@@ -32,7 +32,7 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
 %                           corresponding to the z-position, height, and
 %                           optionally depth of the initial position of the
 %                           ray.
-%   thetaInitial          - A scalar or 2x1 vector in radians that
+%   angleInitial          - A scalar or 2x1 vector in radians that
 %                           specifies the angle of the ray w.r.t. the
 %                           optical axis in the height plane and optionally
 %                           in the depth plane. A value of zero is aligned
@@ -275,7 +275,7 @@ end
 % optical axis, and set the radius to zero.
 opticalSystem = zeros(nSurfaces,5);
 
-% If the radii of each ellipsoidal surface is defined in one or two
+% If the radii of each ellipsoidal surface are defined in one or two
 % dimensions, copy the trailing value over to define the 3D surface. Thus,
 % if a single radius is provided the system will model a sphere. If two
 % radius values are provided the system will model an ellipsoid that is
@@ -352,7 +352,8 @@ for ii = 2:nSurfaces
     end
     
     % Calculate the sin of the angle of incidence; need to reflect the
-    % value if the intersection is below the optical axis p1p2
+    % value if the intersection is below the optical axis
+    % p1p2
     ai = angles_p1p2(ii-1) + atan((opticalSystem(ii,3)^2*(intersectionCoords(ii,1)-opticalSystem(ii,1)))./(opticalSystem(ii,2)^2*intersectionCoords(ii,2)))+pi/2;
     if intersectionCoords(ii,2) < 0
         ai = ai - pi;
@@ -366,8 +367,8 @@ for ii = 2:nSurfaces
     end
     aVals_p1p3(ii) = sign(opticalSystem(ii,2))*sin(ai);
     
-    % The relative refractive index of the prior medium to the medium of
-    % the surface that the ray is now impacting
+    % Calculate the relative refractive index of the prior medium to the
+    % medium of the surface that the ray is now encountering
     relativeIndices(ii)=opticalSystem(ii-1,end)/opticalSystem(ii,end);
     
     % Check if the incidence angle is above the critical angle for the
@@ -576,8 +577,8 @@ unitSphere = [0 0 0 1];
 %  - Scaling in the p1, p2, and p3 directions
 %  - Rotation about the p1, p2, and p3 directions (not used here)
 %  - Translation (we are only using shifts along the optical axis)
-% We combine these in the 4x4 transformation matrix K.
-% We then find the intersection of the ray inv(K)P + t*inv(K)u with the unit sphere.
+% We combine these in the 4x4 transformation matrix K. We then find the
+% intersection of the ray inv(K)P + t*inv(K)u with the unit sphere.
 
 % Construct K = translate * rotate * scale
 scale = [ellipsoidRadii(1) 0 0 0; 0 ellipsoidRadii(2) 0 0; 0 0 ellipsoidRadii(3) 0; 0 0 0 1];
@@ -605,7 +606,7 @@ if isnan(intersectionPoints(1,1))
     return
 end
 
-% transform the intersection points back to the original coordinate frame
+% Transform the intersection points back to the original coordinate frame
 coordsOutA = K*[intersectionPoints(1,:) 1]';
 coordsOutB = K*[intersectionPoints(2,:) 1]';
 coordsOutAB = [coordsOutA(1:3)'; coordsOutB(1:3)'];

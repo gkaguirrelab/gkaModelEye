@@ -19,8 +19,8 @@ function [virtualEyePoint, nodalPointIntersectError] = virtualImageFunc( eyePoin
 %                           Azimuth, elevation, and torsion are in units of
 %                           head-centered (extrinsic) degrees. The pupil
 %                           radius value is unused by this routine.
-%   cameraTranslation     - Equal to sceneGeometry.cameraPosition.
-%                           translation
+%   cameraTranslation     - Equal to
+%                           	sceneGeometry.cameraPosition.translation
 %   rotationCenters       - Equal to sceneGeometry.eye.rotationCenters
 %   opticalSystem         - Equal to sceneGeometry.refraction.opticalSystem
 %
@@ -29,8 +29,9 @@ function [virtualEyePoint, nodalPointIntersectError] = virtualImageFunc( eyePoin
 %                           of a point in eyeWorld space with the
 %                           dimensions p1, p2, p3.
 %   nodalPointIntersectError - The distance (in mm) between the nodal point
-%                           of the camera and ray arising from the eyeWorld
-%                           point after it exited the optical system.
+%                           of the camera and the closest passage of a ray
+%                           arising from the eyeWorld point after it exited
+%                           the optical system.
 %
 % Examples:
 %{
@@ -105,7 +106,8 @@ badTraceFlag = false;
 while searchingFlag
 
     % The distance error function for searching across p1p2 theta values
-    cameraNodeDistanceError_p1p2 = @(angleX) calcCameraNodeDistanceError(eyePoint, angleX, angle_p1p3, eyePose, cameraTranslation, rotationCenters, opticalSystem);
+    cameraNodeDistanceError_p1p2 = ...
+        @(angleX) calcCameraNodeDistanceError(eyePoint, angleX, angle_p1p3, eyePose, cameraTranslation, rotationCenters, opticalSystem);
 
     % Set the x0 value for the search, handling the issue that an initial
     % value of exactly zero breaks the search.
@@ -134,7 +136,8 @@ while searchingFlag
     end
     
     % The distance error function for searching across p1p3 theta values    
-    cameraNodeDistanceError_p1p3 = @(angleX) calcCameraNodeDistanceError(eyePoint, angle_p1p2, angleX, eyePose, cameraTranslation, rotationCenters, opticalSystem);
+    cameraNodeDistanceError_p1p3 = ...
+        @(angleX) calcCameraNodeDistanceError(eyePoint, angle_p1p2, angleX, eyePose, cameraTranslation, rotationCenters, opticalSystem);
 
     % Set the x0 value for the search, handling the issue that an initial
     % value of exactly zero breaks the search.
@@ -181,8 +184,8 @@ end
 
 
 %% Obtain the virtual image location
-% With both theta values calculated, now obtain the virtual image
-% ray arising from the pupil plane that reflects the corneal optics
+% With both theta values calculated, now obtain the virtual image ray
+% arising from the pupil plane that reflects the corneal optics
 virtualEyePoint = calcVirtualImagePoint(eyePoint, angle_p1p2, angle_p1p3, opticalSystem);
 
 % Restore the warning state
@@ -208,29 +211,29 @@ function distance = calcCameraNodeDistanceError(eyePoint, angle_p1p2, angle_p1p3
 % Description:
 %   This function returns the Euclidean distance between the nodal point of
 %   the camera and a ray that has exited from the optical system of a
-%   rotated eye. This distance is calculated within the eye coordinates.
+%   rotated eye. This distance is calculated within eyeWorld coordinates.
 %
 %   This function is used to find angles in the p1p2 and p1p3 planes that
 %   minimize the distance between the intersection point of the ray in the
 %   camera plane and the nodal point of the camera. At a distance of zero,
-%   the ray would enter the pin hole aperture of the camera and thus
-%   produce a point on the resulting image.
+%   the ray would enter the pinhole aperture of the camera and thus produce
+%   a point on the resulting image.
 %
 % Inputs:
 %   eyePoint
-%   angle_p1p2, angle_p1p3 - Scalar in radians. The angle w.r.t. the optical
-%                           axis of the initial ray. 
+%   angle_p1p2, angle_p1p3 - Scalar in radians. The angle w.r.t. the 
+%                           optical axis of the initial ray. 
 %   eyePose
 %   cameraTranslation
 %   rotationCenters
 %   opticalSystem
 %
 % Outputs:
-%   distance              - Scalar in units of mm. The Euclidean distance
-%                           of the minimum distance between the nodal point
-%                           of the camera and a ray exiting the optical
-%                           system of the rotated eye. Set to Inf if an
-%                           error is returned by rayTraceEllipsoids.
+%   distance              - Scalar in units of mm. The minimum Euclidean 
+%                           distance between the nodal point of the camera
+%                           and a ray exiting the optical system of the
+%                           rotated eye. Set to Inf if an error is returned
+%                           by rayTraceEllipsoids.
 %
 
 
@@ -281,28 +284,27 @@ end % calcCameraNodeDistanceError
 
 %% calcVirtualImagePoint
 function [virtualEyePoint] = calcVirtualImagePoint(eyePoint, angle_p1p2, angle_p1p3, opticalSystem)
-% Returns the unit vector virtual image ray for the initial depth position
+% Returns the coordinates of a virtual image point at the initial depth
 %
 % Syntax:
 %  [virtualEyePoint] = calcVirtualImagePoint(eyePoint, angle_p1p2, angle_p1p3, opticalSystem)
 %
 % Description:
 %   For a given point in eyeWorld coordinates, and for a given pair of
-%   angle values, this function returns the ray that corresponds to the
-%   virtual image that arises from the optical system, with the initial
-%   point of the virtual image being at the same p1 position as the
-%   object point.
+%   angle values, this function returns the coordinates of the point that
+%   corresponds to the virtual image that arises from the optical system,
+%   with the initial point of the virtual image being at the same p1
+%   position as the object point.
 %
 %   Practically, once the p1p2 and p1p3 angles are found, this function is
 %   used to obtain the position within the eyeWorld coordinate frame that
 %   is the apparent location of the point after refraction through the
-%   cornea. For this reason, only first row of values are used by the
-%   calling function.
+%   cornea.
 %
 % Inputs:
 %   eyePoint
-%   angle_p1p2, angle_p1p3 - Scalar in radians. The angle w.r.t. the optical
-%                           axis of the initial ray. 
+%   angle_p1p2, angle_p1p3 - Scalar in radians. The angle w.r.t. the 
+%                           optical axis of the initial ray. 
 %   opticalSytem
 %
 % Outputs:
