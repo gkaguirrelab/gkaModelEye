@@ -129,7 +129,6 @@ if length(p.Results.modelEyeAlpha)==1
 else
     modelEyeAlpha = p.Results.modelEyeAlpha;
 end
-        
 
 % Grab the image size
 imageSizeX = sceneGeometry.cameraIntrinsic.sensorResolution(1);
@@ -153,16 +152,17 @@ if p.Results.newFigure
         figHandle = figure('Visible', 'off');
     end
     imshow(backgroundImage, 'Border', 'tight');
-    % Prepare the figure
-    hold on
-    axis off
-    axis equal
-    xlim([0 imageSizeX]);
-    ylim([0 imageSizeY]);
 else
     figHandle = gcf;
 end
 
+% Prepare the figure
+hold on
+axis off
+axis equal
+xlim([0 imageSizeX]);
+ylim([0 imageSizeY]);
+    
 % Silence a ray tracing warning that can occur when the eye is rotated at a
 % large angle and points in the iris (and sometimes pupil) encounter
 % internal reflection
@@ -211,9 +211,9 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
         % If we are plotting the pupil perimeter points, see if we would
         % like to label them
         if p.Results.showPupilTextLabels && strcmp(p.Results.modelEyeLabelNames{pp},'pupilPerimeterFront')
-            % Put text labels for the pupil perimeter points so that we can follow
-            % them through rotations and translations to validate the projection
-            % model
+            % Put text labels for the pupil perimeter points so that we can
+            % follow them through rotations and translations to validate
+            % the projection model
             text(imagePoints(idx,1), imagePoints(idx,2), num2str(find(idx)));
         end
 
