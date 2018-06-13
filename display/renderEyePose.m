@@ -1,4 +1,4 @@
-function [figHandle, renderedFrame] = renderEyePose(eyePose, sceneGeometry, varargin)
+function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, sceneGeometry, varargin)
 % Creates an image of the eye for a given eyePose and sceneGeometry
 %
 % Syntax:
@@ -43,6 +43,7 @@ function [figHandle, renderedFrame] = renderEyePose(eyePose, sceneGeometry, vara
 %
 % Outputs:
 %   figHandle             - Handle to a created figure.
+%   plotObjectHandles     - Array of handles to the plotted object elements
 %   renderedFrame         - Structure containing the rendered frame. The
 %                           field 'cdata' has the dimensions (X,Y,3), and
 %                           contains the RGB image. The field 'colormap' is
@@ -175,6 +176,9 @@ warning('Off','rayTraceEllipsoids:criticalAngle');
 % Restore the warning state
 warning(warnState);
 
+% Set up an empty variable to hold plot object handles
+plotObjectHandles = gobjects(0);
+
 % Loop through the point labels present in the eye model
 for pp = 1:length(p.Results.modelEyeLabelNames)
     % Check if we should plot the pupilEllipse
@@ -185,13 +189,13 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
         % Superimpose the ellipse using fimplicit or ezplot (ezplot is the
         % fallback option for older Matlab versions)
         if exist('fimplicit','file')==2
-            fimplicit(fh,[1, imageSizeX, 1, imageSizeY],'Color', p.Results.modelEyePlotColors{pp}(2),'LineWidth',1);
+            plotObjectHandles(end+1) = fimplicit(fh,[1, imageSizeX, 1, imageSizeY],'Color', p.Results.modelEyePlotColors{pp}(2),'LineWidth',1);
             set(gca,'position',[0 0 1 1],'units','normalized')
             axis off;
         else
-            plotHandle=ezplot(fh,[1, imageSizeX, 1, imageSizeY]);
-            set(plotHandle, 'Color', p.Results.modelEyePlotColors{pp}(2))
-            set(plotHandle,'LineWidth',1);
+            plotObjectHandles(end+1) = ezplot(fh,[1, imageSizeX, 1, imageSizeY]);
+            set(plotObjectHandles(end), 'Color', p.Results.modelEyePlotColors{pp}(2))
+            set(plotObjectHandles(end),'LineWidth',1);
         end
     else
         % Plot this label
@@ -199,14 +203,17 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
         mc =  p.Results.modelEyePlotColors{pp};
         switch mc(1)
             case '.'
-                sc = scatter(imagePoints(idx,1), imagePoints(idx,2), 10, 'o', 'filled', 'MarkerFaceColor', mc(2), 'MarkerEdgeColor','none');
-                sc.MarkerFaceAlpha = modelEyeAlpha(pp);
+                s = scatter(imagePoints(idx,1), imagePoints(idx,2), 10, 'o', 'filled', 'MarkerFaceColor', mc(2), 'MarkerEdgeColor','none');
+                s.MarkerFaceAlpha = modelEyeAlpha(pp);
+                plotObjectHandles(end+1) = s;
             case 'o'
-                sc = scatter(imagePoints(idx,1), imagePoints(idx,2), mc(1), 'filled', 'MarkerFaceColor', mc(2), 'MarkerEdgeColor','none');
-                sc.MarkerFaceAlpha = modelEyeAlpha(pp);
+                s = scatter(imagePoints(idx,1), imagePoints(idx,2), mc(1), 'filled', 'MarkerFaceColor', mc(2), 'MarkerEdgeColor','none');
+                s.MarkerFaceAlpha = modelEyeAlpha(pp);
+                plotObjectHandles(end+1) = s;
             otherwise
-                sc = scatter(imagePoints(idx,1), imagePoints(idx,2), mc(1), 'MarkerFaceColor', 'none', 'MarkerEdgeColor',mc(2));
-                sc.MarkerEdgeAlpha = modelEyeAlpha(pp);
+                s = scatter(imagePoints(idx,1), imagePoints(idx,2), mc(1), 'MarkerFaceColor', 'none', 'MarkerEdgeColor',mc(2));
+                s.MarkerEdgeAlpha = modelEyeAlpha(pp);
+                plotObjectHandles(end+1) = s;
         end
         % If we are plotting the pupil perimeter points, see if we would
         % like to label them
@@ -214,7 +221,7 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
             % Put text labels for the pupil perimeter points so that we can
             % follow them through rotations and translations to validate
             % the projection model
-            text(imagePoints(idx,1), imagePoints(idx,2), num2str(find(idx)));
+            plotObjectHandles(end+1) = text(imagePoints(idx,1), imagePoints(idx,2), num2str(find(idx)));
         end
 
     end
