@@ -254,7 +254,11 @@ warning(warningState);
 % This process terminates when the search count exceeds nMaxSearches.
 if RMSE > p.Results.repeatSearchThresh && ...
         p.Results.searchCount <= p.Results.nMaxSearches
-    x0 = eyePose;
+    % Make sure that the search yielded an actual solution for the eyePose.
+    % If not, simply re-use the x0 (with a small shift).
+    if ~isempty(eyePose)
+        x0 = eyePose;
+    end
     x0(1:2) = x0(1:2)+[0.1 0.1]./p.Results.searchCount;
     [eyePose_r, RMSE_r] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, ...
         'x0',x0,...
