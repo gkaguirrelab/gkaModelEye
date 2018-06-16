@@ -194,6 +194,7 @@ options = optimoptions(@fmincon,...
 warningState = warning;
 warning('off','rayTraceEllipsoids:criticalAngle');
 warning('off','pupilProjection_fwd:ellipseFitFailed');
+warning('off','MATLAB:nearlySingularMatrix');
 
 % Perform the search with nested objfun and outfun
 fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, [], options);
