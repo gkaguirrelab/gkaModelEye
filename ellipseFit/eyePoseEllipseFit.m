@@ -22,7 +22,7 @@ function [eyePose, RMSE] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
 %  'x0'                   - Initial guess for the eyePose.
 %  'eyePoseLB'            - Lower bound on the eyePose
 %  'eyePoseUB'            - Upper bound on the eyePose
-%  'rmseThresh'        - Scalar that defines the stopping point for the
+%  'rmseThresh'           - Scalar that defines the stopping point for the
 %                           search. The default value allows reconstruction
 %                           of eyePose within 0.1% of the veridical,
 %                           simulated value.
@@ -212,7 +212,15 @@ fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, [], options);
             % This is the RMSE of the distance values of the boundary
             % points to the ellipse fit.
             explicitEllipse = ellipse_transparent2ex(pupilEllipseOnImagePlane);
-            fVal = sqrt(nanmean(ellipsefit_distance(Xp,Yp,explicitEllipse).^2));
+            if isempty(explicitEllipse)
+                fVal = nan;
+            else
+                if any(isnan(explicitEllipse))
+                    fVal = nan;
+                else
+                    fVal = sqrt(nanmean(ellipsefit_distance(Xp,Yp,explicitEllipse).^2));
+                end
+            end
         end
     end % local objective function
 
