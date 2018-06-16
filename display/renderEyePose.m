@@ -116,7 +116,7 @@ p.addParameter('showPupilTextLabels',false,@islogical);
 p.addParameter('nPupilPerimPoints',8,@isnumeric);
 p.addParameter('nIrisPerimPoints',20,@isnumeric);
 p.addParameter('modelEyeLabelNames', {'aziRotationCenter', 'eleRotationCenter', 'posteriorChamber' 'irisPerimeter' 'pupilPerimeterBack' 'pupilEllipse' 'pupilPerimeterFront' 'anteriorChamber' 'cornealApex'}, @iscell);
-p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' '.b' '*g' '-g' '*g' '.y' '*y'}, @iscell);
+p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '*g' '-g' '*g' '.y' '*y'}, @iscell);
 p.addParameter('modelEyeAlpha',1,@isnumeric);
 
 % parse
@@ -203,15 +203,15 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
         mc =  p.Results.modelEyePlotColors{pp};
         switch mc(1)
             case '.'
-                s = scatter(imagePoints(idx,1), imagePoints(idx,2), 10, 'o', 'filled', 'MarkerFaceColor', mc(2), 'MarkerEdgeColor','none');
+                s = scatter(imagePoints(idx,1), imagePoints(idx,2), (imageSizeX/200)^2, 'o', 'filled', 'MarkerFaceColor', mc(2), 'MarkerEdgeColor','none');
                 s.MarkerFaceAlpha = modelEyeAlpha(pp);
                 plotObjectHandles(end+1) = s;
             case 'o'
-                s = scatter(imagePoints(idx,1), imagePoints(idx,2), mc(1), 'filled', 'MarkerFaceColor', mc(2), 'MarkerEdgeColor','none');
+                s = scatter(imagePoints(idx,1), imagePoints(idx,2), (imageSizeX/150)^2, 'o', 'filled', 'MarkerFaceColor', mc(2), 'MarkerEdgeColor','none');
                 s.MarkerFaceAlpha = modelEyeAlpha(pp);
                 plotObjectHandles(end+1) = s;
             otherwise
-                s = scatter(imagePoints(idx,1), imagePoints(idx,2), mc(1), 'MarkerFaceColor', 'none', 'MarkerEdgeColor',mc(2));
+                s = scatter(imagePoints(idx,1), imagePoints(idx,2), (imageSizeX/100)^2, mc(1), 'MarkerFaceColor', 'none', 'MarkerEdgeColor', mc(2));
                 s.MarkerEdgeAlpha = modelEyeAlpha(pp);
                 plotObjectHandles(end+1) = s;
         end
