@@ -296,7 +296,7 @@ fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, @constr, options);
         % Compute objective function as Euclidean distance in the target
         % and candidate ellipse centers
         if any(isnan(ellipseAtLast))
-            fval = nan;
+            fval = realmax;
         else
             fval = sqrt((targetEllipse(1) - ellipseAtLast(1))^2 + ...
                 (targetEllipse(2) - ellipseAtLast(2))^2);
@@ -311,8 +311,10 @@ fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, @constr, options);
         end
         
         if any(isnan(ellipseAtLast))
-            c = nan;
-            ceq = nan;
+            c = realmax;
+            ceq = realmax;
+            shapeErrorAtLast = c;
+            areaErrorAtLast = ceq;
         else
             % c:
             % The theta and eccentricity of an ellipse can be described as
