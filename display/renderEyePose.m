@@ -118,6 +118,7 @@ p.addParameter('nIrisPerimPoints',20,@isnumeric);
 p.addParameter('modelEyeLabelNames', {'aziRotationCenter', 'eleRotationCenter', 'posteriorChamber' 'irisPerimeter' 'pupilPerimeterBack' 'pupilEllipse' 'pupilPerimeterFront' 'anteriorChamber' 'cornealApex'}, @iscell);
 p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '*g' '-g' '*g' '.y' '*y'}, @iscell);
 p.addParameter('modelEyeAlpha',1,@isnumeric);
+p.addParameter('modelEyeSymbolSizeScaler',1,@isnumeric);
 
 % parse
 p.parse(eyePose, sceneGeometry, varargin{:})
@@ -203,15 +204,15 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
         mc =  p.Results.modelEyePlotColors{pp};
         switch mc(1)
             case '.'
-                s = scatter(imagePoints(idx,1), imagePoints(idx,2), (imageSizeX/200)^2, 'o', 'filled', 'MarkerFaceColor', mc(2), 'MarkerEdgeColor','none');
+                s = scatter(imagePoints(idx,1), imagePoints(idx,2), (imageSizeX/(200/p.Results.modelEyeSymbolSizeScaler))^2, 'o', 'filled', 'MarkerFaceColor', mc(2), 'MarkerEdgeColor','none');
                 s.MarkerFaceAlpha = modelEyeAlpha(pp);
                 plotObjectHandles(end+1) = s;
             case 'o'
-                s = scatter(imagePoints(idx,1), imagePoints(idx,2), (imageSizeX/150)^2, 'o', 'filled', 'MarkerFaceColor', mc(2), 'MarkerEdgeColor','none');
+                s = scatter(imagePoints(idx,1), imagePoints(idx,2), (imageSizeX/(150/p.Results.modelEyeSymbolSizeScaler))^2, 'o', 'filled', 'MarkerFaceColor', mc(2), 'MarkerEdgeColor','none');
                 s.MarkerFaceAlpha = modelEyeAlpha(pp);
                 plotObjectHandles(end+1) = s;
             otherwise
-                s = scatter(imagePoints(idx,1), imagePoints(idx,2), (imageSizeX/100)^2, mc(1), 'MarkerFaceColor', 'none', 'MarkerEdgeColor', mc(2));
+                s = scatter(imagePoints(idx,1), imagePoints(idx,2), (imageSizeX/(100/p.Results.modelEyeSymbolSizeScaler))^2, mc(1), 'MarkerFaceColor', 'none', 'MarkerEdgeColor', mc(2));
                 s.MarkerEdgeAlpha = modelEyeAlpha(pp);
                 plotObjectHandles(end+1) = s;
         end
