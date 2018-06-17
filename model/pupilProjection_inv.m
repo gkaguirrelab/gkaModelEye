@@ -288,49 +288,61 @@ fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, @constr, options);
 
     % Nested objective function
     function fval = objfun(x)
-        if ~isequal(x,xLast) % Check if computation is necessary
+        % Check if computation is necessary
+        if ~isequal(x,xLast)
             ellipseAtLast = pupilProjection_fwd(x, sceneGeometry);
             xLast = x;
         end
         % Compute objective function as Euclidean distance in the target
         % and candidate ellipse centers
-        fval = sqrt((targetEllipse(1) - ellipseAtLast(1))^2 + ...
-            (targetEllipse(2) - ellipseAtLast(2))^2);
+        if any(isnan(ellipseAtLast))
+            fval = nan;
+        else
+            fval = sqrt((targetEllipse(1) - ellipseAtLast(1))^2 + ...
+                (targetEllipse(2) - ellipseAtLast(2))^2);
+        end
     end
 
     % Nested constraint function
     function [c,ceq] = constr(x)
-        if ~isequal(x,xLast) % Check if computation is necessary
+        if ~isequal(x,xLast) 
             ellipseAtLast = pupilProjection_fwd(x, sceneGeometry);
             xLast = x;
         end
-        % c:
-        % The theta and eccentricity of an ellipse can be described as a
-        % point in polar coordinates. We express the constraint as the
-        % vector distance between these points. Direct minimization of
-        % differences in theta is a poor constraint, as differences in
-        % theta have reduced meaning at small eccentricities. Because
-        % ellipses are symmetric, theta spans the range of 0:pi. Therefore,
-        % the theta value is doubled prior to conversion to Cartesian
-        % coordinates so that the space wraps at the 0 - pi transition
-        % point. Eccentricity has a value ranging from zero (circular) to 1
-        % (a fully flattened ellipse). We linearize the eccentricity value
-        % so that the error metric is sensitive to small differences in
-        % eccentricity. The ceq value is divided by 2, so that the largest
-        % possible error is unity.
         
-        thetaT = targetEllipse(5)*2;
-        thetaC = ellipseAtLast(5)*2;
-        rhoT = 1-sqrt(1-targetEllipse(4)^2);
-        rhoC = 1-sqrt(1-ellipseAtLast(4)^2);
-        
-        c = sqrt(rhoT^2 + rhoC^2 - 2*rhoT*rhoC*cos(thetaT-thetaC))/2;
-        shapeErrorAtLast = c;
-        
-        % ceq:
-        % Proportional difference in ellipse areas
-        ceq = abs(targetEllipse(3) - ellipseAtLast(3))/targetEllipse(3);
-        areaErrorAtLast = ceq;
+        if any(isnan(ellipseAtLast))
+            c = nan;
+            ceq = nan;
+        else
+            % c:
+            % The theta and eccentricity of an ellipse can be described as
+            % a point in polar coordinates. We express the constraint as
+            % the vector distance between these points. Direct minimization
+            % of differences in theta is a poor constraint, as differences
+            % in theta have reduced meaning at small eccentricities.
+            % Because ellipses are symmetric, theta spans the range of
+            % 0:pi. Therefore, the theta value is doubled prior to
+            % conversion to Cartesian coordinates so that the space wraps
+            % at the 0 - pi transition point. Eccentricity has a value
+            % ranging from zero (circular) to 1 (a fully flattened
+            % ellipse). We linearize the eccentricity value so that the
+            % error metric is sensitive to small differences in
+            % eccentricity. The ceq value is divided by 2, so that the
+            % largest possible error is unity.
+            
+            thetaT = targetEllipse(5)*2;
+            thetaC = ellipseAtLast(5)*2;
+            rhoT = 1-sqrt(1-targetEllipse(4)^2);
+            rhoC = 1-sqrt(1-ellipseAtLast(4)^2);
+            
+            c = sqrt(rhoT^2 + rhoC^2 - 2*rhoT*rhoC*cos(thetaT-thetaC))/2;
+            shapeErrorAtLast = c;
+            
+            % ceq:
+            % Proportional difference in ellipse areas
+            ceq = abs(targetEllipse(3) - ellipseAtLast(3))/targetEllipse(3);
+            areaErrorAtLast = ceq;
+        end
     end
 
     % Nested output function
