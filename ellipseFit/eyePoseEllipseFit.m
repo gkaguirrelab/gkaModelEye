@@ -282,6 +282,13 @@ if RMSE > p.Results.repeatSearchThresh && ...
     end
 end
 
+% If the eyePose variable is empty, then not fit could be found. In this 
+% situation return nans for the eyePose and inf for the RMSE
+if isempty(eyePose)
+    eyePose = [nan nan nan nan];
+    RMSE = inf;
+end
+
 end % eyePoseEllipseFit
 
 
