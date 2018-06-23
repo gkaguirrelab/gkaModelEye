@@ -191,8 +191,10 @@ switch p.Results.species
             targetBackHorizToAxNav = backHorizToAxAtch / frontHorizToAxAtch * frontHorizToAxNav;
             radiiNavBackCorrected = [a a*targetBackHorizToAxNav a*targetBackHorizToAxNav]./atchNavScaler
         %}
+        eye.cornea.front.profile = 'ellipse';
         eye.cornea.front.radii = [14.26   10.43   10.27] .* ...
             ((p.Results.sphericalAmetropia .* -0.0028)+1);
+        eye.cornea.back.profile = 'ellipse';
         eye.cornea.back.radii = [ 13.7716    9.3027    9.3027];
         
         % Code here to calculate the Navarro 1985 corneal parameters that
@@ -487,6 +489,7 @@ switch p.Results.species
         %}
         postChamberRadiiEmetrope = [10.1760 11.4558 11.3771];
         postChamberRadiiAmetropiaSlope = [-0.1495 -0.0393 -0.0864];
+        eye.posteriorChamber.profile = 'ellipse';
         eye.posteriorChamber.radii = ...
             postChamberRadiiEmetrope + postChamberRadiiAmetropiaSlope.* p.Results.sphericalAmetropia;
 
@@ -546,6 +549,7 @@ switch p.Results.species
             solution.a
             solution.b
         %}
+        eye.lens.front.profile = 'hyperbola';
         eye.lens.front.R = 11.48;
         eye.lens.front.Q = -5;
         a = eye.lens.front.R * sqrt(abs( 1 / (eye.lens.front.Q - 1 ) )) * sign(eye.lens.front.Q);
@@ -554,6 +558,7 @@ switch p.Results.species
         eye.lens.front.radii(2:3) = a;
         eye.lens.front.center = [eye.pupil.center(1)-eye.lens.front.radii(1) 0 0];
         
+        eye.lens.back.profile = 'hyperbola';
         eye.lens.back.R = -5.9;
         eye.lens.back.Q = -2;
         a = eye.lens.back.R * sqrt(abs( 1 / (eye.lens.back.Q - 1 ) )) * sign(eye.lens.back.Q);
@@ -819,6 +824,7 @@ switch p.Results.species
         
         %% Refractive indices
         % Obtain refractive index values for this spectral domain.
+        eye.index.vitreous = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );
         eye.index.cornea = returnRefractiveIndex( 'cornea', p.Results.spectralDomain );
         eye.index.aqueous = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
         eye.index.lens = returnRefractiveIndex( 'lens', p.Results.spectralDomain );

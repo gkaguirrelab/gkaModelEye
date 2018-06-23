@@ -227,12 +227,6 @@ end
 % Obtain the refractive index of the medium between the eye and the camera
 mediumRefractiveIndex = returnRefractiveIndex( p.Results.medium, p.Results.spectralDomain );
 
-% The center of the cornea front surface is at a position equal to its
-% radius of curvature, thus placing the apex of the front corneal surface
-% at a z position of zero. The back surface is shifted back to produce
-% the appropriate corneal thickness.
-cornealThickness = -sceneGeometry.eye.cornea.back.center(1)-sceneGeometry.eye.cornea.back.radii(1);
-
 % The axis of the cornea is rotated w.r.t. the optical axis of the eye.
 % Here, we derive the radii for the ellipse that is the intersection of the
 % p1p2 and p1p3 planes with the ellipsoids for the back and front corneal
@@ -241,9 +235,11 @@ corneaBackRotRadii=ellipsesFromEllipsoid(sceneGeometry.eye.cornea.back.radii,sce
 corneaFrontRotRadii=ellipsesFromEllipsoid(sceneGeometry.eye.cornea.front.radii,sceneGeometry.eye.cornea.axis);
 
 % Build the optical system matrix
-sceneGeometry.refraction.opticalSystem = [nan, nan, nan, nan, sceneGeometry.eye.index.aqueous; ...
-    -sceneGeometry.eye.cornea.back.radii(1)-cornealThickness, -corneaBackRotRadii(1), -corneaBackRotRadii(2), -corneaBackRotRadii(3), sceneGeometry.eye.index.cornea; ...
-    -sceneGeometry.eye.cornea.front.radii(1), -corneaFrontRotRadii(1), -corneaFrontRotRadii(2), -corneaFrontRotRadii(3), mediumRefractiveIndex];
+sceneGeometry.refraction.opticalSystem = [nan, nan, nan, nan, nan, sceneGeometry.eye.index.vitreous; ...
+    sceneGeometry.eye.lens.back.center(1), 2, -sceneGeometry.eye.lens.back.radii(1:3), sceneGeometry.eye.index.lens; ...
+    sceneGeometry.eye.lens.front.center(1), 2, -sceneGeometry.eye.lens.front.radii(1:3), sceneGeometry.eye.index.aqueous; ...
+    sceneGeometry.eye.cornea.back.center(1), 0, -corneaBackRotRadii(1:3), sceneGeometry.eye.index.cornea; ...
+    sceneGeometry.eye.cornea.front.center(1), 0, -corneaFrontRotRadii(1:3), mediumRefractiveIndex];
 
 
 %% Lenses
@@ -279,7 +275,7 @@ end
 
 % Pad the optical system with nan rows to reach a fixed 10x5 size
 sceneGeometry.refraction.opticalSystem = [sceneGeometry.refraction.opticalSystem; ...
-    nan(10-size(sceneGeometry.refraction.opticalSystem,1),5)];
+    nan(10-size(sceneGeometry.refraction.opticalSystem,1),6)];
 
 
 %% constraintTolerance

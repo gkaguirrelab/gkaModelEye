@@ -61,7 +61,7 @@ switch material
         % The refractive index of the lens of the eye varies along a
         % gradient in thickness. Until such time as I implement these
         % values properly, I will leave the index undefined.
-        ns = [nan nan];
+        ns = [1.4 1.4];
     case 'aqueous'
         % Sardar, Dhiraj K., et al. "Optical properties of ocular tissues
         % in the near infrared region." Lasers in medical science 22.1

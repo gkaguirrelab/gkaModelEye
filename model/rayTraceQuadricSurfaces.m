@@ -1,31 +1,33 @@
-function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids(coordsInitial, angleInitial, opticalSystemIn, figureFlag)
+function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceQuadricSurfaces(coordsInitial, angleInitial, opticalSystemIn, figureFlag)
 % Returns the position and angle of a resultant ray w.r.t. the optical axis
 %
 % Syntax:
-%  [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids(coordsInitial, angleInitial, opticalSystemIn, figureFlag)
+%  [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceQuadricSurfaces(coordsInitial, angleInitial, opticalSystemIn, figureFlag)
 %
 % Description:
-%   This routine implements 3D skew ray tracing through ellipsoidal
+%   This routine implements 3D skew ray tracing through quadric
 %   surfaces. Some steps of the process are modified versions of the
 %   generalized ray tracing equations of:
 %
 %       Elagha, Hassan A. "Generalized formulas for ray-tracing and
 %       longitudinal spherical aberration." JOSA A 34.3 (2017): 335-343.
 %
-%   The implementation assumes a set of ellipsoidal surfaces, with each
-%   surface having its center positioned on the optical axis. The initial
+%   The implementation assumes a set of rotationally symmetric quadric
+%   surfaces, with the exception of the ellipsoid which may be triaxial.
+%   Each surface has its center positioned on the optical axis. The initial
 %   state of the ray is specified by its 3D coordinates and by the angles
 %   that it makes with the optical axis. By convention, the optical axis is
 %   termed "z", and the orthogonal axis is termed "height". Positive values
-%   of z are to the right. An angle of zero indicates a ray that is parallel
-%   to the optical axis. Positive values of the angle correspond to the ray
-%   diverging to a position above the optical axis. Each elliptical surface
-%   is specified by a center and a radius in the z and h dimensions. The
-%   center must lie on the optical axis; positive values place the center
-%   to the right of the origin of the ray. A positive radius presents the
-%   ray with a convex surface; a negative radius presents the ray with a
-%   concave surface. The output of the routine is the position and angle at
-%   which the ray (or its reverse projection) intersects the optical axis.
+%   of z are to the right. An angle of zero indicates a ray that is
+%   parallel to the optical axis. Positive values of the angle correspond
+%   to the ray diverging to a position above the optical axis. Each
+%   elliptical surface is specified by a center and a radius in the z and h
+%   dimensions. The center must lie on the optical axis; positive values
+%   place the center to the right of the origin of the ray. A positive
+%   radius presents the ray with a convex surface; a negative radius
+%   presents the ray with a concave surface. The output of the routine is
+%   the position and angle at which the ray (or its reverse projection)
+%   intersects the optical axis.
 %
 % Inputs:
 %   coordsInitial         - A 2x1 orf 3x1 vector, with the values 
@@ -39,21 +41,21 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
 %                           with the optical axis. Values between 0 and pi
 %                           direct the ray to diverge "upwards" away from
 %                           the axis.
-%   opticalSystemIn       - An mx3, mx4, or mx5 matrix, where m is the 
-%                           number of surfaces in the model, including the
-%                           initial state of the ray. Each row contains the
-%                           values:
-%                               [center, radius, refractiveIndex]
-%                           or
-%                               [center, radiusZ, radiusH, refractiveIndex]
-%                           or
-%                               [center, radiusZ, radiusH, radiusK, refractiveIndex]
-%                           that define an elliptical lens. The first row
-%                           corresponds to the initial conditions of the
-%                           ray. Thus, the refractive index value given in
-%                           the first row specifies the index of the medium
-%                           in which the ray arises. The center and radius
-%                           values for the first row are ignored.
+%   opticalSystemIn       - An mx6 matrix, where m is the number of 
+%                           surfaces in the model, including the initial
+%                           state of the ray. Each row contains the
+%                           parameters of the an optical surface:
+%                               [center, profile, radiusZ, ...
+%                                   radiusH, radiusK, refractiveIndex]
+%                           that define a quadric surface lens. The profile
+%                           value is an index of:
+%                               0 = ellipse; 1 = parabola; 2 = hyperbola
+%                           The first row corresponds to the initial
+%                           conditions of the ray. Thus, the refractive
+%                           index value given in the first row specifies
+%                           the index of the medium in which the ray
+%                           arises. The center and radius values for the
+%                           first row are ignored.
 %   figureFlag            - Logical or structure. If logical, the true or
 %                           false value controls whether the default style
 %                           plot is created. If empty, it will be set to
@@ -92,7 +94,7 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
     angleInitial = deg2rad(17.309724);
     figureFlag=true;
     opticalSystem=[nan nan 1; 22 10 1.2; 9 -8 1; 34 12 1.5; 20 -10 1.0];
-    [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids(coords, angleInitial, opticalSystem, figureFlag);
+    [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceQuadricSurfaces(coords, angleInitial, opticalSystem, figureFlag);
     elaghaThetasDeg = [17.309724 9.479589 4.143784 -5.926743 -26.583586];
     assert(max(abs(angles_p1p2' - deg2rad(elaghaThetasDeg)))<1e-5);
 %}
@@ -101,7 +103,7 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
     % A model of the passage of a point on the pupil perimeter through
     % the axial cross-section of the cornea (units in mm)
     sceneGeometry = createSceneGeometry();
-    [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1) 2], [deg2rad(-15) 0], sceneGeometry.refraction.opticalSystem, true);
+    [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceQuadricSurfaces([sceneGeometry.eye.pupil.center(1) 2], [deg2rad(-15) 0], sceneGeometry.refraction.opticalSystem, true);
 %}
 %{
     %% Pupil through cornea, multiple points and rays
@@ -116,7 +118,7 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
     figureFlag.textLabels = false;
     for theta = -25:50:25
         for pupilRadius = -2:4:2
-            rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1) pupilRadius], theta, sceneGeometry.refraction.opticalSystem, figureFlag);
+            rayTraceQuadricSurfaces([sceneGeometry.eye.pupil.center(1) pupilRadius], theta, sceneGeometry.refraction.opticalSystem, figureFlag);
         end
     end
 %}
@@ -127,7 +129,7 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
     % This ray will not intersect the surface. The function issues
     % warning and returns an empty outputRay
     theta = deg2rad(45);
-    outputRay = rayTraceEllipsoids(coords, theta, opticalSystem);
+    outputRay = rayTraceQuadricSurfaces(coords, theta, opticalSystem);
 %}
 %{
     %% Demo total internal reflection warning
@@ -137,7 +139,7 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
     % This ray encounters total internal reflection. The function issues
     % warning and returns an empty outputRay
     theta = deg2rad(25);
-    outputRay = rayTraceEllipsoids(coords, theta, opticalSystem);
+    outputRay = rayTraceQuadricSurfaces(coords, theta, opticalSystem);
 %}
 
 
@@ -232,11 +234,10 @@ end
 % outputRay set to empty
 outputRay = [];
 % strip the optical system of any rows which are all nans
-opticalSystemIn=opticalSystemIn(sum(isnan(opticalSystemIn),2)~=size(opticalSystemIn,2),:);
-% determine the number of surfaces and dimensionalty in which they are
-% defined (i.e., spherical or elliptical)
-nSurfaces = size(opticalSystemIn,1);
-nDims = size(opticalSystemIn,2);
+opticalSystem=opticalSystemIn(sum(isnan(opticalSystemIn),2)~=size(opticalSystemIn,2),:);
+% determine the number of surfaces
+nSurfaces = size(opticalSystem,1);
+nDims = 6;
 
 % Pre-allocate our loop variables; set the values for the first surface
 % (initial position of ray)
@@ -270,29 +271,10 @@ if angles_p1p3(1)==0
     angles_p1p3(1)=realmin;
 end
 
-% Build the local optical system. Replace the center and radius of the
-% first surface with the point of intersection of the initial ray with the
-% optical axis, and set the radius to zero.
-opticalSystem = zeros(nSurfaces,5);
-
-% If the radii of each ellipsoidal surface are defined in one or two
-% dimensions, copy the trailing value over to define the 3D surface. Thus,
-% if a single radius is provided the system will model a sphere. If two
-% radius values are provided the system will model an ellipsoid that is
-% rotationally symmetric about the optical axis.
-switch nDims
-    case 3
-        opticalSystem = [opticalSystemIn(:,1) opticalSystemIn(:,2) opticalSystemIn(:,2) opticalSystemIn(:,2) opticalSystemIn(:,3)];
-    case 4
-        opticalSystem = [opticalSystemIn(:,1) opticalSystemIn(:,2) opticalSystemIn(:,3) opticalSystemIn(:,3) opticalSystemIn(:,4)];
-    case 5
-        opticalSystem = opticalSystemIn;
-end
-
 % Initialize the figure
 if figureFlag.show
     % Determine if we are plotting the p1p2 only, or both p1 and p3
-    if nDims == 5 || length(angleInitial)==2 || ~isempty(figureFlag.p3Lim)
+    if nDims == 6 || length(angleInitial)==2 || ~isempty(figureFlag.p3Lim)
         figureFlag.axsag = true;
     end
     if figureFlag.new
@@ -341,32 +323,62 @@ end
 %% Peform the ray trace
 for ii = 2:nSurfaces
 
-    % Obtain the coordinate at which the ray intersects the next surface,
-    % and (for display purposes) the radii of the ellipse in this
-    % coordinate space.
-    [ intersectionCoords(ii,:), ellipseRadii_p1p2, ellipseRadii_p1p3 ] = rayIntersectEllipsoid( intersectionCoords(ii-1,:), angles_p1p2(ii-1), angles_p1p3(ii-1), [opticalSystem(ii,2) opticalSystem(ii,3) opticalSystem(ii,4)], [opticalSystem(ii,1) 0 0] );
-    % Check if the ray missed (or was tangenital to) the surface
-    if isnan(intersectionCoords(ii,1)) || isnan(intersectionCoords(ii,1))
-        warning('rayTraceEllipsoids:nonIntersectingRay','Ray did not intersect surface %d. Returning.',ii);
-        return
-    end
-    
-    % Calculate the sin of the angle of incidence; need to reflect the
-    % value if the intersection is below the optical axis
-    % p1p2
-    ai = angles_p1p2(ii-1) + atan((opticalSystem(ii,3)^2*(intersectionCoords(ii,1)-opticalSystem(ii,1)))./(opticalSystem(ii,2)^2*intersectionCoords(ii,2)))+pi/2;
-    if intersectionCoords(ii,2) < 0
-        ai = ai - pi;
-    end
-    aVals_p1p2(ii) = sign(opticalSystem(ii,2))*sin(ai);
+    % Obtain the coordinate at which the ray intersects the next surface
+    % and the sin of the angle of incidence. We also obtain the radii of
+    % the quadric surface in the p1p2 and p1p3 planes at the point of
+    % intersection for display purposes.
+    switch opticalSystem(ii,2)
+        case 0 % Ellipsoid
+            [ intersectionCoords(ii,:), radii_p1p2, radii_p1p3 ] = rayIntersectEllipsoid( intersectionCoords(ii-1,:), angles_p1p2(ii-1), angles_p1p3(ii-1), [opticalSystem(ii,3) opticalSystem(ii,4) opticalSystem(ii,5)], [opticalSystem(ii,1) 0 0] );
+            % Check if the ray missed (or was tangenital to) the surface
+            if isnan(intersectionCoords(ii,1)) || isnan(intersectionCoords(ii,1))
+                warning('rayTraceQuadricSurfaces:nonIntersectingRay','Ray did not intersect surface %d. Returning.',ii);
+                return
+            end
+            
+            % Calculate the sin of the angle of incidence; need to reflect
+            % the value if the intersection is below the optical axis.
+            % p1p2
+            ai = angles_p1p2(ii-1) + atan((opticalSystem(ii,4)^2*(intersectionCoords(ii,1)-opticalSystem(ii,1)))./(opticalSystem(ii,3)^2*intersectionCoords(ii,2)))+pi/2;
+            if intersectionCoords(ii,2) < 0
+                ai = ai - pi;
+            end
+            aVals_p1p2(ii) = sign(opticalSystem(ii,3))*sin(ai);
+            
+            % p1p3
+            ai = angles_p1p3(ii-1) + atan((opticalSystem(ii,5)^2*(intersectionCoords(ii,1)-opticalSystem(ii,1)))./(opticalSystem(ii,3)^2*intersectionCoords(ii,3)))+pi/2;
+            if intersectionCoords(ii,3) < 0
+                ai = ai - pi;
+            end
+            aVals_p1p3(ii) = sign(opticalSystem(ii,3))*sin(ai);     
 
-    % p1p3
-    ai = angles_p1p3(ii-1) + atan((opticalSystem(ii,4)^2*(intersectionCoords(ii,1)-opticalSystem(ii,1)))./(opticalSystem(ii,2)^2*intersectionCoords(ii,3)))+pi/2;
-    if intersectionCoords(ii,3) < 0
-        ai = ai - pi;
+            
+        case 2 % Hyperboloid
+            [ intersectionCoords(ii,:), radii_p1p2, radii_p1p3 ] = rayIntersectEllipsoid( intersectionCoords(ii-1,:), angles_p1p2(ii-1), angles_p1p3(ii-1), [opticalSystem(ii,3) opticalSystem(ii,4) opticalSystem(ii,5)], [opticalSystem(ii,1) 0 0] );
+            % Check if the ray missed (or was tangenital to) the surface
+            if isnan(intersectionCoords(ii,1)) || isnan(intersectionCoords(ii,1))
+                warning('rayTraceQuadricSurfaces:nonIntersectingRay','Ray did not intersect surface %d. Returning.',ii);
+                return
+            end
+            
+            % Calculate the sin of the angle of incidence; need to reflect the
+            % value if the intersection is below the optical axis
+            % p1p2
+            ai = angles_p1p2(ii-1) + atan((opticalSystem(ii,4)^2*(intersectionCoords(ii,1)-opticalSystem(ii,1)))./(opticalSystem(ii,3)^2*intersectionCoords(ii,2)))+pi/2;
+            if intersectionCoords(ii,2) < 0
+                ai = ai - pi;
+            end
+            aVals_p1p2(ii) = sign(opticalSystem(ii,3))*sin(ai);
+            
+            % p1p3
+            ai = angles_p1p3(ii-1) + atan((opticalSystem(ii,5)^2*(intersectionCoords(ii,1)-opticalSystem(ii,1)))./(opticalSystem(ii,3)^2*intersectionCoords(ii,3)))+pi/2;
+            if intersectionCoords(ii,3) < 0
+                ai = ai - pi;
+            end
+            aVals_p1p3(ii) = sign(opticalSystem(ii,3))*sin(ai);
+
     end
-    aVals_p1p3(ii) = sign(opticalSystem(ii,2))*sin(ai);
-    
+
     % Calculate the relative refractive index of the prior medium to the
     % medium of the surface that the ray is now encountering
     relativeIndices(ii)=opticalSystem(ii-1,end)/opticalSystem(ii,end);
@@ -374,7 +386,7 @@ for ii = 2:nSurfaces
     % Check if the incidence angle is above the critical angle for the
     % relative refractive index at the surface interface.
     if abs((aVals_p1p2(ii)*relativeIndices(ii))) > 1 || abs((aVals_p1p3(ii)*relativeIndices(ii))) > 1
-        warning('rayTraceEllipsoids:criticalAngle','Angle of incidence for surface %d greater than critical angle. Returning.',ii);
+        warning('rayTraceQuadricSurfaces:criticalAngle','Angle of incidence for surface %d greater than critical angle. Returning.',ii);
         return
     end
     
@@ -388,9 +400,9 @@ for ii = 2:nSurfaces
         if figureFlag.surfaces
             if figureFlag.axsag
                 subplot(3,3,1:3);
-                plotLensArc([opticalSystem(ii,1) ellipseRadii_p1p2])
+                plotLensArc([opticalSystem(ii,1) radii_p1p2])
                 subplot(3,3,4:6);
-                plotLensArc([opticalSystem(ii,1) ellipseRadii_p1p3])
+                plotLensArc([opticalSystem(ii,1) radii_p1p3])
             else
                 plotLensArc(opticalSystem(ii,[1 2 3]))
             end
@@ -499,20 +511,116 @@ end % function
 
 %% LOCAL FUNCTIONS
 
-function plotLensArc(opticalSystem)
+function plotLensArc(center,profile,radii)
 % Local function to handle plotting lens surfaces
 ang=pi/2:0.01:3*pi/2;
-xp=opticalSystem(2)*cos(ang);
-yp=opticalSystem(3)*sin(ang);
-plot(opticalSystem(1)+xp,yp,'-k');
+switch profile
+    case 0
+        xp=radii(1)*cos(ang);
+        yp=radii(2)*sin(ang);
+    case 2
+        xp=radii(1)*sec(ang);
+        yp=radii(2)*tan(ang);
+end
+plot(center(1)+xp,yp,'-k');
 end
 
 
-function [ coordsOut, ellipseRadii_p1p2, ellipseRadii_p1p3 ] = rayIntersectEllipsoid( coordsIn, angle_p1p2, angle_p1p3, ellipsoidRadii, ellipsoidCenter )
+function [ coordsOut, angleIncidence_p1p2, angleIncidence_p1p3 ] = rayIntersectHyperboloid( coordsIn, angle_p1p2, angle_p1p3, hyperboloidRadii, hyperboloidCenter )
+
+
+% Initialize return variables
+coordsOut = [nan, nan, nan];
+angleIncidence_p1p2 = nan;
+angleIncidence_p1p3 = nan;
+
+% Store the sign of the radius values. These radii must have the same sign.
+radiiSign = sign(hyperboloidRadii(1));
+if ~all(radiiSign == radiiSign(1))
+    error('rayTraceQuadricSurfaces:incompatibleConvexity','The radii of the hyperboloid lens surface must have the same sign.');
+end
+% Convert the radii to their absolute values
+hyperboloidRadii = abs(hyperboloidRadii);
+
+% Define the ray as P + tu, where P is the point of origin of the ray, u is
+% the unit vector direction of the ray, and t is the weight on that unit
+% vector direction
+
+% convert the fixed angles to theta and phi
+theta=acos(cos(angle_p1p3)*cos(angle_p1p2))*sign(angle_p1p2);
+phi=atan(tan(angle_p1p3)/sin(angle_p1p2));
+
+ray = createLine3d(coordsIn([1 3 2]),theta,phi);
+ray = ray([1 3 2 6 4 5]);
+
+% Intersection for a ray with a hyperboloid surface from:
+%   https://johannesbuchner.github.io/intersection/intersection_line_hyperboloid.html
+t = ray(4);
+k = ray(5)/t;
+l = ray(6)/5;
+
+% Shift the ray / hyperboloid system so that the hyperboloid is centered at
+% zero
+x0 = ray(1)-hyperboloidCenter(1);
+y0 = ray(2)-hyperboloidCenter(2);
+z0 = ray(3)-hyperboloidCenter(3);
+a = hyperboloidRadii(1);
+b = hyperboloidRadii(2);
+c = hyperboloidRadii(3);
+
+% Calculation common to all coordinate solutions
+rootVal = sqrt(a^2*b^2*c^2*(-a^2*b^2^l^2+a^2*c^2*k^2+a^2*k^2*z0^2-2*a^2*k*l*yo*z0+a^2*l^2*y0^2+b^2*c^2+b^2*l^2*x0^2-2*b^2*l*x0*z0+b^2*z0^2-c^2*k^2*x0^2+2*c^2*k*x0*y0-c^2*y0^2));
+
+% First intersection point
+divisorVal = (-a^2*b^2*l^2+a^2*c^2*k^2+b^2+c^2);
+sumVal = a^2*b^2*l*z0 - a^2*c^2*k*y0 - b^2*c^2*x0;
+intersectionPoints(1,1) = x0 + 1/divisorVal * (sumVal + rootVal);
+intersectionPoints(1,2) = y0 + k/divisorVal * (sumVal + rootVal);
+intersectionPoints(1,3) = z0 + l/divisorVal * (sumVal + rootVal);
+
+% Second intersection point
+divisorVal = (a^2*b^2*l^2-a^2*c^2*k^2-b^2+c^2);
+sumVal = -a^2*b^2*l*z0 + a^2*c^2*k*y0 + b^2*c^2*x0;
+intersectionPoints(2,1) = x0 + 1/divisorVal * (sumVal + rootVal);
+intersectionPoints(2,2) = y0 + k/divisorVal * (sumVal + rootVal);
+intersectionPoints(2,3) = z0 + l/divisorVal * (sumVal + rootVal);
+
+% Detect if we have a tangential ray
+if sum(abs(intersectionPoints(1,:)-intersectionPoints(2,:)))==0
+    return
+end
+
+% Detect if we have a non-intersecting ray
+if isnan(intersectionPoints(1,1))
+    return
+end
+
+% If the radiiSign is positive, report the coordinates on the left-hand
+% side of the two sheet hyperboloid, otherwise report the coordinates on the right
+coordsOutAB = [intersectionPoints(1,:)'; intersectionPoints(2,:)'];
+if radiiSign<0
+    [~,rightIdx] = max(coordsOutAB(:,1));
+    coordsOut = coordsOutAB(rightIdx,:);
+else
+    [~,leftIdx] = min(coordsOutAB(:,1));
+    coordsOut = coordsOutAB(leftIdx,:);
+end
+
+% Shift the intersection points to account for the hyperboloid center
+coordsOut = coordsOut + hyperboloidCenter;
+
+% Obtain the equation for the plane tangent to the point of intersection
+f = @(x,y) (c*(a^2*b^2 + a^2*y^2 + b^2*x^2)^(1/2))/(a*b);
+tanPlane = [
+
+end
+
+
+function [ coordsOut, radii_p1p2, radii_p1p3 ] = rayIntersectEllipsoid( coordsIn, angle_p1p2, angle_p1p3, ellipsoidRadii, ellipsoidCenter )
 % Returns the point of intersection of a ray and an ellipsoid
 %
 % Syntax:
-%  [ coordsOut, ellipseRadii_p1p2, ellipseRadii_p1p3 ] = rayIntersectEllipsoid( coordsIn, angle_p1p2, angle_p1p3, ellipsoidRadii, ellipsoidCenter )
+%  [ coordsOut, radii_p1p2, radii_p1p3 ] = rayIntersectEllipsoid( coordsIn, angle_p1p2, angle_p1p3, ellipsoidRadii, ellipsoidCenter )
 %
 % Description:
 %   Implements trigonometric operations to identify the point at which a
@@ -550,13 +658,13 @@ function [ coordsOut, ellipseRadii_p1p2, ellipseRadii_p1p3 ] = rayIntersectEllip
 
 % Initialize return variables
 coordsOut = [nan, nan, nan];
-ellipseRadii_p1p2 = [nan nan];
-ellipseRadii_p1p3 = [nan nan];
+radii_p1p2 = [nan nan];
+radii_p1p3 = [nan nan];
 
 % Store the sign of the radius values. They radii must have the same sign.
 radiiSign = sign(ellipsoidRadii(1));
 if ~all(radiiSign == radiiSign(1))
-    error('rayTraceEllipsoids:incompatibleConvexity','The radii of the elliptical lens surface must have the same sign.');
+    error('rayTraceQuadricSurfaces:incompatibleConvexity','The radii of the elliptical lens surface must have the same sign.');
 end
 % Convert the radii to their absolute values
 ellipsoidRadii = abs(ellipsoidRadii);
@@ -631,9 +739,9 @@ D = coordsOut(2)/((coordsOut(1)-ellipsoidCenter(1))*A);
 if isinf(D) || isnan(D)
     D = 0;
 end
-ellipseRadii_p1p2 = [complex(0) complex(0)];
-[ellipseRadii_p1p2(1),ellipseRadii_p1p2(2)]=EllipsoidPlaneIntersection(A,B,C,0,ellipsoidRadii(1),ellipsoidRadii(2),ellipsoidRadii(3));
-ellipseRadii_p1p2 = real(ellipseRadii_p1p2);
+radii_p1p2 = [complex(0) complex(0)];
+[radii_p1p2(1),radii_p1p2(2)]=EllipsoidPlaneIntersection(A,B,C,0,ellipsoidRadii(1),ellipsoidRadii(2),ellipsoidRadii(3));
+radii_p1p2 = real(radii_p1p2);
 
 % The radii of the ellipse that lies within the p1p3 plane when the ray is
 % diverging from the optical axis into the p2 dimension by angle azimuth
@@ -642,24 +750,24 @@ D = coordsOut(3)/((coordsOut(1)-ellipsoidCenter(1))*A);
 if isinf(D) || isnan(D)
     D = 0;
 end
-ellipseRadii_p1p3 = [complex(0) complex(0)];
-[ellipseRadii_p1p3(1),ellipseRadii_p1p3(2)]=EllipsoidPlaneIntersection(A,B,C,0,ellipsoidRadii(1),ellipsoidRadii(2),ellipsoidRadii(3));
-ellipseRadii_p1p3 = real(ellipseRadii_p1p3);
+radii_p1p3 = [complex(0) complex(0)];
+[radii_p1p3(1),radii_p1p3(2)]=EllipsoidPlaneIntersection(A,B,C,0,ellipsoidRadii(1),ellipsoidRadii(2),ellipsoidRadii(3));
+radii_p1p3 = real(radii_p1p3);
 
 % Adjust the ellipse radii for the sign of the input radii and return these
-ellipseRadii_p1p2 = ellipseRadii_p1p2 * radiiSign;
-ellipseRadii_p1p3 = ellipseRadii_p1p3 * radiiSign;
+radii_p1p2 = radii_p1p2 * radiiSign;
+radii_p1p3 = radii_p1p3 * radiiSign;
 
 
 % This code would calculate the radius of curvature encountered by the ray,
 % but this is not needed for the computation.
 %{
     % p1p2 plane
-    t = real(acos(complex((coordsOut(1)-ellipsoidCenter(1))/ellipseRadii_p1p2(1))));
-    curvature_p1p2 = radiiSign*((ellipseRadii_p1p2(1)^2*sin(t)^2 + ellipseRadii_p1p2(2)^2*cos(t)^2)^(3/2))/(ellipseRadii_p1p2(1)*ellipseRadii_p1p2(2));
+    t = real(acos(complex((coordsOut(1)-ellipsoidCenter(1))/radii_p1p2(1))));
+    curvature_p1p2 = radiiSign*((radii_p1p2(1)^2*sin(t)^2 + radii_p1p2(2)^2*cos(t)^2)^(3/2))/(radii_p1p2(1)*radii_p1p2(2));
     % p1p3 plane
-    t = real(acos(complex((coordsOut(1)-ellipsoidCenter(1))/ellipseRadii_p1p3(1))));
-    curvature_p1p3 = radiiSign*((ellipseRadii_p1p3(1)^2*sin(t)^2 + ellipseRadii_p1p3(2)^2*cos(t)^2)^(3/2))/(ellipseRadii_p1p3(1)*ellipseRadii_p1p3(2));
+    t = real(acos(complex((coordsOut(1)-ellipsoidCenter(1))/radii_p1p3(1))));
+    curvature_p1p3 = radiiSign*((radii_p1p3(1)^2*sin(t)^2 + radii_p1p3(2)^2*cos(t)^2)^(3/2))/(radii_p1p3(1)*radii_p1p3(2));
 %}
 
 
