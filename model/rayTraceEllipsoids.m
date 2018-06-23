@@ -520,7 +520,7 @@ function [ coordsOut, ellipseRadii_p1p2, ellipseRadii_p1p3 ] = rayIntersectEllip
 %   the frame of reference of the ray at the point of intersection
 %
 % Inputs:
-%   coordsInitial         - 2x1 vector, with the values corresponding to
+%   coordsIn              - 3x1 vector, with the values corresponding to
 %                           the z-position and height of the initial
 %                           position of the ray.
 %   angle_p1p2, angle_p1p3 - Scalars in radians. A value of zero is aligned
