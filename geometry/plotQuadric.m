@@ -14,31 +14,36 @@ a23 = -0.0147; a1 = -.06; a2 = -0.115; a3 = 13.546; a0 = -23.25;
 % To convert to the standard notation, need to account for
 % the factor of 2. Note the cross-terms are in the order [xy, xz, yz].
 v = [a11 a22 a33 a12/2 a13/2 a23/2 a1/2 a2/2 a3/2 a0];
-   
+
+% Normalize the Navarro values to have the standard form of -1 as a0
+v = -v./a0;
+
+
 % Convert from polynomial to matrix form
 S = quadricPolynomialToMatrix(v);
 
 % Convert the quadric from matrix to canonical form
-c = quadricMatrixToCanonical(S);
+[c, class] = quadricMatrixToCanonical(S);
+class
 
 % Convert the canonical form back to matrix
-Srecovered = quadricCanonicalToMatrix(c);
-vrecovered = quadricMatrixToPolynomial(Srecovered);
+S = quadricCanonicalToMatrix(c);
+vrecovered = quadricMatrixToPolynomial(S);
 
 % Confirm that we can transform these representations accurately
-assert(max(max(S-Srecovered)) < 1e-10);
-assert(max(max(v-vrecovered)) < 1e-10);
+%assert(max(max(S-Srecovered)) < 1e-10);
+%assert(max(max(v-vrecovered)) < 1e-10);
 
 
 % Obtain a function handle for the polynomial
-F = quadricPolynomialFunc(v);
+F = quadricPolynomialFunc(vrecovered);
 
 % Plot the surface
-gv = linspace(-4,4,100); % adjust for appropriate domain
+gv = linspace(-15,15,100); % adjust for appropriate domain
 [xx, yy, zz]=meshgrid(gv, gv, gv);
 fig = figure;
 isosurface(xx, yy, zz, F(xx, yy, zz), 0)
-
+axis equal
 
 
 foo=1;
@@ -49,15 +54,19 @@ function S = quadricCanonicalToMatrix(c)
 
 center = c(1:3);
 radii = c(4:6);
-angles = c(7:9);
+angles = deg2rad(c(7:9));
 scale = c(10);
 
-eulerAngles = deg2rad(angles.*([1 -1 1])-[90 0 -180]);
-
 D = diag(radii);
-Ainv = eul2rotm(eulerAngles)*D;
+sgns = sign(D);
+Ainv = eul2rotm(angles)*D;
 A = inv(Ainv);
 Q = A'*A*scale;
+Q = Q.*sgns;
+
+% Restore the sign of the radii
+
+
 Q(4,4) = -scale;
 
 % Translation
@@ -97,15 +106,25 @@ sgns = sign( diag( evals ) );
 radii = radii .* sgns;
 
 % Derive the angles
-eulerAngles = rotm2eul(evecs);
-
-% Conver the angles into the style used by Navarro
-angles = (rad2deg(eulerAngles)+[90 0 -180]).*([1 -1 1]);
+angles = rad2deg(rotm2eul(evecs));
 
 % Derive the scale
 scale = transpose(center)*S(1:3,1:3)*center - S(4,4);
 
+% Assemble the canonical parameter vector
 c = [center' radii' angles scale];
+
+% Identify the class of the quadric
+switch num2str(sign(diag(evals))','%d')
+    case '111'
+       class = 'ellipsoid';
+    case {'11-1', '1-11', '-111'}
+        class = 'hyperboloid of one sheet';
+    case {'1-1-1', '-11-1', '-1-11'}
+        class = 'hyperboloid of two sheets';
+    otherwise
+        class = 'degenerate case';
+end
 
 end
 
