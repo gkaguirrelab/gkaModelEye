@@ -610,8 +610,20 @@ end
 coordsOut = coordsOut + hyperboloidCenter;
 
 % Obtain the equation for the plane tangent to the point of intersection
-f = @(x,y) (c*(a^2*b^2 + a^2*y^2 + b^2*x^2)^(1/2))/(a*b);
-tanPlane = [
+%{
+    syms x y z a b c
+    % Two-sheeted hyperboloid equation
+    eq1 = 0 == x^2/a^2 + y^2/b^2 - z^2/c^2 + 1;
+    % Obtain partial derivatives for each variable
+    diff(eq1,x)
+    diff(eq1,y)
+    diff(eq1,z)
+    
+%}
+tanPlane_x = (2*coordsOut(1))/a^2;
+tanPlane_y = (2*coordsOut(2))/b^2;
+tanPlane_z = -(2*coordsOut(3))/c^2;
+tanPlane_d = tanPlane_x*coordsOut(1)+tanPlane_y*coordsOut(2)+tanPlane_z*coordsOut(3);
 
 end
 
