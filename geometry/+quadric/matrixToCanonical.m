@@ -6,7 +6,7 @@ function [c, class] = matrixToCanonical(S)
 % semi-axes, and [alpha, beta, gamma] are the angles in degrees.
 
 
-% find the center of the ellipsoid
+% find the center of the quadric
 center = -S( 1:3, 1:3 ) \ S( 1:3,4 );
 
 % form the corresponding translation matrix
@@ -21,6 +21,9 @@ Q = T * S * transpose(T);
 radii = 1./diag(sqrt(evals));
 sgns = sign( diag( evals ) );
 radii = radii .* sgns;
+
+% To rotate Q into canonical orientation:
+%  evecs'*Q(1:3,1:3)*evecs
 
 % Derive the angles
 angles = rad2deg(rotm2eul(evecs));
