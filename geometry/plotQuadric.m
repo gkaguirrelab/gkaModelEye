@@ -16,25 +16,32 @@ a23 = -0.0147; a1 = -.06; a2 = -0.115; a3 = 13.546; a0 = -23.25;
 v = [a11 a22 a33 a12/2 a13/2 a23/2 a1/2 a2/2 a3/2 a0];
 
 % Normalize the Navarro values to have the standard form of -1 as a0
-v = -v./a0;
+v = quadric.normalize(v);
 
 % Convert from polynomial to matrix form
 S = quadric.polynomialToMatrix(v);
 
-% Obtain the canonical form of the quadric
-[c, class] = quadric.matrixToCanonical(S);
+% Obtain the transparent form of the quadric
+[c, class] = quadric.matrixToTransparent(S);
+
+% Rotate to canonical orientation
+angles = c(4:6);
+R = eul2rotm(deg2rad(angles));
+angles = rad2deg(rotm2eul(R'));
+Srot = quadric.rotate( S, angles );
+
+% Translate to canonical center
+[crot, class] = quadric.matrixToTransparent(Srot);
+t = crot(7:9);
+Srottrans = quadric.translate(S,-t);
+
 
 % Confirm that matrix can be recovered from the canonical form
-Srecovered = quadric.canonicalToMatrix(c);
+Srecovered = quadric.transparentToMatrix(c);
 assert(max(max(abs(Srecovered-S)))< 0.02);
 
-% Translate the quadric
-Xshift = -c(1:3)';
-Xshift(3) = Xshift(3) - c(6);
-S = quadric.translate( S, Xshift );
-
 % Examine the canonical form of the shifted quadric
-cShift = quadric.matrixToCanonical(S);
+cShift = quadric.matrixToTransparent(S);
 
 % Obtain a function handle for the polynomial
 F = quadric.returnPolynomialFunc(vrecovered);

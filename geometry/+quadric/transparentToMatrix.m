@@ -1,9 +1,9 @@
-function S = canonicalToMatrix(c)
+function S = transparentToMatrix(c)
 
 
-center = c(1:3);
-radii = c(4:6);
-angles = deg2rad(c(7:9));
+radii = c(1:3);
+angles = deg2rad(c(4:6));
+center = c(7:9);
 scale = c(10);
 
 D = diag(radii);

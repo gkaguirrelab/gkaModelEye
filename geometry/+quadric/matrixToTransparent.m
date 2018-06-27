@@ -1,9 +1,9 @@
-function [c, class] = matrixToCanonical(S)
-% The canonical form of a quadric are the parameters:
-%   cx, cy, cz, sx, sy, sz, alpha, beta, gamma, scale
+function [c, class] = matrixToTransparent(S)
+% The transparent form of a quadric are the parameters:
+%   sx, sy, sz, alpha, beta, gamma, cx, cy, cz, scale
 %
-% where [cx, cy, cz] if the center of the quadric, [sx, sy, sz] are the
-% semi-axes, and [alpha, beta, gamma] are the angles in degrees.
+% where [sx, sy, sz] are the semi-axes, [alpha, beta, gamma] are the angles
+% in degrees, and [cx, cy, cz] is the center.
 
 
 % find the center of the quadric
@@ -31,8 +31,8 @@ angles = rad2deg(rotm2eul(evecs));
 % Derive the scale
 scale = transpose(center)*S(1:3,1:3)*center - S(4,4);
 
-% Assemble the canonical parameter vector
-c = [center' radii' angles scale];
+% Assemble the transparent parameter vector
+c = [radii' angles center' scale];
 
 % Identify the class of the quadric
 switch num2str(sign(diag(evals))','%d')
