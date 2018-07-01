@@ -1,6 +1,7 @@
 % Plot the canonical Navarro corneal surface
 
 
+
 % Navarro 2006, Table 1, mean cornea ellipsoid parameters
 a11 = 1; a22 = 1.0318; a33 = 0.536; a12 = -0.0006; a13 = -0.038;
 a23 = -0.0147; a1 = -.06; a2 = -0.115; a3 = 13.546; a0 = -23.25;
@@ -19,21 +20,15 @@ v = [a11 a22 a33 a12/2 a13/2 a23/2 a1/2 a2/2 a3/2 a0];
 v = quadric.normalize(v);
 
 % Convert from polynomial to matrix form
-S = quadric.polynomialToMatrix(v);
-
-% Obtain the transparent form of the quadric
-[c, class] = quadric.matrixToTransparent(S);
+S = quadric.vecToMatrix(v);
 
 % Rotate to canonical orientation
-angles = c(4:6);
-R = eul2rotm(deg2rad(angles));
-angles = rad2deg(rotm2eul(R'));
-Srot = quadric.rotate( S, angles );
+Srot = quadric.alignAxes( S );
 
 % Translate to canonical center
 [crot, class] = quadric.matrixToTransparent(Srot);
 t = crot(7:9);
-Srottrans = quadric.translate(S,-t);
+Srottrans = quadric.translate(S,t);
 
 
 % Confirm that matrix can be recovered from the canonical form
@@ -44,7 +39,7 @@ assert(max(max(abs(Srecovered-S)))< 0.02);
 cShift = quadric.matrixToTransparent(S);
 
 % Obtain a function handle for the polynomial
-F = quadric.returnPolynomialFunc(vrecovered);
+F = quadric.returnPolynomialFunc(quadric.matrixToPolynomial(S));
 
 % Plot the surface
 gv = linspace(-15,15,100); % adjust for appropriate domain

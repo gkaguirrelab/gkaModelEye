@@ -4,7 +4,7 @@ function S = normalize( S )
 
 
 % Adjust by the absolute value of K
-S = S ./ abs(S(end,end));
+S = S ./ abs(S(end));
 
 end
 

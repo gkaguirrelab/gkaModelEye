@@ -1,5 +1,5 @@
 
-function F = returnPolynomialFunc(v)
+function F = vecToFunc(v)
 
 % The implicit form of a second-order (quadric) surface:
 %   S(x,y,z) =  Ax^2 + Bx^2 + Cx^2 + 

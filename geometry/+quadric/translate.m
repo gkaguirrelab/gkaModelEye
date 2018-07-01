@@ -1,19 +1,27 @@
-function S = translate( S, t )
+function S = translate( S, Xt )
 %UNTITLED7 Summary of this function goes here
 %   Detailed explanation goes here
 
-% Store the initial scaler value for the quadric
-k = S(end,end);
+v = quadric.matrixToVec(S);
 
-% Form the translation matrix
-T = eye( 4 );
-T( 4, 1:3 ) = -t';
+xt = Xt(1);
+yt = Xt(2);
+zt = Xt(3);
 
-% Apply the translation
-S = T * S * T';
+v(:) = ...
+    [ v(1) ...
+    ; v(2) ...
+    ; v(3) ...
+    ; v(4) ...
+    ; v(5) ...
+    ; v(6) ...
+    ; v(7) - 2*v(1)*xt - v(4)*yt - v(5)*zt ...
+    ; v(8) - 2*v(2)*yt - v(4)*xt - v(6)*zt ...
+    ; v(9) - 2*v(3)*zt - v(5)*xt - v(6)*yt ...
+    ; v(10) + v(1)*xt^2 + v(2)*yt^2 + v(3)*zt^2 + v(4)*xt*yt + v(5)*xt*zt + v(6)*yt*zt - v(7)*xt - v(8)*yt - v(9)*zt ...
+    ];
 
-% Return to original scale
-S = quadric.normalize(S) .* abs(k);
+S = quadric.vecToMatrix(v);
 
 end
 

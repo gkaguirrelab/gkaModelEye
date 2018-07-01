@@ -1,4 +1,4 @@
-function v = matrixToPolynomial(S)
+function v = matrixToVec(S)
 % The implicit form of a second-order (quadric) surface:
 %   S(x,y,z) =  Ax^2 + Bx^2 + Cx^2 + 
 %               2Dxy + 2Exz + 2Fyz +
