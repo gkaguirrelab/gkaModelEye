@@ -1,4 +1,4 @@
-function N = surfaceNormal(S,X)
+function N = surfaceNormal(S,X,side)
 %
 % Inputs:
 %   S                     - 4x4 quadratic surface matrix
@@ -19,8 +19,12 @@ function N = surfaceNormal(S,X)
     N = quadric.surfaceNormal(S,X);
 %}
 
+if nargin==2
+    side=1;
+end
+
 % Pre-allocate the output variables
-R = nan(3,2);
+N = nan(3,2);
 
 % Decompose the coordinate
 x = X(1); y = X(2); z = X(3);
@@ -36,6 +40,12 @@ end
 % respect to x, y, and z. Performed here in matrix form.
 Q = 2*S(1:3,:)*[X;1];
 Q = Q/sqrt(dot(Q,Q));
+
+% If side==2, then the ray struck this point on the quadric surface from
+% within the surface, so the negative of the normal should be returned.
+if side==2
+    Q=-Q;
+end
 
 % Express the surface normal as a unit vector arising from the point of
 % intersection.

@@ -1,28 +1,51 @@
-syms A B C D E F G H I K
-syms x y z
-syms px py pz ux uy uz t
+clear opticalSystem
+opticalSystem(:,1)=[nan(1,10) nan 1.0];
 
-S = [A D E G; D B F H; E F C I; G H I K];
-X = [x; y; z];
-p = [px; py; pz];
-u = [ux; uy; uz];
-R = p + t * u;
+% S = quadric.unitSphere();
+% S = quadric.scale(S,10);
+% S = quadric.translate(S,[22; 0; 0]);
+% opticalSystem(:,end+1)=[quadric.matrixToVec(S) 1 1.2];
+% 
+% S = quadric.unitSphere();
+% S = quadric.scale(S,8);
+% S = quadric.translate(S,[9; 0; 0]);
+% opticalSystem(:,end+1)=[quadric.matrixToVec(S) 2 1];
+% 
+% S = quadric.unitSphere();
+% S = quadric.scale(S,12);
+% S = quadric.translate(S,[34; 0; 0]);
+% opticalSystem(:,end+1)=[quadric.matrixToVec(S) 1 1.5];
+% 
+% S = quadric.unitSphere();
+% S = quadric.scale(S,10);
+% S = quadric.translate(S,[20; 0; 0]);
+% opticalSystem(:,end+1)=[quadric.matrixToVec(S) 2 1.0];
 
 
-% General equation for quadric surface:
-eq2 = transpose([X;1]) * S * [X;1] == 0;
+S = quadric.unitSphere();
+S = quadric.scale(S,[13.7648   9.3027   9.3027]);
+S = quadric.translate(S,[-14.3216 0 0]);
+opticalSystem(:,end+1)=[quadric.matrixToVec(S) 2 1.3747];
 
-% Ray Quadric intersection equation
-eq11 = transpose([R0; 1]) * S * [R0; 1] == 0;
-
-% Normal vector to a quadric
-Q = 2 * S(1:3,1:4) * X1;
-eq10 = Q / sqrt(sum(Q.^2));
+S = quadric.unitSphere();
+S = quadric.scale(S,[14.2545  10.4300  10.2700]);
+S = quadric.translate(S,[-14.2600 0 0]);
+opticalSystem(:,end+1)=[quadric.matrixToVec(S) 2 1.0];
 
 
+p = [-3.925;2;0];
+u = [1;tand(-15);0];
+u = u./sqrt(sum(u.^2));
+R = [p, u];
+atan2(R(2,2),R(1,2))
 
-% Snell's law
-eq17 = cross(Q,n0*cross(X0d,Q)) == cross(Q,n1*cross(X1d,Q));
-eq18 = solve(eq17,X1d);
-
-X1d = [eq18.x1d; eq18.y1d; eq18.z1d];
+for ii=2:3
+    S = quadric.vecToMatrix(opticalSystem(1:10,ii));
+    side = opticalSystem(11,ii);
+    X = quadric.intersectRay(S,R,side);
+    N = quadric.surfaceNormal(S,X,side);
+    nRel = opticalSystem(12,ii-1)/opticalSystem(12,ii);
+    R = quadric.refractRay(R,N,nRel);
+    atan2(R(2,2),R(1,2))
+end
+    

@@ -67,8 +67,9 @@ function Rr = refractRay(R,N,nRel)
     u = [1;tand(17.309724);0];
     u = u./sqrt(sum(u.^2));
     R = [p, u];
-    [X1,X2] = quadric.intersectRay(S,R);
-    N = quadric.surfaceNormal(S,X2);
+    side = 1;
+    X = quadric.intersectRay(S,R,side);
+    N = quadric.surfaceNormal(S,X);
     Rr = quadric.refractRay(R,N,1/1.2);
     assert(abs(atan(Rr(2,2)/Rr(1,2))-0.1655)<0.001);
 %}
@@ -98,7 +99,6 @@ Rr(:,1) = N(:,1);
 
 % Calculate the direction vector of the refracted ray. This equation is
 % taken from: http://www.starkeffects.com/snells-law-vector.shtml
-
 Rr(:,2) = nRel*cross(q,(cross(-q,u))) - q*sqrt(1-(nRel^2)*dot(cross(q,u),cross(q,u)));
 
 end

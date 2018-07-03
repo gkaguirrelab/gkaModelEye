@@ -1,4 +1,4 @@
-function [X1, X2] = intersectRay(S,R)
+function [X1, X2] = intersectRay(S,R,side)
 %
 %
 % Syntax:
@@ -29,7 +29,7 @@ function [X1, X2] = intersectRay(S,R)
     u = [1; 1; 1];
     u = u./sqrt(sum(u.^2));
     R = [p, u];
-    [X1, X2] = quadric.intersectRay(S,R);
+    X = quadric.intersectRay(S,R);
 %}
 %{
     % Unit sphere, axis-aligned ray starting from the origin
@@ -38,7 +38,7 @@ function [X1, X2] = intersectRay(S,R)
     u = [0; 0; 1];
     u = u./sqrt(sum(u.^2));
     R = [p, u];
-    [X1, X2] = quadric.intersectRay(S,R);
+    X = quadric.intersectRay(S,R);
 %}
 %{
     % Unit sphere, non-intersecting ray
@@ -47,7 +47,7 @@ function [X1, X2] = intersectRay(S,R)
     u = [0; 0; 1];
     u = u./sqrt(sum(u.^2));
     R = [p, u];
-    [X1, X2] = quadric.intersectRay(S,R);
+    X = quadric.intersectRay(S,R);
 %}
 %{
     % Scaled, translated sphere. Ray starts from sphere center.
@@ -58,8 +58,12 @@ function [X1, X2] = intersectRay(S,R)
     u = [0;tand(17.309724);1];
     u = u./sqrt(sum(u.^2));
     R = [p, u];
-    [X1,X2] = quadric.intersectRay(S,R);
+    X = quadric.intersectRay(S,R);
 %}
+
+if nargin==2
+    side=1;
+end
 
 % Pre-allocate the output variables
 X1 = nan(3,1);
@@ -107,12 +111,18 @@ if beta<=0
 end
 
 % Obtain the quadratic roots.
-t(:,1) = (-alpha + sqrt(beta))/gamma;
-t(:,2) = (-alpha - sqrt(beta))/gamma;
+t(:,1) = (-alpha - sqrt(beta))/gamma;
+t(:,2) = (-alpha + sqrt(beta))/gamma;
 
 % Calculate the coordinates of intersection given t
-X1 = p(1:3)+u(1:3)*t(:,1);
-X2 = p(1:3)+u(1:3)*t(:,2);
+if side==1
+    X1 = p(1:3)+u(1:3)*t(:,1);
+    X2 = p(1:3)+u(1:3)*t(:,2);
+end
+if side==2
+    X1 = p(1:3)+u(1:3)*t(:,2);
+    X2 = p(1:3)+u(1:3)*t(:,1);
+end
 
 end
 
