@@ -254,7 +254,7 @@ switch p.Results.species
         else
             eye.cornea.axis = p.Results.cornealAxis;
         end
-        
+        eye.cornea.axis=[0 0 0]
         
         %% Iris
         % The iris has a thickness. This thickness influences the

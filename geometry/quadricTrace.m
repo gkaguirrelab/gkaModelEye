@@ -1,5 +1,5 @@
 clear opticalSystem
-opticalSystem(:,1)=[nan(1,10) nan 1.0];
+opticalSystem(:,1)=[nan(1,10) nan 1.3370];
 
 % S = quadric.unitSphere();
 % S = quadric.scale(S,10);
@@ -23,12 +23,12 @@ opticalSystem(:,1)=[nan(1,10) nan 1.0];
 
 
 S = quadric.unitSphere();
-S = quadric.scale(S,[13.7648   9.3027   9.3027]);
+S = quadric.scale(S,[ 13.7716  9.3027  9.3027]);
 S = quadric.translate(S,[-14.3216 0 0]);
 opticalSystem(:,end+1)=[quadric.matrixToVec(S) 2 1.3747];
 
 S = quadric.unitSphere();
-S = quadric.scale(S,[14.2545  10.4300  10.2700]);
+S = quadric.scale(S,[ 14.2600  10.4300 10.2700    ]);
 S = quadric.translate(S,[-14.2600 0 0]);
 opticalSystem(:,end+1)=[quadric.matrixToVec(S) 2 1.0];
 
@@ -36,6 +36,7 @@ opticalSystem(:,end+1)=[quadric.matrixToVec(S) 2 1.0];
 p = [-3.925;2;0];
 u = [1;tand(-15);0];
 u = u./sqrt(sum(u.^2));
+p = p-u*100;
 R = [p, u];
 atan2(R(2,2),R(1,2))
 
@@ -46,6 +47,5 @@ for ii=2:3
     N = quadric.surfaceNormal(S,X,side);
     nRel = opticalSystem(12,ii-1)/opticalSystem(12,ii);
     R = quadric.refractRay(R,N,nRel);
-    atan2(R(2,2),R(1,2))
 end
     
