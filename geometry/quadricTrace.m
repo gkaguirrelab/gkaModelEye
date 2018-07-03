@@ -1,6 +1,7 @@
 clear opticalSystem
 opticalSystem(:,1)=[nan(1,10) nan 1.3370];
 
+% Replicate Elagha
 % S = quadric.unitSphere();
 % S = quadric.scale(S,10);
 % S = quadric.translate(S,[22; 0; 0]);
@@ -34,11 +35,10 @@ opticalSystem(:,end+1)=[quadric.matrixToVec(S) 2 1.0];
 
 
 p = [-3.925;2;0];
-u = [1;tand(-15);0];
+u = [1;tand(-15);tand(10)];
 u = u./sqrt(sum(u.^2));
-p = p-u*100;
 R = [p, u];
-atan2(R(2,2),R(1,2))
+atan2(R(2,2),R(1,2));
 
 for ii=2:3
     S = quadric.vecToMatrix(opticalSystem(1:10,ii));

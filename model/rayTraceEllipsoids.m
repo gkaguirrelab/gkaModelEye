@@ -101,7 +101,7 @@ function [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEll
     % A model of the passage of a point on the pupil perimeter through
     % the axial cross-section of the cornea (units in mm)
     sceneGeometry = createSceneGeometry();
-    [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1) 2], [deg2rad(-15) 0], sceneGeometry.refraction.opticalSystem, true);
+    [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1) 2], [deg2rad(-15) deg2rad(10)], sceneGeometry.refraction.opticalSystem, true);
 %}
 %{
     %% Pupil through cornea, multiple points and rays
