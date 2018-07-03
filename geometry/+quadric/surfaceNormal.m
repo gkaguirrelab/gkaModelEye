@@ -26,6 +26,11 @@ end
 % Pre-allocate the output variables
 N = nan(3,2);
 
+% Clear the nan case
+if any(isnan(X))
+    return
+end
+
 % Decompose the coordinate
 x = X(1); y = X(2); z = X(3);
 

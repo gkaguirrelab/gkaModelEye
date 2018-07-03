@@ -77,6 +77,15 @@ function Rr = refractRay(R,N,nRel)
 % Pre-allocate the output variable
 Rr = nan(3,2);
 
+% Clear the nan cases
+if any(isnan(R))    
+    return
+end
+if any(isnan(N))
+    Rr = R;
+    return
+end
+
 % Obtain the direction vector of the incident ray
 u = R(:,2);
 
