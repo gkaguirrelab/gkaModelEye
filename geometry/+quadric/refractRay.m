@@ -1,4 +1,4 @@
-function Rr = refractedDirection(R,N,nRel)
+function Rr = refractRay(R,N,nRel)
 %
 % Inputs:
 %   R                     - 3x2 matrix that specifies the incident ray as a
@@ -37,12 +37,12 @@ function Rr = refractedDirection(R,N,nRel)
     u = u./sqrt(sum(u.^2));
     R = [p, u];
     [X1,X2] = quadric.intersectRay(S,R);
-    N = quadric.surfaceNormal(S,X);
-    Rr = quadric.refractedDirection(R,Rr,1.2)
+    N = quadric.surfaceNormal(S,X1);
+    Rr = quadric.refractRay(R,N,1.2)
 %}
 
-% Pre-allocate the output variables
-Rrefract = nan(3,2);
+% Pre-allocate the output variable
+Rr = nan(3,2);
 
 % Obtain the direction vector of the incident ray
 Ru = R(:,2);
@@ -53,8 +53,13 @@ Nu = N(:,2);
 % Place the surface intersection point as the origin of the refracted ray
 Rr(:,1) = N(:,1);
 
-% Calculate the direction vector of the refracted ray
-Rr(:,2) = nRel*Ru + nRel*(-Nu*Ru-sqrt(1+(nRel^2)*((Nu*Ru)^2-1)))*Q;
+% Calculate the direction vector of the refracted ray. This is eq 18 of:
+%
+%   Langenbucher, Achim, et al. "Ray tracing through a schematic eye
+%   containing second?order (quadric) surfaces using 4× 4 matrix notation."
+%   Ophthalmic and Physiological Optics 26.2 (2006): 180-188.
+%
+Rr(:,2) = nRel*Ru + nRel*(-dot(Nu,Ru)-sqrt(1+(nRel^2)*(dot(Nu,Ru)^2-1)))*Nu;
 
 end
 

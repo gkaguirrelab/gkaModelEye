@@ -1,21 +1,16 @@
 syms A B C D E F G H I K
 syms x y z
-syms x0 y0 z0 x0d y0d z0d k0 n0
-syms x1 y1 z1 x1d y1d z1d k1 n1
+syms px py pz ux uy uz t
 
 S = [A D E G; D B F H; E F C I; G H I K];
-X = [x; y; z; 1];
-X0 = [x0; y0; z0; 1];
-X0d = [x0d; y0d; z0d; 1];
-R0 = X0 + k1 * X0d;
-
-X1 = [x1; y1; z1];
-X1d = [x1d; y1d; z1d];
-R1 = X1 + k1 * X1d;
+X = [x; y; z];
+p = [px; py; pz];
+u = [ux; uy; uz];
+R = p + t * u;
 
 
 % General equation for quadric surface:
-eq2 = transpose(X) * S * X == 0;
+eq2 = transpose([X;1]) * S * [X;1] == 0;
 
 % Ray Quadric intersection equation
 eq11 = transpose([R0; 1]) * S * [R0; 1] == 0;

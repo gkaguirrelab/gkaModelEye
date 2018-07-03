@@ -1,4 +1,4 @@
-function [S] = variablesToMatrix(A, B, C, D, E, F, G, H, I, K)
+function [S] = varsToMatrix(A, B, C, D, E, F, G, H, I, K)
 % The implicit form of a second-order (quadric) surface:
 %   S(x,y,z) =  Ax^2 + Bx^2 + Cx^2 + 
 %               2Dxy + 2Exz + 2Fyz +
