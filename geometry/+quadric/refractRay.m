@@ -29,37 +29,77 @@ function Rr = refractRay(R,N,nRel)
 %
 % Examples:
 %{
+    % Test 1 from http://www.starkeffects.com/snells-law-vector.shtml
+    p=[0;0;0];
+    u=[1/sqrt(2);0;1/sqrt(2)];
+    R=[p,u];
+    n0 = 1;
+    n1 = 1.5;
+    nRel = n0/n1;
+    N=[p,[0;0;-1]];
+    Rr = quadric.refractRay(R,N,nRel);
+    assert(max(abs(Rr(:,2)-[0.471;0;0.882]))<0.001);
+%}
+%{
+    % Test 2 from http://www.starkeffects.com/snells-law-vector.shtml
+    p=[0;0;0];
+    u=[4;1;1];
+    u = u./sqrt(sum(u.^2));
+    R=[p,u];
+    n0 = 1;
+    n1 = 1.5;
+    nRel = n0/n1;
+    u=[0;-2;-1];
+    u = u./sqrt(sum(u.^2));
+    N=[p,u];
+    Rr = quadric.refractRay(R,N,nRel);
+    assert(max(abs(Rr(:,2)-[0.629;0.661;0.409]))<0.001);
+%}
+%{
+    % Elagha 2017 numerical example
+    % The paper provides a numerical example in section C. Test that we get
+    % the same value.
+    % First surface from Elagha 
     S = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 -1];
     S = quadric.scale(S,[10 10 10]);
-    S = quadric.translate(S,[0; 0; 22]);
+    S = quadric.translate(S,[22; 0; 0]);
     p = [0;0;0];
-    u = [0;tand(17.309724);1];
+    u = [1;tand(17.309724);0];
     u = u./sqrt(sum(u.^2));
     R = [p, u];
     [X1,X2] = quadric.intersectRay(S,R);
-    N = quadric.surfaceNormal(S,X1);
-    Rr = quadric.refractRay(R,N,1.2)
+    N = quadric.surfaceNormal(S,X2);
+    Rr = quadric.refractRay(R,N,1/1.2);
+    assert(abs(atan(Rr(2,2)/Rr(1,2))-0.1655)<0.001);
 %}
 
 % Pre-allocate the output variable
 Rr = nan(3,2);
 
 % Obtain the direction vector of the incident ray
-Ru = R(:,2);
+u = R(:,2);
 
 % Obtain the direction vector of the surface normal
-Nu = N(:,2);
+q = N(:,2);
 
 % Place the surface intersection point as the origin of the refracted ray
 Rr(:,1) = N(:,1);
 
-% Calculate the direction vector of the refracted ray. This is eq 18 of:
-%
-%   Langenbucher, Achim, et al. "Ray tracing through a schematic eye
-%   containing second?order (quadric) surfaces using 4× 4 matrix notation."
-%   Ophthalmic and Physiological Optics 26.2 (2006): 180-188.
-%
-Rr(:,2) = nRel*Ru + nRel*(-dot(Nu,Ru)-sqrt(1+(nRel^2)*(dot(Nu,Ru)^2-1)))*Nu;
+% Code to generate the 3D expression of Snell's Law
+%{
+    syms qx qy qz r0x r0y r0z r1x r1y r1z n0 n1
+    Q = [qx;qy;qz];
+    R0 = [r0x;r0y;r0z];
+    R1 = [r1x;r1y;r1z];
+    eq = cross(Q,n0*cross(R0,Q)) == cross(Q,n1*cross(R1,Q));
+
+    eq_R = solve(eq,R1);
+%}
+
+% Calculate the direction vector of the refracted ray. This equation is
+% taken from: http://www.starkeffects.com/snells-law-vector.shtml
+
+Rr(:,2) = nRel*cross(q,(cross(-q,u))) - q*sqrt(1-(nRel^2)*dot(cross(q,u),cross(q,u)));
 
 end
 
