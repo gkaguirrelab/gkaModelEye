@@ -5,7 +5,7 @@ function N = surfaceNormal(S,X)
 %   X                     - 3x1 vector specifying a point on the surface
 %
 % Outputs:
-%   R                     - 3x2 matrix that specifies the normal as a unit
+%   N                     - 3x2 matrix that specifies the normal as a unit
 %                           vector of the form [p; d], corresponding to
 %                               R = p + t*u,
 %                           where p is vector origin, d is the direction

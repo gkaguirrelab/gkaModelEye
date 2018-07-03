@@ -38,9 +38,18 @@ u = [R(:,2); 1];
 %       t = (-b +- sqrt(b^2 - 4ac))/2a
 %
 % where 
-a = u'*S*u;
-b = u'*S*p;
-c = p'*S*p;
+% a = u'*S*u;
+% b = u'*S*p;
+% c = p'*S*p;
+
+[A, B, C, D, E, F, G, H, I, K] = quadric.matrixToVariables(S);
+
+px=p(1); py=p(2); pz=p(3);
+ux=u(1); uy=u(2); uz=u(3);
+
+a = A*ux^2 + B*uy^2 + C*uz^2 + D*ux*uy + E*ux*uz + F*uy*uz;
+b = 2*A*px*ux + 2*B*py*uy + 2*C*pz*uz + D*(px*uy + py*ux) + E*px*uz + F*(py*uz + uy*pz) + G*ux + H*uy + I*uz;
+c = A*px^2 + B*py^2 + C*pz^2 + D*px*py + E*px*pz + F*py*pz + G*px + H*py + I*pz + K;
 
 % If the discriminant is less than or equal to zero, then the ray either
 % misses or intersects the surface tangentially. We return nans.
