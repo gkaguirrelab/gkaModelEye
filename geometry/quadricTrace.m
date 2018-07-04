@@ -1,5 +1,5 @@
 clear opticalSystem
-opticalSystem(:,1)=[nan(1,10) nan 1.3370];
+opticalSystem(:,1)=[nan(1,10) nan nan(1,6) 1.3370];
 
 % Replicate Elagha
 % S = quadric.unitSphere();
@@ -22,25 +22,30 @@ opticalSystem(:,1)=[nan(1,10) nan 1.3370];
 % S = quadric.translate(S,[20; 0; 0]);
 % opticalSystem(:,end+1)=[quadric.matrixToVec(S) 2 1.0];
 
+
 S = quadric.unitTwoSheetHyperboloid();
 S = quadric.scale(S,[ 1.9667 3.4064 3.4064]);
 S = quadric.translate(S,[-9.4917 0 0]);
-opticalSystem(:,end+1)=[quadric.matrixToVec(S) 1 1.3747];
+boundingBox=[-8 -3.5 -4 4 -4 4];
+opticalSystem(:,end+1)=[quadric.matrixToVec(S) 1 boundingBox 1.3747];
 
 S = quadric.unitTwoSheetHyperboloid();
 S = quadric.scale(S,[ 1.9133 4.6867 4.6867]);
 S = quadric.translate(S,[-2.0117 0 0]);
-opticalSystem(:,end+1)=[quadric.matrixToVec(S) 2 1.3747];
+boundingBox=[-8 -3.5 -4 4 -4 4];
+opticalSystem(:,end+1)=[quadric.matrixToVec(S) 2 boundingBox 1.3747];
 
 S = quadric.unitSphere();
 S = quadric.scale(S,[ 13.7716  9.3027  9.3027]);
 S = quadric.translate(S,[-14.3216 0 0]);
-opticalSystem(:,end+1)=[quadric.matrixToVec(S) 2 1.3747];
+boundingBox=[-4 0 -8 8 -8 8];
+opticalSystem(:,end+1)=[quadric.matrixToVec(S) 2 boundingBox 1.3747];
 
 S = quadric.unitSphere();
 S = quadric.scale(S,[ 14.2600  10.4300 10.2700    ]);
 S = quadric.translate(S,[-14.2600 0 0]);
-opticalSystem(:,end+1)=[quadric.matrixToVec(S) 2 1.0];
+boundingBox=[-4 0 -8 8 -8 8];
+opticalSystem(:,end+1)=[quadric.matrixToVec(S) 2 boundingBox 1.0];
 
 
 p = [-3.925;2;0];
@@ -50,32 +55,38 @@ R = [p, u];
 atan2(R(2,2),R(1,2));
 
 figure
-    gv = linspace(15,-8,100); % adjust for appropriate domain
-[xx, yy, zz]=meshgrid(gv, gv, gv);
 
 surfColors = {'','blue','cyan','red','green'};
 
 for ii=2:5
+    % Extract components from optical system vector
     S = quadric.vecToMatrix(opticalSystem(1:10,ii));
     side = opticalSystem(11,ii);
+    boundingBox = opticalSystem(12:17,ii);
+    nRel = opticalSystem(18,ii-1)/opticalSystem(18,ii);
+
+    % Compute the intersection, surface normal, and refracted rat
     X = quadric.intersectRay(S,R,side);
     N = quadric.surfaceNormal(S,X,side);
-    nRel = opticalSystem(12,ii-1)/opticalSystem(12,ii);
     R = quadric.refractRay(R,N,nRel);
 
     % Obtain a function handle for the polynomial
     F = quadric.vecToFunc(quadric.matrixToVec(S));
 
     % Plot the surface
-    vertices = isosurface(xx, yy, zz, F(xx, yy, zz), 0);
-    plotSurface(vertices,surfColors{ii})
+    plotSurface(F,boundingBox,surfColors{ii})
     hold on
     axis equal
 
 end
 
 
-function plotSurface(vertices,surfColor)
+function plotSurface(F,boundingBox,surfColor)
+
+[xx, yy, zz]=meshgrid( linspace(boundingBox(1),boundingBox(2),100),...
+    linspace(boundingBox(3),boundingBox(4),100),...
+    linspace(boundingBox(5),boundingBox(6),100));
+    vertices = isosurface(xx, yy, zz, F(xx, yy, zz), 0);
 
 p = patch(vertices);
 %isonormals(x,y,z,v,p)
