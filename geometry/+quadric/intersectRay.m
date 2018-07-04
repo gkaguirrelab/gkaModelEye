@@ -1,4 +1,4 @@
-function [X1, X2] = intersectRay(S,R,side)
+function [X1, X2] = intersectRay(S,R,side,boundingBox)
 %
 %
 % Syntax:
@@ -9,7 +9,7 @@ function [X1, X2] = intersectRay(S,R,side)
 %   quadric surface.
 %
 % Inputs:
-%   S                     - 4x4 quadratic surface matrix
+%   S                     - 4x4 quadric surface matrix
 %   R                     - 3x2 matrix that specifies the ray as a unit 
 %                           vector of the form [p; d], corresponding to
 %                               R = p + t*u
@@ -65,6 +65,10 @@ if nargin==2
     side=1;
 end
 
+if nargin==3
+    boundingBox = [];
+end
+
 % Pre-allocate the output variables
 X1 = nan(3,1);
 X2 = nan(3,1);
@@ -110,11 +114,13 @@ if beta<=0
     return
 end
 
-% Obtain the quadratic roots.
+% The scale of the ray (t) is given by a quadratic equation. Obtain the two
+% roots.
 t(:,1) = (-alpha - sqrt(beta))/gamma;
 t(:,2) = (-alpha + sqrt(beta))/gamma;
 
-% Calculate the coordinates of intersection given t
+% Calculate the two coordinates of intersection. Order these by the side
+% variable
 if side==1
     X1 = p(1:3)+u(1:3)*t(:,1);
     X2 = p(1:3)+u(1:3)*t(:,2);
@@ -122,6 +128,32 @@ end
 if side==2
     X1 = p(1:3)+u(1:3)*t(:,2);
     X2 = p(1:3)+u(1:3)*t(:,1);
+end
+
+% If a bounding box has been specified, check to see if only one of the
+% coordinates is within the box, and if so, report this one as X1
+if ~isempty(boundingBox)
+    inX1 = false;
+    if X1(1)>=boundingBox(1) && X1(1)<=boundingBox(2) && ...
+            X1(2)>=boundingBox(3) && X1(2)<=boundingBox(4) && ...
+            X1(3)>=boundingBox(5) && X1(3)<=boundingBox(6)
+        inX1 = true;
+    else
+            X1 = nan(3,1);
+    end
+    inX2 = false;
+    if X2(1)>=boundingBox(1) && X2(1)<=boundingBox(2) && ...
+            X2(2)>=boundingBox(3) && X2(2)<=boundingBox(4) && ...
+            X2(3)>=boundingBox(5) && X2(3)<=boundingBox(6)
+        inX2 = true;
+    else
+            X2 = nan(3,1);
+    end
+    if inX2 && ~inX1
+        tmp = X1;
+        X1 = X2;
+        X2 = tmp;
+    end
 end
 
 end
