@@ -23,7 +23,7 @@ function X = center( S )
 
 % Copyright 2012 Levente Hunyadi
 
-[A, B, C, D, E, F, G, H, I, ~] = quadric.matrixToVariables(S);
+[A, B, C, D, E, F, G, H, I, ~] = quadric.matrixToVars(S);
 
 % E = ...
 %   [ a, h, g, p ...
