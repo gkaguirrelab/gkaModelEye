@@ -15,6 +15,26 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox)
 %                               R = p + t*u
 %                           where p is vector origin, d is the direction
 %                           expressed as a unit step, and t is unity.
+%   side                  - Scalar, taking the value of -1 or 1. Defines
+%                           whether the first (-1) or second (+1)
+%                           intersection point should be returned as X1.
+%                           For an ellipsoid, setting side=-1 causes the
+%                           ray to intersect the convex surface, and
+%                           setting side=+1 causes the ray to intersect the
+%                           concave surface. For a two-sheeted hyperboloid,
+%                           with the ray traveling down the open axis,
+%                           setting side = -1 means that the first point of
+%                           intersection will be within the interior of one
+%                           of the hyperboloid sheets, and thus an
+%                           intersection with a concave surface.
+%                           Default value is 1.
+%   boundingBox           - 1x6 vector that specifies:
+%                           	[xmin, xmax, ymin, ymax, zmin, zmax]
+%                           These values set the bounds within which the
+%                           coordinates of an intersection are reported.
+%                           Intersection points outside of these bounds are
+%                           returned as nans. If not defined no bounds will
+%                           be enforced.
 %
 % Outputs:
 %   X1, X2                - 3x1 vectors that give the coordinates of the
@@ -61,8 +81,10 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox)
     X = quadric.intersectRay(S,R);
 %}
 
+% Handle incomplete input arguments
 if nargin==2
     side=1;
+    boundingBox = [];
 end
 
 if nargin==3
@@ -121,38 +143,26 @@ t(:,2) = (-alpha + sqrt(beta))/gamma;
 
 % Calculate the two coordinates of intersection. Order these by the side
 % variable
-if side==1
+if side==-1
     X1 = p(1:3)+u(1:3)*t(:,1);
     X2 = p(1:3)+u(1:3)*t(:,2);
 end
-if side==2
+if side==1
     X1 = p(1:3)+u(1:3)*t(:,2);
     X2 = p(1:3)+u(1:3)*t(:,1);
 end
 
-% If a bounding box has been specified, check to see if only one of the
-% coordinates is within the box, and if so, report this one as X1
+% Set to nan coordinates that are not within the bounding box
 if ~isempty(boundingBox)
-    inX1 = false;
-    if X1(1)>=boundingBox(1) && X1(1)<=boundingBox(2) && ...
+    if ~(X1(1)>=boundingBox(1) && X1(1)<=boundingBox(2) && ...
             X1(2)>=boundingBox(3) && X1(2)<=boundingBox(4) && ...
-            X1(3)>=boundingBox(5) && X1(3)<=boundingBox(6)
-        inX1 = true;
-    else
-            X1 = nan(3,1);
+            X1(3)>=boundingBox(5) && X1(3)<=boundingBox(6))
+        X1 = nan(3,1);
     end
-    inX2 = false;
-    if X2(1)>=boundingBox(1) && X2(1)<=boundingBox(2) && ...
+    if ~(X2(1)>=boundingBox(1) && X2(1)<=boundingBox(2) && ...
             X2(2)>=boundingBox(3) && X2(2)<=boundingBox(4) && ...
-            X2(3)>=boundingBox(5) && X2(3)<=boundingBox(6)
-        inX2 = true;
-    else
-            X2 = nan(3,1);
-    end
-    if inX2 && ~inX1
-        tmp = X1;
-        X1 = X2;
-        X2 = tmp;
+            X2(3)>=boundingBox(5) && X2(3)<=boundingBox(6))
+        X2 = nan(3,1);
     end
 end
 
