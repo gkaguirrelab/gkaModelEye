@@ -79,32 +79,18 @@ p = [-23.58;0;0];
 u = [1;tand(-10);0];
 u = u./sqrt(sum(u.^2));
 R = [p, u];
-atan2(R(2,2),R(1,2));
 
-figure
 
 surfColors = {'',[0.5 0.5 0.5],[0.5 0.6 0.5],[0.5 0.7 0.5],[0.5 0.8 0.5],[0.5 0.9 0.5],[0.5 1.0 0.5],[0.5 1.0 0.5],[0.5 0.9 0.5],[0.5 0.8 0.5],[0.5 0.7 0.5],[0.5 0.6 0.5],[0.5 0.5 0.5],'blue','blue'};
 
-rayPath(1,:) = p;
+[outputRay, rayPath] = rayTraceQuadrics(R, opticalSystem);
+
+figure
 
 for ii=2:size(opticalSystem,1)
-    % Extract components from optical system vector
-    S = quadric.vecToMatrix(opticalSystem(ii,1:10));
-    side = opticalSystem(ii,11);
-    boundingBox = opticalSystem(ii,12:17);
-    nRel = opticalSystem(ii-1,18)/opticalSystem(ii,18);
-
-    % Compute the intersection, surface normal, and refracted ray
-    X = quadric.intersectRay(S,R,side,boundingBox);
-    N = quadric.surfaceNormal(S,X,side);
-    R = quadric.refractRay(R,N,nRel);
-
-    % Store the ray path
-    rayPath(end+1,:) = X;
-    
     % Obtain a function handle for the polynomial
-    F = quadric.vecToFunc(quadric.matrixToVec(S));
-
+    F = quadric.vecToFunc(opticalSystem(ii,1:10));
+    boundingBox = opticalSystem(ii,12:17);
     % Plot the surface
     plotSurface(F,boundingBox,surfColors{ii})
     hold on
@@ -112,9 +98,9 @@ for ii=2:size(opticalSystem,1)
 end
 
 % Plot the ray
-rayPath(end+1,:) = R(:,1)+R(:,2)*3;
+rayPath(end+1,:,1) = rayPath(end,:,1)+rayPath(end,:,2)*3;
 
-plot3(rayPath(:,1),rayPath(:,2),rayPath(:,3),'-r');
+plot3(rayPath(:,1,1),rayPath(:,2,1),rayPath(:,3,1),'-r');
 
 camlight 
 lighting gouraud

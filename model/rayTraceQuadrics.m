@@ -120,10 +120,11 @@ outputRay = nan(3,2);
 opticalSystem=opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
 % Determine the number of surfaces
 nSurfaces = size(opticalSystem,1);
+% Define R (the current state of the ray) as the inputRay
+R=inputRay;
 % Pre-allocate rayPath
 rayPath = nan(nSurfaces,3,2);
-rayPath(1,:,:)=inputRay;
-
+rayPath(1,:,:)=R;
 
 %% Peform the ray trace
 for ii=2:nSurfaces
@@ -139,7 +140,7 @@ for ii=2:nSurfaces
     R = quadric.refractRay(R,N,nRel);
 
     % Store the ray path
-    rayPath(end+1,:,:) = R;
+    rayPath(ii,:,:) = R;
 end
 
 
