@@ -7,6 +7,8 @@ function v = matrixToVec(S)
 % Note that the order of the cross-terms is xy, xz, yz
 %
 
+v = zeros(1,10);
+
 v(1) = S(1,1);
 v(2) = S(2,2);
 v(3) = S(3,3);
