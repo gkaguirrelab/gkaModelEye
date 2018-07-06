@@ -236,12 +236,20 @@ function distance = calcCameraNodeDistanceError(eyePoint, angle_p1p2, angle_p1p3
 %                           by rayTraceEllipsoids.
 %
 
+% Assemble the input ray. Note that the rayTraceQuadrics routine handles
+% vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
+% Tranpose operations ahead.
+p = eyePoint';
+u = [1; tan(angle_p1p2); tan(angle_p1p3)];
+u = u./sqrt(sum(u.^2));
+inputRay = [p, u];
 
 % Ray trace
-outputRayEyeWorld = rayTraceEllipsoids(eyePoint, [angle_p1p2, angle_p1p3], opticalSystem);
+outputRayEyeWorld = rayTraceQuadrics(inputRay, opticalSystem);
+outputRayEyeWorld = outputRayEyeWorld';
 
 % If we received a ray trace error, then return Inf for the distance
-if isempty(outputRayEyeWorld)
+if any(isnan(outputRayEyeWorld))
     distance = Inf;
     return
 end
@@ -273,7 +281,7 @@ Pc=Pc+rotationCenters.azi;
 
 % Calculate the distance between the closest approach of the outputRay to
 % the camera nodal point.
-d = distancePointLine3d(Pc, [outputRayEyeWorld(1,:) (outputRayEyeWorld(2,:)-outputRayEyeWorld(1,:))]);
+d = distancePointLine3d(Pc, [outputRayEyeWorld(1,:) outputRayEyeWorld(2,:)]);
 
 % Obtain the Euclidean distance in the 3 dimensions.
 distance = sqrt(sum(d.^2));
@@ -313,19 +321,29 @@ function [virtualEyePoint] = calcVirtualImagePoint(eyePoint, angle_p1p2, angle_p
 %
 
 
-% Ray trace for these thetas
-outputRayEyeWorld = rayTraceEllipsoids(eyePoint, [angle_p1p2, angle_p1p3], opticalSystem);
+% Ray trace for these angles
+% Assemble the input ray. Note that the rayTraceQuadrics routine handles
+% vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
+% Tranpose operations ahead.
+p = eyePoint';
+u = [1; tan(angle_p1p2); tan(angle_p1p3)];
+u = u./sqrt(sum(u.^2));
+inputRay = [p, u];
 
-% If we received a ray-trace error, then return nans for output ray
-if isempty(outputRayEyeWorld) || isempty(outputRayEyeWorld)
+% Ray trace
+outputRayEyeWorld = rayTraceQuadrics(inputRay, opticalSystem);
+outputRayEyeWorld = outputRayEyeWorld';
+
+% If we received a ray trace error, then return nans for output ray
+if any(isnan(outputRayEyeWorld))
     virtualEyePoint = nan(2,3);
     return
 end
 
 % Adjust the p1 (optical axis) position of the ray to have an initial
 % position at the depth of the pupil
-slope_p1p2 =(outputRayEyeWorld(2,2)-outputRayEyeWorld(1,2))/(outputRayEyeWorld(2,1)-outputRayEyeWorld(1,1));
-slope_p1p3 =(outputRayEyeWorld(2,3)-outputRayEyeWorld(1,3))/(outputRayEyeWorld(2,1)-outputRayEyeWorld(1,1));
+slope_p1p2 =outputRayEyeWorld(2,2)/outputRayEyeWorld(2,1);
+slope_p1p3 =outputRayEyeWorld(2,3)/outputRayEyeWorld(2,1);
 zOffset=outputRayEyeWorld(1,1)-eyePoint(1);
 outputRayEyeWorld(:,1)=outputRayEyeWorld(:,1)-zOffset;
 outputRayEyeWorld(:,2)=outputRayEyeWorld(:,2)-(zOffset*slope_p1p2);
