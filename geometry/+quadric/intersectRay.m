@@ -138,18 +138,18 @@ end
 
 % The scale of the ray (t) is given by a quadratic equation. Obtain the two
 % roots.
-t(:,1) = (-alpha - sqrt(beta))/gamma;
-t(:,2) = (-alpha + sqrt(beta))/gamma;
+t1 = (-alpha - sqrt(beta))/gamma;
+t2 = (-alpha + sqrt(beta))/gamma;
 
 % Calculate the two coordinates of intersection. Order these by the side
 % variable
 if side==-1
-    X1 = p(1:3)+u(1:3)*t(:,1);
-    X2 = p(1:3)+u(1:3)*t(:,2);
+    X1 = p(1:3)+u(1:3)*t1;
+    X2 = p(1:3)+u(1:3)*t2;
 end
 if side==1
-    X1 = p(1:3)+u(1:3)*t(:,2);
-    X2 = p(1:3)+u(1:3)*t(:,1);
+    X1 = p(1:3)+u(1:3)*t2;
+    X2 = p(1:3)+u(1:3)*t1;
 end
 
 % Set to nan coordinates that are not within the bounding box
