@@ -128,7 +128,7 @@ for ii=2:nSurfaces
 
     % Compute the intersection, surface normal, and refracted ray
     X = quadric.intersectRay(S,R,side,boundingBox);
-    N = quadric.surfaceNormal(S,X,side);
+    N = quadric.surfaceNormal(S,X,side,[]);
     R = quadric.refractRay(R,N,nRel);
 
     % Store the ray path
