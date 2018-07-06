@@ -154,8 +154,12 @@ args = [dynamicArgs, staticArgs{:}];
 initialDir = cd(functionDirPath);
 % Compile the mex file
 codegen -o virtualImageFuncMex virtualImageFunc -args args
-% Clean up the compile dir
+% Clean up the compile dir. Turn off warnings regarding the removal of
+% these files
+warnState = warning();
+warning('Off','MATLAB:RMDIR:RemovedFromPath');
 rmdir('codegen', 's');
+warning(warnState);
 % Refresh the path to add the compiled function
 addpath(functionDirPath,'-begin');
 % Change back to the initial directory
