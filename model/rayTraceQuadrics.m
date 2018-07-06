@@ -47,10 +47,11 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %                               R = p + t*u
 %                           where p is vector origin, d is the direction
 %                           expressed as a unit step, and t is unity.
-%   rayPath               - An mx3x2 matrix that provides the refracted ray
-%                           at each surface. The value for arrayRay(1,:,:)
-%                           is equal to the inputRay, and the value for
-%                           arrayRay(end,:,:) is equal to the outputRay.
+%   rayPath               - An mx3 matrix that provides the ray coordinates
+%                           at each surface. The value for rayPath(1,:,:)
+%                           is equal to initial position. If a surface is
+%                           missed, then the coordinates for that surface
+%                           will be nan.
 %
 % Examples:
 %{
@@ -105,7 +106,6 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %}
 
 
-
 %% Initialize variables
 % Strip the optical system of any rows which are all nans
 opticalSystem=opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
@@ -113,13 +113,14 @@ opticalSystem=opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:
 nSurfaces = size(opticalSystem,1);
 % Define R (the current state of the ray) as the inputRay
 R=inputRay;
-% Pre-allocate rayPath
-rayPath = nan(nSurfaces,3,2);
-rayPath(1,:,:)=R;
+% Pre-allocate rayPath and normals
+rayPath = nan(nSurfaces,3);
+rayPath(1,:,:)=R(:,1);
 
 
 %% Peform the ray trace
 for ii=2:nSurfaces
+    
     % Extract components from optical system vector
     S = quadric.vecToMatrix(opticalSystem(ii,1:10));
     side = opticalSystem(ii,11);
@@ -131,10 +132,12 @@ for ii=2:nSurfaces
     N = quadric.surfaceNormal(S,X,side,[]);
     R = quadric.refractRay(R,N,nRel);
 
-    % Store the ray path
-    rayPath(ii,:,:) = R;
+    % Store the ray path and normals
+    rayPath(ii,:,:) = X;
 end
 
+
+%% Return the output ray
 outputRay = R;
 
 end
