@@ -102,7 +102,6 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
     inputRay = [p, u];
     % Perform the ray trace
     outputRay = rayTraceQuadrics(inputRay, sceneGeometry.refraction.opticalSystem);
-
 %}
 
 
