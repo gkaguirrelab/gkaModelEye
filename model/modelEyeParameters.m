@@ -102,8 +102,7 @@ switch p.Results.species
                 
 
         %% Cornea
-        % We model the cornea as an ellipsoid, taking the "canonical
-        % representation" parameters from Table 1 of Navarro 2006:
+        % The corneal front surface is taken from Table 1 of Navarro 2006:
         %
         %   Navarro, Rafael, Luis González, and José L. Hernández. "Optics
         %   of the average normal cornea from general and canonical
@@ -164,6 +163,16 @@ switch p.Results.species
             % for the front surface of the cornea; we use this below.
             atchNavScaler = a(0) ./ radiiNavFront(1)
         %}
+        % We set the center of the cornea front surface ellipsoid so that
+        % the axial apex (prior to rotation) is at position [0, 0, 0]
+       	eye.cornea.front.radii = [14.26   10.43   10.27] .* ...
+            ((p.Results.sphericalAmetropia .* -0.0028)+1);
+        S = quadric.scale(quadric.unitSphere,eye.cornea.front.radii);
+        S = quadric.translate(S,[-eye.cornea.front.radii(1) 0 0]);
+        eye.cornea.front.S = quadric.matrixToVec(S);
+        eye.cornea.front.side = 1;
+        eye.cornea.front.boundingBox=[-4 0 -8 8 -8 8];
+        
         % Atchison finds that the back surface of cornea does not vary by
         % ametropia. Navarro does not provide posterior cornea parameters.
         % Therefore, we scale the parameters provided by Atchison to relate
@@ -191,10 +200,16 @@ switch p.Results.species
             targetBackHorizToAxNav = backHorizToAxAtch / frontHorizToAxAtch * frontHorizToAxNav;
             radiiNavBackCorrected = [a a*targetBackHorizToAxNav a*targetBackHorizToAxNav]./atchNavScaler
         %}
-        eye.cornea.front.radii = [14.26   10.43   10.27] .* ...
-            ((p.Results.sphericalAmetropia .* -0.0028)+1);
+        % The center of the back cornea ellipsoid is positioned so that
+        % there is 0.55 mm of corneal thickness between the front and back
+        % surface of the cornea at the apex, following Atchison 2006.
         eye.cornea.back.radii = [ 13.7716    9.3027    9.3027];
-        
+        S = quadric.scale(quadric.unitSphere,eye.cornea.back.radii);
+        S = quadric.translate(S,[-0.55-eye.cornea.back.radii(1) 0 0]);
+        eye.cornea.back.S = quadric.matrixToVec(S);
+        eye.cornea.back.side = 1;
+        eye.cornea.back.boundingBox=[-4 0 -8 8 -8 8];
+
         % Code here to calculate the Navarro 1985 corneal parameters that
         % were used by Fedtke 2010 in her simulation. These may be used for
         % comparison.
@@ -215,14 +230,6 @@ switch p.Results.species
             eye.cornea.back.radii = [6.5000    6.5000    6.5000];
         %}
         
-        % We set the center of the cornea front surface ellipsoid so that
-        % the axial apex (prior to rotation) is at position [0, 0, 0]
-        eye.cornea.front.center = [-eye.cornea.front.radii(1) 0 0];
-                
-        % The center of the back cornea ellipsoid is positioned so that
-        % there is 0.55 mm of corneal thickness between the front and back
-        % surface of the cornea at the apex, following Atchison 2006.
-        eye.cornea.back.center = [-0.55-eye.cornea.back.radii(1) 0 0];
         
         % Navarro 2006 measured the angle of rotation of the axes of the
         % corneal ellipsoid relative to the keratometric axis, which is the
@@ -254,7 +261,7 @@ switch p.Results.species
         else
             eye.cornea.axis = p.Results.cornealAxis;
         end
-        eye.cornea.axis=[0 0 0]
+        eye.cornea.axis=[0 0 0];
         
         %% Iris
         % The iris has a thickness. This thickness influences the
@@ -819,9 +826,10 @@ switch p.Results.species
         
         %% Refractive indices
         % Obtain refractive index values for this spectral domain.
-        eye.index.cornea = returnRefractiveIndex( 'cornea', p.Results.spectralDomain );
-        eye.index.aqueous = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
+        eye.index.vitreous = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );
         eye.index.lens = returnRefractiveIndex( 'lens', p.Results.spectralDomain );
+        eye.index.aqueous = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
+        eye.index.cornea = returnRefractiveIndex( 'cornea', p.Results.spectralDomain );
 
         
     %% Dog eye
