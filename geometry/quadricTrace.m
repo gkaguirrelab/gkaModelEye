@@ -4,26 +4,6 @@ clear rayPath
 
 opticalSystem(1,:)=[nan(1,10) nan nan(1,6) 1.357];
 
-% Replicate Elagha
-% S = quadric.unitSphere();
-% S = quadric.scale(S,10);
-% S = quadric.translate(S,[22; 0; 0]);
-% opticalSystem(:,end+1)=[quadric.matrixToVec(S) -1 1.2];
-% 
-% S = quadric.unitSphere();
-% S = quadric.scale(S,8);
-% S = quadric.translate(S,[9; 0; 0]);
-% opticalSystem(:,end+1)=[quadric.matrixToVec(S) 1 1];
-% 
-% S = quadric.unitSphere();
-% S = quadric.scale(S,12);
-% S = quadric.translate(S,[34; 0; 0]);
-% opticalSystem(:,end+1)=[quadric.matrixToVec(S) -1 1.5];
-% 
-% S = quadric.unitSphere();
-% S = quadric.scale(S,10);
-% S = quadric.translate(S,[20; 0; 0]);
-% opticalSystem(:,end+1)=[quadric.matrixToVec(S) 1 1.0];
 
 % %% Back lens surface
 S = quadric.unitTwoSheetHyperboloid();
