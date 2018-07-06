@@ -36,6 +36,8 @@ function N = surfaceNormal(S,X,side,surfaceTolerance)
     N = quadric.surfaceNormal(S,X);
 %}
 
+% Keep the compiler happy by excluding prohibited calls
+coder.extrinsic('warning')
 
 % Handle incomplete input arguments
 if nargin==2
