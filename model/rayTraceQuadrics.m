@@ -19,7 +19,7 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %                           number of surfaces in the model, including the
 %                           initial state of the ray. Each row contains the
 %                           values:
-%                               [S side bb n]
+%                               [S side bb n must]
 %                           where:
 %                               S     - 1x10 quadric surface vector
 %                               side  - Scalar taking the value -1 or 1
@@ -31,6 +31,12 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %                                       box within which the refractive
 %                                       surface is present.
 %                               n     - Refractive index of the surface.
+%                               must  - Scalar taking the value of 0 or 1,
+%                                       where 1 indicates that the ray must
+%                                       intersect the surface. If the ray
+%                                       misses a required surface, the
+%                                       routine exits with nans for the
+%                                       outputRay.
 %                           The first row corresponds to the initial
 %                           conditions of the ray. Thus, the refractive
 %                           index value given in the first row specifies
@@ -47,7 +53,7 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %                               R = p + t*u
 %                           where p is vector origin, d is the direction
 %                           expressed as a unit step, and t is unity.
-%   rayPath               - An mx3 matrix that provides the ray coordinates
+%   rayPath               - An 3xm matrix that provides the ray coordinates
 %                           at each surface. The value for rayPath(1,:,:)
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
@@ -64,19 +70,19 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
     % Create the optical system of spherical, aligned surfaces
     boundingBox = [-inf inf -inf inf -inf inf];
     clear opticalSystem
-    opticalSystem(1,:)=[nan(1,10) nan nan(1,6) 1];
+    opticalSystem(1,:)=[nan(1,10) nan nan(1,6) 1 nan];
     S = quadric.scale(quadric.unitSphere,10);
     S = quadric.translate(S,[22; 0; 0]);
-    opticalSystem(end+1,:)=[quadric.matrixToVec(S) -1 boundingBox 1.2];
+    opticalSystem(end+1,:)=[quadric.matrixToVec(S) -1 boundingBox 1.2 1];
     S = quadric.scale(quadric.unitSphere,8);
     S = quadric.translate(S,[9; 0; 0]);
-    opticalSystem(end+1,:)=[quadric.matrixToVec(S) 1 boundingBox 1];
+    opticalSystem(end+1,:)=[quadric.matrixToVec(S) 1 boundingBox 1 1];
     S = quadric.scale(quadric.unitSphere,12);
     S = quadric.translate(S,[34; 0; 0]);
-    opticalSystem(end+1,:)=[quadric.matrixToVec(S) -1 boundingBox 1.5];
+    opticalSystem(end+1,:)=[quadric.matrixToVec(S) -1 boundingBox 1.5 1];
     S = quadric.scale(quadric.unitSphere,10);
     S = quadric.translate(S,[20; 0; 0]);
-    opticalSystem(end+1,:)=[quadric.matrixToVec(S) 1 boundingBox 1.0];
+    opticalSystem(end+1,:)=[quadric.matrixToVec(S) 1 boundingBox 1.0 1];
 
     % Define an initial ray
     p = [0;0;0];
@@ -113,9 +119,10 @@ opticalSystem=opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:
 nSurfaces = size(opticalSystem,1);
 % Define R (the current state of the ray) as the inputRay
 R=inputRay;
-% Pre-allocate rayPath and normals
-rayPath = nan(nSurfaces,3);
-rayPath(1,:,:)=R(:,1);
+% Pre-allocate outputRay and rayPath
+outputRay = nan(3,2);
+rayPath = nan(3,nSurfaces);
+rayPath(:,1)=R(:,1);
 
 
 %% Peform the ray trace
@@ -126,9 +133,17 @@ for ii=2:nSurfaces
     side = opticalSystem(ii,11);
     boundingBox = opticalSystem(ii,12:17);
     nRel = opticalSystem(ii-1,18)/opticalSystem(ii,18);
+    mustIntersectFlag =  opticalSystem(ii,19);
 
-    % Compute the intersection, surface normal, and refracted ray
+    % Compute the intersection
     X = quadric.intersectRay(S,R,side,boundingBox);
+    
+    % Exit if we have missed a must intersect surface
+    if any(isnan(X)) && mustIntersectFlag
+        return
+    end
+    
+    % surface normal, and refracted ray
     N = quadric.surfaceNormal(S,X,side,[]);
     R = quadric.refractRay(R,N,nRel);
 

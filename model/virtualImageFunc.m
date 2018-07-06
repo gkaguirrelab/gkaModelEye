@@ -248,7 +248,8 @@ inputRay = [p, u];
 outputRayEyeWorld = rayTraceQuadrics(inputRay, opticalSystem);
 outputRayEyeWorld = outputRayEyeWorld';
 
-% If we received a ray trace error, then return Inf for the distance
+% If any must intersect surfaces were missed, the output ray will contain
+% nans. In this case, return Inf for the distance
 if any(isnan(outputRayEyeWorld))
     distance = Inf;
     return
@@ -334,7 +335,8 @@ inputRay = [p, u];
 outputRayEyeWorld = rayTraceQuadrics(inputRay, opticalSystem);
 outputRayEyeWorld = outputRayEyeWorld';
 
-% If we received a ray trace error, then return nans for output ray
+% If any must intersect surfaces were missed, the output ray will contain
+% nans. In this case, return return nans for output ray
 if any(isnan(outputRayEyeWorld))
     virtualEyePoint = nan(2,3);
     return
