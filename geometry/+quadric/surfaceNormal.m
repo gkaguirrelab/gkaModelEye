@@ -56,7 +56,7 @@ if any(isnan(X))
 end
 
 % Check that the supplied point is on the surface of the quadric
-if ~empty(surfaceTolerance)
+if ~isempty(surfaceTolerance)
     funcS = quadric.vecToFunc(quadric.matrixToVec(S));
     % Decompose the coordinate
     x = X(1); y = X(2); z = X(3);
