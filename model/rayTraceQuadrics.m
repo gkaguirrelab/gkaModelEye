@@ -54,68 +54,60 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %
 % Examples:
 %{
-    %% Elagha 2017 numerical example
-    % The paper provides a numerical example in section C which is
-    % implemented here as an example. Compare the returned theta values
-    % with those given on page 340, section C.
-    clear figureFlag
-    coords = [0 0];
-    angleInitial = deg2rad(17.309724);
-    figureFlag=true;
-    opticalSystem=[nan nan 1; 22 10 1.2; 9 -8 1; 34 12 1.5; 20 -10 1.0];
-    [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids(coords, angleInitial, opticalSystem, figureFlag);
+    %% Numerical example in 2D
+    % This paper provides a numerical example in section C which is
+    % implemented here as an example.
+    %   Elagha, Hassan A. "Generalized formulas for ray-tracing and
+    %   longitudinal spherical aberration." JOSA A 34.3 (2017): 335-343.
+
+    % Create the optical system of spherical, aligned surfaces
+    boundingBox = [-inf inf -inf inf -inf inf];
+    clear opticalSystem
+    opticalSystem(1,:)=[nan(1,10) nan nan(1,6) 1];
+    S = quadric.scale(quadric.unitSphere,10);
+    S = quadric.translate(S,[22; 0; 0]);
+    opticalSystem(end+1,:)=[quadric.matrixToVec(S) -1 boundingBox 1.2];
+    S = quadric.scale(quadric.unitSphere,8);
+    S = quadric.translate(S,[9; 0; 0]);
+    opticalSystem(end+1,:)=[quadric.matrixToVec(S) 1 boundingBox 1];
+    S = quadric.scale(quadric.unitSphere,12);
+    S = quadric.translate(S,[34; 0; 0]);
+    opticalSystem(end+1,:)=[quadric.matrixToVec(S) -1 boundingBox 1.5];
+    S = quadric.scale(quadric.unitSphere,10);
+    S = quadric.translate(S,[20; 0; 0]);
+    opticalSystem(end+1,:)=[quadric.matrixToVec(S) 1 boundingBox 1.0];
+
+    % Define an initial ray
+    p = [0;0;0];
+    u = [1;tand(17.309724);0];
+    u = u./sqrt(sum(u.^2));
+    inputRay = [p, u];
+
+    % Perform the ray trace
+    [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem);
+
+    % Obtain the angle of the ray in the p1p2 plane at each surface.
+    % Compare with the Elagha numeric results.
+    recoveredThetas = atand(rayPath(:,2,2)./rayPath(:,1,2))';
     elaghaThetasDeg = [17.309724 9.479589 4.143784 -5.926743 -26.583586];
-    assert(max(abs(angles_p1p2' - deg2rad(elaghaThetasDeg)))<1e-5);
+    assert(max(abs(recoveredThetas - elaghaThetasDeg))<1e-4);
 %}
 %{
     %% Pupil through cornea
-    % A model of the passage of a point on the pupil perimeter through
-    % the axial cross-section of the cornea (units in mm)
     sceneGeometry = createSceneGeometry();
-    [outputRay, angles_p1p2, angles_p1p3, intersectionCoords] = rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1) 2], [deg2rad(-15) 0], sceneGeometry.refraction.opticalSystem, true);
-%}
-%{
-    %% Pupil through cornea, multiple points and rays
-    sceneGeometry = createSceneGeometry();
-    pupilRadius = 2;
-    % Define FigureFlag as a structure, and set the new field to false so
-    % that subsequent calls to the ray tracing routine will plot on the
-    % same figure. Also, set the textLabels to false to reduce clutter
-    figure
-    clear figureFlag
-    figureFlag.new = false;
-    figureFlag.textLabels = false;
-    for theta = -25:50:25
-        for pupilRadius = -2:4:2
-            rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1) pupilRadius], theta, sceneGeometry.refraction.opticalSystem, figureFlag);
-        end
-    end
-%}
-%{
-    %% Demo non-intersection warning
-    coords = [0 0];
-    opticalSystem=[nan nan 1.5; 20 10 1.0];
-    % This ray will not intersect the surface. The function issues
-    % warning and returns an empty outputRay
-    theta = deg2rad(45);
-    outputRay = rayTraceEllipsoids(coords, theta, opticalSystem);
-%}
-%{
-    %% Demo total internal reflection warning
-    coords = [0 0];
-    % Make the index of refraction of the surface very high
-    opticalSystem=[nan nan 25.0; 20 10 1];
-    % This ray encounters total internal reflection. The function issues
-    % warning and returns an empty outputRay
-    theta = deg2rad(25);
-    outputRay = rayTraceEllipsoids(coords, theta, opticalSystem);
+    % Define an initial ray
+    p = [sceneGeometry.eye.pupil.center(1); 2; 0];
+    u = [1;tand(-15);0];
+    u = u./sqrt(sum(u.^2));
+    inputRay = [p, u];
+    % Perform the ray trace
+    outputRay = rayTraceQuadrics(inputRay, sceneGeometry.refraction.opticalSystem);
+
 %}
 
 
 
 %% Initialize variables
-% OutputRay set to empty
-outputRay = nan(3,2);
 % Strip the optical system of any rows which are all nans
 opticalSystem=opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
 % Determine the number of surfaces
@@ -125,6 +117,7 @@ R=inputRay;
 % Pre-allocate rayPath
 rayPath = nan(nSurfaces,3,2);
 rayPath(1,:,:)=R;
+
 
 %% Peform the ray trace
 for ii=2:nSurfaces
@@ -143,6 +136,7 @@ for ii=2:nSurfaces
     rayPath(ii,:,:) = R;
 end
 
+outputRay = R;
 
 end
 
