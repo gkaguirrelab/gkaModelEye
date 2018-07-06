@@ -19,7 +19,7 @@ function N = surfaceNormal(S,X,side,surfaceTolerance)
 %   surfaceTolerance        Scalar. Defines the tolerance on the check to
 %                           ensure that the passed X coordinate is on the
 %                           quadric surface. Defaults to 1e-10 if not
-%                           defined.
+%                           defined. If set to empty the check is skipped.                           
 %
 % Outputs:
 %   N                     - 3x2 matrix that specifies the normal as a unit
@@ -32,7 +32,7 @@ function N = surfaceNormal(S,X,side,surfaceTolerance)
 % Examples:
 %{
     S = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 -1];
-    X = [0; 0.707106781186547; 0.707106781186547];
+    X = [0 0.707106781186547 0.707106781186547];
     N = quadric.surfaceNormal(S,X);
 %}
 
@@ -55,14 +55,15 @@ if any(isnan(X))
     return
 end
 
-% Decompose the coordinate
-x = X(1); y = X(2); z = X(3);
-
-% Test that the supplied point is on the surface of the quadric
-funcS = quadric.vecToFunc(quadric.matrixToVec(S));
-if abs(funcS(x,y,z)) > surfaceTolerance
-    warning('Passed coordinate is not on the quadric surface within tolerance (%f)',surfaceTolerance);
-    return
+% Check that the supplied point is on the surface of the quadric
+if ~empty(surfaceTolerance)
+    funcS = quadric.vecToFunc(quadric.matrixToVec(S));
+    % Decompose the coordinate
+    x = X(1); y = X(2); z = X(3);
+    if abs(funcS(x,y,z)) > surfaceTolerance
+        warning('Passed coordinate is not on the quadric surface within tolerance (%f)',surfaceTolerance);
+        return
+    end
 end
 
 % Obtain the surface normal by taking the partial derivatives of Q with
