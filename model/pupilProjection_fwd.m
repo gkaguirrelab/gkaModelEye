@@ -6,8 +6,8 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %
 % Description:
 %   Given the sceneGeometry, this routine simulates a pupil aperture in a
-%   rotated eye and then measures the parameters of the ellipse (in
-%   transparent format) fit to the entrance pupil in the image plane.
+%   rotated eye and returns the parameters of the ellipse (in transparent
+%   format) fit to the entrance pupil in the image plane.
 %
 %   The forward model is a perspective projection of an anatomically
 %   accurate eye, with points positioned behind the cornea subject to
@@ -51,10 +51,10 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %  'nIrisPerimPoints'     - The number of points that are distributed
 %                           around the iris circle. A minimum of 5 is
 %                           required to uniquely specify the image ellipse.
-%  'posteriorChamberEllipsoidPoints' - The number of points that are on
+%  'posteriorChamberMeshDensity' - The number of points that are on
 %                           each latitude line of the posterior chamber
 %                           ellipsoid. About 30 makes a nice image.
-%  'anteriorChamberEllipsoidPoints' - The number of points that are on
+%  'anteriorChamberMeshDensity' - The number of points that are on
 %                           each longitude line of the anterior chamber
 %                           ellipsoid. About 30 makes a nice image.
 %
@@ -177,8 +177,8 @@ p.addParameter('fullEyeModelFlag',false,@islogical);
 p.addParameter('nPupilPerimPoints',5,@(x)(isnumeric(x) && x>4));
 p.addParameter('pupilPerimPhase',0,@isnumeric);
 p.addParameter('nIrisPerimPoints',5,@isnumeric);
-p.addParameter('posteriorChamberEllipsoidPoints',30,@isnumeric);
-p.addParameter('anteriorChamberEllipsoidPoints',30,@isnumeric);
+p.addParameter('anteriorChamberMeshDensity',10,@isnumeric);
+p.addParameter('posteriorChamberMeshDensity',30,@isnumeric);
 
 % parse
 p.parse(eyePose, sceneGeometry, varargin{:})
@@ -293,41 +293,18 @@ if p.Results.fullEyeModelFlag
     tmpLabels(:) = {'irisPerimeter'};
     pointLabels = [pointLabels; tmpLabels];
     
-    % Create the anterior chamber ellipsoid
-    [p1tmp, p2tmp, p3tmp] = ellipsoid( ...
-        sceneGeometry.eye.cornea.front.center(1), ...
-        sceneGeometry.eye.cornea.front.center(2), ...
-        sceneGeometry.eye.cornea.front.center(3), ...
-        sceneGeometry.eye.cornea.front.radii(1), ...
-        sceneGeometry.eye.cornea.front.radii(2), ...
-        sceneGeometry.eye.cornea.front.radii(3), ...
-        p.Results.anteriorChamberEllipsoidPoints);
-    % Convert the surface matrices to a vector of points and switch the
-    % axes back
-    ansTmp = surf2patch(p1tmp, p2tmp, p3tmp);
-    anteriorChamberPoints=double(ansTmp.vertices);
+    % Create the anterior chaber vertices
+    anteriorChamberPoints = quadric.surfaceMesh(...
+        sceneGeometry.eye.cornea.front.S,...
+        sceneGeometry.eye.cornea.front.boundingBox,...
+        p.Results.anteriorChamberMeshDensity);
 
     % Identify the index of the corneal apex
     [~,apexIdx]=max(anteriorChamberPoints(:,1));
     
-    % Rotate the anteriorChamber points so that they reflect the difference
-    % in the axis of the corneal ellipsoid w.r.t. the optical axis
-    angles = sceneGeometry.eye.cornea.axis;
-    R3 = [cosd(angles(1)) -sind(angles(1)) 0; sind(angles(1)) cosd(angles(1)) 0; 0 0 1];
-    R2 = [cosd(-angles(2)) 0 sind(-angles(2)); 0 1 0; -sind(-angles(2)) 0 cosd(-angles(2))];
-    R1 = [1 0 0; 0 cosd(angles(3)) -sind(angles(3)); 0 sind(angles(3)) cosd(angles(3))];
-    anteriorChamberPoints = ((R1*R2*R3)*(anteriorChamberPoints-sceneGeometry.eye.cornea.front.center)')'+sceneGeometry.eye.cornea.front.center;
-    
     % Save the corneal apex coordinates
     cornealApex = anteriorChamberPoints(apexIdx,:);
-    
-    % Retain those points that are anterior to the iris plane.
-    retainIdx = anteriorChamberPoints(:,1) >= sceneGeometry.eye.iris.center(1);
-    if all(~retainIdx)
-        error('pupilProjection_fwd:pupilPlanePosition','The pupil plane is set in front of the corneal apea');
-    end
-    anteriorChamberPoints = anteriorChamberPoints(retainIdx,:);
-    
+        
     % Add the points and labels
     eyePoints = [eyePoints; anteriorChamberPoints];
     tmpLabels = cell(size(anteriorChamberPoints,1), 1);
@@ -338,21 +315,11 @@ if p.Results.fullEyeModelFlag
     eyePoints = [eyePoints; cornealApex];
     pointLabels = [pointLabels; 'cornealApex'];
     
-    % Create the posterior chamber ellipsoid. We switch dimensions here so
-    % that the ellipsoid points have their poles oriented differently from
-    % the cornea to make a more attractive rendering.
-    [p3tmp, p2tmp, p1tmp] = ellipsoid( ...
-        sceneGeometry.eye.posteriorChamber.center(3), ...
-        sceneGeometry.eye.posteriorChamber.center(2), ...
-        sceneGeometry.eye.posteriorChamber.center(1), ...
-        sceneGeometry.eye.posteriorChamber.radii(3), ...
-        sceneGeometry.eye.posteriorChamber.radii(2), ...
-        sceneGeometry.eye.posteriorChamber.radii(1), ...
-        p.Results.posteriorChamberEllipsoidPoints);
-    % Convert the surface matrices to a vector of points and switch the
-    % axes back
-    ansTmp = surf2patch(p1tmp, p2tmp, p3tmp);
-    posteriorChamberPoints=ansTmp.vertices;
+    % Create the posterior chamber vertices
+    posteriorChamberPoints = quadric.surfaceMesh(...
+        sceneGeometry.eye.posteriorChamber.S,...
+        sceneGeometry.eye.posteriorChamber.boundingBox,...
+        p.Results.posteriorChamberMeshDensity);
     
     % Retain those points that are posterior to the iris plane, and have a
     % distance from the optical axis in the p2xp3 plane of greater than the
