@@ -1,4 +1,4 @@
-function r = radii(S)
+function angles = angles(S)
 % The transparent form of a quadric are the parameters:
 %   sx, sy, sz, alpha, beta, gamma, cx, cy, cz, scale
 %
@@ -22,12 +22,10 @@ T( 4, 1:3 ) = center';
 Q = T * S * transpose(T);
 
 % solve the eigenproblem
-[~,evals] = svd(Q( 1:3, 1:3 ) / -Q( 4, 4 ));
-r = 1./diag(sqrt(evals));
-sgns = sign( diag( evals ) );
-r = r .* sgns;
+[evecs,~] = svd(Q( 1:3, 1:3 ) / -Q( 4, 4 ));
 
-r=flipud(r);
+% Derive the angles
+angles = rad2deg(rotm2eul(evecs));
 
 end
 
