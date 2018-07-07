@@ -255,9 +255,9 @@ if any(isnan(outputRayEyeWorld))
     return
 end
 
-% Counter-rotate the camera position point (in eyeWorld coordinate space)
-% so that it is in a position w.r.t. the eye that is equivalent to if the
-% eye had rotated
+% We express the position of the camera (PC) in eye world coordinates. 
+% Then, the point is counter-rotated by the eye pose, so that the camera
+% is in a position equivalent to if the eye had rotated.
 cameraRot = -eyePose;
 RotAzi = [cosd(cameraRot(1)) -sind(cameraRot(1)) 0; sind(cameraRot(1)) cosd(cameraRot(1)) 0; 0 0 1];
 RotEle = [cosd(-cameraRot(2)) 0 sind(-cameraRot(2)); 0 1 0; -sind(-cameraRot(2)) 0 cosd(-cameraRot(2))];
@@ -282,8 +282,9 @@ Pc=Pc+rotationCenters.azi;
 
 % Calculate the distance between the closest approach of the outputRay to
 % the camera nodal point.
-d = distancePointLine3d(Pc, [outputRayEyeWorld(1,:) outputRayEyeWorld(2,:)]);
-
+d = norm(cross(outputRayEyeWorld(2,:),Pc - outputRayEyeWorld(1,:))) ...
+    / norm(outputRayEyeWorld(2,:));
+      
 % Obtain the Euclidean distance in the 3 dimensions.
 distance = sqrt(sum(d.^2));
 
