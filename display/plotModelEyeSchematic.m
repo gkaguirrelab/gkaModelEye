@@ -95,8 +95,8 @@ end
 plotConicSection(eye.posteriorChamber.S, titleString, p.Results.plotColor,eye.posteriorChamber.boundingBox)
 plotConicSection(eye.cornea.back.S, titleString, p.Results.plotColor,eye.cornea.back.boundingBox)
 plotConicSection(eye.cornea.front.S, titleString, p.Results.plotColor,eye.cornea.front.boundingBox)
-%plotConicSection(eye.lens.front.S, titleString, p.Results.plotColor,eye.lens.front.boundingBox)
-%plotConicSection(eye.lens.back.S, titleString, p.Results.plotColor,eye.lens.back.boundingBox)
+plotConicSection(eye.lens.front.S, titleString, p.Results.plotColor,eye.lens.front.boundingBox)
+plotConicSection(eye.lens.back.S, titleString, p.Results.plotColor,eye.lens.back.boundingBox)
 
 
 %% Add a 2mm radius pupil, center of rotation, iris boundary, fovea, and optic disc
