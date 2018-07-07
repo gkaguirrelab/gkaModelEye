@@ -106,9 +106,20 @@ Rr(:,1) = N(:,1);
     eq_R = solve(eq,R1);
 %}
 
+
 % Calculate the direction vector of the refracted ray. This equation is
 % taken from: http://www.starkeffects.com/snells-law-vector.shtml
-Rr(:,2) = nRel*cross(q,(cross(-q,u))) - q*sqrt(1-(nRel^2)*dot(cross(q,u),cross(q,u)));
+% 
+%  nRel*cross(q,(cross(-q,u))) - q*sqrt(1-(nRel^2)*dot(cross(q,u),cross(q,u)))
+%
+% We compute the full expression in parts, and test if the component to be
+% rooted is negative
+rootTerm = 1-(nRel^2)*dot(cross(q,u),cross(q,u));
+if rootTerm<0
+    fprintf('neg root\n')
+    return
+end
+Rr(:,2) = nRel*cross(q,(cross(-q,u))) - q*sqrt(rootTerm);
 
 end
 
