@@ -19,7 +19,7 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %                           number of surfaces in the model, including the
 %                           initial state of the ray. Each row contains the
 %                           values:
-%                               [S side bb n must]
+%                               [S side bb must n]
 %                           where:
 %                               S     - 1x10 quadric surface vector
 %                               side  - Scalar taking the value -1 or 1
@@ -53,7 +53,7 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %                               R = p + t*u
 %                           where p is vector origin, d is the direction
 %                           expressed as a unit step, and t is unity.
-%   rayPath               - A 3xm matrix that provides the ray coordinates
+%   rayPath               - 3xm matrix that provides the ray coordinates
 %                           at each surface. The value for rayPath(1,:)
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
