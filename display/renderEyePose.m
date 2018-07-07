@@ -136,7 +136,7 @@ end
 imageSizeX = sceneGeometry.cameraIntrinsic.sensorResolution(1);
 imageSizeY = sceneGeometry.cameraIntrinsic.sensorResolution(2);
 
-% A blank frame to initialize each frame
+% A blank frame to initialize the figure
 if ~isempty(p.Results.backgroundImage)
     backgroundImage = p.Results.backgroundImage;
     if size(backgroundImage) ~= [imageSizeX imageSizeY]
