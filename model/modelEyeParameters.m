@@ -530,6 +530,10 @@ switch p.Results.species
         eye.posteriorChamber.center = ...
             [(-posteriorChamberApexDepth - eye.posteriorChamber.radii(1)) 0 0];
 
+        S = quadric.scale(quadric.unitSphere,eye.posteriorChamber.radii);
+        S = quadric.translate(S,[eye.posteriorChamber.center 0 0]);
+        eye.posteriorChamber.S = quadric.matrixToVec(S);
+        eye.posteriorChamber.boundingBox = [-25 -4 -40 40 -40 40];
         
         %% Lens
         % The lens parameters are included to support an illustration of a
