@@ -68,12 +68,6 @@ function [virtualEyePoint, nodalPointIntersectError] = virtualImageFunc( eyePoin
 %}
 
 
-%% Handle ray trace warnings
-coder.extrinsic('warning')
-warnState = warning();
-warning('off','rayTraceCenteredSurfaces:criticalAngle');
-warning('off','rayTraceCenteredSurfaces:nonIntersectingRay');
-
 
 %% Find the p1p2 and p1p3 angles
 % For this eyeWorld point, we find the angles of origin of a ray in the
@@ -89,8 +83,8 @@ nodalErrorTolerance = 1e-4;
 searchIterTolerance = 6;
 searchIter = 0;
 searchingFlag = true;
-angle_p1p2 = 1e-4;
-angle_p1p3 = 1e-4;
+angle_p1p2 = 0;
+angle_p1p3 = 0;
 
 % Set fminsearch options to tolerate an error of 1e-2, and to make changes
 % in theta as small as 1e-6.
@@ -109,13 +103,9 @@ while searchingFlag
     cameraNodeDistanceError_p1p2 = ...
         @(angleX) calcCameraNodeDistanceError(eyePoint, angleX, angle_p1p3, eyePose, cameraTranslation, rotationCenters, opticalSystem);
 
-    % Set the x0 value for the search, handling the issue that an initial
-    % value of exactly zero breaks the search.
-    if abs(angle_p1p2) < 1e-4
-        x0 = 1e-4;
-    else
-        x0 = angle_p1p2;
-    end
+    % Set the x0 value for the search to the current value of angle_p1p2
+    x0 = angle_p1p2;
+        
     % Perform the search
     [angle_p1p2,~]=fminsearch(@myObj_p1p2,x0,options);
 
@@ -128,8 +118,6 @@ while searchingFlag
     if badTraceFlag && angle_p1p2 > (TolX*10)
         virtualEyePoint = nan(1,3);
         nodalPointIntersectError = Inf;
-        % Restore the warning state
-        warning(warnState);
         return
     else
         badTraceFlag = false;
@@ -139,13 +127,9 @@ while searchingFlag
     cameraNodeDistanceError_p1p3 = ...
         @(angleX) calcCameraNodeDistanceError(eyePoint, angle_p1p2, angleX, eyePose, cameraTranslation, rotationCenters, opticalSystem);
 
-    % Set the x0 value for the search, handling the issue that an initial
-    % value of exactly zero breaks the search.
-    if abs(angle_p1p3) < 1e-4
-        x0 = 1e-4;
-    else
-        x0 = angle_p1p3;
-    end
+    % Set the x0 value for the search to the current value of angle_p1p3
+    x0 = angle_p1p3;
+
     % Perform the search
     [angle_p1p3,nodalPointIntersectError]=fminsearch(@myObj_p1p3,x0,options);
 
@@ -153,8 +137,6 @@ while searchingFlag
     if badTraceFlag && angle_p1p3 > (TolX*10)
         virtualEyePoint = nan(1,3);
         nodalPointIntersectError = Inf;
-        % Restore the warning state
-        warning(warnState);
         return
     else
         badTraceFlag = false;
@@ -188,8 +170,6 @@ end
 % arising from the pupil plane that reflects the corneal optics
 virtualEyePoint = calcVirtualImagePoint(eyePoint, angle_p1p2, angle_p1p3, opticalSystem);
 
-% Restore the warning state
-warning(warnState);
 
 end % virtualImageFunc -- MAIN
 
