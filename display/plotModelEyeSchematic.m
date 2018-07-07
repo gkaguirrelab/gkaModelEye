@@ -13,7 +13,7 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %                           modelEyeParameters()
 %
 % Optional key/value pairs:
-%  'view'     - String. The view to display. Valid choices
+%  'view'                 - String. The view to display. Valid choices
 %                           include {'axial','sagittal'};
 %  'newFigure'            - Logical. Determines if we create a new figure.
 %  'plotColor'            - String. Matlab line spec code for line color,
@@ -78,9 +78,6 @@ switch p.Results.view
         titleString = 'Axial';
         yLabelString = 'temporal <----> nasal';
         xLabelString = 'posterior <----> anterior';
-        postChamberRange = [-30, -7, -15, 15];
-        corneaRange = [eye.pupil.center(1), 5, -15, 15];
-        lensRange = [-10, -2.5, -5, 5];
     case {'sagittal','Sagittal','Sag','sag','Vertical','vertical','vert'}
         PdimA = 1;
         PdimB = 3;
@@ -90,24 +87,17 @@ switch p.Results.view
         titleString = 'Sagittal';
         yLabelString = 'inferior <----> superior';
         xLabelString = 'posterior <----> anterior';
-        postChamberRange = [-30, -7, -15, 15];
-        corneaRange = [eye.pupil.center(1), 5, -15, 15];
-        lensRange = [-10, -2.5, -5, 5];       
     otherwise
         error('Not a recognized view for the schematic eye');
 end
 
 %% Plot the anterior and posterior chambers and the lens
-ep = ellipse_ex2im([eye.posteriorChamber.center([PdimA PdimB]) eye.posteriorChamber.radii([PdimA PdimB]) 0]);
-plotEllipse(ep,p.Results.plotColor,postChamberRange)
-ep = ellipse_ex2im([eye.cornea.back.center([PdimA PdimB]) eye.cornea.back.radii([PdimA PdimB]) deg2rad(eye.cornea.axis(PdimA))]);
-plotEllipse(ep,p.Results.plotColor,corneaRange)
-ep = ellipse_ex2im([eye.cornea.front.center([PdimA PdimB]) eye.cornea.front.radii([PdimA PdimB]) deg2rad(eye.cornea.axis(PdimA))]);
-plotEllipse(ep,p.Results.plotColor,corneaRange)
-ep = ellipse_ex2im([eye.lens.front.center([PdimA PdimB]) eye.lens.front.radii([PdimA PdimB]) 0]);
-plotHyperbola(ep,p.Results.plotColor,lensRange)
-ep = ellipse_ex2im([eye.lens.back.center([PdimA PdimB]) eye.lens.back.radii([PdimA PdimB]) 0]);
-plotHyperbola(ep,p.Results.plotColor,lensRange)
+plotConicSection(eye.posteriorChamber.S, titleString, p.Results.plotColor,eye.posteriorChamber.boundingBox)
+plotConicSection(eye.cornea.back.S, titleString, p.Results.plotColor,eye.cornea.back.boundingBox)
+plotConicSection(eye.cornea.front.S, titleString, p.Results.plotColor,eye.cornea.front.boundingBox)
+%plotConicSection(eye.lens.front.S, titleString, p.Results.plotColor,eye.lens.front.boundingBox)
+%plotConicSection(eye.lens.back.S, titleString, p.Results.plotColor,eye.lens.back.boundingBox)
+
 
 %% Add a 2mm radius pupil, center of rotation, iris boundary, fovea, and optic disc
 plot([eye.pupil.center(PdimA) eye.pupil.center(PdimA)],[-2 2],['-' p.Results.plotColor]);
@@ -145,6 +135,22 @@ title(titleString);
 ylabel(yLabelString);
 xlabel(xLabelString);
 
+end
+
+function plotConicSection(S,plane,colorCode,boundingBox)
+    F = quadric.vecToFunc(S);
+    switch plane
+        case 'Axial'
+            fh = @(x,y) F(x,y,0);
+            rangeVec = boundingBox([1 2 3 4]);
+        case 'Sagittal'
+            fh = @(x,y) F(x,0,y);
+            rangeVec = boundingBox([1 2 5 6]);
+        case 'Coronal'
+            fh = @(x,y) F(0,x,y);
+            rangeVec = boundingBox([3 4 5 6]);
+    end
+    fimplicit(fh,rangeVec,'Color', colorCode,'LineWidth',1);
 end
 
 function plotEllipse(ep,colorCode,rangeVec)
