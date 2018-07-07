@@ -53,8 +53,8 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %                               R = p + t*u
 %                           where p is vector origin, d is the direction
 %                           expressed as a unit step, and t is unity.
-%   rayPath               - An 3xm matrix that provides the ray coordinates
-%                           at each surface. The value for rayPath(1,:,:)
+%   rayPath               - A 3xm matrix that provides the ray coordinates
+%                           at each surface. The value for rayPath(1,:)
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
 %                           will be nan.
@@ -95,9 +95,9 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 
     % Obtain the angle of the ray in the p1p2 plane at each surface.
     % Compare with the Elagha numeric results.
-    recoveredThetas = atand(rayPath(:,2,2)./rayPath(:,1,2))';
-    elaghaThetasDeg = [17.309724 9.479589 4.143784 -5.926743 -26.583586];
-    assert(max(abs(recoveredThetas - elaghaThetasDeg))<1e-4);
+    recoveredThetas = atand(diff(rayPath(2,:))./diff(rayPath(1,:)));
+    elaghaThetasDeg = [17.309724 9.479589 4.143784 -5.926743];
+    assert(max(abs(recoveredThetas - elaghaThetasDeg))<1e-6);
 %}
 %{
     %% Pupil through cornea
@@ -132,26 +132,26 @@ for ii=2:nSurfaces
     S = quadric.vecToMatrix(opticalSystem(ii,1:10));
     side = opticalSystem(ii,11);
     boundingBox = opticalSystem(ii,12:17);
-    mustIntersectFlag =  opticalSystem(ii,18);
-    nRel = opticalSystem(ii-1,18)/opticalSystem(ii,19);
+    mustIntersectFlag = opticalSystem(ii,18);
+    nRel = opticalSystem(ii-1,19)/opticalSystem(ii,19);
 
     % Compute the intersection
     X = quadric.intersectRay(S,R,side,boundingBox);
     
-    % Exit if we have missed a must intersect surface
+    % Exit if we have missed a "must intersect" surface
     if any(isnan(X)) && mustIntersectFlag
         return
     end
     
-    % Get the surface normal. Pass empty for the last variable to
-    % skip checking if the X coordinate is on the surface of the quadric
+    % Get the surface normal. Pass empty for the last variable to skip
+    % checking if the X coordinate is on the surface of the quadric
     N = quadric.surfaceNormal(S,X,side,[]);
 
     % Get the refracted ray
     R = quadric.refractRay(R,N,nRel);
 
-    % Store the ray path and normals
-    rayPath(ii,:,:) = X;
+    % Store the ray path
+    rayPath(:,ii) = X;
 end
 
 
