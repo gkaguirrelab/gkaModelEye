@@ -316,7 +316,7 @@ inputRay = [p, u];
 outputRayEyeWorld = rayTraceQuadrics(inputRay, opticalSystem);
 outputRayEyeWorld = outputRayEyeWorld';
 
-% If any must intersect surfaces were missed, the output ray will contain
+% If any "must intersect" surfaces were missed, the output ray will contain
 % nans. In this case, return return nans for output ray
 if any(isnan(outputRayEyeWorld))
     virtualEyePoint = nan(2,3);
