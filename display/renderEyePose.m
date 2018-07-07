@@ -222,7 +222,8 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
             % Put text labels for the pupil perimeter points so that we can
             % follow them through rotations and translations to validate
             % the projection model
-            plotObjectHandles(end+1) = text(imagePoints(idx,1), imagePoints(idx,2), num2str(find(idx)));
+            txtHandles = text(imagePoints(idx,1), imagePoints(idx,2), num2str(find(idx)));
+            plotObjectHandles = [plotObjectHandles txtHandles'];
         end
 
     end
