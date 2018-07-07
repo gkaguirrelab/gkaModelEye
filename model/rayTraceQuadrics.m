@@ -30,13 +30,13 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %                               bb    - 1x6 vector defining the bounding
 %                                       box within which the refractive
 %                                       surface is present.
-%                               n     - Refractive index of the surface.
 %                               must  - Scalar taking the value of 0 or 1,
 %                                       where 1 indicates that the ray must
 %                                       intersect the surface. If the ray
 %                                       misses a required surface, the
 %                                       routine exits with nans for the
 %                                       outputRay.
+%                               n     - Refractive index of the surface.
 %                           The first row corresponds to the initial
 %                           conditions of the ray. Thus, the refractive
 %                           index value given in the first row specifies
@@ -70,19 +70,19 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
     % Create the optical system of spherical, aligned surfaces
     boundingBox = [-inf inf -inf inf -inf inf];
     clear opticalSystem
-    opticalSystem(1,:)=[nan(1,10) nan nan(1,6) 1 nan];
+    opticalSystem(1,:)=[nan(1,10) nan nan(1,6) nan 1];
     S = quadric.scale(quadric.unitSphere,10);
     S = quadric.translate(S,[22; 0; 0]);
-    opticalSystem(end+1,:)=[quadric.matrixToVec(S) -1 boundingBox 1.2 1];
+    opticalSystem(end+1,:)=[quadric.matrixToVec(S) -1 boundingBox 1 1.2];
     S = quadric.scale(quadric.unitSphere,8);
     S = quadric.translate(S,[9; 0; 0]);
     opticalSystem(end+1,:)=[quadric.matrixToVec(S) 1 boundingBox 1 1];
     S = quadric.scale(quadric.unitSphere,12);
     S = quadric.translate(S,[34; 0; 0]);
-    opticalSystem(end+1,:)=[quadric.matrixToVec(S) -1 boundingBox 1.5 1];
+    opticalSystem(end+1,:)=[quadric.matrixToVec(S) -1 boundingBox 1 1.5];
     S = quadric.scale(quadric.unitSphere,10);
     S = quadric.translate(S,[20; 0; 0]);
-    opticalSystem(end+1,:)=[quadric.matrixToVec(S) 1 boundingBox 1.0 1];
+    opticalSystem(end+1,:)=[quadric.matrixToVec(S) 1 boundingBox 1 1.0];
 
     % Define an initial ray
     p = [0;0;0];
@@ -132,8 +132,8 @@ for ii=2:nSurfaces
     S = quadric.vecToMatrix(opticalSystem(ii,1:10));
     side = opticalSystem(ii,11);
     boundingBox = opticalSystem(ii,12:17);
-    nRel = opticalSystem(ii-1,18)/opticalSystem(ii,18);
-    mustIntersectFlag =  opticalSystem(ii,19);
+    mustIntersectFlag =  opticalSystem(ii,18);
+    nRel = opticalSystem(ii-1,18)/opticalSystem(ii,19);
 
     % Compute the intersection
     X = quadric.intersectRay(S,R,side,boundingBox);
@@ -143,8 +143,11 @@ for ii=2:nSurfaces
         return
     end
     
-    % surface normal, and refracted ray
+    % Get the surface normal. Pass empty for the last variable to
+    % skip checking if the X coordinate is on the surface of the quadric
     N = quadric.surfaceNormal(S,X,side,[]);
+
+    % Get the refracted ray
     R = quadric.refractRay(R,N,nRel);
 
     % Store the ray path and normals

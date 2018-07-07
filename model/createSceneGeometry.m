@@ -227,9 +227,9 @@ end
 mediumRefractiveIndex = returnRefractiveIndex( p.Results.medium, p.Results.spectralDomain );
 
 % Build the optical system matrix
-opticalSystem(1,:)     = [nan(1,10) nan nan(1,6) sceneGeometry.eye.index.aqueous nan];
-opticalSystem(end+1,:) = [sceneGeometry.eye.cornea.back.S sceneGeometry.eye.cornea.back.side sceneGeometry.eye.cornea.back.boundingBox sceneGeometry.eye.index.cornea 1];
-opticalSystem(end+1,:) = [sceneGeometry.eye.cornea.front.S sceneGeometry.eye.cornea.front.side sceneGeometry.eye.cornea.front.boundingBox mediumRefractiveIndex 1];
+opticalSystem(1,:)     = [nan(1,10) nan nan(1,6) nan sceneGeometry.eye.index.aqueous];
+opticalSystem(end+1,:) = [sceneGeometry.eye.cornea.back.S sceneGeometry.eye.cornea.back.side sceneGeometry.eye.cornea.back.boundingBox 1 sceneGeometry.eye.index.cornea];
+opticalSystem(end+1,:) = [sceneGeometry.eye.cornea.front.S sceneGeometry.eye.cornea.front.side sceneGeometry.eye.cornea.front.boundingBox 1 mediumRefractiveIndex];
 
 % Add a contact lens if requested
 if ~isempty(p.Results.contactLens)
@@ -261,7 +261,7 @@ if ~isempty(p.Results.spectacleLens)
     sceneGeometry.lenses.spectacle = pOutFun.Results;
 end
 
-% Pad the optical system with nan rows to reach a fixed 20x18 size
+% Pad the optical system with nan rows to reach a fixed 20x19 size
 opticalSystem = [opticalSystem; ...
     nan(20-size(opticalSystem,1),19)];
 
