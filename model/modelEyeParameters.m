@@ -165,10 +165,10 @@ switch p.Results.species
         %}
         % We set the center of the cornea front surface ellipsoid so that
         % the axial apex (prior to rotation) is at position [0, 0, 0]
-       	eye.cornea.front.radii = [14.26   10.43   10.27] .* ...
+       	radii = [14.26   10.43   10.27] .* ...
             ((p.Results.sphericalAmetropia .* -0.0028)+1);
-        S = quadric.scale(quadric.unitSphere,eye.cornea.front.radii);
-        S = quadric.translate(S,[-eye.cornea.front.radii(1) 0 0]);
+        S = quadric.scale(quadric.unitSphere,radii);
+        S = quadric.translate(S,[-radii(1) 0 0]);
         eye.cornea.front.S = quadric.matrixToVec(S);
         eye.cornea.front.side = 1;
         eye.cornea.front.boundingBox=[-4 0 -8 8 -8 8];
@@ -203,9 +203,9 @@ switch p.Results.species
         % The center of the back cornea ellipsoid is positioned so that
         % there is 0.55 mm of corneal thickness between the front and back
         % surface of the cornea at the apex, following Atchison 2006.
-        eye.cornea.back.radii = [ 13.7716    9.3027    9.3027];
-        S = quadric.scale(quadric.unitSphere,eye.cornea.back.radii);
-        S = quadric.translate(S,[-0.55-eye.cornea.back.radii(1) 0 0]);
+        radii = [ 13.7716    9.3027    9.3027];
+        S = quadric.scale(quadric.unitSphere,radii);
+        S = quadric.translate(S,[-0.55-radii(1) 0 0]);
         eye.cornea.back.S = quadric.matrixToVec(S);
         eye.cornea.back.side = 1;
         eye.cornea.back.boundingBox=[-4 0 -8 8 -8 8];
@@ -533,15 +533,15 @@ switch p.Results.species
         S = quadric.scale(quadric.unitSphere,eye.posteriorChamber.radii);
         S = quadric.translate(S,[eye.posteriorChamber.center 0 0]);
         eye.posteriorChamber.S = quadric.matrixToVec(S);
-        eye.posteriorChamber.boundingBox = [-25 -4 -40 40 -40 40];
+        eye.posteriorChamber.boundingBox = [-25 -5 -40 40 -40 40];
+        eye.posteriorChamber.side = -1;
         
+
         %% Lens
-        % The lens parameters are included to support an illustration of a
-        % complete eye model. The front and back surfaces of the lens are
-        % modeled as hyperbolas. This simplified model does not model the
-        % gradient in refractive index across the extent of the lens, and
-        % therefore does not support ray tracing. All values taken from
-        % Atchison 2006.
+        % The front and back surfaces of the lens are modeled as
+        % hyperbolas, and as a set of ellipsoidal surfaces within the body
+        % of the lens with a gradient of refractive indices. All values
+        % taken from Atchison 2006.
         % To convert R and Q to radii of a hyperbola:
         %   R = b^2/a
         %	Q = (a^2 / b^2) + 1
@@ -561,18 +561,29 @@ switch p.Results.species
         eye.lens.front.Q = -5;
         a = eye.lens.front.R * sqrt(abs( 1 / (eye.lens.front.Q - 1 ) )) * sign(eye.lens.front.Q);
         b = eye.lens.front.R / (eye.lens.front.Q - 1 );
-        eye.lens.front.radii(1) = b;
-        eye.lens.front.radii(2:3) = a;
-        eye.lens.front.center = [eye.pupil.center(1)-eye.lens.front.radii(1) 0 0];
+        radii(1) = abs(b);
+        radii(2:3) = abs(a);
+
+        S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
+        S = quadric.translate(S,[eye.pupil.center(1)+radii(1) 0 0]);
+        eye.lens.front.S = quadric.matrixToVec(S);
+        eye.lens.front.boundingBox = [-5.14 -3.7 -4 4 -4 4];
+        eye.lens.front.side = 1;
+        
         
         eye.lens.back.R = -5.9;
         eye.lens.back.Q = -2;
         a = eye.lens.back.R * sqrt(abs( 1 / (eye.lens.back.Q - 1 ) )) * sign(eye.lens.back.Q);
         b = eye.lens.back.R / (eye.lens.back.Q - 1 );
-        eye.lens.back.radii(1) = b;
-        eye.lens.back.radii(2:3) = a;
-        eye.lens.back.center = [eye.pupil.center(1)-3.6-eye.lens.back.radii(1) 0 0];
-        
+        radii(1) = abs(b);
+        radii(2:3) = abs(a);
+
+        S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
+        S = quadric.translate(S,[-7.3-radii(1) 0 0]);
+        eye.lens.back.S = quadric.matrixToVec(S);
+        eye.lens.back.boundingBox = [-7.3 -5.14 -4 4 -4 4];
+        eye.lens.back.side = -1;
+
         % I specify the location of a single nodal point to support
         % calculation of the visual axis. The nodal point is placed at a
         % depth of 7.2 mm, which is mid point of the nodal points specified
