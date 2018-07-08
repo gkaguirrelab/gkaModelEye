@@ -1,4 +1,4 @@
-function cornea = cornea(eye, sphericalAmetropia, eyeLaterality, cornealAxis)
+function cornea = cornea(eye, sphericalAmetropia, eyeLaterality, cornealAxis, spectralDomain)
 
 % The corneal front surface is taken from Table 1 of Navarro 2006:
 %
@@ -107,6 +107,13 @@ S = quadric.translate(S,[-0.55-radii(1) 0 0]);
 cornea.back.S = quadric.matrixToVec(S);
 cornea.back.side = 1;
 cornea.back.boundingBox=[-4 0 -8 8 -8 8];
+
+cornea.S = [cornea.back.S; cornea.front.S];
+cornea.boundingBox = [cornea.back.boundingBox; cornea.front.boundingBox];
+cornea.side = [1; 1];
+cornea.mustIntersect = [1; 1];
+cornea.index = returnRefractiveIndex( 'cornea', spectralDomain );
+cornea.labels = {'cornea.back','cornea.front'};
 
 % Code here to calculate the Navarro 1985 corneal parameters that
 % were used by Fedtke 2010 in her simulation. These may be used for

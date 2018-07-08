@@ -223,50 +223,7 @@ end
 
 
 %% refraction - optical system
-% Obtain the refractive index of the medium between the eye and the camera
-mediumRefractiveIndex = returnRefractiveIndex( p.Results.medium, p.Results.spectralDomain );
-
-% Build the optical system matrix
-opticalSystem(1,:)     = [nan(1,10) nan nan(1,6) nan sceneGeometry.eye.index.aqueous];
-opticalSystem(end+1,:) = [sceneGeometry.eye.cornea.back.S sceneGeometry.eye.cornea.back.side sceneGeometry.eye.cornea.back.boundingBox 1 sceneGeometry.eye.index.cornea];
-opticalSystem(end+1,:) = [sceneGeometry.eye.cornea.front.S sceneGeometry.eye.cornea.front.side sceneGeometry.eye.cornea.front.boundingBox 1 mediumRefractiveIndex];
-
-% Add a contact lens if requested
-if ~isempty(p.Results.contactLens)
-    switch length(p.Results.contactLens)
-        case 1
-            lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', p.Results.spectralDomain );
-            [opticalSystem, pOutFun] = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex);
-        case 2
-            [opticalSystem, pOutFun] = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2));
-        otherwise
-            error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
-    end
-    sceneGeometry.lenses.contact = pOutFun.Results;
-end
-
-% Add a spectacle lens if requested
-if ~isempty(p.Results.spectacleLens)
-    switch length(p.Results.spectacleLens)
-        case 1
-            lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', p.Results.spectralDomain );
-            [opticalSystem, pOutFun] = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex);
-        case 2
-            [opticalSystem, pOutFun] = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2));
-        case 3
-            [opticalSystem, pOutFun] = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3));
-        otherwise
-            error('The key-value pair spectacleLens is limited to three elements: [refractionDiopters, refractionIndex, vertexDistance]');
-    end
-    sceneGeometry.lenses.spectacle = pOutFun.Results;
-end
-
-% Pad the optical system with nan rows to reach a fixed 20x19 size
-opticalSystem = [opticalSystem; ...
-    nan(20-size(opticalSystem,1),19)];
-
-% Store the optical system in the sceneGeometry structure
-sceneGeometry.refraction.opticalSystem = opticalSystem;
+sceneGeometry.refraction.opticalSystem = assembleOpticalSystem( sceneGeometry.eye);
 
 
 %% constraintTolerance

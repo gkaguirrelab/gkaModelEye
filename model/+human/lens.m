@@ -52,5 +52,14 @@ lens.back.side = -1;
 % in the Gullstrand-Emsley simplified schematic eye
 lens.nodalPoint = [-7.2 0 0];
 
+
+lens.S = [lens.back.S; lens.front.S];
+lens.boundingBox = [lens.back.boundingBox; lens.front.boundingBox];
+lens.side = [-1; 1];
+lens.mustIntersect = [1; 1];
+lens.index = [1.31];
+lens.labels = {'lens.back','lens.front'};
+
+
 end
 

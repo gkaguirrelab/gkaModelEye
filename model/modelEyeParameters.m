@@ -104,26 +104,26 @@ switch p.Results.species
     case {'human','Human','HUMAN'}
                 
         % Cornea
-        eye.cornea = human.cornea(eye, p.Results.sphericalAmetropia, eyeLaterality, p.Results.cornealAxis);
-        
+        eye.cornea = human.cornea(eye, p.Results.sphericalAmetropia, eyeLaterality, p.Results.cornealAxis, p.Results.spectralDomain);
+
         % Iris
         eye.iris = human.iris(eye, eyeLaterality );
-        
+
         % Pupil
         eye.pupil = human.pupil(eye, eyeLaterality );
-                
+
         % Posterior chamber
         eye.posteriorChamber = human.posteriorChamber(eye, p.Results.sphericalAmetropia);
-        
+
         % Lens
         eye.lens = human.lens(eye);
-         
+
         % Axes
         eye.axes = human.axes(eye, eyeLaterality, p.Results.visualAxisDegRetina, p.Results.opticDiscAxisDegRetina);
-        
+
         % Rotation centers
         eye.rotationCenters = human.rotationCenters( eye, eyeLaterality );
-                
+
         %% Refractive indices
         % Obtain refractive index values for this spectral domain.
         eye.index.vitreous = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );
