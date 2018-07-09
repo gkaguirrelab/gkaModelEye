@@ -1,4 +1,4 @@
-function rotationCenters = rotationCenters( eye, eyeLaterality )
+function rotationCenters = rotationCenters( eye )
 
 % The rotation center of the eye is often treated as a single,
 % fixed point. A typical assumption is that the eye center of
@@ -60,7 +60,7 @@ function rotationCenters = rotationCenters( eye, eyeLaterality )
 % rotation for azimuth, elevation, and torsional eye movements. The
 % values differ by eye because of the nasal displacement of the
 % rotation center.
-switch eyeLaterality
+switch eye.meta.eyeLaterality
     case 'Right'
         rotationCenters.azi = [-14.7 0.79 0];
     case 'Left'

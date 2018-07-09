@@ -1,4 +1,4 @@
-function cornea = cornea(eye, sphericalAmetropia, eyeLaterality, cornealAxis, spectralDomain)
+function cornea = cornea(eye, cornealAxis)
 
 % The corneal front surface is taken from Table 1 of Navarro 2006:
 %
@@ -64,7 +64,7 @@ function cornea = cornea(eye, sphericalAmetropia, eyeLaterality, cornealAxis, sp
 % We set the center of the cornea front surface ellipsoid so that
 % the axial apex (prior to rotation) is at position [0, 0, 0]
 radii = [14.26   10.43   10.27] .* ...
-    ((sphericalAmetropia .* -0.0028)+1);
+    ((eye.meta.sphericalAmetropia .* -0.0028)+1);
 S = quadric.scale(quadric.unitSphere,radii);
 S = quadric.translate(S,[-radii(1) 0 0]);
 cornea.front.S = quadric.matrixToVec(S);
@@ -112,7 +112,7 @@ cornea.S = [cornea.back.S; cornea.front.S];
 cornea.boundingBox = [cornea.back.boundingBox; cornea.front.boundingBox];
 cornea.side = [1; 1];
 cornea.mustIntersect = [1; 1];
-cornea.index = returnRefractiveIndex( 'cornea', spectralDomain );
+cornea.index = returnRefractiveIndex( 'cornea', eye.meta.spectralDomain );
 cornea.labels = {'cornea.back','cornea.front'};
 
 % Code here to calculate the Navarro 1985 corneal parameters that
@@ -157,7 +157,7 @@ cornea.labels = {'cornea.back','cornea.front'};
     cornealAxisWRTopticalAxis = fixationAxisWRTopticalAxis - fixationAxisWRTcornealAxis
 %}
 if isempty(cornealAxis)
-    switch eyeLaterality
+    switch eye.meta.eyeLaterality
         case 'Right'
             cornea.axis = [3.4460    1.6500   -0.0200];
         case 'Left'

@@ -97,39 +97,47 @@ end
 % Create an empty eye struct
 eye = struct();
 
+% Meta data regarding the units of the model
+eye.meta.p = p.Results;
+eye.meta.units = 'mm';
+eye.meta.coordinates = 'eyeWorld';
+eye.meta.dimensions = {'depth (axial)' 'horizontal' 'vertical'};
+eye.meta.eyeLaterality = eyeLaterality;
+eye.meta.sphericalAmetropia = p.Results.sphericalAmetropia;
+eye.meta.species = p.Results.species;
+eye.meta.spectralDomain = p.Results.spectralDomain;
+
 % Switch parameters at the top level by species
-switch p.Results.species
+switch eye.meta.species
 
     %% Human eye
     case {'human','Human','HUMAN'}
                 
         % Cornea
-        eye.cornea = human.cornea(eye, p.Results.sphericalAmetropia, eyeLaterality, p.Results.cornealAxis, p.Results.spectralDomain);
+        eye.cornea = human.cornea(eye, p.Results.cornealAxis);
 
         % Iris
-        eye.iris = human.iris(eye, eyeLaterality );
+        eye.iris = human.iris(eye);
 
         % Pupil
-        eye.pupil = human.pupil(eye, eyeLaterality );
+        eye.pupil = human.pupil(eye);
 
         % Posterior chamber
-        eye.posteriorChamber = human.posteriorChamber(eye, p.Results.sphericalAmetropia);
+        eye.posteriorChamber = human.posteriorChamber(eye);
 
         % Lens
         eye.lens = human.lens(eye);
 
         % Axes
-        eye.axes = human.axes(eye, eyeLaterality, p.Results.visualAxisDegRetina, p.Results.opticDiscAxisDegRetina);
+        eye.axes = human.axes(eye, p.Results.visualAxisDegRetina, p.Results.opticDiscAxisDegRetina);
 
         % Rotation centers
-        eye.rotationCenters = human.rotationCenters( eye, eyeLaterality );
+        eye.rotationCenters = human.rotationCenters(eye);
 
         %% Refractive indices
         % Obtain refractive index values for this spectral domain.
         eye.index.vitreous = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );
-        eye.index.lens = returnRefractiveIndex( 'lens', p.Results.spectralDomain );
         eye.index.aqueous = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
-        eye.index.cornea = returnRefractiveIndex( 'cornea', p.Results.spectralDomain );
 
         
     %% Dog eye
@@ -318,12 +326,7 @@ switch p.Results.species
         error('Please specify a valid species for the eye model');
 end
 
-% Meta data regarding the units of the model
-eye.meta.p = p.Results;
-eye.meta.units = 'mm';
-eye.meta.coordinates = 'eyeWorld';
-eye.meta.dimensions = {'depth (axial)' 'horizontal' 'vertical'};
-eye.meta.alpha = 'Degrees angle of fixation axis w.r.t. optical axis.';
+
 
 end % function
 

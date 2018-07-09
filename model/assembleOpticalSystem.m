@@ -13,12 +13,11 @@ p.addRequired('eye',@isstruct);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('cameraMedium','air',@ischar);
-p.addParameter('spectralDomain','nir',@ischar);
 
 % parse
 p.parse(eye, varargin{:})
 
-mediumRefractiveIndex = returnRefractiveIndex( p.Results.cameraMedium, p.Results.spectralDomain );
+mediumRefractiveIndex = returnRefractiveIndex( p.Results.cameraMedium, eye.meta.spectralDomain );
 
 %% Build the optical system matrix
 

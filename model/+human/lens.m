@@ -1,9 +1,29 @@
 function lens = lens( eye )
 
-% The front and back surfaces of the lens are modeled as
-% hyperbolas, and as a set of ellipsoidal surfaces within the body
-% of the lens with a gradient of refractive indices. All values
-% taken from Atchison 2006.
+nShells = 5;
+
+% Initialize the components of the optical system
+lens.S = [];
+lens.boundingBox = [];
+lens.side = [];
+lens.mustIntersect = [];
+lens.index = [];
+lens.label = {};
+
+% Obtain the core and edge refractive indices
+nEdge = returnRefractiveIndex( 'lens.edge', eye.meta.spectralDomain );
+nCore = returnRefractiveIndex( 'lens.core', eye.meta.spectralDomain );
+
+% This is the position (on the optical axis) of the point in the lens with
+% the maximal refractive index.
+lensCenter = -5.4;
+lensThickBack = 2.16;
+lensThickFront = 1.44;
+
+
+%% Back lens surface
+% The back surface of the lens is modeled as a hyperbola. Values taken
+% from Atchison 2006.
 % To convert R and Q to radii of a hyperbola:
 %   R = b^2/a
 %	Q = (a^2 / b^2) + 1
@@ -19,47 +39,95 @@ function lens = lens( eye )
             solution.a
             solution.b
 %}
-lens.front.R = 11.48;
-lens.front.Q = -5;
-a = lens.front.R * sqrt(abs( 1 / (lens.front.Q - 1 ) )) * sign(lens.front.Q);
-b = lens.front.R / (lens.front.Q - 1 );
+R = -5.9; Q = -2;
+a = R * sqrt(abs( 1 / (Q - 1 ) )) * sign(Q);
+b = R / (Q - 1 );
+radii(1) = abs(b); radii(2:3) = abs(a);
+
+% Build the quadric
+S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
+S = quadric.translate(S,[lensCenter-lensThickBack-radii(1) 0 0]);
+boundingBox = [lensCenter-lensThickBack lensCenter -4 4 -4 4];
+
+% Add to the optical system structure
+lens.S = [lens.S; quadric.matrixToVec(S)];
+lens.boundingBox = [lens.boundingBox; boundingBox];
+lens.side = [lens.side; -1];
+lens.mustIntersect = [lens.mustIntersect; 1];
+lens.index = [lens.index; nEdge];
+lens.label = {lens.label{:}; 'lens.back'};
+
+
+%% Back gradient shells
+boundingBox = [lensCenter-lensThickBack lensCenter -4 4 -4 4];
+nLensVals = linspace(nEdge,nCore,nShells+1);
+for ii = 1:nShells
+    nBackQuadric = [-0.010073731138546 0 0 0.0; 0 -0.002039930555556 0 0; 0 0 -0.002039930555556 0; 0 0 0 1.418000000000000];
+    S = nBackQuadric;
+    S(end,end)=S(end,end)-nLensVals(ii)+1;
+    S=S./S(end,end);
+    S = quadric.translate(S,[lensCenter 0 0]);
+    
+    % Add this shell to the optical system structure
+    lens.S = [lens.S; quadric.matrixToVec(S)];
+    lens.boundingBox = [lens.boundingBox; boundingBox];
+    lens.side = [lens.side; 1];
+    lens.mustIntersect = [lens.mustIntersect; 0];
+    lens.index = [lens.index; nLensVals(ii+1)];
+    lens.label = [lens.label; {sprintf('lens.back.shell%02d',ii)}];
+end
+
+
+%% Front gradient shells
+boundingBox = [lensCenter lensCenter+lensThickFront -4 4 -4 4];
+nLensVals = linspace(nCore,nEdge,nShells+11);
+for ii = 1:nShells
+    nFrontQuadric = [0.022665895061728 0 0 0; 0 0.002039930555556 0 0; 0 0 0.002039930555556 0; 0 0 0 1.371000000000000];
+    S = nFrontQuadric;
+    S(end,end)=nLensVals(ii)-nCore;
+    S = quadric.translate(S,[lensCenter-0.065277777777778 0 0]);
+    S=S./S(end,end);
+
+    % Add this shell to the optical system structure
+    lens.S = [lens.S; quadric.matrixToVec(S)];
+    lens.boundingBox = [lens.boundingBox; boundingBox];
+    lens.side = [lens.side; 1];
+    lens.mustIntersect = [lens.mustIntersect; 0];
+    lens.index = [lens.index; nLensVals(ii+1)];
+    lens.label = [lens.label; {sprintf('lens.front.shell%02d',ii)}];
+end
+
+
+%% Front lens surface
+R = 11.48;
+Q = -5;
+a = R * sqrt(abs( 1 / (Q - 1 ) )) * sign(Q);
+b = R / (Q - 1 );
 radii(1) = abs(b);
 radii(2:3) = abs(a);
 
+% Build the quadric
 S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
 S = quadric.translate(S,[eye.pupil.center(1)+radii(1) 0 0]);
-lens.front.S = quadric.matrixToVec(S);
-lens.front.boundingBox = [-5.14 -3.7 -4 4 -4 4];
-lens.front.side = 1;
+boundingBox = [lensCenter lensCenter+lensThickFront -4 4 -4 4];
+
+% Add to the optical system structure
+% No refractive index added with this surface, as this is the last surface
+% of this set.
+lens.S = [lens.S; quadric.matrixToVec(S)];
+lens.boundingBox = [lens.boundingBox; boundingBox];
+lens.side = [lens.side; 1];
+lens.mustIntersect = [lens.mustIntersect; 1];
+lens.label = [lens.label; {'lens.front'}];
 
 
-lens.back.R = -5.9;
-lens.back.Q = -2;
-a = lens.back.R * sqrt(abs( 1 / (lens.back.Q - 1 ) )) * sign(lens.back.Q);
-b = lens.back.R / (lens.back.Q - 1 );
-radii(1) = abs(b);
-radii(2:3) = abs(a);
 
-S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
-S = quadric.translate(S,[-7.3-radii(1) 0 0]);
-lens.back.S = quadric.matrixToVec(S);
-lens.back.boundingBox = [-7.3 -5.14 -4 4 -4 4];
-lens.back.side = -1;
 
 % I specify the location of a single nodal point to support
 % calculation of the visual axis. The nodal point is placed at a
 % depth of 7.2 mm, which is mid point of the nodal points specified
 % in the Gullstrand-Emsley simplified schematic eye
 lens.nodalPoint = [-7.2 0 0];
-
-
-lens.S = [lens.back.S; lens.front.S];
-lens.boundingBox = [lens.back.boundingBox; lens.front.boundingBox];
-lens.side = [-1; 1];
-lens.mustIntersect = [1; 1];
-lens.index = [1.31];
-lens.labels = {'lens.back','lens.front'};
-
 
 end
 

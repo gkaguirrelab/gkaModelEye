@@ -1,4 +1,4 @@
-function axes = axes( eye, eyeLaterality, visualAxisDegRetina, opticDiscAxisDegRetina )
+function axes = axes( eye, visualAxisDegRetina, opticDiscAxisDegRetina )
 
 %% Axes - optical
 % Eye axes are specified as rotations (in degrees) within the eye
@@ -37,7 +37,7 @@ axes.optical.degField = [0 0 0];
     fprintf('Distance between the fovea and the center of the optic disc in retinal degrees in the right eye:\n');
     fprintf('\tazimuth = %4.4f; elevation = %4.4f \n\n', retinalArcDeg([1 2]));
 %}
-switch eyeLaterality
+switch eye.meta.eyeLaterality
     case 'Right'
         opticDisc_WRT_foveaDegRetina = [-22.9384, 2.6078 ,0];
     case 'Left'
@@ -66,7 +66,7 @@ end
             myObj = @(x) (targetAlphaAngle(2) - myComputedAlphaEle(modelEyeParameters('visualAxisDegRetina',[aziFoveaEmmetropic x 0])))^2;
             eleFoveaEmmetropic = fminsearch(myObj,2)
 %}
-switch eyeLaterality
+switch eye.meta.eyeLaterality
     case 'Right'
         fovea_WRT_opticAxisDegRetina_emmetrope = [8.2964 -3.5762 0];
     case 'Left'

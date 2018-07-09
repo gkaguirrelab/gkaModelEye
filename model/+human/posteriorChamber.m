@@ -1,4 +1,4 @@
-function posteriorChamber = posteriorChamber(eye, sphericalAmetropia )
+function posteriorChamber = posteriorChamber(eye)
 
 % Atchison 2006 provides radii of curvature and asphericities for a
 % biconic model of the posterior chamber, with these values varying
@@ -49,7 +49,7 @@ function posteriorChamber = posteriorChamber(eye, sphericalAmetropia )
 postChamberRadiiEmetrope = [10.1760 11.4558 11.3771];
 postChamberRadiiAmetropiaSlope = [-0.1495 -0.0393 -0.0864];
 posteriorChamber.radii = ...
-    postChamberRadiiEmetrope + postChamberRadiiAmetropiaSlope.* sphericalAmetropia;
+    postChamberRadiiEmetrope + postChamberRadiiAmetropiaSlope.* eye.meta.sphericalAmetropia;
 
 % Our model holds the depth of the anterior chamber constant.
 % Atchison found that anterior chamber depth does not vary with

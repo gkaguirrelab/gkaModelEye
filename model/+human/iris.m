@@ -1,4 +1,4 @@
-function iris = iris( eye, eyeLaterality )
+function iris = iris( eye )
 
 % The iris has a thickness. This thickness influences the
 % properties of the entrance pupil, as when the eye is rotated
@@ -22,7 +22,7 @@ iris.thickness = 0.15;
 %
 % Bennett, Edward S., and Barry A. Weissman, eds. Clinical contact
 % lens practice. Lippincott Williams & Wilkins, 2005, p119
-switch eyeLaterality
+switch eye.meta.eyeLaterality
     case 'Right'
         iris.center = [-4+iris.thickness/2 0.35 0.35];
     case 'Left'

@@ -1,4 +1,4 @@
-function pupil = pupil( eye, eyeLaterality )
+function pupil = pupil( eye )
 
 % The pupil is an aperture in the iris, centered on the optical
 % axis
@@ -94,7 +94,7 @@ pupil.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',pupil.eccenParams
 
 % The theta values of the actual pupil ellipse for eccentricities
 % less than, and greater than, zero.
-switch eyeLaterality
+switch eye.meta.eyeLaterality
     case 'Right'
         pupil.thetas = [0  3/7*pi];
     case 'Left'
