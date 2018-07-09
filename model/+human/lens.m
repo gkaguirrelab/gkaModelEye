@@ -93,12 +93,18 @@ for ii = nShells:-1:nStartShell
     % Add this shell to the optical system structure
     lens.S = [lens.S; quadric.matrixToVec(S)];
     lens.boundingBox = [lens.boundingBox; boundingBox];
-    lens.side = [lens.side; 1];
+    lens.side = [lens.side; -1];
     lens.mustIntersect = [lens.mustIntersect; 0];
     lens.index = [lens.index; nLensVals(ii*2-1)];
     lens.label = [lens.label; {sprintf('lens.front.shell_n=%0.3f',nLensVals(ii*2))}];
     lens.plot.color = [lens.plot.color; [0.5 (nLensVals(ii*2)-nEdge)/(nCore-nEdge)/2+0.5 0.5]];
 end
+
+% Force the index of the space between the last front shell and the front
+% lens surface to be equal to the lens edge refractive index. The value can
+% be something other than this when the start shell is something other than
+% one.
+lens.index(end) = nEdge;
 
 
 %% Front lens surface
