@@ -1,4 +1,4 @@
-function opticalSystem = assembleOpticalSystem( eye, varargin )
+function [opticalSystem, surfaceColor] = assembleOpticalSystem( eye, varargin )
 
 
 % Assemble the system from retina to camera
@@ -32,6 +32,9 @@ opticalSystem = [opticalSystem; ...
 opticalSystem = [opticalSystem; ...
     [eye.cornea.S eye.cornea.side eye.cornea.boundingBox eye.cornea.mustIntersect [eye.cornea.index; mediumRefractiveIndex]]];
 
+% Create a surface plot colors cell array
+surfaceColor = [{''}; eye.lens.plot.color; eye.cornea.plot.color];
+
 % Add a contact lens if requested
 if ~isempty(p.Results.contactLens)
     switch length(p.Results.contactLens)
@@ -62,9 +65,12 @@ if ~isempty(p.Results.spectacleLens)
     sceneGeometry.lenses.spectacle = pOutFun.Results;
 end
 
-% Pad the optical system with nan rows to reach a fixed 20x19 size
+
+
+
+% Pad the optical system with nan rows to reach a fixed 100x19 size
 opticalSystem = [opticalSystem; ...
-    nan(20-size(opticalSystem,1),19)];
+    nan(100-size(opticalSystem,1),19)];
 
 
 end

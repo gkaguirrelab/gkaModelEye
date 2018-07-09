@@ -125,7 +125,7 @@ y = eye.posteriorChamber.radii(2) * cosd(theta) * sind(phi);
 z = eye.posteriorChamber.radii(3) * sind(theta);
 
 % Note this location in the posterior chamber field
-eye.posteriorChamber.fovea = [-x y -z] + eye.posteriorChamber.center;
+axes.visual.coords = [-x y -z] + eye.posteriorChamber.center;
 
 % Calculate the optic disc position in eyeWorld coordinates.
 phi = -axes.opticDisc.degRetina(1);
@@ -134,8 +134,8 @@ x = eye.posteriorChamber.radii(1) * cosd(theta) * cosd(phi);
 y = eye.posteriorChamber.radii(2) * cosd(theta) * sind(phi);
 z = eye.posteriorChamber.radii(3) * sind(theta);
 
-% Note this location in the posterior chamber field
-eye.posteriorChamber.opticDisc = [-x y -z] + eye.posteriorChamber.center;
+% Store this location
+axes.opticDisc.coords = [-x y -z] + eye.posteriorChamber.center;
 
 % Calcuate the optic disc and visual axes in deg of visual field,
 % using the nodal point of the eye. For the visual axis, these
@@ -143,11 +143,11 @@ eye.posteriorChamber.opticDisc = [-x y -z] + eye.posteriorChamber.center;
 % and optical /pupillary axes. The difference between the visual
 % and optic disc axes specifies the location of the physiologic
 % blind spot relative to fixation.
-axes.visual.degField(1) = atand((eye.posteriorChamber.fovea(2) - eye.lens.nodalPoint(2)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint(1)));
-axes.visual.degField(2) = -(-atand((eye.posteriorChamber.fovea(3) - eye.lens.nodalPoint(3)) / (eye.posteriorChamber.fovea(1) - eye.lens.nodalPoint(1))));
+axes.visual.degField(1) = atand((axes.visual.coords(2) - eye.lens.nodalPoint(2)) / (axes.visual.coords(1) - eye.lens.nodalPoint(1)));
+axes.visual.degField(2) = -(-atand((axes.visual.coords(3) - eye.lens.nodalPoint(3)) / (axes.visual.coords(1) - eye.lens.nodalPoint(1))));
 axes.visual.degField(3) = 0;
-axes.opticDisc.degField(1) = atand((eye.posteriorChamber.opticDisc(2) - eye.lens.nodalPoint(2)) / (eye.posteriorChamber.opticDisc(1) - eye.lens.nodalPoint(1)));
-axes.opticDisc.degField(2) = -(-atand((eye.posteriorChamber.opticDisc(3) - eye.lens.nodalPoint(3)) / (eye.posteriorChamber.opticDisc(1) - eye.lens.nodalPoint(1))));
+axes.opticDisc.degField(1) = atand((axes.opticDisc.coords(2) - eye.lens.nodalPoint(2)) / (axes.opticDisc.coords(1) - eye.lens.nodalPoint(1)));
+axes.opticDisc.degField(2) = -(-atand((axes.opticDisc.coords(3) - eye.lens.nodalPoint(3)) / (axes.opticDisc.coords(1) - eye.lens.nodalPoint(1))));
 axes.opticDisc.degField(3) = 0;
 
 end

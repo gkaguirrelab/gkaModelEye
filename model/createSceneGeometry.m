@@ -223,8 +223,9 @@ end
 
 
 %% refraction - optical system
-sceneGeometry.refraction.opticalSystem = assembleOpticalSystem( sceneGeometry.eye);
-
+[opticalSystem, surfaceColor] = assembleOpticalSystem( sceneGeometry.eye);
+sceneGeometry.refraction.opticalSystem = opticalSystem;
+sceneGeometry.refraction.plot.surfaceColor = surfaceColor;
 
 %% constraintTolerance
 sceneGeometry.constraintTolerance = p.Results.constraintTolerance;

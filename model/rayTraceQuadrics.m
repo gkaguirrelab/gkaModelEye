@@ -100,7 +100,7 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
     assert(max(abs(recoveredThetas - elaghaThetasDeg))<1e-6);
 %}
 %{
-    %% Pupil through cornea
+    %% Pupil point through cornea
     sceneGeometry = createSceneGeometry();
     % Define an initial ray
     p = [sceneGeometry.eye.pupil.center(1); 2; 0];
@@ -109,6 +109,26 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
     inputRay = [p, u];
     % Perform the ray trace
     outputRay = rayTraceQuadrics(inputRay, sceneGeometry.refraction.opticalSystem);
+%}
+%{
+    %% Foveal retina point through lens and cornea
+    sceneGeometry = createSceneGeometry();
+    % Plot the optical system
+    plotOpticalSystem('opticalSystem',sceneGeometry.refraction.opticalSystem,...
+        'surfaceColor',sceneGeometry.refraction.plot.surfaceColor,'addLighting',true);
+    % Define an initial ray arising at the fovea
+    p = sceneGeometry.eye.axes.visual.coords';
+    % Loop over horizontal angles relative to the visual axis
+    for ii = -5:2.5:5
+        % Assemble the ray
+        u = [1;tand(sceneGeometry.eye.axes.visual.degField(1)+ii);tand(sceneGeometry.eye.axes.visual.degField(2))];
+        u = u./sqrt(sum(u.^2));
+        R = [p, u];
+        % Perform the ray trace
+        [outputRay, rayPath] = rayTraceQuadrics(R, sceneGeometry.refraction.opticalSystem);
+        % Add this ray to the optical system plot
+        plotOpticalSystem('newFigure',false,'outputRay',outputRay,'rayPath',rayPath);
+    end
 %}
 
 

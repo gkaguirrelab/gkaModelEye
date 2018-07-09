@@ -43,15 +43,14 @@ p.addParameter('opticalSystem',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('rayPath',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('outputRay',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('addLighting',false, @islogical);
-p.addParameter('surfaceColors', ...
-    {'',[0.5 0.5 0.5],[0.5 0.6 0.5],[0.5 0.7 0.5],[0.5 0.8 0.5],[0.5 0.9 0.5],[0.5 1.0 0.5],[0.5 1.0 0.5],[0.5 0.9 0.5],[0.5 0.8 0.5],[0.5 0.7 0.5],[0.5 0.6 0.5],[0.5 0.5 0.5],'blue','blue'},...
-    @iscell);
-p.addParameter('surfaceAlpha', ones(1,15)*0.1,@isnumeric);
+p.addParameter('surfaceColor', {[0.5 0.5 0.5]}, @iscell);
+p.addParameter('surfaceAlpha', 0.1,@isnumeric);
 
 p.addParameter('rayColor','red',@(x)(ischar(x) | isnumeric(x)));
 
 % parse
 p.parse(varargin{:})
+
 
 
 % Open a figure
@@ -68,12 +67,27 @@ hold on
 
 % Plot the opticalSystem if provided
 if ~isempty(p.Results.opticalSystem)
-    for ii=2:size(p.Results.opticalSystem,1)
+
+    % Create a local variable for the optical system and strip any nan rows
+    opticalSystem=p.Results.opticalSystem;
+    opticalSystem=opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
+
+    % Determine the number of surfaces
+    nSurfaces = size(opticalSystem,1);
+
+    % Create a vector of surface colors
+    surfaceColor=p.Results.surfaceColor;
+    if length(surfaceColor)==1
+        surfaceColor = repmat(surfaceColor,nSurfaces,1);
+    end
+    
+    % Loop over the surfaces
+    for ii=2:nSurfaces
         % Obtain a function handle for the polynomial
-        F = quadric.vecToFunc(p.Results.opticalSystem(ii,1:10));
-        boundingBox = p.Results.opticalSystem(ii,12:17);
+        F = quadric.vecToFunc(opticalSystem(ii,1:10));
+        boundingBox = opticalSystem(ii,12:17);
         % Plot the surface
-        plotSurface(F,boundingBox,p.Results.surfaceColors{ii},p.Results.surfaceAlpha(ii))
+        plotSurface(F,boundingBox,surfaceColor{ii},p.Results.surfaceAlpha)
         hold on
     end
 end

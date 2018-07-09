@@ -23,6 +23,11 @@ function X = center( S )
 
 % Copyright 2012 Levente Hunyadi
 
+% If the quadric surface was passed in vector form, convert to matrix
+if isequal(size(S),[1 10])
+    S = quadric.vecToMatrix(S);
+end
+
 [A, B, C, D, E, F, G, H, I, ~] = quadric.matrixToVars(S);
 
 % E = ...
