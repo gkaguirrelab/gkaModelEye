@@ -22,11 +22,11 @@ mediumRefractiveIndex = returnRefractiveIndex( p.Results.cameraMedium, eye.meta.
 %% Build the optical system matrix
 
 % Start in the retina
-opticalSystem(1,:)     = [nan(1,10) nan nan(1,6) nan eye.index.aqueous];
+opticalSystem(1,:)     = [nan(1,10) nan nan(1,6) nan eye.index.vitreous];
 
 % Add the lens
 opticalSystem = [opticalSystem; ...
-    [eye.lens.S eye.lens.side eye.lens.boundingBox eye.lens.mustIntersect [eye.lens.index; eye.index.vitreous]]];
+    [eye.lens.S eye.lens.side eye.lens.boundingBox eye.lens.mustIntersect [eye.lens.index; eye.index.aqueous]]];
 
 % Add the cornea
 opticalSystem = [opticalSystem; ...
