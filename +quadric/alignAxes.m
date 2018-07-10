@@ -23,6 +23,8 @@ Qscale = Q(4,4);
 
 % solve the eigenproblem
 [evecs,~] = svd(Q(1:3,1:3) / -Qscale);
+
+% Apply the inverse rotation
 Q(1:3,1:3) = evecs'*Q(1:3,1:3)*evecs;
 
 % Restore the Q scale
