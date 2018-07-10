@@ -1,4 +1,4 @@
-function [virtualEyePoint, nodalPointIntersectError] = virtualImageFunc( eyePoint, eyePose, cameraTranslation, rotationCenters, opticalSystem )
+function [virtualEyePoint, nodalPointIntersectError, angle_p1p2, angle_p1p3] = virtualImageFunc( eyePoint, eyePose, cameraTranslation, rotationCenters, opticalSystem )
 % Returns the virtual image location of a point in eyeWorld coordinates
 %
 % Syntax:

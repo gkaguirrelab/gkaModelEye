@@ -115,6 +115,21 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
         'outputRay',outputRay,'rayPath',rayPath);
 %}
 %{
+    %% Camera point to pupil
+    sceneGeometry = createSceneGeometry('surfaceSetName','cameraToPupil');
+    % Define an initial ray
+    p = sceneGeometry.cameraPosition.translation([3 1 2]);
+    u = [-1;tand(0);0];
+    u = u./sqrt(sum(u.^2));
+    inputRay = [p, u];
+    % Perform the ray trace
+    [outputRay, rayPath] = rayTraceQuadrics(inputRay, sceneGeometry.refraction.opticalSystem);
+    % Plot the optical system
+    plotOpticalSystem('opticalSystem',sceneGeometry.refraction.opticalSystem,...
+        'surfaceColors',sceneGeometry.refraction.surfaceColors,'addLighting',true,...
+        'outputRay',outputRay,'rayPath',rayPath);
+%}
+%{
     %% Foveal retina point through lens and cornea
     sceneGeometry = createSceneGeometry('surfaceSetName','retinaToCamera');
     % Plot the optical system
