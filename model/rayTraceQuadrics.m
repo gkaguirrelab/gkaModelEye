@@ -62,7 +62,7 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 % Examples:
 %{
     %% Numerical example in 2D
-    % This paper provides a numerical example in section C which is
+    % Elagha provides a numerical example in section C which is
     % implemented here as an example.
     %   Elagha, Hassan A. "Generalized formulas for ray-tracing and
     %   longitudinal spherical aberration." JOSA A 34.3 (2017): 335-343.
