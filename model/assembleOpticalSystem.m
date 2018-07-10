@@ -20,9 +20,11 @@ p.parse(eye, varargin{:})
 mediumRefractiveIndex = returnRefractiveIndex( p.Results.cameraMedium, eye.meta.spectralDomain );
 
 %% Build the optical system matrix
+opticalSystem=[];
 
 % Start in the retina
-opticalSystem(1,:)     = [nan(1,10) nan nan(1,6) nan eye.index.vitreous];
+opticalSystem = [opticalSystem; ...
+    [eye.posteriorChamber.S eye.posteriorChamber.side eye.posteriorChamber.boundingBox eye.posteriorChamber.mustIntersect eye.index.vitreous]];
 
 % Add the lens
 opticalSystem = [opticalSystem; ...
@@ -33,7 +35,7 @@ opticalSystem = [opticalSystem; ...
     [eye.cornea.S eye.cornea.side eye.cornea.boundingBox eye.cornea.mustIntersect [eye.cornea.index; mediumRefractiveIndex]]];
 
 % Create a surface plot colors cell array
-surfaceColor = [{''}; eye.lens.plot.color; eye.cornea.plot.color];
+surfaceColor = [eye.posteriorChamber.plot.color; eye.lens.plot.color; eye.cornea.plot.color];
 
 % Add a contact lens if requested
 if ~isempty(p.Results.contactLens)
@@ -64,8 +66,6 @@ if ~isempty(p.Results.spectacleLens)
     end
     sceneGeometry.lenses.spectacle = pOutFun.Results;
 end
-
-
 
 
 % Pad the optical system with nan rows to reach a fixed 100x19 size

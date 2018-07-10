@@ -45,6 +45,7 @@ p.addParameter('outputRay',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('addLighting',false, @islogical);
 p.addParameter('surfaceColor', {[0.5 0.5 0.5]}, @iscell);
 p.addParameter('surfaceAlpha', 0.1,@isnumeric);
+p.addParameter('viewAngle',[40 40],@isnumeric);
 
 p.addParameter('rayColor','red',@(x)(ischar(x) | isnumeric(x)));
 
@@ -82,13 +83,16 @@ if ~isempty(p.Results.opticalSystem)
     end
     
     % Loop over the surfaces
-    for ii=2:nSurfaces
-        % Obtain a function handle for the polynomial
-        F = quadric.vecToFunc(opticalSystem(ii,1:10));
-        boundingBox = opticalSystem(ii,12:17);
-        % Plot the surface
-        plotSurface(F,boundingBox,surfaceColor{ii},p.Results.surfaceAlpha)
-        hold on
+    for ii=1:nSurfaces
+        % Obtain the quadric, proceed if there are no nans
+        S = opticalSystem(ii,1:10);
+        if ~any(isnan(S))
+            % Obtain a function handle for the polynomial
+            F = quadric.vecToFunc(opticalSystem(ii,1:10));
+            boundingBox = opticalSystem(ii,12:17);
+            % Plot the surface
+            plotSurface(F,boundingBox,surfaceColor{ii},p.Results.surfaceAlpha)
+        end
     end
 end
 
@@ -111,6 +115,9 @@ if p.Results.addLighting
     camlight
     lighting gouraud
 end
+
+% Set the viewing angle
+view(p.Results.viewAngle);
 
 end % plotOpticalSystem
 
