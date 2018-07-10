@@ -169,4 +169,22 @@ else
 end
 cornea.axis=[0 0 0];
 
+% Navarro original params
+% Navarro 2006, Table 1, mean cornea ellipsoid parameters
+%{
+a11 = 1; a22 = 1.0318; a33 = 0.536; a12 = -0.0006; a13 = -0.038;
+a23 = -0.0147; a1 = -.06; a2 = -0.115; a3 = 13.546; a0 = -23.25;
+
+% Place the Navarro parameters into a polynomial vector. Navarro defines his
+% parameters w.r.t. the polynomial equation as:
+%
+%   0 =
+%     a11x^2 + a22y^2 + a33z^2 + a12xy + a13xz + a23yz + a1x + a2y +a3z+a0
+%
+% To convert to the standard notation, need to account for
+% the factor of 2. Note the cross-terms are in the order [xy, xz, yz].
+v = [a11 a22 a33 a12/2 a13/2 a23/2 a1/2 a2/2 a3/2 a0];
+S = quadric.vecToMatrix(v);
+%}
+
 end
