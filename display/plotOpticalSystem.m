@@ -43,7 +43,7 @@ p.addParameter('opticalSystem',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('rayPath',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('outputRay',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('addLighting',false, @islogical);
-p.addParameter('surfaceColor', {[0.5 0.5 0.5]}, @iscell);
+p.addParameter('surfaceColors', {[0.5 0.5 0.5]}, @iscell);
 p.addParameter('surfaceAlpha', 0.1,@isnumeric);
 p.addParameter('viewAngle',[40 40],@isnumeric);
 
@@ -77,9 +77,9 @@ if ~isempty(p.Results.opticalSystem)
     nSurfaces = size(opticalSystem,1);
 
     % Create a vector of surface colors
-    surfaceColor=p.Results.surfaceColor;
-    if length(surfaceColor)==1
-        surfaceColor = repmat(surfaceColor,nSurfaces,1);
+    surfaceColors=p.Results.surfaceColors;
+    if length(surfaceColors)==1
+        surfaceColors = repmat(surfaceColors,nSurfaces,1);
     end
     
     % Loop over the surfaces
@@ -91,7 +91,7 @@ if ~isempty(p.Results.opticalSystem)
             F = quadric.vecToFunc(opticalSystem(ii,1:10));
             boundingBox = opticalSystem(ii,12:17);
             % Plot the surface
-            plotSurface(F,boundingBox,surfaceColor{ii},p.Results.surfaceAlpha)
+            plotSurface(F,boundingBox,surfaceColors{ii},p.Results.surfaceAlpha)
         end
     end
 end

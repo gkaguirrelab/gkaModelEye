@@ -134,7 +134,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %                           index of refraction of the lens material, and
 %                           (optinally) the vertex distance in mm. If left
 %                           empty, no spectacle is added to the model.
-%  'medium'               - String, options include:
+%  'cameraMedium'               - String, options include:
 %                           {'air','water','vacuum'}. This sets the index
 %                           of refraction of the medium between the eye and
 %                           the camera.
@@ -162,7 +162,7 @@ function sceneGeometry = createSceneGeometry(varargin)
     % Create a sceneGeometry file for a myopic eye wearing spectacles
     % of appropriate correction. Place the system under water, and imaged
     % in the visible range
-    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2,'medium','water','spectralDomain','vis');
+    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2,'cameraMedium','water','spectralDomain','vis');
     % Plot a figure that traces a ray arising from the optical axis at the
     % pupil plane, departing at 15 degrees.
     clear figureFlag
@@ -182,9 +182,10 @@ p.addParameter('radialDistortionVector',[0 0],@isnumeric);
 p.addParameter('cameraTranslation',[0; 0; 120],@isnumeric);
 p.addParameter('cameraTorsion',0,@isnumeric);
 p.addParameter('constraintTolerance',0.02,@isscalar);
+p.addParameter('surfaceSetName','pupilToCamera',@ischar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
-p.addParameter('medium','air',@ischar);
+p.addParameter('cameraMedium','air',@ischar);
 p.addParameter('spectralDomain','nir',@ischar);
 p.addParameter('forceMATLABVirtualImageFunc',false,@islogical);
 
@@ -223,10 +224,13 @@ end
 
 
 %% refraction - optical system
-[opticalSystem, surfaceColor] = assembleOpticalSystem( sceneGeometry.eye);
+[opticalSystem, surfaceLabels, surfaceColors] = assembleOpticalSystem( sceneGeometry.eye, varargin{:});
+sceneGeometry.refraction.surfaceSetName = p.Results.surfaceSetName;
 sceneGeometry.refraction.opticalSystem = opticalSystem;
-sceneGeometry.refraction.plot.surfaceColor = surfaceColor;
+sceneGeometry.refraction.surfaceLabels = surfaceLabels;
+sceneGeometry.refraction.surfaceColors = surfaceColors;
 
+ 
 %% constraintTolerance
 sceneGeometry.constraintTolerance = p.Results.constraintTolerance;
 

@@ -73,9 +73,10 @@ S = quadric.scale(quadric.unitSphere,posteriorChamber.radii);
 S = quadric.translate(S,[posteriorChamber.center 0 0]);
 posteriorChamber.S = quadric.matrixToVec(S);
 posteriorChamber.side = -1;
-posteriorChamber.boundingBox = [-25 -5 -40 40 -40 40];
+posteriorChamber.boundingBox = [-25 -5.4 -25 25 -25 25];
 posteriorChamber.mustIntersect = 1;
-posteriorChamber.plot.color = {[.7,.7,.7]};
+posteriorChamber.label = {'posteriorChamber'};
+posteriorChamber.plot.color = {[.7,.5,.7]};
 
 end
 

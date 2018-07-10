@@ -101,21 +101,25 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %}
 %{
     %% Pupil point through cornea
-    sceneGeometry = createSceneGeometry();
+    sceneGeometry = createSceneGeometry('surfaceSetName','pupilToCamera');
     % Define an initial ray
     p = [sceneGeometry.eye.pupil.center(1); 2; 0];
     u = [1;tand(-15);0];
     u = u./sqrt(sum(u.^2));
     inputRay = [p, u];
     % Perform the ray trace
-    outputRay = rayTraceQuadrics(inputRay, sceneGeometry.refraction.opticalSystem);
+    [outputRay, rayPath] = rayTraceQuadrics(inputRay, sceneGeometry.refraction.opticalSystem);
+    % Plot the optical system
+    plotOpticalSystem('opticalSystem',sceneGeometry.refraction.opticalSystem,...
+        'surfaceColors',sceneGeometry.refraction.surfaceColors,'addLighting',true,...
+        'outputRay',outputRay,'rayPath',rayPath);
 %}
 %{
     %% Foveal retina point through lens and cornea
-    sceneGeometry = createSceneGeometry();
+    sceneGeometry = createSceneGeometry('surfaceSetName','retinaToCamera');
     % Plot the optical system
     plotOpticalSystem('opticalSystem',sceneGeometry.refraction.opticalSystem,...
-        'surfaceColor',sceneGeometry.refraction.plot.surfaceColor,'addLighting',true);
+        'surfaceColors',sceneGeometry.refraction.surfaceColors,'addLighting',true);
     % Define an initial ray arising at the fovea
     p = sceneGeometry.eye.axes.visual.coords';
     % Loop over horizontal angles relative to the visual axis
