@@ -1,4 +1,4 @@
-function [X1, X2] = intersectRay(S,R,side,boundingBox,betaTol,bbTol)
+function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
 %
 %
 % Syntax:
@@ -90,18 +90,15 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,betaTol,bbTol)
 if nargin==2
     side=1;
     boundingBox = [];
-    betaTol=-1e4;
     bbTol = 1e-2;
 end
 
 if nargin==3
     boundingBox = [];
-    betaTol=-1e4;
     bbTol = 1e-2;
 end
 
 if nargin==4
-    betaTol=-1e4;
     bbTol = 1e-2;
 end
 
@@ -150,13 +147,8 @@ gamma = A.*ux.^2+B.*uy.^2+C.*uz.^2+D.*ux.*uy.*2.0+E.*ux.*uz.*2.0+F.*uy.*uz.*2.0;
 
 % Here, beta is the discriminant. If it is less than zero, then the ray
 % misses the surface. In this situation, return nans.
-% We allow a small tolerance on beta being slightly less than zero
 if beta<0
-    if beta>betaTol
-        beta = 0;
-    else
-        return
-    end
+	return
 end
 
 % The scale of the ray (t) is given by a quadratic equation. Obtain the two

@@ -119,7 +119,7 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
     % Define an initial ray arising at the fovea
     p = sceneGeometry.eye.axes.visual.coords';
     % Loop over horizontal angles relative to the visual axis
-    for ii = -5:2.5:5
+    for ii = -2:1:2
         % Assemble the ray
         u = [1;tand(sceneGeometry.eye.axes.visual.degField(1)+ii);tand(sceneGeometry.eye.axes.visual.degField(2))];
         u = u./sqrt(sum(u.^2));

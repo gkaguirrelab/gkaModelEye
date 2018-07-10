@@ -2,7 +2,8 @@ function lens = lens( eye )
 
 % Currently only supports odd number of shells.
 nShells = 11;
-nStartShell = 2;
+startShell = 2;
+endShell = 11;
 
 % Initialize the components of the optical system
 lens.S = [];
@@ -64,12 +65,12 @@ lens.plot.color = [lens.plot.color; {'red'}];
 %% Back gradient shells
 boundingBox = [lensCenter-lensThickBack lensCenter -4 4 -4 4];
 nLensVals = linspace(nEdge,nCore,nShells*2+1);
-for ii = nStartShell:nShells
+for ii = startShell:endShell
     nBackQuadric = [-0.010073731138546 0 0 0.0; 0 -0.002039930555556 0 0; 0 0 -0.002039930555556 0; 0 0 0 1.418000000000000];
     S = nBackQuadric;
     S(end,end)=S(end,end)-nLensVals(ii*2);
     S = quadric.translate(S,[lensCenter 0 0]);
-
+    
     % Add this shell to the optical system structure
     lens.S = [lens.S; quadric.matrixToVec(S)];
     lens.boundingBox = [lens.boundingBox; boundingBox];
@@ -79,27 +80,30 @@ for ii = nStartShell:nShells
     lens.label = [lens.label; {sprintf('lens.back.shell_n=%0.3f',nLensVals(ii*2))}];
     lens.plot.color = [lens.plot.color; [0.5 (nLensVals(ii*2)-nEdge)/(nCore-nEdge)/2+0.5 0.5]];
 end
+% Force the index of the center shell to be equal to the lens core
+% refractive index. The value can be something other than this when
+% endShell shell is not equal to the nShells.
+lens.index(end) = nCore;
 
 
 %% Front gradient shells
 boundingBox = [lensCenter lensCenter+lensThickFront -4 4 -4 4];
 nLensVals = linspace(nEdge,nCore,nShells*2+1);
-for ii = nShells:-1:nStartShell
+for ii = endShell:-1:startShell
     nFrontQuadric = [0.022665895061728 0 0 0; 0 0.002039930555556 0 0; 0 0 0.002039930555556 0; 0 0 0 1.371000000000000];
     S = nFrontQuadric;
     S(end,end)=nLensVals(ii*2)-nCore;
     S = quadric.translate(S,[lensCenter-0.065277777777778 0 0]);
-
+    
     % Add this shell to the optical system structure
     lens.S = [lens.S; quadric.matrixToVec(S)];
     lens.boundingBox = [lens.boundingBox; boundingBox];
-    lens.side = [lens.side; -1];
+    lens.side = [lens.side; 1];
     lens.mustIntersect = [lens.mustIntersect; 0];
     lens.index = [lens.index; nLensVals(ii*2-1)];
     lens.label = [lens.label; {sprintf('lens.front.shell_n=%0.3f',nLensVals(ii*2))}];
     lens.plot.color = [lens.plot.color; [0.5 (nLensVals(ii*2)-nEdge)/(nCore-nEdge)/2+0.5 0.5]];
 end
-
 % Force the index of the space between the last front shell and the front
 % lens surface to be equal to the lens edge refractive index. The value can
 % be something other than this when the start shell is something other than
