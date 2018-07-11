@@ -27,11 +27,6 @@ Q = T * S * transpose(T);
 % Derive the angles
 angles = rad2deg(rotm2eul(evecs));
 
-% Wrap values by 180 and report the mins
-[~,idx]=min(abs([angles; angles+180]));
-angles = angles+180.*(idx-1);
-[~,idx]=min(abs([angles; angles-180]));
-angles = angles-180.*(idx-1);
 
 end
 

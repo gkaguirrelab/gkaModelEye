@@ -1,4 +1,11 @@
-function [Aye,Bye,q1,q2,q3] = planeEllipsoidIntersect(S,p1,p2,p3)
+function [semiMajor,semiMinor,centerX,centerY,centerZ] = planeEllipsoidIntersect(S,p1,p2,p3)
+
+%{
+    S = quadric.scale(quadric.unitSphere,[4 5 3]);
+    p1 = [-1 1 1]; p2 = [3 4 1]; p3 = [ 5 2 1];
+    [Aye,Bye,q1,q2,q3] = quadric.planeEllipsoidIntersect(S,p1,p2,p3)
+%}
+
 
 n = cross(p1 - p2, p1 - p3);
 d = p1(1)*n(1) + p1(2)*n(2) + p1(3)*n(3);
@@ -7,7 +14,7 @@ d = -d;
 
 radii = quadric.radii(S);
 
-[Aye,Bye,q1,q2,q3]=BektasFxn(n(1),n(2),n(3),d,3,4,5);
+[semiMajor,semiMinor,centerX,centerY,centerZ]=BektasFxn(n(1),n(2),n(3),d,radii(1),radii(2),radii(3));
 
 end
 
@@ -54,35 +61,35 @@ function[Aye,Bye,q1,q2,q3]=BektasFxn(A,B,C,D,a,b,c)
 %
 car=A*B*C*D;
 if car~=0
-kx2=1/a^2 + (A^2)/(C^2*c^2);
-ky2=1/b^2 + (B^2)/(C^2*c^2);
-kxy=(2*A*B)/(C^2*c^2);
-kx=+ (2*A*D)/(C^2*c^2);
-ky=+ (2*B*D)/(C^2*c^2) ;
-ksab=D^2/(C^2*c^2)- 1;
-ParA=[kx2  kxy  ky2  kx  ky  ksab];
-G=AtoG(ParA);
-
-q1=G(1);q2=G(2);q3=(A*q1+B*q2+D)/-C;
-    end
+    kx2=1/a^2 + (A^2)/(C^2*c^2);
+    ky2=1/b^2 + (B^2)/(C^2*c^2);
+    kxy=(2*A*B)/(C^2*c^2);
+    kx=+ (2*A*D)/(C^2*c^2);
+    ky=+ (2*B*D)/(C^2*c^2) ;
+    ksab=D^2/(C^2*c^2)- 1;
+    ParA=[kx2  kxy  ky2  kx  ky  ksab];
+    G=AtoG(ParA);
+    
+    q1=G(1);q2=G(2);q3=(A*q1+B*q2+D)/-C;
+end
 
 if C==0 & A~=0
-ParA=[(1/b^2 + (B/A/a)^2) 0  1/c^2 (2*D*B/(A*a)^2)  0  (-1+(D/A/a)^2)];G=AtoG(ParA);
-
-q2=G(1);q3=G(2);q1=(D+B*q2+C*q3)/-A;    
+    ParA=[(1/b^2 + (B/A/a)^2) 0  1/c^2 (2*D*B/(A*a)^2)  0  (-1+(D/A/a)^2)];G=AtoG(ParA);
+    
+    q2=G(1);q3=G(2);q1=(D+B*q2+C*q3)/-A;
 end
 
 if C==0 & B~=0
-ParA=[(1/a^2 + (A/B/b)^2) 0  1/c^2 (2*D*A/(B*b)^2)  0  (-1+(D/B/b)^2)];G=AtoG(ParA);
-
-q1=G(1);q3=G(2);q2=(D+A*q1+C*q3)/-B;    
+    ParA=[(1/a^2 + (A/B/b)^2) 0  1/c^2 (2*D*A/(B*b)^2)  0  (-1+(D/B/b)^2)];G=AtoG(ParA);
+    
+    q1=G(1);q3=G(2);q2=(D+A*q1+C*q3)/-B;
 end
 
-if A==0 & B==0 ,    q1=0;q2=0;q3=-D/C;end 
+if A==0 & B==0 ,    q1=0;q2=0;q3=-D/C;end
 if D==0,    q1=0;q2=0;q3=0;
+    
+end
 
-end 
- 
 quz=sqrt(q1^2+q2^2+q3^2);
 n1=A/sqrt(A^2+B^2+C^2);
 n2=B/sqrt(A^2+B^2+C^2);
