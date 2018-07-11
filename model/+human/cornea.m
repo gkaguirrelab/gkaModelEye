@@ -185,6 +185,17 @@ a23 = -0.0147; a1 = -.06; a2 = -0.115; a3 = 13.546; a0 = -23.25;
 % the factor of 2. Note the cross-terms are in the order [xy, xz, yz].
 v = [a11 a22 a33 a12/2 a13/2 a23/2 a1/2 a2/2 a3/2 a0];
 S = quadric.vecToMatrix(v);
+origCenter = quadric.center(S);
+S = quadric.translate(S,-origCenter);
+Sr = quadric.rotate(S,[90 0 0]);
+Srt = quadric.translate(Sr,origCenter);
+
+S = quadric.vecToMatrix(v);
+origCenter = quadric.center(S);
+S = quadric.translate(S,-origCenter);
+S = quadric.alignAxes(S);
+
+
 %}
 
 end
