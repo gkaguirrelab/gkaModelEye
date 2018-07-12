@@ -1,4 +1,4 @@
-function [vertices, faces] = surfaceMesh(S,boundingBox,vertexDensity, polarMesh)
+function coordVals = surfaceGrid(S,boundingBox,vertexDensity, polarMesh)
 %
 % Inputs:
 %   S                     - A quadric surface in either 1x10 vector form or
@@ -14,8 +14,7 @@ function [vertices, faces] = surfaceMesh(S,boundingBox,vertexDensity, polarMesh)
 %                           to unity.
 %   polarMesh             - Logical. If set to true, produces a polar
 %                           distribution of points. This is valid only if
-%                           the quadric is an ellipsoid. Defaults to
-%                           cartersian otherwise.
+%                           the quadric is an ellipsoid.
 %
 % Outputs:
 %   vertices              - nx3 matrix that provides the [x; y; z]
@@ -47,7 +46,7 @@ if isequal(size(S),[4 4])
     S = quadric.matrixToVec(S);
 end
 
-% Obtain the meshgrid
+% Obtain the surfaceGrid
 if polarMesh
     % Shift the quadric to the center, and the boundingBox by the
     % corresponding amount
@@ -56,18 +55,14 @@ if polarMesh
     boundingBox(1:2) =  boundingBox(1:2)-Xt(1);
     boundingBox(3:4) =  boundingBox(3:4)-Xt(2);
     boundingBox(5:6) =  boundingBox(5:6)-Xt(3);
-    % Obtain the radii. These are in canonical order (smallest to largest),
-    % so we flip the order to match what is desired by the geodetic
-    % function.
-    radii = flipud(quadric.radii(St));
+    % Obtain the radii.
+    radii = quadric.radii(St);
     coordVals = [];
-    for latitude = -180:5:180
-        for longitude=-90:5:90
-            X = geodetic_cart( [latitude; longitude; 0], radii );
-            % Store the coordinate value. We have to reverse the direction
-            % of the array to place the values back in relation to the
-            % canonical ordering of the axes of the quadric.
-            coordVals(end+1,:)= fliplr(X);
+    for latitude = linspace(-180,180,vertexDensity*2)
+        for longitude=linspace(-180,180,vertexDensity)
+            X = quadric.geodeticToCart( [latitude; longitude; 0], radii );
+            % Store the coordinate value.
+            coordVals(end+1,:)= X;
         end
     end
     % Re-order the coordVal dimensions to match the axis order for the
@@ -86,17 +81,6 @@ else
 	linspace(boundingBox(3),boundingBox(4),vertexDensity); ...
     	linspace(boundingBox(5),boundingBox(6),vertexDensity)];
 end
-
-[xx, yy, zz]=meshgrid( coordVals(:,1), coordVals(:,2), coordVals(:,3));
-
-
-% Create a function handle for the quadric surface
-F = quadric.vecToFunc(S);
-
-% Obtain the vertices and faces
-fv = isosurface(xx, yy, zz, F(xx, yy, zz), 0);
-vertices = fv.vertices;
-faces = fv.faces;
 
 end
 
