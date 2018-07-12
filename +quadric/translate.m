@@ -38,7 +38,7 @@ St = quadric.varsToMatrix(A, B, C, D, E, F, Gt, Ht, It, Kt);
 
 % Return a vector if that was the original input
 if returnVecFlag
-    St = quadric.MatrixToVec(St);
+    St = quadric.matrixToVec(St);
 end
 
 end
