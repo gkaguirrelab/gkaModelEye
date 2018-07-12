@@ -53,10 +53,10 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %                           required to uniquely specify the image ellipse.
 %  'posteriorChamberMeshDensity' - The number of points that are on
 %                           each latitude line of the posterior chamber
-%                           ellipsoid. About 30 makes a nice image.
+%                           ellipsoid. About 45 makes a nice image.
 %  'anteriorChamberMeshDensity' - The number of points that are on
 %                           each longitude line of the anterior chamber
-%                           ellipsoid. About 30 makes a nice image.
+%                           ellipsoid. About 36 makes a nice image.
 %
 % Outputs:
 %   pupilEllipseOnImagePlane - A 1x5 vector with the parameters of the
@@ -177,8 +177,8 @@ p.addParameter('fullEyeModelFlag',false,@islogical);
 p.addParameter('nPupilPerimPoints',5,@(x)(isnumeric(x) && x>4));
 p.addParameter('pupilPerimPhase',0,@isnumeric);
 p.addParameter('nIrisPerimPoints',5,@isnumeric);
-p.addParameter('anteriorChamberMeshDensity',10,@isnumeric);
-p.addParameter('posteriorChamberMeshDensity',30,@isnumeric);
+p.addParameter('anteriorChamberMeshDensity',20,@isnumeric);
+p.addParameter('posteriorChamberMeshDensity',24,@isnumeric);
 
 % parse
 p.parse(eyePose, sceneGeometry, varargin{:})
@@ -293,8 +293,8 @@ if p.Results.fullEyeModelFlag
     tmpLabels(:) = {'irisPerimeter'};
     pointLabels = [pointLabels; tmpLabels];
     
-    % Create the anterior chaber vertices
-    anteriorChamberPoints = quadric.surfaceMesh(...
+    % Create the anterior chamber vertices
+    anteriorChamberPoints = quadric.surfaceGrid(...
         sceneGeometry.eye.cornea.front.S,...
         sceneGeometry.eye.cornea.front.boundingBox,...
         p.Results.anteriorChamberMeshDensity);
@@ -316,7 +316,7 @@ if p.Results.fullEyeModelFlag
     pointLabels = [pointLabels; 'cornealApex'];
     
     % Create the posterior chamber vertices
-    posteriorChamberPoints = quadric.surfaceMesh(...
+    posteriorChamberPoints = quadric.surfaceGrid(...
         sceneGeometry.eye.posteriorChamber.S,...
         sceneGeometry.eye.posteriorChamber.boundingBox,...
         p.Results.posteriorChamberMeshDensity);
