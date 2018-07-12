@@ -49,7 +49,7 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
 % Examples:
 %{
     % Unit sphere, diagonal ray starting from the origin
-    S = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 -1];
+    S = quadric.unitSphere;
     p = [0; 0; 0];
     u = [1; 1; 1];
     u = u./sqrt(sum(u.^2));
@@ -58,7 +58,7 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
 %}
 %{
     % Unit sphere, axis-aligned ray starting from the origin
-    S = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 -1];
+    S = quadric.unitSphere;
     p = [0; 0; 0];
     u = [0; 0; 1];
     u = u./sqrt(sum(u.^2));
@@ -67,7 +67,7 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
 %}
 %{
     % Unit sphere, non-intersecting ray
-    S = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 -1];
+    S = quadric.unitSphere;
     p = [3; 3; 3];
     u = [0; 0; 1];
     u = u./sqrt(sum(u.^2));
@@ -76,11 +76,21 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
 %}
 %{
     % Scaled, translated sphere. Ray starts from sphere center.
-    S = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 -1];
+    S = quadric.unitSphere;
     S = quadric.scale(S,[2 2 2]);
     S = quadric.translate(S,[0; 1; 1]);
     p = [0;1;1];
     u = [0;tand(17.309724);1];
+    u = u./sqrt(sum(u.^2));
+    R = [p, u];
+    X = quadric.intersectRay(S,R);
+%}
+%{
+    % Centered ellipsoid. Ray starts from center.
+    S = quadric.unitSphere;
+    S = quadric.scale(S,[5 4 3]);
+    p = [0;0;0];
+    u = [1;tand(15);0];
     u = u./sqrt(sum(u.^2));
     R = [p, u];
     X = quadric.intersectRay(S,R);
