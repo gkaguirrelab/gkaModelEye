@@ -1,40 +1,45 @@
 function St = translate( S, Xt )
-%UNTITLED7 Summary of this function goes here
-%   Detailed explanation goes here
 %{
+    % Define a quadric and a translation vector
     S = quadric.scale(quadric.unitSphere,[5 4 3]);
-    quadric.center(S)
-    Xt = [-10; 2; -3];
-    St = quadric.translate(S, Xt);
-    quadric.center(St)
-    Sprime = quadric.translate(St, -Xt);
-    quadric.center(Sprime)
+    Xt = [-10; 0; 0];
 
+    % Translate the quadric out and back
+    Sprime = quadric.translate(quadric.translate(S, Xt), -Xt);
+    
+    % Confirm recovery of original values
+    assert(max(max(abs(S-Sprime))) < 1e-20);
 %}
 
+returnVecFlag = false;
 
 % If the quadric surface was passed in vector form, convert to matrix
 if isequal(size(S),[1 10])
     S = quadric.vecToMatrix(S);
+    returnVecFlag = true;
 end
 
+% Obtain the variable form
 [A, B, C, D, E, F, G, H, I, K] = quadric.matrixToVars(S);
 
+% decompose the translation vector
 xt = Xt(1);
 yt = Xt(2);
 zt = Xt(3);
 
-% Store the signs. These are needed to properly adjust the K element.
-xs = sign(xt);
-ys = sign(xt);
-zs = sign(xt);
-
+% Adjust the terms
 Gt = G - A*xt - D*yt - E*zt;
 Ht = H - B*yt - D*xt - F*zt;
 It = I - C*zt - E*xt - F*yt;
-Kt = K + xs*A*xt^2 + ys*B*yt^2 + zs*C*zt^2 + E*xt*yt + D*xt*zt + F*yt*zt - G*xt - H*yt - I*zt;
+Kt = K + A*xt^2 + B*yt^2 + C*zt^2 + 2*D*xt*yt + 2*E*xt*zt + 2*F*yt*zt - 2*G*xt - 2*H*yt - 2*I*zt;
 
+% Assemble the translated quadric matrix
 St = quadric.varsToMatrix(A, B, C, D, E, F, Gt, Ht, It, Kt);
+
+% Return a vector if that was the original input
+if returnVecFlag
+    St = quadric.MatrixToVec(St);
+end
 
 end
 
