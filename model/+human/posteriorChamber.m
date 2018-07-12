@@ -70,7 +70,7 @@ posteriorChamber.center = ...
     [(-posteriorChamberApexDepth - posteriorChamber.radii(1)) 0 0];
 
 S = quadric.scale(quadric.unitSphere,posteriorChamber.radii);
-S = quadric.translate(S,[posteriorChamber.center 0 0]);
+S = quadric.translate(S,posteriorChamber.center);
 posteriorChamber.S = quadric.matrixToVec(S);
 posteriorChamber.side = -1;
 posteriorChamber.boundingBox = [-25 -5.4 -25 25 -25 25];
