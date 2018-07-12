@@ -123,7 +123,7 @@ radii(2:3) = abs(a);
 S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
 S = quadric.translate(S,[eye.pupil.center(1)+radii(1) 0 0]);
 c = quadric.center(S); r = quadric.radii(S);
-boundingBox = [lensCenter c(1)-r(3) -4 4 -4 4];
+boundingBox = [lensCenter c(1)-r(1) -4 4 -4 4];
 
 % Add to the optical system structure. No refractive index added with this
 % surface, as this is the last surface of this set.
