@@ -8,10 +8,10 @@ function axisOrder = axisOrder(S)
 %{
     S = quadric.unitSphere;
     S = quadric.scale(S,[3 5 4]);
-  r = quadric.radii(S)
-  axisOrder = axisOrientation(S);
-% Report the radii in the specified order
-r = r(axisOrder)
+    r = quadric.radii(S)
+    axisOrder = axisOrientation(S);
+    % Report the radii in the specified order
+    r = r(axisOrder)
 %}
 
 % If the quadric surface was passed in vector form, convert to matrix
@@ -19,13 +19,14 @@ if isequal(size(S),[1 10])
     S = quadric.vecToMatrix(S);
 end
 
-a = quadric.angles(S);
-thisOrientation = mod(fix((abs(a)+45)./90),2);
+% solve the eigenproblem
+[evecs,~] = svd(-S( 1:3, 1:3 ) );
+EulerAngles = rad2deg(rotm2eul(evecs));
+thisOrientation = mod(fix((abs(EulerAngles)+45)./90),2);
 
 % Define a mapping of orientations to radii order
 orientations = {[0 0 0],[0 0 1],[0 1 0],[1 0 0],[0 1 1],[1 0 1],[1 1 1]};
 orders = {[1 2 3],[1 3 2],[3 2 1],[2 1 3],[2 3 1],[3 1 2],[1 2 3]};
 axisOrder = orders{cellfun(@(x) isequal(x,thisOrientation),orientations)};
-
 
 end

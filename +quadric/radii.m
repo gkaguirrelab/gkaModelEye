@@ -22,6 +22,11 @@ r = 1./diag(sqrt(evals));
 sgns = sign( diag( evals ) );
 r = r .* sgns;
 
+% The radius values are at this stage in canonical order (smallest to
+% largest). Now re-order the valus so that the correspond to the actual
+% x,y,z dimensions of the quadric.
+axisOrder = quadric.axisOrder(S);
+r = r(axisOrder);
 
 end
 

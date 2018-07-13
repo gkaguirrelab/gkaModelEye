@@ -1,20 +1,27 @@
-function geodetic = cartToGeodetic( X, radii )
+function geodetic = cartToGeodetic( X, S )
 % Converts Cartesian to geodetic coordinates on an ellipsoidal surface
 %
 % Syntax:
-%   geodetic = carToGeodetic( X, radii )
+%   geodetic = carToGeodetic( X, S )
 %
 % Description:
 %   Converts from Cartesian (x, y, z) coordinates on the ellipsoidal
 %   surface to geodetic (latitude, longitude, elevation) coordinates.
 %
-%   The coordinates are with reference to a centered, aligned ellipsoid.
-%   The radii must be provided in the "canonical" order returned by
-%   quadric.radii(). The x,y,z coordinates returned are with respect to
-%   this order [a <= b <= c].
+%   The routine takes a coordinate (X) and a quadric (S). A geodetic
+%   coordinate is returned of the form latitude (phi), longitude (lambda),
+%   and height (distance from the quadric surface). The geodetic
+%   coordinates are with reference to a centered, non-rotated ellipsoid,
+%   with the axes arranged in a standard form such that they are in
+%   descending order of length (i.e., semi-axes ordered a => b => c). The
+%   variable S can be supplied in either vector or matrix form. The quadric
+%   (and associated point X) is translated to place the center at the
+%   origin, and rotated to be axis-aligned. The semi-axes of the quadric
+%   and point are re-ordered to match the standard form and the geodetic
+%   coordinates computed.
 %
-%   The operations are taken from a function written by Sebahattin Bektas,
-%   (sbektas@omu.edu.tr):
+%   The operations are modified from a function written by Sebahattin
+%   Bektas, (sbektas@omu.edu.tr):
 %
 %       Bektas, Sebahattin. "Geodetic computations on triaxial ellipsoid."
 %       International Journal of Mining Science (IJMS) 1.1 (2015): 25-34.
@@ -22,8 +29,8 @@ function geodetic = cartToGeodetic( X, radii )
 % Inputs:
 %   X                     - 3x1 vector containing the [x, y, z] coordinates
 %                           of the point.
-%   radii                 - 3x1 vector. Semi-axis lengths of the ellipsoid,
-%                           provided in canonical size order (a <= b <= c).
+%   S                     - 1x10 vector or 4x4 matrix specifyin the quadric
+%                           surface.
 %
 % Outputs:
 %   geodetic              - 3x1 vector that provides the geodetic
@@ -32,27 +39,27 @@ function geodetic = cartToGeodetic( X, radii )
 %                           latitude is defined over the range -90:90, and
 %                           the longitude over the range -180:180.
 %                           Elevation takes a value of zero for a point
-%                           that is on the surface of ellipsoid.
+%                           that is on the surface of the ellipsoid.
 %
 % Examples:
 %{
     %% Confirm the invertibility of the transform
     % Define an ellipsoidal surface
-    S = quadric.scale(quadric.unitSphere,[2,4,5]);
+    S = quadric.scale(quadric.unitSphere,[4,2,5]);
     % Find a point on the surface by intersecting a ray
     p = [0;0;0];
     u = [1;tand(15);tand(-15)];
     u = u./sqrt(sum(u.^2));
     R = [p, u];
     X = quadric.intersectRay(S,R);
-    geodetic = quadric.cartToGeodetic( X, quadric.radii(S) );
-    Xprime = quadric.geodeticToCart( geodetic, quadric.radii(S) );
+    geodetic = quadric.cartToGeodetic( X, S );
+    Xprime = quadric.geodeticToCart( geodetic, S );
     assert(max(abs(X-Xprime)) < 1e-6);
 %}
 %{
-    %% Confirm the invertibility of the transform
+    %% Confirm the invertibility of the transform across quadrants
     % Define an ellipsoidal surface
-    S = quadric.scale(quadric.unitSphere,[2,4,5]);
+    S = quadric.scale(quadric.unitSphere,[4.7,3,16]);
     % Find a point on the surface by intersecting a ray
     p = [0;0;0];
     u = [1;tand(15);tand(15)];
@@ -63,39 +70,61 @@ function geodetic = cartToGeodetic( X, radii )
         for p2=-1:2:1
             for p3=-1:2:1
                 quadrant = [p1; p2; p3];
-                geodetic = quadric.cartToGeodetic( X.*quadrant, quadric.radii(S) );
-                Xprime = quadric.geodeticToCart( geodetic, quadric.radii(S));
-                fprintf('X: %d %d %d; geo: %d %d %d; Xp: %d %d %d \n',sign(p1),sign(p2),sign(p3),sign(geodetic(1)),sign(geodetic(2)),sign(geodetic(3)),sign(Xprime(1)),sign(Xprime(2)),sign(Xprime(3)));
+                geodetic = quadric.cartToGeodetic( X.*quadrant, S );
+                Xprime = quadric.geodeticToCart( geodetic, S);
+                fprintf('X: %d %d %d; geo: %d %d %f; Xp: %d %d %d \n',sign(p1),sign(p2),sign(p3),sign(geodetic(1)),sign(geodetic(2)),geodetic(3),sign(Xprime(1)),sign(Xprime(2)),sign(Xprime(3)));
             end
         end
     end
 %}
 
 
+% If the quadric surface was passed in vector form, convert to matrix
+if isequal(size(S),[1 10])
+    S = quadric.vecToMatrix(S);
+end
+
+% Translate the quadric so that it is centered at the origin. Translate
+% the point accordingly.
+origCenter = quadric.center(S);
+S = quadric.translate(S,-origCenter);
+X = X-origCenter;
+
+% Rotate the quadric so that it is aligned with the cardinal axes.
+% Rotate the point accordingly.
+[S, rotMat] = quadric.alignAxes(S);
+X = (X'*rotMat)';
+
 % The geodetic is undefined exactly at the umbilical points on the
 % ellipsoidal surface. Here, we detect the presence of zeros in the
-% cartesian coordinate and shift these to be slightly non-zero
-X(abs(X(1:3))==0) = 1e-6;
+% cartesian coordinate and shift these to be slightly non-zero.
+X(X(1:3)==0) = 1e-6;
 
+% Obtain the radii of the quadric surface and distribute the values.
+% Bektas' code expected the radii to be in the order a => b => c, but the
+% order returned after alignment of the axes is a <= b <= c. This is why c
+% is mapped to the first value in the radii, and why the Cartesian
+% coordinate is assembled as [z y x]
+radii = quadric.radii(S);
+a=radii(3);b=radii(2);c=radii(1);
+x=X(3);y=X(2);z=X(1);
+
+% This next block contains essentially unedited code from Bektas.
+
+% Constants
+nIterations= 20; % number of loops to refine the estimate
 ro=180/pi; % convert degrees to radians
 eps=0.0005; % three sholder
 
-% Distribute the radii to the variables a, b, c. Bektas' original code
-% expected the radii in the opposite order. This is why c is mapped to the
-% first value in the radii, and why the Cartesian coordinate is assembled
-% as [z y x]
-c=radii(1);b=radii(2);a=radii(3);
-x=X(3);y=X(2);z=X(1);
 
 ex2=(a^2-c^2)/a^2; ee2=(a^2-b^2)/a^2;
-
 E=1/a^2;F=1/b^2;G=1/c^2;
 
 xo=a*x/sqrt(x^2+y^2+z^2);
 yo=b*y/sqrt(x^2+y^2+z^2);
 zo=c*z/sqrt(x^2+y^2+z^2);
 
-for i=1:20
+for ii=1:nIterations
     j11=F*yo-(yo-y)*E;
     j12=(xo-x)*F-E*xo;
     
@@ -121,11 +150,14 @@ for i=1:20
 end
 
 % Modified the Bektas code to use atan2 and thus make all four quadrants of
-% the geodesic coordinates invertible
-fi=ro*atan2(zo*(1-ee2)/(1-ex2),sqrt((1-ee2)^2*xo^2+yo^2));
-l=ro*atan2(1/(1-ee2)*yo,xo);
+% the geodesic coordinates invertible for the two angles
+phi=ro*atan2(zo*(1-ee2)/(1-ex2),sqrt((1-ee2)^2*xo^2+yo^2));
+lambda=ro*atan2(1/(1-ee2)*yo,xo);
 
-h=sign(z-zo)*sign(zo)*sqrt((x-xo)^2+(y-yo)^2+(z-zo)^2);
+% Calculate the height of the point w.r.t. the quadric surface
+height=sign(z-zo)*sign(zo)*sqrt((x-xo)^2+(y-yo)^2+(z-zo)^2);
 
-geodetic=[fi; l; h];
+% Assemble the geodetic to return
+geodetic=[phi; lambda; height];
+
 end

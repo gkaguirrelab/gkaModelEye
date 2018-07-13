@@ -1,8 +1,10 @@
-function S = alignAxes(S)
+function [S, evecs] = alignAxes(S)
 
 % If the quadric surface was passed in vector form, convert to matrix
+returnVecFlag = false;
 if isequal(size(S),[1 10])
     S = quadric.vecToMatrix(S);
+    returnVecFlag = true;
 end
 
 % Store the original scale
@@ -37,5 +39,11 @@ S = T * Q * transpose(T);
 
 % Restore the original scale
 S = (S./S(4,4)).*Sscale;
+
+% Return a vector if that was the original input
+if returnVecFlag
+    S = quadric.matrixToVec(S);
+end
+
 
 end

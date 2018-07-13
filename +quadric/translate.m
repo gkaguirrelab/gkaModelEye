@@ -11,9 +11,8 @@ function St = translate( S, Xt )
     assert(max(max(abs(S-Sprime))) < 1e-20);
 %}
 
-returnVecFlag = false;
-
 % If the quadric surface was passed in vector form, convert to matrix
+returnVecFlag = false;
 if isequal(size(S),[1 10])
     S = quadric.vecToMatrix(S);
     returnVecFlag = true;
