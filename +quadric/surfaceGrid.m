@@ -1,4 +1,4 @@
-function coordVals = surfaceGrid(S,boundingBox,vertexDensity, polarMesh)
+function coordVals = surfaceGrid(S,boundingBox,vertexDensity, polarMesh, bbTol)
 %
 % Inputs:
 %   S                     - A quadric surface in either 1x10 vector form or
@@ -39,6 +39,11 @@ end
 
 if nargin == 3
     polarMesh = true;
+    bbTol = 1e-2;
+end
+
+if nargin==4
+    bbTol = 1e-2;
 end
 
 % If the quadric surface was passed in matrix form, convert to vec
@@ -70,9 +75,9 @@ if polarMesh
     axisOrder = quadric.axisOrder(S);
     coordVals = coordVals(:,axisOrder);    
     % Remove the coordinates that are outside the bounding box
-    retainCoords = (coordVals(:,1) > boundingBox(1)) .* (coordVals(:,1) < boundingBox(2)) .* ...
-        (coordVals(:,2) > boundingBox(3)) .* (coordVals(:,2) < boundingBox(4)) .* ...
-        (coordVals(:,3) > boundingBox(5)) .* (coordVals(:,3) < boundingBox(6));
+    retainCoords = (coordVals(:,1) > boundingBox(1)-bbTol) .* (coordVals(:,1) < boundingBox(2)+bbTol) .* ...
+        (coordVals(:,2) > boundingBox(3)-bbTol) .* (coordVals(:,2) < boundingBox(4)+bbTol) .* ...
+        (coordVals(:,3) > boundingBox(5)-bbTol) .* (coordVals(:,3) < boundingBox(6)+bbTol);
     coordVals = coordVals(logical(retainCoords),:);
     % Shift the coord vals to be w.r.t. the original quadric center
     coordVals = coordVals + Xt';
