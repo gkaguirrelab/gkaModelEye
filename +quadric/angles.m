@@ -11,22 +11,14 @@ if isequal(size(S),[1 10])
     S = quadric.vecToMatrix(S);
 end
 
-% find the center of the quadric
-center = -S( 1:3, 1:3 ) \ S( 1:3,4 );
-
-% form the corresponding translation matrix
-T = eye( 4 );
-T( 4, 1:3 ) = center';
-
-% translate to the center
-Q = T * S * transpose(T);
-
 % solve the eigenproblem
-[evecs,~] = svd(Q( 1:3, 1:3 ) / -Q( 4, 4 ));
+[evecs,~] = svd(-S( 1:3, 1:3 ) );
 
 % Derive the angles
-angles = rad2deg(rotm2eul(evecs));
-
+alfax=atan2(-evecs(3,2),evecs(3,3));
+alfay=acos(evecs(3,3)/cos(alfax));
+alfaz=atan2(-evecs(2,1),evecs(1,1));
+angles=180/pi.*[alfax,alfay,alfaz];
 
 end
 
