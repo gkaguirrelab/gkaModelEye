@@ -14,7 +14,10 @@ function geodetic = cartToGeodetic( X, radii )
 %   this order [a <= b <= c].
 %
 %   The operations are taken from a function written by Sebahattin Bektas,
-%   (sbektas@omu.edu.tr) 19 Mayis University, Samsun
+%   (sbektas@omu.edu.tr):
+%
+%       Bekta?, Sebahattin. "Geodetic computations on triaxial ellipsoid."
+%       International Journal of Mining Science (IJMS) 1.1 (2015): 25-34.
 %
 % Inputs:
 %   X                     - 3x1 vector containing the [x, y, z] coordinates
@@ -35,6 +38,10 @@ function geodetic = cartToGeodetic( X, radii )
 %{
 %}
 
+% The geodetic is undefined exactly at the umbilical points on the
+% ellipsoidal surface. Here, we detect the presence of zeros in the
+% cartesian coordinate and shift these to be slightly non-zero
+X(abs(X(1:3))==0) = 1e-6;
 
 ro=180/pi; % convert degrees to radians
 eps=0.0005; % three sholder
