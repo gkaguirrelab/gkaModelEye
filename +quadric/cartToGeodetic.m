@@ -16,7 +16,7 @@ function geodetic = cartToGeodetic( X, radii )
 %   The operations are taken from a function written by Sebahattin Bektas,
 %   (sbektas@omu.edu.tr):
 %
-%       Bekta?, Sebahattin. "Geodetic computations on triaxial ellipsoid."
+%       Bektas, Sebahattin. "Geodetic computations on triaxial ellipsoid."
 %       International Journal of Mining Science (IJMS) 1.1 (2015): 25-34.
 %
 % Inputs:
@@ -36,7 +36,41 @@ function geodetic = cartToGeodetic( X, radii )
 %
 % Examples:
 %{
+    %% Confirm the invertibility of the transform
+    % Define an ellipsoidal surface
+    S = quadric.scale(quadric.unitSphere,[2,4,5]);
+    % Find a point on the surface by intersecting a ray
+    p = [0;0;0];
+    u = [1;tand(15);tand(-15)];
+    u = u./sqrt(sum(u.^2));
+    R = [p, u];
+    X = quadric.intersectRay(S,R);
+    geodetic = quadric.cartToGeodetic( X, quadric.radii(S) );
+    Xprime = quadric.geodeticToCart( geodetic, quadric.radii(S) );
+    assert(max(abs(X-Xprime)) < 1e-6);
 %}
+%{
+    %% Confirm the invertibility of the transform
+    % Define an ellipsoidal surface
+    S = quadric.scale(quadric.unitSphere,[2,4,5]);
+    % Find a point on the surface by intersecting a ray
+    p = [0;0;0];
+    u = [1;tand(15);tand(15)];
+    u = u./sqrt(sum(u.^2));
+    R = [p, u];
+    X = quadric.intersectRay(S,R);
+    for p1=-1:2:1
+        for p2=-1:2:1
+            for p3=-1:2:1
+                quadrant = [p1; p2; p3];
+                geodetic = quadric.cartToGeodetic( X.*quadrant, quadric.radii(S) );
+                Xprime = quadric.geodeticToCart( geodetic, quadric.radii(S));
+                fprintf('X: %d %d %d; geo: %d %d %d; Xp: %d %d %d \n',sign(p1),sign(p2),sign(p3),sign(geodetic(1)),sign(geodetic(2)),sign(geodetic(3)),sign(Xprime(1)),sign(Xprime(2)),sign(Xprime(3)));
+            end
+        end
+    end
+%}
+
 
 % The geodetic is undefined exactly at the umbilical points on the
 % ellipsoidal surface. Here, we detect the presence of zeros in the
@@ -86,9 +120,10 @@ for i=1:20
     end
 end
 
-fi=ro*atan(zo*(1-ee2)/(1-ex2)/sqrt((1-ee2)^2*xo^2+yo^2));
-
-l=ro*atan(1/(1-ee2)*yo/xo);
+% Modified the Bektas code to use atan2 and thus make all four quadrants of
+% the geodesic coordinates invertible
+fi=ro*atan2(zo*(1-ee2)/(1-ex2),sqrt((1-ee2)^2*xo^2+yo^2));
+l=ro*atan2(1/(1-ee2)*yo,xo);
 
 h=sign(z-zo)*sign(zo)*sqrt((x-xo)^2+(y-yo)^2+(z-zo)^2);
 

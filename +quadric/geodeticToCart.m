@@ -42,7 +42,7 @@ function X = geodeticToCart( geodetic, radii )
     S = quadric.scale(quadric.unitSphere,[2,4,5]);
     % Find a point on the surface by intersecting a ray
     p = [0;0;0];
-    u = [1;0;tand(15)];
+    u = [1;tand(15);tand(-15)];
     u = u./sqrt(sum(u.^2));
     R = [p, u];
     X = quadric.intersectRay(S,R);
