@@ -5,8 +5,9 @@ function X = geodeticToCart( geodetic, radii )
 %  X = quadric.geodeticToCart( geodetic, radii )
 %
 % Description:
-%   Converts from geodetic coordinates (latitude, longitude, elevation) on
-%   the ellipsoidal surface to Cartesian (x, y, z) coordinates.
+%   Converts from geodetic coordinates (latitude - beta, longitude - omega,
+%   elevation) on the ellipsoidal surface to Cartesian (x, y, z)
+%   coordinates.
 %
 %   The coordinates are with reference to a centered, aligned ellipsoid.
 %   The radii must be provided in the "canonical" order returned by
@@ -14,7 +15,10 @@ function X = geodeticToCart( geodetic, radii )
 %   this order [a <= b <= c].
 %
 %   The operations are taken from a function written by Sebahattin Bektas,
-%   (sbektas@omu.edu.tr) 19 Mayis University, Samsun
+%   (sbektas@omu.edu.tr):
+%
+%       Bekta?, Sebahattin. "Geodetic computations on triaxial ellipsoid."
+%       International Journal of Mining Science (IJMS) 1.1 (2015): 25-34.
 %
 % Inputs:
 %   geodetic              - 3x1 vector that provides the geodetic
@@ -38,12 +42,12 @@ function X = geodeticToCart( geodetic, radii )
     S = quadric.scale(quadric.unitSphere,[2,4,5]);
     % Find a point on the surface by intersecting a ray
     p = [0;0;0];
-    u = [1;tand(15);0];
+    u = [1;0;tand(15)];
     u = u./sqrt(sum(u.^2));
     R = [p, u];
     X = quadric.intersectRay(S,R);
     geodetic = quadric.cartToGeodetic( X, quadric.radii(S) );
-    Xprime = quadric.geodeticToCart( geodetic, quadric.radii(S) )
+    Xprime = quadric.geodeticToCart( geodetic, quadric.radii(S) );
     assert(max(abs(X-Xprime)) < 1e-6);
 %}
 
