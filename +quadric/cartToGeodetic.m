@@ -90,9 +90,11 @@ origCenter = quadric.center(S);
 S = quadric.translate(S,-origCenter);
 X = X-origCenter;
 
-% Rotate the quadric so that it is aligned with the cardinal axes.
-% Rotate the point accordingly.
+% Rotate the quadric so that it is aligned with the cardinal axes and in
+% the cardinal orientation.
 [S, rotMat] = quadric.alignAxes(S);
+
+% Subject the Cartesian point to the corresponding rotation.
 X = (X'*rotMat)';
 
 % The geodetic is undefined exactly at the umbilical points on the
