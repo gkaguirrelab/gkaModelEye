@@ -1,6 +1,9 @@
 function dimensionRank = dimensionSizeRank(S)
 % Returns the ordering of dimensions by the largest to smallest semi-axes
 %
+% Syntax:
+%  dimensionRank = quadric.dimensionSizeRank(S)
+%
 % Description:
 %   A quadric has three semi-axis values (A B C), defined in three
 %   dimensions (x, y, z). For any given quadric, which may further be
@@ -17,7 +20,7 @@ function dimensionRank = dimensionSizeRank(S)
 %   between -45 and 45 degrees w.r.t. to the x axis.
 %
 % Inputs:
-%   S                     - 1x10 vector or 4x4 matrix specifyin the quadric
+%   S                     - 1x10 vector or 4x4 matrix of the quadric
 %                           surface.
 %
 % Outputs:
@@ -36,7 +39,7 @@ if isequal(size(S),[1 10])
     S = quadric.vecToMatrix(S);
 end
 
-% solve the eigenproblem
+% Solve the eigenproblem
 [evecs,~] = svd(-S( 1:3, 1:3 ) );
 
 % Obtain the Euler angles

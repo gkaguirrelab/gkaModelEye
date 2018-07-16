@@ -1,8 +1,26 @@
 function S = rotate( S, r )
-%UNTITLED7 Summary of this function goes here
-%   Detailed explanation goes here
-
-
+% Rotates a quadric surface by the specified Euler angles
+%
+% Syntax:
+%  S = quadric.rotate( S, r )
+%
+% Description:
+%   
+%
+%   S can be provided as a vector or matrix, and the returned quadric will
+%   be of the same form.
+%
+% Inputs:
+%   S                     - 1x10 vector or 4x4 matrix of the quadric
+%                           surface.
+%   r                     - 1x3 vector of Euler angles
+% Outputs:
+%   S                     - 1x10 vector or 4x4 matrix of the quadric
+%                           surface, having been subjected to rotation
+%
+% Examples:
+%{
+%}
 
 % If the quadric surface was passed in vector form, convert to matrix
 returnVecFlag = false;

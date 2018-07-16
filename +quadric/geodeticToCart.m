@@ -2,7 +2,7 @@ function X = geodeticToCart( geodetic, S )
 % Converts geodetic to Cartesian coordinates on an ellipsoidal surface
 %
 % Syntax:
-%  X = quadric.geodeticToCart( geodetic, radii )
+%  X = quadric.geodeticToCart( geodetic, S )
 %
 % Description:
 %   Converts from geodetic coordinates (latitude - phi, longitude - lambda,
@@ -35,7 +35,7 @@ function X = geodeticToCart( geodetic, S )
 %                           the longitude over the range -180:180.
 %                           Elevation takes a value of zero for a point
 %                           that is on the surface of ellipsoid.
-%   S                     - 1x10 vector or 4x4 matrix specifyin the quadric
+%   S                     - 1x10 vector or 4x4 matrix of the quadric
 %                           surface.
 %
 % Outputs:
@@ -82,6 +82,8 @@ radii = quadric.radii(S);
 a=radii(3);b=radii(2);c=radii(1);
 
 % This next block contains essentially unedited code from Bektas.
+% https://www.mathworks.com/matlabcentral/fileexchange/46239-converter-geodetic-coordinates-to-cartesian-coordinates
+
 ro=180/pi; % convert degrees to radians
 phi=geodetic(1);lambda=geodetic(2);height=geodetic(3);
 

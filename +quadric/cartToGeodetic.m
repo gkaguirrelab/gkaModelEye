@@ -2,7 +2,7 @@ function geodetic = cartToGeodetic( X, S )
 % Converts Cartesian to geodetic coordinates on an ellipsoidal surface
 %
 % Syntax:
-%   geodetic = carToGeodetic( X, S )
+%   geodetic = quadric.cartToGeodetic( X, S )
 %
 % Description:
 %   Converts from Cartesian (x, y, z) coordinates on the ellipsoidal
@@ -29,7 +29,7 @@ function geodetic = cartToGeodetic( X, S )
 % Inputs:
 %   X                     - 3x1 vector containing the [x, y, z] coordinates
 %                           of the point.
-%   S                     - 1x10 vector or 4x4 matrix specifyin the quadric
+%   S                     - 1x10 vector or 4x4 matrix of the quadric
 %                           surface.
 %
 % Outputs:
@@ -112,6 +112,7 @@ a=radii(3);b=radii(2);c=radii(1);
 x=X(3);y=X(2);z=X(1);
 
 % This next block contains essentially unedited code from Bektas.
+% https://www.mathworks.com/matlabcentral/fileexchange/46248-converter-cartesian-coordinate-to-geodetic-coordinate
 
 % Constants
 nIterations= 20; % number of loops to refine the estimate
