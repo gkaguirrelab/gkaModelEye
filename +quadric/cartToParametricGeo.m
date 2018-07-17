@@ -1,16 +1,17 @@
-function geodetic = cartToGeodetic( X, S )
-% Converts Cartesian to geodetic coordinates on an ellipsoidal surface
+function geodetic = cartToParametricGeo( X, S )
+% Converts Cartesian to parametric geodetic coordinates on an ellipsoid
 %
 % Syntax:
-%   geodetic = quadric.cartToGeodetic( X, S )
+%   geodetic = quadric.cartToParametricGeo( X, S )
 %
 % Description:
 %   Converts from Cartesian (x, y, z) coordinates on the ellipsoidal
-%   surface to geodetic (latitude, longitude, elevation) coordinates.
+%   surface to parametric geodetic (latitude, longitude, elevation)
+%   coordinates.
 %
 %   The routine takes a coordinate (X) and a quadric (S). A geodetic
 %   coordinate is returned of the form latitude (phi), longitude (lambda),
-%   and height (distance from the quadric surface). The geodetic
+%   and elevation (distance from the quadric surface). The geodetic
 %   coordinates are with reference to a centered, non-rotated ellipsoid,
 %   with the axes arranged in a standard form such that they are in
 %   descending order of length (i.e., semi-axes ordered a => b => c). The
@@ -19,6 +20,11 @@ function geodetic = cartToGeodetic( X, S )
 %   origin, and rotated to be axis-aligned. The semi-axes of the quadric
 %   and point are re-ordered to match the standard form and the geodetic
 %   coordinates computed.
+%
+%   The distinction between parametric and orthogonal geodetic coordinates
+%   on the ellipsoidal surface is discussed here:
+%
+%       https://geographiclib.sourceforge.io/html/triaxial.html
 %
 %   The operations are modified from a function written by Sebahattin
 %   Bektas, (sbektas@omu.edu.tr):
@@ -52,8 +58,8 @@ function geodetic = cartToGeodetic( X, S )
     u = u./sqrt(sum(u.^2));
     R = [p, u];
     X = quadric.intersectRay(S,R);
-    geodetic = quadric.cartToGeodetic( X, S );
-    Xprime = quadric.geodeticToCart( geodetic, S );
+    geodetic = quadric.cartToParametricGeo( X, S );
+    Xprime = quadric.parametricGeoToCart( geodetic, S );
     assert(max(abs(X-Xprime)) < 1e-6);
 %}
 %{
@@ -70,8 +76,8 @@ function geodetic = cartToGeodetic( X, S )
         for p2=-1:2:1
             for p3=-1:2:1
                 quadrant = [p1; p2; p3];
-                geodetic = quadric.cartToGeodetic( X.*quadrant, S );
-                Xprime = quadric.geodeticToCart( geodetic, S);
+                geodetic = quadric.cartToParametricGeo( X.*quadrant, S );
+                Xprime = quadric.parametricGeoToCart( geodetic, S);
                 fprintf('X: %d %d %d; geo: %d %d %f; Xp: %d %d %d \n',sign(p1),sign(p2),sign(p3),sign(geodetic(1)),sign(geodetic(2)),geodetic(3),sign(Xprime(1)),sign(Xprime(2)),sign(Xprime(3)));
             end
         end
@@ -157,10 +163,10 @@ end
 phi=ro*atan2(zo*(1-ee2)/(1-ex2),sqrt((1-ee2)^2*xo^2+yo^2));
 lambda=ro*atan2(1/(1-ee2)*yo,xo);
 
-% Calculate the height of the point w.r.t. the quadric surface
-height=sign(z-zo)*sign(zo)*sqrt((x-xo)^2+(y-yo)^2+(z-zo)^2);
+% Calculate the elevation of the point w.r.t. the quadric surface
+elevation=sign(z-zo)*sign(zo)*sqrt((x-xo)^2+(y-yo)^2+(z-zo)^2);
 
 % Assemble the geodetic to return
-geodetic=[phi; lambda; height];
+geodetic=[phi; lambda; elevation];
 
 end

@@ -1,25 +1,28 @@
-function X = geodeticToCart( geodetic, S )
-% Converts geodetic to Cartesian coordinates on an ellipsoidal surface
+function X = parametricGeoToCart( geodetic, S )
+% Converts parametric geodetic to Cartesian coordinates on an ellipsoid
 %
 % Syntax:
-%  X = quadric.geodeticToCart( geodetic, S )
+%  X = quadric.parametricGeoToCart( geodetic, S )
 %
 % Description:
-%   Converts from geodetic coordinates (latitude - phi, longitude - lambda,
-%   elevation) on the ellipsoidal surface to Cartesian (x, y, z)
-%   coordinates.
+%   Converts from the parametric geodetic coordinates (latitude - phi,
+%   longitude - lambda, elevation) on the ellipsoidal surface to Cartesian
+%   (x, y, z) coordinates.
 %
-%   The routine takes a coordinate (X) and a quadric (S). A geodetic
-%   coordinate is returned of the form latitude (phi), longitude (lambda),
-%   and height (distance from the quadric surface). The geodetic
-%   coordinates are with reference to a centered, non-rotated ellipsoid,
-%   with the axes arranged in a standard form such that they are in
-%   descending order of length (i.e., semi-axes ordered a => b => c). The
-%   variable S can be supplied in either vector or matrix form. The quadric
-%   (and associated point X) is translated to place the center at the
-%   origin, and rotated to be axis-aligned. The semi-axes of the quadric
-%   and point are re-ordered to match the standard form and the geodetic
-%   coordinates computed.
+%   The routine takes a geodetic coordinate of the form latitude (phi),
+%   longitude (lambda), and elevation (distance from the quadric surface),
+%   and a quadric (S). A coordinate (X) and is returned. The geodetic
+%   coordinates are with reference to a centered, non-rotated ellipsoid.
+%   The variable S can be supplied in either vector or matrix form. The
+%   quadric (and associated point X) is translated to place the center at
+%   the origin, and rotated to be axis-aligned. The semi-axes of the
+%   quadric and point are re-ordered to match the standard form and the
+%   geodetic coordinates computed.
+%
+%   The distinction between parametric and orthogonal geodetic coordinates
+%   on the ellipsoidal surface is discussed here:
+%
+%       https://geographiclib.sourceforge.io/html/triaxial.html
 %
 %   The operations are modified from a function written by Sebahattin
 %   Bektas, (sbektas@omu.edu.tr):
@@ -53,8 +56,8 @@ function X = geodeticToCart( geodetic, S )
     u = u./sqrt(sum(u.^2));
     R = [p, u];
     X = quadric.intersectRay(S,R);
-    geodetic = quadric.cartToGeodetic( X, quadric.radii(S) );
-    Xprime = quadric.geodeticToCart( geodetic, quadric.radii(S) );
+    geodetic = quadric.cartToParametricGeo( X, quadric.radii(S) );
+    Xprime = quadric.parametricGeoToCart( geodetic, quadric.radii(S) );
     assert(max(abs(X-Xprime)) < 1e-6);
 %}
 
@@ -85,15 +88,15 @@ a=radii(3);b=radii(2);c=radii(1);
 % https://www.mathworks.com/matlabcentral/fileexchange/46239-converter-geodetic-coordinates-to-cartesian-coordinates
 
 ro=180/pi; % convert degrees to radians
-phi=geodetic(1);lambda=geodetic(2);height=geodetic(3);
+phi=geodetic(1);lambda=geodetic(2);elevation=geodetic(3);
 
 ex2=(a^2-c^2)/a^2;
 ee2=(a^2-b^2)/a^2;
 V=a/sqrt(1-ex2*sin(phi/ro)^2-ee2*cos(phi/ro)^2*sin(lambda/ro)^2);
 
-x=(V+height)*cos(lambda/ro)*cos(phi/ro);
-y=(V*(1-ee2)+height)*sin(lambda/ro)*cos(phi/ro);
-z=(V*(1-ex2)+height)*sin(phi/ro);
+x=(V+elevation)*cos(lambda/ro)*cos(phi/ro);
+y=(V*(1-ee2)+elevation)*sin(lambda/ro)*cos(phi/ro);
+z=(V*(1-ex2)+elevation)*sin(phi/ro);
 
 X=[z; y; x];
 
