@@ -9,8 +9,8 @@ function X = parametricGeoToCart( geodetic, S )
 %   longitude - lambda, elevation) on the ellipsoidal surface to Cartesian
 %   (x, y, z) coordinates.
 %
-%   The routine takes a geodetic coordinate of the form latitude (phi),
-%   longitude (lambda), and elevation (distance from the quadric surface),
+%   The routine takes a geodetic coordinate of the form phi (latitude),
+%   lambda (longitude), and elevation (distance from the quadric surface),
 %   and a quadric (S). A coordinate (X) and is returned. The geodetic
 %   coordinates are with reference to a centered, non-rotated ellipsoid.
 %   The variable S can be supplied in either vector or matrix form. The
@@ -32,12 +32,11 @@ function X = parametricGeoToCart( geodetic, S )
 %
 % Inputs:
 %   geodetic              - 3x1 vector that provides the geodetic
-%                           coordinates latitude, longitude, and elevation
-%                           in units of degrees and Cartesian distance. The
-%                           latitude is defined over the range -90:90, and
-%                           the longitude over the range -180:180.
-%                           Elevation takes a value of zero for a point
-%                           that is on the surface of ellipsoid.
+%                           coordinates phi, lambda, and elevation in units
+%                           of degrees and Cartesian distance. Phi is
+%                           defined over the range -90:90, and lambda over
+%                           -180:180. Elevation takes a value of zero for a
+%                           point that is on the surface of ellipsoid.
 %   S                     - 1x10 vector or 4x4 matrix of the quadric
 %                           surface.
 %
@@ -46,6 +45,43 @@ function X = parametricGeoToCart( geodetic, S )
 %                           of the point.
 %
 % Examples:
+%{
+    % Show an ellipsoidal surface with lines of constant phi and lambda
+    S = quadric.scale(quadric.unitSphere,[1 1.5 0.5]);
+    F = quadric.vecToFunc(quadric.matrixToVec(S));
+    figure
+    [xx, yy, zz] = meshgrid( linspace(-2,2,100), linspace(-2,2,100), linspace(-2,2,100));
+    vertices = isosurface(xx, yy, zz, F(xx, yy, zz), 0);
+    p = patch(vertices);
+    p.FaceColor =[.9 .9 .9];
+    p.EdgeColor = 'none';
+    alpha(.8);
+    daspect([1 1 1])
+    view([40 30]); 
+    axis tight
+    axis equal
+    camlight
+    lighting gouraud
+    hold on
+    % Plot lines of varying beta
+    for phi = -90:10:90
+        coords =[];
+        for lambda = -180:3:180
+            coords(end+1,:)=quadric.parametricGeoToCart( [phi, lambda, 0], S );
+        end
+        plot3(coords(:,1),coords(:,2),coords(:,3),'-b');
+    end
+    fprintf('Lines of constant beta in blue\n');
+    % Plot lines of varying omega
+    for lambda = -180:10:180
+        coords =[];
+        for phi = -90:3:90
+            coords(end+1,:)=quadric.parametricGeoToCart( [phi, lambda, 0], S );
+        end
+        plot3(coords(:,1),coords(:,2),coords(:,3),'-g');
+    end
+    fprintf('Lines of constant omega in green\n');
+%}
 %{
     %% Confirm the invertibility of the transform
     % Define an ellipsoidal surface
@@ -56,8 +92,8 @@ function X = parametricGeoToCart( geodetic, S )
     u = u./sqrt(sum(u.^2));
     R = [p, u];
     X = quadric.intersectRay(S,R);
-    geodetic = quadric.cartToParametricGeo( X, quadric.radii(S) );
-    Xprime = quadric.parametricGeoToCart( geodetic, quadric.radii(S) );
+    geodetic = quadric.cartToParametricGeo( X, S );
+    Xprime = quadric.parametricGeoToCart( geodetic, S );
     assert(max(abs(X-Xprime)) < 1e-6);
 %}
 

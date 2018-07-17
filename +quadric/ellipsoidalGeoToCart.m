@@ -34,10 +34,9 @@ function X = ellipsoidalGeoToCart( geodetic, S )
 %
 % Inputs:
 %   geodetic              - 3x1 vector that provides the geodetic
-%                           coordinates beta, omega, and elevation
-%                           in units of degrees. The
-%                           latitude is defined over the range -90:90, and
-%                           the longitude over the range -180:180.
+%                           coordinates beta, omega, and elevation in units
+%                           of degrees. Beta is defined over the range
+%                           -90:90, and omega over the range -180:180.
 %                           Elevation takes a value of zero for a point
 %                           that is on the surface of ellipsoid.
 %   S                     - 1x10 vector or 4x4 matrix of the quadric
@@ -49,8 +48,7 @@ function X = ellipsoidalGeoToCart( geodetic, S )
 %
 % Examples:
 %{
-    % Show an ellipsoidal surface with lines corresponding to beta and
-    % omega
+    % Show an ellipsoidal surface with lines of constant beta and omega
     S = quadric.scale(quadric.unitSphere,[1 1.5 0.5]);
     F = quadric.vecToFunc(quadric.matrixToVec(S));
     figure
@@ -75,6 +73,7 @@ function X = ellipsoidalGeoToCart( geodetic, S )
         end
         plot3(coords(:,1),coords(:,2),coords(:,3),'-b');
     end
+    fprintf('Lines of constant beta in blue\n');
     % Plot lines of varying omega
     for omega = -180:10:180
         coords =[];
@@ -83,6 +82,7 @@ function X = ellipsoidalGeoToCart( geodetic, S )
         end
         plot3(coords(:,1),coords(:,2),coords(:,3),'-g');
     end
+    fprintf('Lines of constant omega in green\n');
 %}
 
 

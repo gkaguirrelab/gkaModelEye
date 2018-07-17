@@ -10,7 +10,7 @@ function geodetic = cartToParametricGeo( X, S )
 %   coordinates.
 %
 %   The routine takes a coordinate (X) and a quadric (S). A geodetic
-%   coordinate is returned of the form latitude (phi), longitude (lambda),
+%   coordinate is returned of the form phi (latitude), lambda (longitude),
 %   and elevation (distance from the quadric surface). The geodetic
 %   coordinates are with reference to a centered, non-rotated ellipsoid,
 %   with the axes arranged in a standard form such that they are in
@@ -40,12 +40,11 @@ function geodetic = cartToParametricGeo( X, S )
 %
 % Outputs:
 %   geodetic              - 3x1 vector that provides the geodetic
-%                           coordinates latitude, longitude, and elevation
-%                           in units of degrees and Cartesian distance. The
-%                           latitude is defined over the range -90:90, and
-%                           the longitude over the range -180:180.
-%                           Elevation takes a value of zero for a point
-%                           that is on the surface of the ellipsoid.
+%                           coordinates phi, lambda, and elevation in units
+%                           of degrees and Cartesian distance. Phi is
+%                           defined over the range -90:90, and lambda over
+%                           -180:180. Elevation takes a value of zero for a
+%                           point that is on the surface of ellipsoid.
 %
 % Examples:
 %{
