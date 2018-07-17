@@ -127,7 +127,8 @@ function plotSurface(F,boundingBox,surfColor,surfAlpha)
 [xx, yy, zz]=meshgrid( linspace(boundingBox(1),boundingBox(2),100),...
     linspace(boundingBox(3),boundingBox(4),100),...
     linspace(boundingBox(5),boundingBox(6),100));
-    vertices = isosurface(xx, yy, zz, F(xx, yy, zz), 0);
+
+vertices = isosurface(xx, yy, zz, F(xx, yy, zz), 0);
 
 p = patch(vertices);
 p.FaceColor = surfColor;
