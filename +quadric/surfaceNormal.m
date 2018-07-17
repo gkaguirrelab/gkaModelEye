@@ -1,20 +1,29 @@
 function N = surfaceNormal(S,X,side,surfaceTolerance)
+% Returns a vector that is normal to a quadric surface at a coordinate
+%
+% Syntax:
+%  N = surfaceNormal(S,X,side,surfaceTolerance)
+%
+% Description:
+%   Given a quadric surface (S) and a coordinate on that surface, the
+%   routine returns a vector that identifies the normal to the surface at
+%   that coordiate.
 %
 % Inputs:
 %   S                     - 4x4 quadratic surface matrix
 %   X                     - 3x1 vector specifying a point on the surface
-%   side                  - Scalar, taking the value of -1 or 1. Defines
-%                           whether the first (-1) or second (+1)
-%                           intersection point should be returned as X1.
-%                           For an ellipsoid, setting side=-1 causes the
-%                           ray to intersect the convex surface, and
-%                           setting side=+1 causes the ray to intersect the
-%                           concave surface. For a two-sheeted hyperboloid,
-%                           with the ray traveling down the open axis,
-%                           setting side = -1 means that the first point of
-%                           intersection will be within the interior of one
-%                           of the hyperboloid sheets, and thus an
-%                           intersection with a concave surface.
+%   side                  - Scalar, taking the value of -1 or 1. The
+%                           quadric surface has two sides at every point.
+%                           This value determines if the "interior" or
+%                           "exterior" surface normal is returned. For  an
+%                           ellipsoid, setting side=-1 causes the routine
+%                           to report the normal on the convex side, and
+%                           setting side=+1 causes the routine to report
+%                           the normal on the concave side. For a two-
+%                           sheeted hyperboloid, with the ray traveling
+%                           down the open axis, setting side = -1 returns
+%                           the normal from the interior of one of the
+%                           hyperboloid sheets, and thus the concave side.
 %                           Default value is 1.
 %   surfaceTolerance        Scalar. Defines the tolerance on the check to
 %                           ensure that the passed X coordinate is on the
@@ -26,13 +35,13 @@ function N = surfaceNormal(S,X,side,surfaceTolerance)
 %                           vector of the form [p; d], corresponding to
 %                               R = p + t*u,
 %                           where p is vector origin, d is the direction
-%                           expressed as a unit steo, and t has an
+%                           expressed as a unit step, and t has an
 %                           obligatory value of unity.
 %
 % Examples:
 %{
     S = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 -1];
-    X = [0 0.707106781186547 0.707106781186547];
+    X = [0; 0.707106781186547; 0.707106781186547];
     N = quadric.surfaceNormal(S,X);
 %}
 

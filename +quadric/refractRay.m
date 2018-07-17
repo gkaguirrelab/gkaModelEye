@@ -1,4 +1,23 @@
 function Rr = refractRay(R,N,nRel)
+% Returns the refracted ray given incident ray, surface normal, and index 
+%
+% Syntax:
+%  Rr = quadric.refractRay(R,N,nRel)
+%
+% Description:
+%   Snell's Law of optical refraction may be expressed in three-dimensions
+%   in matrix form. This routine provides the refracted ray after an
+%   incident ray encounters a surface with a given surface normal, and
+%   possesing a given relative index of refraction. If the ray is found to
+%   experience total internal reflection, the routine returns nans for the
+%   refracted ray.
+%
+%   This approach to optical systems is described in:
+%
+%       Langenbucher, Achim, et al. "Ray tracing through a schematic eye
+%       containing second?order (quadric) surfaces using 4× 4 matrix
+%       notation." Ophthalmic and Physiological Optics 26.2 (2006):
+%       180-188.
 %
 % Inputs:
 %   R                     - 3x2 matrix that specifies the incident ray as a
@@ -102,10 +121,8 @@ Rr(:,1) = N(:,1);
     R0 = [r0x;r0y;r0z];
     R1 = [r1x;r1y;r1z];
     eq = cross(Q,n0*cross(R0,Q)) == cross(Q,n1*cross(R1,Q));
-
     eq_R = solve(eq,R1);
 %}
-
 
 % Calculate the direction vector of the refracted ray. This equation is
 % taken from: http://www.starkeffects.com/snells-law-vector.shtml

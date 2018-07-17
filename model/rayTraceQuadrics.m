@@ -2,12 +2,19 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 % Returns the position and angle of a resultant ray w.r.t. the optical axis
 %
 % Syntax:
-%  [outputRay, intersectionCoords, vectorDirections] = rayTraceQuadrics(coordsInitial, inputRay, opticalSystem)
+%  [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %
 % Description:
 %   This routine implements 3D skew ray tracing through generalized quadric
 %   surfaces (including ellipsoids and hyperboloids). The surfaces can have
 %   arbitrary positions and orientations.
+%
+%   This approach to optical systems is described in:
+%
+%       Langenbucher, Achim, et al. "Ray tracing through a schematic eye
+%       containing second?order (quadric) surfaces using 4× 4 matrix
+%       notation." Ophthalmic and Physiological Optics 26.2 (2006):
+%       180-188.
 %
 % Inputs:
 %   inputRay              - 3x2 matrix that specifies the ray as a unit 
@@ -15,10 +22,9 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %                               R = p + t*u
 %                           where p is vector origin, d is the direction
 %                           expressed as a unit step, and t is unity.
-%   opticalSystem         - An mx18 matrix, where m is the 
-%                           number of surfaces in the model, including the
-%                           initial state of the ray. Each row contains the
-%                           values:
+%   opticalSystem         - An mx19 matrix, where m is the number of
+%                           surfaces in the model, including the initial
+%                           state of the ray. Each row contains the values:
 %                               [S side bb must n]
 %                           where:
 %                               S     - 1x10 quadric surface vector
@@ -41,11 +47,11 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %                           conditions of the ray. Thus, the refractive
 %                           index value given in the first row specifies
 %                           the index of the medium in which the ray
-%                           arises. The center and radius values for the
-%                           first row are ignored. The matrix may have rows
-%                           of all nans. These are used to define a fixed
-%                           sized input variable for compiled code. They
-%                           are removed from the matrix and have no effect.
+%                           arises. The other values for the first row are
+%                           ignored. The matrix may have rows of all nans.
+%                           These are used to define a fixed sized input
+%                           variable for compiled code. They are removed
+%                           from the matrix and have no effect.
 %
 % Outputs:
 %   outputRay             - 3x2 matrix that specifies the ray as a unit 
@@ -167,12 +173,16 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 
 
 %% Initialize variables
+
 % Strip the optical system of any rows which are all nans
 opticalSystem=opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
+
 % Determine the number of surfaces
 nSurfaces = size(opticalSystem,1);
+
 % Define R (the current state of the ray) as the inputRay
 R=inputRay;
+
 % Pre-allocate outputRay and rayPath
 outputRay = nan(3,2);
 rayPath = nan(3,nSurfaces);
@@ -182,7 +192,7 @@ rayPath(:,1)=R(:,1);
 %% Peform the ray trace
 for ii=2:nSurfaces
     
-    % Extract components from optical system vector
+    % Extract components from the optical system row
     S = quadric.vecToMatrix(opticalSystem(ii,1:10));
     side = opticalSystem(ii,11);
     boundingBox = opticalSystem(ii,12:17);
@@ -197,8 +207,8 @@ for ii=2:nSurfaces
         return
     end
     
-    % Get the surface normal. Pass empty for the last variable to skip
-    % checking if the X coordinate is on the surface of the quadric
+    % Get the surface normal. Pass empty for the last input variable to
+    % skip checking if the X coordinate is on the surface of the quadric
     N = quadric.surfaceNormal(S,X,side,[]);
 
     % Get the refracted ray

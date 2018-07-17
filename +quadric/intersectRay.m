@@ -1,8 +1,8 @@
 function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
-%
+% Find the coordinates of intersection of a ray with a quadric surface
 %
 % Syntax:
-%  [X1, X2] = intersectRay(S,R)
+%  [X1, X2] = quadric.intersectRay(S,R,side,boundingBox,bbTol)
 %
 % Description:
 %   Returns the coordinates of the points of intersection of a ray with a
@@ -115,7 +115,6 @@ end
 if nargin==5
     bbTol = 1e-2;
 end
-
 
 % Pre-allocate the output variables
 X1 = nan(3,1);
