@@ -1,4 +1,4 @@
-function [d, theta] = arcLength(S,p1,p2,surfaceTolerance)
+function [d, theta] = arcLength(S,X1,X2)
 % Find the arc distance between two points on a quadric surface
 %
 % Syntax:
@@ -7,7 +7,7 @@ function [d, theta] = arcLength(S,p1,p2,surfaceTolerance)
 % Description:
 %   Returns the arc length distance on the quadric surface between two
 %   points. This currently only works for ellipsoids.
-%
+%https://geographiclib.sourceforge.io/html/triaxial.html
 % Inputs:
 %   S                     - 4x4 quadric surface matrix
 %   p1, p2                - 3x1 vectors that specify the location of points
@@ -21,61 +21,52 @@ function [d, theta] = arcLength(S,p1,p2,surfaceTolerance)
 %
 % Examples:
 %{
+
+    S = quadric.scale(quadric.unitSphere,[6378172, 6378103, 6356753]);
+    % Pick a point on the surface
+    G = [1; 0; 0];
+    X1 = quadric.ellipsoidalGeoToCart( G , S );
+    G = [-80; 5; 0];
+    X2 = quadric.ellipsoidalGeoToCart( G , S );
+    quadric.arcLength(S,X1,X2);
 %}
 
-
-% Keep the compiler happy by excluding prohibited calls
-coder.extrinsic('warning')
-
-% Handle incomplete input arguments
-if nargin==3
-    surfaceTolerance=1e-10;
+% If the quadric surface was passed in vector form, convert to matrix
+if isequal(size(S),[1 10])
+    S = quadric.vecToMatrix(S);
 end
 
-% Pre-allocate the output variables
-d = nan; theta = nan;
+% Obtain the geodetics for the cartesian coordinates
+G1 = quadric.cartToEllipsoidalGeo( X1, S );
+G2 = quadric.cartToEllipsoidalGeo( X2, S );
 
-% Could have test here that S corresponds to an ellipsoid
-%% ADD THIS
 
-% Optionally test that p1 and p2 are on the surface of the quadric
-if ~isempty(surfaceTolerance)
-    funcS = quadric.vecToFunc(quadric.matrixToVec(S));
-    if abs(funcS(p1(1),p1(2),p1(3))) > surfaceTolerance || abs(funcS(p2(1),p2(2),p2(3))) > surfaceTolerance
-        warning('One or more passed points are not on the quadric surface within tolerance (%f)',surfaceTolerance);
-        return
-    end
-end
+% Identify the angle alpha between the two points, where alpha is the angle
+% the geodesic makes with lines of constant omega
+alpha = 0;
 
-% Obtain the coordinates of the center of the quadric surface
-centerS = quadric.center(S);
+% Obtain the radii of the quadric surface and distribute the values. We
+% adopt the canonical order of a => b => c, but the order returned after
+% alignment of the axes is a <= b <= c. This is why c is mapped to the
+% first value in the radii, and why the Cartesian coordinate is assembled
+% as [z y x]
+radii = quadric.radii(quadric.alignAxes(S));
+a=radii(3);b=radii(2);c=radii(1);
 
-% The points p1, p2, and c1 define a plane. Obtain the radii of the ellipse
-% that is formed by the intersection of S and the plane
-[semiMajor,semiMinor,centerX,centerY,centerZ] = planeEllipsoidIntersect(S,p1,p2,centerS);
+% Convert degrees to radians
+ro=180/pi; 
 
-% Obtain the angles theta1 and theta2. Theta1 is the angle between the apex of the
-% ellipsoid and p1, w.r.t. the center of the ellipsoid.
+% Calculate gamma
+gamma = (b^2 - c^2)*cos(G1(1)/ro)^2*sin(alpha/ro)^2-(a^2-b^2)*sin(G1(2)/ro)^2*cos(alpha/ro)^2;
 
-% normalized vectors
-p1 = quadric.normalizeVector(p1 - centerS);
-p2 = quadric.normalizeVector(p2 - centerS);
+ds_dBeta = @(beta) (sqrt(b.^2*sin(beta./ro).^2+c.^2.*cos(beta./ro).^2).*sqrt((b.^2-c.^2)*cos(beta./ro).^2-gamma))./ ...
+    sqrt(a.^2-b.^2.*sin(beta./ro).^2-c.^2*cos(beta./ro).^2);
+ds_dOmega = @(omega) (sqrt(a.^2.*sin(omega./ro).^2+b.^2*cos(omega./ro).^2).*sqrt((a.^2-b.^2).*sin(omega./ro).^2+gamma))./ ...
+    sqrt(a.^2.*sin(omega./ro).^2+b.^2.*cos(omega./ro).^2-c.^2);
 
-% compute angle
-theta = acos(dot(p1, p2, 2));
-
-% setup the elliptic integral
-ellipticIntegral=@(theta) sqrt(1-sqrt(1-eye.posteriorChamber.radii(2).^2/eye.posteriorChamber.radii(1).^2)^2.*(sin(theta)).^2);
-ellipticIntegral_p1p3=@(theta) sqrt(1-sqrt(1-eye.posteriorChamber.radii(3).^2/eye.posteriorChamber.radii(1).^2)^2.*(sin(theta)).^2);
-arcLength_p1p2 = @(theta1,theta2) eye.posteriorChamber.radii(1).*integral(ellipticIntegral_p1p2, theta1, theta2);
-arcLength_p1p3 = @(theta1,theta2) eye.posteriorChamber.radii(1).*integral(ellipticIntegral_p1p3, theta1, theta2);
-
-% For the calculation, the first theta value is zero, as we are
-% calculating distance from the posterior chamber apex (i.e., the
-% intersection of the optical axis with the retina).
-axes.visual.mmRetina = [arcLength_p1p2(0,deg2rad(axes.visual.degRetina(1))), arcLength_p1p3(0,deg2rad(axes.visual.degRetina(2))), 0];
-axes.opticDisc.mmRetina = [arcLength_p1p2(0,deg2rad(axes.opticDisc.degRetina(1))), arcLength_p1p3(0,deg2rad(axes.opticDisc.degRetina(2))), 0];
-
+s_beta = real(integral(ds_dBeta,G1(1)/ro,G2(1)/ro));
+s_omega = real(integral(ds_dOmega,G1(2)/ro,G2(2)/ro));
+s = s_beta+s_omega;
 
 
 end
