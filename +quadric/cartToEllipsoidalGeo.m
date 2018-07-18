@@ -10,16 +10,15 @@ function geodetic = cartToEllipsoidalGeo( X, S )
 %   coordinates.
 %
 %   The routine takes a coordinate (X) and a quadric (S). A geodetic
-%   coordinate is returned of the form latitude (phi), longitude (lambda),
-%   and elevation (distance from the quadric surface). The geodetic
-%   coordinates are with reference to a centered, non-rotated ellipsoid,
-%   with the axes arranged in a standard form such that they are in
-%   descending order of length (i.e., semi-axes ordered a => b => c). The
-%   variable S can be supplied in either vector or matrix form. The quadric
-%   (and associated point X) is translated to place the center at the
-%   origin, and rotated to be axis-aligned. The semi-axes of the quadric
-%   and point are re-ordered to match the standard form and the geodetic
-%   coordinates computed.
+%   coordinate is returned of the form beta (latitude, omega (longitude),
+%   and elevation=0. The geodetic coordinates are with reference to a
+%   centered, non-rotated ellipsoid, with the axes arranged in a standard
+%   form such that they are in descending order of length (i.e., semi-axes
+%   ordered a => b => c). The variable S can be supplied in either vector
+%   or matrix form. The quadric (and associated point X) is translated to
+%   place the center at the origin, and rotated to be axis-aligned. The
+%   semi-axes of the quadric and point are re-ordered to match the standard
+%   form and the geodetic coordinates computed.
 %
 %   The distinction between parametric and orthogonal geodetic coordinates
 %   on the ellipsoidal surface is discussed here:
@@ -82,11 +81,11 @@ X = (X'*rotMat)';
 % cartesian coordinate and shift these to be slightly non-zero.
 X(X(1:3)==0) = 1e-6;
 
-% Obtain the radii of the quadric surface and distribute the values.
-% Bektas' code expected the radii to be in the order a => b => c, but the
-% order returned after alignment of the axes is a <= b <= c. This is why c
-% is mapped to the first value in the radii, and why the Cartesian
-% coordinate is assembled as [z y x]
+% Obtain the radii of the quadric surface and distribute the values. We
+% adopt the canonical order of a => b => c, but the order returned after
+% alignment of the axes is a <= b <= c. This is why c is mapped to the
+% first value in the radii, and why the Cartesian coordinate is assembled
+% as [z y x]
 radii = quadric.radii(S);
 a=radii(3);b=radii(2);c=radii(1);
 x=X(3);y=X(2);z=X(1);
