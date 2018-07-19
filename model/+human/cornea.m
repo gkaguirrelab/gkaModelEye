@@ -36,30 +36,30 @@ function cornea = cornea(eye, cornealAxis)
 % corresponding to the axial dimension, and b to the horizontal and
 % vertical dimensions. Checking my algebra here:
 %{
-            syms a b R Q
-            eqn1 = R == b^2/a;
-            eqn2 = Q == (b^2 / a^2) - 1;
-            solution = solve([eqn1, eqn2]);
-            solution.a
-            solution.b
+    syms a b R Q
+    eqn1 = R == b^2/a;
+    eqn2 = Q == (b^2 / a^2) - 1;
+    solution = solve([eqn1, eqn2]);
+    solution.a
+    solution.b
 %}
 % We calculate the change in parameters of the Navarro model that
 % would be expected given the Atchison effect for ametropia.
 %{
-            R = @(D) 7.77 + 0.022 .* D;
-            Q = -0.15;
-            a = @(D) R(D) ./ (Q+1);
-            b = @(D) R(D) .* sqrt(1./(Q+1));
-            radiiAtchFront = @(D) [a(D) b(D) b(D)];
-            % Show that the ametropia correction scales all radii equally
-            radiiAtchFront(0)./radiiAtchFront(1)
-            % Calculate the proportion change in radius
-            radiusScalerPerD = 1-a(1)/a(0);
-            radiiNavFront = [14.26   10.43   10.27];
-            radiiNavFrontCorrected = @(D) radiiNavFront.* (D.*radiusScalerPerD+1);
-            % Report the ratio of the Atchison and Navarro axial radii
-            % for the front surface of the cornea; we use this below.
-            atchNavScaler = a(0) ./ radiiNavFront(1)
+    R = @(D) 7.77 + 0.022 .* D;
+    Q = -0.15;
+    a = @(D) R(D) ./ (Q+1);
+    b = @(D) R(D) .* sqrt(1./(Q+1));
+    radiiAtchFront = @(D) [a(D) b(D) b(D)];
+    % Show that the ametropia correction scales all radii equally
+    radiiAtchFront(0)./radiiAtchFront(1)
+    % Calculate the proportion change in radius
+    radiusScalerPerD = 1-a(1)/a(0);
+    radiiNavFront = [14.26   10.43   10.27];
+    radiiNavFrontCorrected = @(D) radiiNavFront.* (D.*radiusScalerPerD+1);
+    % Report the ratio of the Atchison and Navarro axial radii
+    % for the front surface of the cornea; we use this below.
+    atchNavScaler = a(0) ./ radiiNavFront(1)
 %}
 % We set the center of the cornea front surface ellipsoid so that
 % the axial apex (prior to rotation) is at position [0, 0, 0]
@@ -76,27 +76,27 @@ cornea.front.boundingBox=[-4 0 -8 8 -8 8];
 % Therefore, we scale the parameters provided by Atchison to relate
 % to the axial corneal radius specified by Navarro:
 %{
-            R = 6.4;
-            Q = -0.275;
-            a = R ./ (Q+1);
-            b = R .* sqrt(1./(Q+1));
-            % Taken from the prior block of code
-            atchNavScaler = 0.6410;
-            radiiAtchBack = [a b b];
-            % Scale the overall back cornea ellipsoid to match Navarro
-            radiiNavBack = radiiAtchBack./atchNavScaler;
-            % Now scale the relative horizontal and vertical axes so that
-            % the relationship between the horizontal (and vertical) radii
-            % and the axial radius is of the same proportion to the front
-            % surface in the Atchison model
-            radiiAtchFront0D = radiiAtchFront(0);
-            frontHorizToAxAtch = radiiAtchFront0D(2)/radiiAtchFront0D(1);
-            backHorizToAxAtch = b / a;
-            radiiNavFront0D = radiiNavFrontCorrected(0);
-            frontHorizToAxNav = radiiNavFront0D(2)/radiiNavFront0D(1);
-            backHorizToAxNav = radiiNavBack(2)/radiiNavBack(1);
-            targetBackHorizToAxNav = backHorizToAxAtch / frontHorizToAxAtch * frontHorizToAxNav;
-            radiiNavBackCorrected = [a a*targetBackHorizToAxNav a*targetBackHorizToAxNav]./atchNavScaler
+    R = 6.4;
+    Q = -0.275;
+    a = R ./ (Q+1);
+    b = R .* sqrt(1./(Q+1));
+    % Taken from the prior block of code
+    atchNavScaler = 0.6410;
+    radiiAtchBack = [a b b];
+    % Scale the overall back cornea ellipsoid to match Navarro
+    radiiNavBack = radiiAtchBack./atchNavScaler;
+    % Now scale the relative horizontal and vertical axes so that
+    % the relationship between the horizontal (and vertical) radii
+    % and the axial radius is of the same proportion to the front
+    % surface in the Atchison model
+    radiiAtchFront0D = radiiAtchFront(0);
+    frontHorizToAxAtch = radiiAtchFront0D(2)/radiiAtchFront0D(1);
+    backHorizToAxAtch = b / a;
+    radiiNavFront0D = radiiNavFrontCorrected(0);
+    frontHorizToAxNav = radiiNavFront0D(2)/radiiNavFront0D(1);
+    backHorizToAxNav = radiiNavBack(2)/radiiNavBack(1);
+    targetBackHorizToAxNav = backHorizToAxAtch / frontHorizToAxAtch * frontHorizToAxNav;
+    radiiNavBackCorrected = [a a*targetBackHorizToAxNav a*targetBackHorizToAxNav]./atchNavScaler
 %}
 % The center of the back cornea ellipsoid is positioned so that
 % there is 0.55 mm of corneal thickness between the front and back
@@ -120,20 +120,20 @@ cornea.plot.color = {'blue'; 'blue'};
 % were used by Fedtke 2010 in her simulation. These may be used for
 % comparison.
 %{
-            % cornea front
-            R = 7.72;
-            Q = -0.26;
-            a = R ./ (Q+1);
-            b = R .* sqrt(1./(Q+1));
-            [a b b]
-            % cornea back
-            R = 6.5;
-            Q = 0;
-            a = R ./ (Q+1);
-            b = R .* sqrt(1./(Q+1));
-            [a b b]
-            cornea.front.radii = [10.4324    8.9743    8.9743];
-            cornea.back.radii = [6.5000    6.5000    6.5000];
+    % cornea front
+    R = 7.72;
+    Q = -0.26;
+    a = R ./ (Q+1);
+    b = R .* sqrt(1./(Q+1));
+    [a b b]
+    % cornea back
+    R = 6.5;
+    Q = 0;
+    a = R ./ (Q+1);
+    b = R .* sqrt(1./(Q+1));
+    [a b b]
+    cornea.front.radii = [10.4324    8.9743    8.9743];
+    cornea.back.radii = [6.5000    6.5000    6.5000];
 %}
 
 

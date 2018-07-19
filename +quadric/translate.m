@@ -1,4 +1,24 @@
 function St = translate( S, Xt )
+% Translates a quadric surface
+%
+% Syntax:
+%  St = quadric.translate( S, Xt )
+%
+% Description
+%   Translates the center of a quadric surface by Xt, which is a vector
+%   that defines the displacement in [x; y; z]
+%
+% Inputs:
+%   S                     - 1x10 vector or 4x4 matrix of the quadric
+%                           surface.
+%   Xt                    - 3x1 vector containing the [x, y, z] translation
+%                           vector
+%
+% Outputs:
+%   S                     - 1x10 vector or 4x4 matrix of the translated 
+%                           quadric surface.
+%
+% Examples:
 %{
     % Define a quadric and a translation vector
     S = quadric.scale(quadric.unitSphere,[5 4 3]);
@@ -21,7 +41,7 @@ end
 % Obtain the variable form
 [A, B, C, D, E, F, G, H, I, K] = quadric.matrixToVars(S);
 
-% decompose the translation vector
+% Decompose the translation vector
 xt = Xt(1);
 yt = Xt(2);
 zt = Xt(3);

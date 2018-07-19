@@ -2,7 +2,7 @@ function geodetic = cartToParametricGeo( X, S )
 % Converts Cartesian to parametric geodetic coordinates on an ellipsoid
 %
 % Syntax:
-%   geodetic = quadric.cartToParametricGeo( X, S )
+%  geodetic = quadric.cartToParametricGeo( X, S )
 %
 % Description:
 %   Converts from Cartesian (x, y, z) coordinates on the ellipsoidal

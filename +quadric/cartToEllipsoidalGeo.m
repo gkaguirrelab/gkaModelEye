@@ -2,7 +2,7 @@ function geodetic = cartToEllipsoidalGeo( X, S )
 % Converts Cartesian to ellipsoidal, Jacobian geodetic coordinates
 %
 % Syntax:
-%   geodetic = quadric.cartToParametricGeo( X, S )
+%  geodetic = quadric.cartToParametricGeo( X, S )
 %
 % Description:
 %   Converts from Cartesian (x, y, z) coordinates on the ellipsoidal

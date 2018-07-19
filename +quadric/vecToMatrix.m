@@ -1,10 +1,33 @@
 function S = vecToMatrix(v)
-% The implicit form of a second-order (quadric) surface:
-%   S(x,y,z) =  Ax^2 + By^2 + Cz^2 + 
-%               2Dxy + 2Exz + 2Fyz +
-%               2Gx + 2Hy + 2Iz + K == 0
+% Converts a quadric from vector to matrix form
 %
-% Note that the order of the cross-terms is xy, xz, yz
+% Syntax:
+%  S = quadric.vecToMatrix(v)
+%
+% Description:
+%   Convert between two forms of expression of the quadric surface.
+%
+%   The implicit form of a second-order (quadric) surface is:
+%       S(x,y,z) =  Ax^2 + Bx^2 + Cx^2 + 
+%                   2Dxy + 2Exz + 2Fyz +
+%                   2Gx + 2Hy + 2Iz + K == 0
+%
+% 	Note that the order of the cross-terms is xy, xz, yz
+%
+%   Matrix form:
+%       [A D E G;
+%        D B F H;
+%        E F C I;
+%        G H I K]
+%
+%   Vector form:
+%       [A B C D E F G H I J K]
+%
+% Inputs:
+%   v                     - 10x1 vector of the quadric surface
+%
+% Outputs:
+%   S                     - 4x4 matrix of the quadric surface.
 %
 
 A = v(1);

@@ -6,7 +6,6 @@ function S = rotate( S, r )
 %
 % Description:
 %   
-%
 %   S can be provided as a vector or matrix, and the returned quadric will
 %   be of the same form.
 %

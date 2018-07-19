@@ -1,61 +1,65 @@
 function X = center( S )
-% Center of a central quadric (quadratic surface). When reducing the
-% surface to its canonical form, a translation of the coordinate system as
-% given by the coordinates of the center must be made.
+% Returns the coordinates of the center of the quadric surface
 %
-% 0 = f(x,y,z) = a*x^2 + b*y^2 + c*z^2
-%              + 2*f*y*z + 2*g*x*z + 2*h*x*y
-%              + 2*p*x + 2*q*y + 2*r*z + d
+% Syntax:
+%  X = quadric.center( S )
 %
-% A center of a quadric surface is a point P with the property that any
-% line through P
-% * determines a chord of the surface whose midpoint is P, or
-% * has no point in common with the surface, or
-% * lies entirely in the surface.
+% Description:
+%   Given a quadric surface (S) the routine returns the [x; y; z]
+%   coordinates of the center of the surface.
 %
-% Input arguments:
-% u:
-%    parameters of quadric as [x.^2, y.^2, z.^2, x.*y, x.*z, y.*z, x, y, z, 1]
+%   Adapted from a routine written by Levente Hunyadi, who noted that the
+%   center of a quadric surface has the property that any line through it:
+%     - determines a chord of the surface whose midpoint is P, or
+%     - has no point in common with the surface, or
+%     - lies entirely in the surface.
 %
-% Output arguments:
-% x, y, z:
-%    coordinates of center
+% Inputs:
+%   S                     - 1x10 vector or 4x4 matrix of the quadric
+%                           surface.
+%
+% Outputs:
+%   X                     - 3x1 vector containing the [x, y, z] coordinates
+%                           of the point.
+%
 
-% Copyright 2012 Levente Hunyadi
 
 % If the quadric surface was passed in vector form, convert to matrix
 if isequal(size(S),[1 10])
     S = quadric.vecToMatrix(S);
 end
 
+% Decompose the matrix into individual variables
 [A, B, C, D, E, F, G, H, I, ~] = quadric.matrixToVars(S);
 
+% Code below taken directly from Levente Hunyadi
+
 % E = ...
-%   [ a, h, g, p ...
-%   ; h, b, f, q ...
-%   ; g, f, c, r ...
-%   ; p, q, r, d ...
+%   [ A D E G ...
+%   ; D B F H ...
+%   ; E F C I ...
+%   ; G H I K ...
 %   ];
 
-P = ...  % minor of E belonging to p
+P = ...  % minor of E belonging to g
     [ D, E, G ...
     ; B, F, H ...
     ; F, C, I ...
     ];
 
-Q = ...  % minor of E belonging to q
+Q = ...  % minor of E belonging to h
     [ A, E, G ...
     ; D, F, H ...
     ; E, C, I ...
     ];
 
-R = ...  % minor of E belonging to r
+R = ...  % minor of E belonging to i
     [ A, D, G ...
     ; D, B, H ...
     ; E, F, I ...
     ];
 
-W = ...  % minor of E belonging to d
+W = ...  % minor of E belonging to k
     [ A, D, E ...
     ; D, B, F ...
     ; E, F, C ...
@@ -66,8 +70,6 @@ x = -det(P) / d;
 y =  det(Q) / d;
 z = -det(R) / d;
 X = [x; y; z];
-
-
 
 end
 

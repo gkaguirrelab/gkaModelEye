@@ -24,9 +24,9 @@ function [d, theta] = arcLength(S,X1,X2)
 
     S = quadric.scale(quadric.unitSphere,[6378172, 6378103, 6356753]);
     % Pick a point on the surface
-    G = [1; 0; 0];
+    G = [0; 0.5; 0];
     X1 = quadric.ellipsoidalGeoToCart( G , S );
-    G = [-80; 5; 0];
+    G = [80; 0.5; 0];
     X2 = quadric.ellipsoidalGeoToCart( G , S );
     quadric.arcLength(S,X1,X2);
 %}
@@ -40,7 +40,6 @@ end
 G1 = quadric.cartToEllipsoidalGeo( X1, S );
 G2 = quadric.cartToEllipsoidalGeo( X2, S );
 
-
 % Identify the angle alpha between the two points, where alpha is the angle
 % the geodesic makes with lines of constant omega
 alpha = 0;
@@ -48,8 +47,7 @@ alpha = 0;
 % Obtain the radii of the quadric surface and distribute the values. We
 % adopt the canonical order of a => b => c, but the order returned after
 % alignment of the axes is a <= b <= c. This is why c is mapped to the
-% first value in the radii, and why the Cartesian coordinate is assembled
-% as [z y x]
+% first value in the radii.
 radii = quadric.radii(quadric.alignAxes(S));
 a=radii(3);b=radii(2);c=radii(1);
 
