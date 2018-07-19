@@ -1,4 +1,4 @@
-function coordinates = surfaceGrid(S, boundingBox, vertexDensity, polarGrid, bbTol)
+function coordinates = surfaceGrid(S, boundingBox, vertexDensity, gridType, bbTol)
 % Returns a set coordinates evenly distributed on the quadric surface
 %
 % Syntax:
@@ -19,9 +19,10 @@ function coordinates = surfaceGrid(S, boundingBox, vertexDensity, polarGrid, bbT
 %                           coordinates are reported.
 %   vertexDensity         - Scalar. The density of the mesh grid. Defaults
 %                           to unity.
-%   polarGrid             - Logical. If set to true, produces a polar
-%                           distribution of points. This is valid only if
-%                           the quadric is an ellipsoid.
+%   gridType              - Char vector / string. Valid values are:
+%                              'linear' - the default
+%                              'parametricPolar' - non orthogonal lat/long
+%                              'ellipsoidalPolar' - Jacobian, orthogonal
 %   bbTol                 - Scalar. Defines the tolerance within which the
 %                           intersection must be within the boundingBox.
 %                           Default value is 0.1. Handles the situation in
@@ -47,8 +48,8 @@ if nargin == 2
 end
 
 if nargin == 3
-    polarGrid = true;
     bbTol = 1e-2;
+    gridType = 'linear';
 end
 
 if nargin==4
@@ -56,27 +57,45 @@ if nargin==4
 end
 
 % Obtain the surfaceGrid
-if polarGrid
-    % Assemble the set of coordinates
-    coordinates = [];
-    for latitude = linspace(-180,180,vertexDensity*2)
-        for longitude=linspace(-180,180,vertexDensity)
-            X = quadric.geodeticToCart( [latitude; longitude; 0], S );
-            % Store the coordinate value.
-            coordinates(end+1,:)= X;
+switch gridType
+    case 'parametricPolar'
+        % Assemble the set of coordinates
+        coordinates = [];
+        for latitude = linspace(-180,180,vertexDensity*2)
+            for longitude=linspace(-180,180,vertexDensity)
+                X = quadric.parametricGeoToCart( [latitude; longitude; 0], S );
+                % Store the coordinate value.
+                coordinates(end+1,:)= X;
+            end
         end
-    end
-    % Remove the coordinates that are outside the bounding box
-    retainCoords = (coordinates(:,1) > boundingBox(1)-bbTol) .* (coordinates(:,1) < boundingBox(2)+bbTol) .* ...
-        (coordinates(:,2) > boundingBox(3)-bbTol) .* (coordinates(:,2) < boundingBox(4)+bbTol) .* ...
-        (coordinates(:,3) > boundingBox(5)-bbTol) .* (coordinates(:,3) < boundingBox(6)+bbTol);
-    coordinates = coordinates(logical(retainCoords),:);
-else
-    % Produce a set of coordinates that are linearly spaced across the
-    % boundingBox.
-    coordinates = [linspace(boundingBox(1),boundingBox(2),vertexDensity); ...
-	linspace(boundingBox(3),boundingBox(4),vertexDensity); ...
-    	linspace(boundingBox(5),boundingBox(6),vertexDensity)];
+        % Remove the coordinates that are outside the bounding box
+        retainCoords = (coordinates(:,1) > boundingBox(1)-bbTol) .* (coordinates(:,1) < boundingBox(2)+bbTol) .* ...
+            (coordinates(:,2) > boundingBox(3)-bbTol) .* (coordinates(:,2) < boundingBox(4)+bbTol) .* ...
+            (coordinates(:,3) > boundingBox(5)-bbTol) .* (coordinates(:,3) < boundingBox(6)+bbTol);
+        coordinates = coordinates(logical(retainCoords),:);
+    case 'ellipsoidalPolar'
+        % Assemble the set of coordinates
+        coordinates = [];
+        for latitude = linspace(-180,180,vertexDensity*2)
+            for longitude=linspace(-180,180,vertexDensity)
+                X = quadric.ellipsoidalGeoToCart( [latitude; longitude; 0], S );
+                % Store the coordinate value.
+                coordinates(end+1,:)= X;
+            end
+        end
+        % Remove the coordinates that are outside the bounding box
+        retainCoords = (coordinates(:,1) > boundingBox(1)-bbTol) .* (coordinates(:,1) < boundingBox(2)+bbTol) .* ...
+            (coordinates(:,2) > boundingBox(3)-bbTol) .* (coordinates(:,2) < boundingBox(4)+bbTol) .* ...
+            (coordinates(:,3) > boundingBox(5)-bbTol) .* (coordinates(:,3) < boundingBox(6)+bbTol);
+        coordinates = coordinates(logical(retainCoords),:);
+    case 'linear'
+        % Produce a set of coordinates that are linearly spaced across the
+        % boundingBox.
+        coordinates = [linspace(boundingBox(1),boundingBox(2),vertexDensity); ...
+            linspace(boundingBox(3),boundingBox(4),vertexDensity); ...
+            linspace(boundingBox(5),boundingBox(6),vertexDensity)];
+    otherwise
+        error('Not a valid surface grid type');
 end
 
 end % surfaceGrid
