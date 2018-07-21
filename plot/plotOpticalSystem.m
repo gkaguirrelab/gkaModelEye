@@ -25,13 +25,26 @@ function figHandle = plotOpticalSystem(varargin)
 %
 % Examples:
 %{
-    % Basic call for an axial and sagittal view plot in new windows
-    eye = modelEyeParameters;
-    plotModelEyeSchematic(eye);
-    plotModelEyeSchematic(eye,'view','sag');
+    %% Foveal retina point through lens and cornea
+    sceneGeometry = createSceneGeometry('surfaceSetName','retinaToCamera');
+    % Plot the optical system
+    plotOpticalSystem('opticalSystem',sceneGeometry.refraction.opticalSystem,...
+        'surfaceColors',sceneGeometry.refraction.surfaceColors,'addLighting',true);
+    % Define an initial ray arising at the fovea
+    p = sceneGeometry.eye.axes.visual.coords';
+    % Loop over horizontal angles relative to the visual axis
+    for ii = -2:1:2
+        % Assemble the ray
+        u = [1;tand(sceneGeometry.eye.axes.visual.degField(1)+ii);tand(sceneGeometry.eye.axes.visual.degField(2))];
+        u = u./sqrt(sum(u.^2));
+        R = [p, u];
+        % Perform the ray trace
+        [outputRay, rayPath] = rayTraceQuadrics(R, sceneGeometry.refraction.opticalSystem);
+        % Add this ray to the optical system plot
+        plotOpticalSystem('newFigure',false,'outputRay',outputRay,'rayPath',rayPath);
+    end
 %}
-%{
-%}
+
 
 %% input parser
 p = inputParser; p.KeepUnmatched = true;
@@ -87,11 +100,10 @@ if ~isempty(p.Results.opticalSystem)
         % Obtain the quadric, proceed if there are no nans
         S = opticalSystem(ii,1:10);
         if ~any(isnan(S))
-            % Obtain a function handle for the polynomial
-            F = quadric.vecToFunc(opticalSystem(ii,1:10));
+            % Obtain the bounding box
             boundingBox = opticalSystem(ii,12:17);
             % Plot the surface
-            plotSurface(F,boundingBox,surfaceColors{ii},p.Results.surfaceAlpha)
+            quadric.plotSurface(S,boundingBox,surfaceColors{ii},p.Results.surfaceAlpha);
         end
     end
 end
@@ -121,22 +133,3 @@ view(p.Results.viewAngle);
 
 end % plotOpticalSystem
 
-
-function plotSurface(F,boundingBox,surfColor,surfAlpha)
-
-[xx, yy, zz]=meshgrid( linspace(boundingBox(1),boundingBox(2),100),...
-    linspace(boundingBox(3),boundingBox(4),100),...
-    linspace(boundingBox(5),boundingBox(6),100));
-
-vertices = isosurface(xx, yy, zz, F(xx, yy, zz), 0);
-
-p = patch(vertices);
-p.FaceColor = surfColor;
-p.EdgeColor = 'none';
-alpha(surfAlpha);
-daspect([1 1 1])
-view(3); 
-axis tight
-axis equal
-
-end
