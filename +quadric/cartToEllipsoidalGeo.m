@@ -41,8 +41,8 @@ function geodetic = cartToEllipsoidalGeo( X, S )
 %                           coordinates beta, omega, and elevation in units
 %                           of degrees. Beta is defined over the range
 %                           -90:90, and omega over the range -180:180.
-%                           Elevation takes a value of zero for a point
-%                           that is on the surface of ellipsoid.
+%                           Elevation has an obligatory value of zero as
+%                           this solution is only defined on the surface.
 %
 % Examples:
 %{
