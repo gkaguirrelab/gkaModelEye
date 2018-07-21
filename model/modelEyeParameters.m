@@ -29,8 +29,8 @@ function eye = modelEyeParameters( varargin )
 %                           length of the eye to the passed value in
 %                           millimeters. As the modeled anterior chamber
 %                           depth is not variable, this change is enforced
-%                           on the posterior chamber. The remaining
-%                           dimensions of the posterior chamber are scaled
+%                           on the vitreous chamber. The remaining
+%                           dimensions of the vitreous chamber are scaled
 %                           to fit the proportions predicted by the
 %                           Atchison model for the specified degree of
 %                           ametropia.
@@ -122,8 +122,8 @@ switch eye.meta.species
         % Pupil
         eye.pupil = human.pupil(eye);
 
-        % Posterior chamber
-        eye.posteriorChamber = human.posteriorChamber(eye);
+        % vitreous chamber
+        eye.vitreousChamber = human.vitreousChamber(eye);
 
         % Lens
         eye.lens = human.lens(eye);
@@ -224,34 +224,34 @@ switch eye.meta.species
         eye.pupil.thetas = [0  0];
         
 
-        %% Posterior chamber
-        eye.posteriorChamber.radii = [ 8.25 8.25 8.25];
+        %% vitreous chamber
+        eye.vitreousChamber.radii = [ 8.25 8.25 8.25];
         
         % This is the human value; Need to do the computation for the dog.
-        posteriorChamberApexDepth = 3.25;
+        vitreousChamberApexDepth = 3.25;
 
         if isempty(p.Results.axialLength)
-            eye.axialLength = posteriorChamberApexDepth + eye.posteriorChamber.radii(1)*2;
+            eye.axialLength = vitreousChamberApexDepth + eye.vitreousChamber.radii(1)*2;
         else
             % If a specific axial length was passed (perhaps obtained by
             % measurement using the IOL Master apparatus), set the model
             % eye to have this length, and scale the other dimensions of
-            % the posterior chamber to maintain the specified ametropia. We
+            % the vitreous chamber to maintain the specified ametropia. We
             % adjust the axial length for the component of the anterior
-            % chamber that contibutes to length (posteriorChamberApexDepth)
-            scaleFactor = (p.Results.axialLength - posteriorChamberApexDepth) / (eye.posteriorChamberRadii(1)*2);
-            eye.posteriorChamber.radii = eye.posteriorChamber.radii .* scaleFactor;
+            % chamber that contibutes to length (vitreousChamberApexDepth)
+            scaleFactor = (p.Results.axialLength - vitreousChamberApexDepth) / (eye.vitreousChamberRadii(1)*2);
+            eye.vitreousChamber.radii = eye.vitreousChamber.radii .* scaleFactor;
             eye.axialLength = p.Results.axialLength;
         end
 
-        % Set the depth of the center of the posterior chamber
-        eye.posteriorChamber.center = ...
-            [(-4.2 - eye.posteriorChamber.radii(1)) 0 0];
+        % Set the depth of the center of the vitreous chamber
+        eye.vitreousChamber.center = ...
+            [(-4.2 - eye.vitreousChamber.radii(1)) 0 0];
 
         % I have not yet implemented fovea and optic disc positioning in
         % the canine eye, so set these to nan for now
-        eye.posteriorChamber.fovea = [nan nan nan];
-        eye.posteriorChamber.opticDisc = [nan nan nan];
+        eye.vitreousChamber.fovea = [nan nan nan];
+        eye.vitreousChamber.opticDisc = [nan nan nan];
         
         %% Lens
         % The lens parameters are included to support an illustration of a

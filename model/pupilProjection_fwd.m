@@ -51,8 +51,8 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %  'nIrisPerimPoints'     - The number of points that are distributed
 %                           around the iris circle. A minimum of 5 is
 %                           required to uniquely specify the image ellipse.
-%  'posteriorChamberMeshDensity' - The number of points that are on
-%                           each latitude line of the posterior chamber
+%  'vitreousChamberMeshDensity' - The number of points that are on
+%                           each latitude line of the vitreous chamber
 %                           ellipsoid. About 45 makes a nice image.
 %  'anteriorChamberMeshDensity' - The number of points that are on
 %                           each longitude line of the anterior chamber
@@ -78,7 +78,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %   pointLabels           - An nx1 cell array that identifies each of the
 %                           points, from the set {'pupilCenter',
 %                           'irisCenter', 'aziRotationCenter',
-%                           'eleRotationCenter', 'posteriorChamber',
+%                           'eleRotationCenter', 'vitreousChamber',
 %                           'irisPerimeter', 'pupilPerimeter',
 %                           'anteriorChamber','cornealApex'}.
 %   nodalPointIntersectError - A nx1 vector that contains the distance (in
@@ -114,7 +114,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
     % Perform the projection and request the full eye model
     [~, ~, worldPoints, ~, pointLabels] = pupilProjection_fwd(eyePose,sceneGeometry,'fullEyeModelFlag',true);
     % Define some settings for display
-    eyePartLabels = {'aziRotationCenter', 'eleRotationCenter', 'posteriorChamber' 'irisPerimeter' 'pupilPerimeterFront' 'pupilPerimeterBack' 'anteriorChamber' 'cornealApex' 'fovea' 'opticDisc'};
+    eyePartLabels = {'aziRotationCenter', 'eleRotationCenter', 'vitreousChamber' 'irisPerimeter' 'pupilPerimeterFront' 'pupilPerimeterBack' 'anteriorChamber' 'cornealApex' 'fovea' 'opticDisc'};
     plotColors = {'>r' '^m' '.k' '*b' '*g' '*g' '.y' '*y' '*r' 'xk'};
     % Prepare a figure
     figure
@@ -178,7 +178,7 @@ p.addParameter('nPupilPerimPoints',5,@(x)(isnumeric(x) && x>4));
 p.addParameter('pupilPerimPhase',0,@isnumeric);
 p.addParameter('nIrisPerimPoints',5,@isnumeric);
 p.addParameter('anteriorChamberMeshDensity',20,@isnumeric);
-p.addParameter('posteriorChamberMeshDensity',24,@isnumeric);
+p.addParameter('vitreousChamberMeshDensity',24,@isnumeric);
 
 % parse
 p.parse(eyePose, sceneGeometry, varargin{:})
@@ -316,28 +316,28 @@ if p.Results.fullEyeModelFlag
     eyePoints = [eyePoints; cornealApex];
     pointLabels = [pointLabels; 'cornealApex'];
     
-    % Create the posterior chamber vertices
-    posteriorChamberPoints = quadric.surfaceGrid(...
-        sceneGeometry.eye.posteriorChamber.S,...
-        sceneGeometry.eye.posteriorChamber.boundingBox,...
-        p.Results.posteriorChamberMeshDensity, ...
+    % Create the vitreous chamber vertices
+    vitreousChamberPoints = quadric.surfaceGrid(...
+        sceneGeometry.eye.vitreousChamber.S,...
+        sceneGeometry.eye.vitreousChamber.boundingBox,...
+        p.Results.vitreousChamberMeshDensity, ...
         'ellipsoidalPolar');
     
     % Retain those points that are posterior to the iris plane, and have a
     % distance from the optical axis in the p2xp3 plane of greater than the
     % iris radius
     retainIdx = logical(...
-        (posteriorChamberPoints(:,1) < sceneGeometry.eye.iris.center(1)) .* ...
-        sqrt(posteriorChamberPoints(:,2).^2+posteriorChamberPoints(:,3).^2) > sceneGeometry.eye.iris.radius );
+        (vitreousChamberPoints(:,1) < sceneGeometry.eye.iris.center(1)) .* ...
+        sqrt(vitreousChamberPoints(:,2).^2+vitreousChamberPoints(:,3).^2) > sceneGeometry.eye.iris.radius );
     if all(~retainIdx)
-        error('pupilProjection_fwd:irisCenterPosition','The iris center is behind the center of the posterior chamber');
+        error('pupilProjection_fwd:irisCenterPosition','The iris center is behind the center of the vitreous chamber');
     end
-    posteriorChamberPoints = posteriorChamberPoints(retainIdx,:);
+    vitreousChamberPoints = vitreousChamberPoints(retainIdx,:);
     
     % Add the points and labels
-    eyePoints = [eyePoints; posteriorChamberPoints];
-    tmpLabels = cell(size(posteriorChamberPoints,1), 1);
-    tmpLabels(:) = {'posteriorChamber'};
+    eyePoints = [eyePoints; vitreousChamberPoints];
+    tmpLabels = cell(size(vitreousChamberPoints,1), 1);
+    tmpLabels(:) = {'vitreousChamber'};
     pointLabels = [pointLabels; tmpLabels];
     
 end
@@ -407,8 +407,8 @@ end
 % chamber points that are posterior to the most posterior of the centers of
 % rotation of the eye, and thus would not be visible to the camera.
 if p.Results.fullEyeModelFlag
-    seenIdx = strcmp(pointLabels,'posteriorChamber') .* (eyePoints(:,1) >= min([sceneGeometry.eye.rotationCenters.azi(1) sceneGeometry.eye.rotationCenters.ele(1)]));
-    seenIdx = logical(seenIdx + ~strcmp(pointLabels,'posteriorChamber'));
+    seenIdx = strcmp(pointLabels,'vitreousChamber') .* (eyePoints(:,1) >= min([sceneGeometry.eye.rotationCenters.azi(1) sceneGeometry.eye.rotationCenters.ele(1)]));
+    seenIdx = logical(seenIdx + ~strcmp(pointLabels,'vitreousChamber'));
     pointLabels(~seenIdx) = strcat(pointLabels(~seenIdx),'_hidden');
 end
 

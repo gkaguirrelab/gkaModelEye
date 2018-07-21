@@ -1,15 +1,15 @@
-function posteriorChamber = posteriorChamber(eye)
+function vitreousChamber = vitreousChamber(eye)
 
 % Atchison 2006 provides radii of curvature and asphericities for a
-% biconic model of the posterior chamber, with these values varying
+% biconic model of the vitreous chamber, with these values varying
 % by spherical ametropia. Parameters for the the decentration and
-% tilt of the posterior chamber are also provided:
+% tilt of the vitreous chamber are also provided:
 %
 %	Atchison, David A., et al. "Shape of the retinal surface in
 %   emmetropia and myopia." Investigative ophthalmology & visual
 %   science 46.8 (2005): 2698-2707.
 %
-% I model the posterior chamber as a centered ellipsoid. I convert
+% I model the vitreous chamber as a centered ellipsoid. I convert
 % the 4 parameeters of the Atchison biconic model to a 3 radii of
 % an ellipsoid by numeric approximation. To match Atchison's axial
 % length formula (Eq 19), I had to inflate the effect of spherical
@@ -26,7 +26,7 @@ function posteriorChamber = posteriorChamber(eye)
 %
 %{
     % Numeric approximation of Atchison 2006 biconic model of
-    % posterior chamber with ellipsoid radii
+    % vitreous chamber with ellipsoid radii
     radii = [];
     for SR = -2:2
     Cx = 1/(12.91+0.094*SR);
@@ -46,10 +46,10 @@ function posteriorChamber = posteriorChamber(eye)
     fprintf('horizontal radius = %4.4f %4.4f * SR \n',radii(3,2),slopes(2));
     fprintf('vertical radius = %4.4f %4.4f * SR \n',radii(3,3),slopes(3));
 %}
-postChamberRadiiEmetrope = [10.1760 11.4558 11.3771];
-postChamberRadiiAmetropiaSlope = [-0.1495 -0.0393 -0.0864];
-posteriorChamber.radii = ...
-    postChamberRadiiEmetrope + postChamberRadiiAmetropiaSlope.* eye.meta.sphericalAmetropia;
+vitreousChamberRadiiEmetrope = [10.1760 11.4558 11.3771];
+vitreousChamberRadiiAmetropiaSlope = [-0.1495 -0.0393 -0.0864];
+vitreousChamber.radii = ...
+    vitreousChamberRadiiEmetrope + vitreousChamberRadiiAmetropiaSlope.* eye.meta.sphericalAmetropia;
 
 % Our model holds the depth of the anterior chamber constant.
 % Atchison found that anterior chamber depth does not vary with
@@ -59,24 +59,24 @@ posteriorChamber.radii = ...
 %   depth, refractive state, corneal diameter, and axial length."
 %   Journal of Refractive Surgery 16.3 (2000): 336-340.
 %
-% To position the posterior chamber, we need to know the distance
+% To position the vitreous chamber, we need to know the distance
 % between the apex of the anterior chamber and the apex of the
-% posterior chamber. I derive the value for this distance from the
+% vitreous chamber. I derive the value for this distance from the
 % Atchison 2006 model eye.
-posteriorChamberApexDepth = 23.5800 - postChamberRadiiEmetrope(1)*2;
+vitreousChamberApexDepth = 23.5800 - vitreousChamberRadiiEmetrope(1)*2;
 
-% Set the depth of the center of the posterior chamber
-posteriorChamber.center = ...
-    [(-posteriorChamberApexDepth - posteriorChamber.radii(1)) 0 0];
+% Set the depth of the center of the vitreous chamber
+vitreousChamber.center = ...
+    [(-vitreousChamberApexDepth - vitreousChamber.radii(1)) 0 0];
 
-S = quadric.scale(quadric.unitSphere,posteriorChamber.radii);
-S = quadric.translate(S,posteriorChamber.center);
-posteriorChamber.S = quadric.matrixToVec(S);
-posteriorChamber.side = -1;
-posteriorChamber.boundingBox = [-25 -5.4 -25 25 -25 25];
-posteriorChamber.mustIntersect = 1;
-posteriorChamber.label = {'posteriorChamber'};
-posteriorChamber.plot.color = {[.7,.5,.7]};
+S = quadric.scale(quadric.unitSphere,vitreousChamber.radii);
+S = quadric.translate(S,vitreousChamber.center);
+vitreousChamber.S = quadric.matrixToVec(S);
+vitreousChamber.side = -1;
+vitreousChamber.boundingBox = [-25 -5.4 -25 25 -25 25];
+vitreousChamber.mustIntersect = 1;
+vitreousChamber.label = {'vitreousChamber'};
+vitreousChamber.plot.color = {[.7,.5,.7]};
 
 end
 

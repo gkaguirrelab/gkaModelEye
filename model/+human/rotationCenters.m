@@ -89,13 +89,13 @@ rotationCenters.tor = [0 0 0];
 % & Hill observation of 0.15 - 0.167 mm of increase.
 %
 % We scale the azi and ele rotation centers by the ratio of the
-% posterior chamber axial and vertical radii relative to the
+% vitreous chamber axial and vertical radii relative to the
 % emmetropic size
 postChamberRadiiEmetrope = [10.1760 11.4558 11.3771];
 
-rotationCenters.azi = rotationCenters.azi .* (eye.posteriorChamber.radii./postChamberRadiiEmetrope);
-rotationCenters.ele = rotationCenters.ele .* (eye.posteriorChamber.radii./postChamberRadiiEmetrope);
-rotationCenters.tor = rotationCenters.tor .* (eye.posteriorChamber.radii./postChamberRadiiEmetrope);
+rotationCenters.azi = rotationCenters.azi .* (eye.vitreousChamber.radii./postChamberRadiiEmetrope);
+rotationCenters.ele = rotationCenters.ele .* (eye.vitreousChamber.radii./postChamberRadiiEmetrope);
+rotationCenters.tor = rotationCenters.tor .* (eye.vitreousChamber.radii./postChamberRadiiEmetrope);
 
 
 end

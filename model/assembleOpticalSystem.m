@@ -29,7 +29,7 @@ switch p.Results.surfaceSetName
         
         % Start on the retina with vitreous refractive index
         opticalSystem = [opticalSystem; ...
-            [eye.posteriorChamber.S eye.posteriorChamber.side eye.posteriorChamber.boundingBox eye.posteriorChamber.mustIntersect returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
+            [eye.vitreousChamber.S eye.vitreousChamber.side eye.vitreousChamber.boundingBox eye.vitreousChamber.mustIntersect returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
         
         % Add the lens
         opticalSystem = [opticalSystem; ...
@@ -40,10 +40,10 @@ switch p.Results.surfaceSetName
             [eye.cornea.S eye.cornea.side eye.cornea.boundingBox eye.cornea.mustIntersect [eye.cornea.index; mediumRefractiveIndex]]];
         
         % Assemble the labels
-        surfaceLabels = [eye.posteriorChamber.label; eye.lens.label; eye.cornea.label];
+        surfaceLabels = [eye.vitreousChamber.label; eye.lens.label; eye.cornea.label];
         
         % Assemble the surface plot colors
-        surfaceColors = [eye.posteriorChamber.plot.color; eye.lens.plot.color; eye.cornea.plot.color];
+        surfaceColors = [eye.vitreousChamber.plot.color; eye.lens.plot.color; eye.cornea.plot.color];
         
         % % Add a contact lens if requested
         % if ~isempty(p.Results.contactLens)
@@ -79,17 +79,17 @@ switch p.Results.surfaceSetName
         
         % Start in the retina
         opticalSystem = [opticalSystem; ...
-            [eye.posteriorChamber.S eye.posteriorChamber.side eye.posteriorChamber.boundingBox eye.posteriorChamber.mustIntersect returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
+            [eye.vitreousChamber.S eye.vitreousChamber.side eye.vitreousChamber.boundingBox eye.vitreousChamber.mustIntersect returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
         
         % Add the lens, ending in the aqueous medium
         opticalSystem = [opticalSystem; ...
             [eye.lens.S eye.lens.side eye.lens.boundingBox eye.lens.mustIntersect [eye.lens.index; returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain )]]];
         
         % Assemble the labels
-        surfaceLabels = [eye.posteriorChamber.label; eye.lens.label];
+        surfaceLabels = [eye.vitreousChamber.label; eye.lens.label];
         
         % Assemble the surface plot colors
-        surfaceColors = [eye.posteriorChamber.plot.color; eye.lens.plot.color];
+        surfaceColors = [eye.vitreousChamber.plot.color; eye.lens.plot.color];
         
     case 'pupilToCamera'
         
@@ -133,17 +133,17 @@ switch p.Results.surfaceSetName
        opticalSystem = [opticalSystem; ...
           [flipud(eye.lens.S) flipud(eye.lens.side)*(-1) flipud(eye.lens.boundingBox) flipud(eye.lens.mustIntersect) [flipud(eye.lens.index); returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]]];
 
-        % Add the posterior chamber. We assign the vitreous refractive
+        % Add the vitreous chamber. We assign the vitreous refractive
         % index so that the final unit vector direction of the ray is
         % unchanged. The ray stops here.
        opticalSystem = [opticalSystem; ...
-          [flipud(eye.posteriorChamber.S) flipud(eye.posteriorChamber.side)*(-1) flipud(eye.posteriorChamber.boundingBox) flipud(eye.posteriorChamber.mustIntersect) returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
+          [flipud(eye.vitreousChamber.S) flipud(eye.vitreousChamber.side)*(-1) flipud(eye.vitreousChamber.boundingBox) flipud(eye.vitreousChamber.mustIntersect) returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
 
         % Assemble the labels
-        surfaceLabels = [{'anteriorChamber'}; flipud(eye.lens.label); flipud(eye.posteriorChamber.label)];
+        surfaceLabels = [{'anteriorChamber'}; flipud(eye.lens.label); flipud(eye.vitreousChamber.label)];
         
         % Assemble the surface plot colors
-        surfaceColors = [{[nan nan nan]}; flipud(eye.lens.plot.color); flipud(eye.posteriorChamber.plot.color)];
+        surfaceColors = [{[nan nan nan]}; flipud(eye.lens.plot.color); flipud(eye.vitreousChamber.plot.color)];
         
     otherwise
         error('Unrecognized surfaceSetName');
