@@ -6,8 +6,10 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
 %
 % Description:
 %   Returns the geodesic distance between two points on the tri-axial
-%   ellipsoidal surface. The code was provided by Georgios Panou, and is
-%   based upon the approach described in:
+%   ellipsoidal surface. This is (effectively) the minimum length path on
+%   the ellipsoidal surface that connects the two points. The code was
+%   provided by Georgios Panou, and is based upon the approach described
+%   in:
 %
 %       Panou, G. "The geodesic boundary value problem and its solution on
 %       a triaxial ellipsoid." Journal of Geodetic Science 3.3 (2013):
@@ -21,7 +23,10 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
 % Outputs:
 %   distance              - Scalar. Distance of the geodetic between the
 %                           two points.
-%   startAngle, endAngle  - 
+%   startAngle, endAngle  - Scalars. The heading of the geodetic path, in
+%                           degrees, relative to a line of constant omega
+%                           in the ellipsoidal geodetic coordinate system
+%                           on the ellipsoidal surface. 
 %
 % Examples:
 %{
@@ -30,20 +35,11 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
     X0 = quadric.ellipsoidalGeoToCart( [5 5 0], S );
     X1 = quadric.ellipsoidalGeoToCart( [60 120 0], S );
     [distance,startAngle,endAngle,geodeticPathCoords] = quadric.panouGeodesicDistance(S,X0,X1);
-    assert( max(abs(s - 0.0259)) < 1e-3 );
-
-        F = quadric.vecToFunc(quadric.matrixToVec(S));
+    % Check the result against Panou's value
+    assert( max(abs(distance - 0.0259)) < 1e-3 );
+    % Plot the result
     figure
-    [xx, yy, zz] = meshgrid( linspace(-2,2,100), linspace(-2,2,100), linspace(-2,2,100));
-    vertices = isosurface(xx, yy, zz, F(xx, yy, zz), 0);
-    p = patch(vertices);
-    p.FaceColor =[.9 .9 .9];
-    p.EdgeColor = 'none';
-    alpha(.8);
-    daspect([1 1 1])
-    view([40 30]); 
-    axis tight
-    axis equal
+    quadric.plotSurface(S,[-0.02,0.02,-0.02,0.02,-0.02,0.02],[0.9 0.9 0.9],0.8);
     camlight
     lighting gouraud
     hold on
@@ -66,6 +62,7 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
     end
     fprintf('Lines of constant omega in green\n');
     plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'-r');
+    plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'*r');
 %}
 
 
@@ -77,7 +74,7 @@ nSubspaces = 20000;
 epsilonAccuracy = 10^(-12);
 
 % resolution of the returned path coords
-pathResolution = 20;
+pathResolution = 50;
 
 % If the quadric surface was passed in vector form, convert to matrix
 if isequal(size(S),[1 10])
@@ -135,12 +132,12 @@ hx = sqrt(ax^2-b^2);
 hy = sqrt(ay^2-b^2);
 he = sqrt(ax^2-ay^2);
 
-[beta,lambda] = meshgrid(linspace(0,2*pi,25),linspace(0,2*pi,25));
-x = ax.*sqrt(cos(beta).^2+((he/hx)^2).*sin(beta).^2).*cos(lambda);
-y = ay.*cos(beta).*sin(lambda);
-z = b.*sin(beta).*sqrt(1-((he/hx)^2).*cos(lambda).^2);
-mesh(x,y,z)
-hold on
+% [beta,lambda] = meshgrid(linspace(0,2*pi,25),linspace(0,2*pi,25));
+% x = ax.*sqrt(cos(beta).^2+((he/hx)^2).*sin(beta).^2).*cos(lambda);
+% y = ay.*cos(beta).*sin(lambda);
+% z = b.*sin(beta).*sqrt(1-((he/hx)^2).*cos(lambda).^2);
+% mesh(x,y,z)
+% hold on
 %----------
 
 omega = acos(sin(lambda0)*sin(lambda1)+cos(lambda0)*cos(lambda1)*cos(beta1-beta0));
@@ -185,7 +182,7 @@ z = b.*sin(beta).*sqrt(1-((he/hx)^2).*cos(lambda).^2);
 
 geodeticPathCoords = [x y z];
 
-plot3(x,y,z)
+% plot3(x,y,z)
 
 B = (ay^2.*sin(beta).^2+b^2.*cos(beta).^2)./(hx^2-hy^2.*sin(beta).^2);
 L = (ax^2.*sin(lambda).^2+ay^2.*cos(lambda).^2)./(hx^2-he^2.*cos(lambda).^2);
@@ -238,12 +235,12 @@ hx = sqrt(ax^2-b^2);
 hy = sqrt(ay^2-b^2);
 he = sqrt(ax^2-ay^2);
 
-[beta,lambda] = meshgrid(linspace(0,2*pi,25),linspace(0,2*pi,25));
-x = ax.*sqrt(cos(beta).^2+((he/hx)^2).*sin(beta).^2).*cos(lambda);
-y = ay.*cos(beta).*sin(lambda);
-z = b.*sin(beta).*sqrt(1-((he/hx)^2).*cos(lambda).^2);
-mesh(x,y,z)
-hold on
+% [beta,lambda] = meshgrid(linspace(0,2*pi,25),linspace(0,2*pi,25));
+% x = ax.*sqrt(cos(beta).^2+((he/hx)^2).*sin(beta).^2).*cos(lambda);
+% y = ay.*cos(beta).*sin(lambda);
+% z = b.*sin(beta).*sqrt(1-((he/hx)^2).*cos(lambda).^2);
+% mesh(x,y,z)
+% hold on
 %----------
 
 omega = acos(sin(beta0)*sin(beta1)+cos(beta0)*cos(beta1)*cos(lambda1-lambda0));
@@ -285,8 +282,8 @@ end
 x = ax.*sqrt(cos(beta).^2+((he/hx)^2).*sin(beta).^2).*cos(lambda);
 y = ay.*cos(beta).*sin(lambda);
 z = b.*sin(beta).*sqrt(1-((he/hx)^2).*cos(lambda).^2);
-plot3(x,y,z)
 geodeticPathCoords = [x y z];
+% plot3(x,y,z)
 
 
 B = (ay^2.*sin(beta).^2+b^2.*cos(beta).^2)./(hx^2-hy^2.*sin(beta).^2);
