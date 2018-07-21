@@ -50,7 +50,7 @@ function geodetic = cartToEllipsoidalGeo( X, S )
     % Define an ellipsoidal surface
     S = quadric.scale(quadric.unitSphere,[4,2,5]);
     % Pick a point on the surface
-    G = [-15; 10; 0];
+    G = [-90; -65; 0];
     X = quadric.ellipsoidalGeoToCart( G , S );
     Gprime = quadric.cartToEllipsoidalGeo( X, S );
     assert(max(abs(G-Gprime)) < 1e-6);
