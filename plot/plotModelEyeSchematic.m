@@ -91,12 +91,12 @@ switch p.Results.view
         error('Not a recognized view for the schematic eye');
 end
 
-%% Plot the anterior and vitreous chambers and the lens
-plotConicSection(eye.vitreousChamber.S, titleString, p.Results.plotColor,eye.vitreousChamber.boundingBox)
-plotConicSection(eye.cornea.back.S, titleString, p.Results.plotColor,eye.cornea.back.boundingBox)
-plotConicSection(eye.cornea.front.S, titleString, p.Results.plotColor,eye.cornea.front.boundingBox)
-plotConicSection(eye.lens.front.S, titleString, p.Results.plotColor,eye.lens.front.boundingBox)
-plotConicSection(eye.lens.back.S, titleString, p.Results.plotColor,eye.lens.back.boundingBox)
+%% Plot the anterior chamber, vitreous chamber, and the lens surfaces
+plotConicSection(eye.vitreousChamber.S(1:10), titleString, p.Results.plotColor, eye.vitreousChamber.boundingBox)
+plotConicSection(eye.cornea.S(1,:), titleString, p.Results.plotColor, eye.cornea.boundingBox(1,:))
+plotConicSection(eye.cornea.S(end,:), titleString, p.Results.plotColor, eye.cornea.boundingBox(end,:))
+plotConicSection(eye.lens.S(1,:), titleString, p.Results.plotColor, eye.lens.boundingBox(1,:))
+plotConicSection(eye.lens.S(end,:), titleString, p.Results.plotColor, eye.lens.boundingBox(end,:))
 
 
 %% Add a 2mm radius pupil, center of rotation, iris boundary, fovea, and optic disc
@@ -105,8 +105,8 @@ plot(eye.rotationCenters.azi(PdimA),eye.rotationCenters.azi(PdimB),['>' p.Result
 plot(eye.rotationCenters.ele(PdimA),eye.rotationCenters.ele(PdimB),['^' p.Results.plotColor])
 plot(eye.iris.center(PdimA),eye.iris.center(PdimB)+eye.iris.radius,['x' p.Results.plotColor])
 plot(eye.iris.center(PdimA),eye.iris.center(PdimB)-eye.iris.radius,['x' p.Results.plotColor])
-plot(eye.vitreousChamber.fovea(PdimA),eye.vitreousChamber.fovea(PdimB),['*' p.Results.plotColor])
-plot(eye.vitreousChamber.opticDisc(PdimA),eye.vitreousChamber.opticDisc(PdimB),['x' p.Results.plotColor])
+plot(eye.axes.visual.coords(PdimA),eye.axes.visual.coords(PdimB),['*' p.Results.plotColor])
+plot(eye.axes.opticDisc.coords(PdimA),eye.axes.opticDisc.coords(PdimB),['x' p.Results.plotColor])
 
 %% Plot the cornealApex
 sg.eye = eye;
@@ -115,13 +115,13 @@ idx = find(strcmp(pointLabels,'cornealApex'));
 plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColor]);
 
 %% Plot the visual axis
-m = (eye.vitreousChamber.fovea(PdimB) - eye.lens.nodalPoint(PdimB)) / (eye.vitreousChamber.fovea(PdimA) - eye.lens.nodalPoint(PdimA));
+m = (eye.axes.visual.coords(PdimB) - eye.lens.nodalPoint(PdimB)) / (eye.axes.visual.coords(PdimA) - eye.lens.nodalPoint(PdimA));
 b = eye.lens.nodalPoint(PdimB) -  (eye.lens.nodalPoint(PdimA) * m);
 xRange = xlim;
 plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
 
 %% Plot the blind spot axis
-m = (eye.vitreousChamber.opticDisc(PdimB) - eye.lens.nodalPoint(PdimB)) / (eye.vitreousChamber.opticDisc(PdimA) - eye.lens.nodalPoint(PdimA));
+m = (eye.axes.opticDisc.coords(PdimB) - eye.lens.nodalPoint(PdimB)) / (eye.axes.opticDisc.coords(PdimA) - eye.lens.nodalPoint(PdimA));
 b = eye.lens.nodalPoint(PdimB) -  (eye.lens.nodalPoint(PdimA) * m);
 xRange = xlim;
 plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
@@ -151,14 +151,4 @@ function plotConicSection(S,plane,colorCode,boundingBox)
             rangeVec = boundingBox([3 4 5 6]);
     end
     fimplicit(fh,rangeVec,'Color', colorCode,'LineWidth',1);
-end
-
-function plotEllipse(ep,colorCode,rangeVec)
-fh=@(x,y) ep(1).*x.^2 +ep(2).*x.*y +ep(3).*y.^2 +ep(4).*x +ep(5).*y +ep(6);
-fimplicit(fh,rangeVec,'Color', colorCode,'LineWidth',1);
-end
-
-function plotHyperbola(ep,colorCode,rangeVec)
-fh=@(x,y) ep(1).*x.^2 +ep(2).*x.*y -ep(3).*y.^2 +ep(4).*x -ep(5).*y +ep(6);
-fimplicit(fh,rangeVec,'Color', colorCode,'LineWidth',1);
 end
