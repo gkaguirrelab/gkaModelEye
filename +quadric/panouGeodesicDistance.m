@@ -63,6 +63,8 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
     fprintf('Lines of constant omega in green\n');
     plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'-r');
     plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'*r');
+    plot3(geodeticPathCoords(1,1),geodeticPathCoords(1,2),geodeticPathCoords(1,3),'om');
+    plot3(geodeticPathCoords(end,1),geodeticPathCoords(end,2),geodeticPathCoords(end,3),'+m');
 %}
 
 
