@@ -56,15 +56,15 @@ end
 % corresponding position of the fovea w.r.t. the the optical axis
 % of the eye (adjusted for eye laterality).
 %{
-            eye = modelEyeParameters();
-            % These are the visual axis angles for an emmetropic eye
-            targetAlphaAngle = [5.8  2.5  0];
-            myComputedAlphaAzi = @(eye) axes.visual.degField(1);
-            myObj = @(x) (targetAlphaAngle(1) - myComputedAlphaAzi(modelEyeParameters('visualAxisDegRetina',[x 0 0])))^2;
-            aziFoveaEmmetropic = fminsearch(myObj,9)
-            myComputedAlphaEle = @(eye) axes.visual.degField(2);
-            myObj = @(x) (targetAlphaAngle(2) - myComputedAlphaEle(modelEyeParameters('visualAxisDegRetina',[aziFoveaEmmetropic x 0])))^2;
-            eleFoveaEmmetropic = fminsearch(myObj,2)
+    eye = modelEyeParameters();
+    % These are the visual axis angles for an emmetropic eye
+    targetAlphaAngle = [5.8  2.5  0];
+    myComputedAlphaAzi = @(eye) axes.visual.degField(1);
+    myObj = @(x) (targetAlphaAngle(1) - myComputedAlphaAzi(modelEyeParameters('visualAxisDegRetina',[x 0 0])))^2;
+    aziFoveaEmmetropic = fminsearch(myObj,9)
+    myComputedAlphaEle = @(eye) axes.visual.degField(2);
+    myObj = @(x) (targetAlphaAngle(2) - myComputedAlphaEle(modelEyeParameters('visualAxisDegRetina',[aziFoveaEmmetropic x 0])))^2;
+    eleFoveaEmmetropic = fminsearch(myObj,2)
 %}
 switch eye.meta.eyeLaterality
     case 'Right'

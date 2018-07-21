@@ -21,15 +21,15 @@ function Rr = refractRay(R,N,nRel)
 %
 % Inputs:
 %   R                     - 3x2 matrix that specifies the incident ray as a
-%                           unit vector of the form [p; d]:
+%                           unit vector of the form [p; u]:
 %                               R = p + t*u,
-%                           where p is vector origin, d is the direction
+%                           where p is vector origin, u is the direction
 %                           expressed as a unit step, and t has an
 %                           obligatory value of unity.
 %   N                     - 3x2 matrix that specifies the surface normal as
-%                           a unit vector of the form [p; d]:
+%                           a unit vector of the form [p; u]:
 %                               N = p + t*u,
-%                           where p is vector origin, d is the direction
+%                           where p is vector origin, u is the direction
 %                           expressed as a unit step, and t has an
 %                           obligatory value of unity.
 %   nRel                  - The relative index of refraction n / n', where
@@ -39,10 +39,10 @@ function Rr = refractRay(R,N,nRel)
 %                           the ray has intersected.
 %
 % Outputs:
-%   Rr              - 3x2 matrix that specifies the refracted ray as 
-%                           a unit vector of the form [p; d]:
+%   Rr                    - 3x2 matrix that specifies the refracted ray as 
+%                           a unit vector of the form [p; u]:
 %                               Rr = p + t*u,
-%                           where p is vector origin, d is the direction
+%                           where p is vector origin, u is the direction
 %                           expressed as a unit steo, and t has an
 %                           obligatory value of unity.
 %
@@ -63,14 +63,12 @@ function Rr = refractRay(R,N,nRel)
     % Test 2 from http://www.starkeffects.com/snells-law-vector.shtml
     p=[0;0;0];
     u=[4;1;1];
-    u = u./sqrt(sum(u.^2));
-    R=[p,u];
+    R = quadric.normalizeRay([p, u]);
     n0 = 1;
     n1 = 1.5;
     nRel = n0/n1;
     u=[0;-2;-1];
-    u = u./sqrt(sum(u.^2));
-    N=[p,u];
+    N=quadric.normalizeRay([p,u]);
     Rr = quadric.refractRay(R,N,nRel);
     assert(max(abs(Rr(:,2)-[0.629;0.661;0.409]))<0.001);
 %}
@@ -84,8 +82,7 @@ function Rr = refractRay(R,N,nRel)
     S = quadric.translate(S,[22; 0; 0]);
     p = [0;0;0];
     u = [1;tand(17.309724);0];
-    u = u./sqrt(sum(u.^2));
-    R = [p, u];
+    R = quadric.normalizeRay([p, u]);
     side = 1;
     X = quadric.intersectRay(S,R,side);
     N = quadric.surfaceNormal(S,X);

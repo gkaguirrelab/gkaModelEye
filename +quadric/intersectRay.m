@@ -11,9 +11,9 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
 % Inputs:
 %   S                     - 4x4 quadric surface matrix
 %   R                     - 3x2 matrix that specifies the ray as a unit 
-%                           vector of the form [p; d], corresponding to
+%                           vector of the form [p; u], corresponding to
 %                               R = p + t*u
-%                           where p is vector origin, d is the direction
+%                           where p is vector origin, u is the direction
 %                           expressed as a unit step, and t is unity.
 %   side                  - Scalar, taking the value of -1 or 1. Defines
 %                           whether the first (-1) or second (+1)
@@ -52,8 +52,7 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
     S = quadric.unitSphere;
     p = [0; 0; 0];
     u = [1; 1; 1];
-    u = u./sqrt(sum(u.^2));
-    R = [p, u];
+    R = quadric.normalizeRay([p, u]);
     X = quadric.intersectRay(S,R);
 %}
 %{
@@ -61,8 +60,7 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
     S = quadric.unitSphere;
     p = [0; 0; 0];
     u = [0; 0; 1];
-    u = u./sqrt(sum(u.^2));
-    R = [p, u];
+    R = quadric.normalizeRay([p, u]);
     X = quadric.intersectRay(S,R);
 %}
 %{
@@ -70,8 +68,7 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
     S = quadric.unitSphere;
     p = [3; 3; 3];
     u = [0; 0; 1];
-    u = u./sqrt(sum(u.^2));
-    R = [p, u];
+    R = quadric.normalizeRay([p, u]);
     X = quadric.intersectRay(S,R);
 %}
 %{
@@ -81,8 +78,7 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
     S = quadric.translate(S,[0; 1; 1]);
     p = [0;1;1];
     u = [0;tand(17.309724);1];
-    u = u./sqrt(sum(u.^2));
-    R = [p, u];
+    R = quadric.normalizeRay([p, u]);
     X = quadric.intersectRay(S,R);
 %}
 %{
@@ -91,8 +87,7 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
     S = quadric.scale(S,[5 4 3]);
     p = [0;0;0];
     u = [1;tand(15);0];
-    u = u./sqrt(sum(u.^2));
-    R = [p, u];
+    R = quadric.normalizeRay([p, u]);
     X = quadric.intersectRay(S,R);
 %}
 

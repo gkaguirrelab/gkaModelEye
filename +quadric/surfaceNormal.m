@@ -32,9 +32,9 @@ function N = surfaceNormal(S,X,side,surfaceTolerance)
 %
 % Outputs:
 %   N                     - 3x2 matrix that specifies the normal as a unit
-%                           vector of the form [p; d], corresponding to
+%                           vector of the form [p; u], corresponding to
 %                               R = p + t*u,
-%                           where p is vector origin, d is the direction
+%                           where p is vector origin, u is the direction
 %                           expressed as a unit step, and t has an
 %                           obligatory value of unity.
 %
