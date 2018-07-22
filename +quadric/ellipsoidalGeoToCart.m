@@ -13,7 +13,7 @@ function X = ellipsoidalGeoToCart( geodetic, S )
 %   surface. Thus, elevation must be zero.
 %
 %   The routine takes a geodetic coordinate of the form [beta, omega, 0],
-%   and a quadric (S). A coordinate (X) and is returned. The geodetic
+%   and a quadric (S). A coordinate (X) is returned. The geodetic
 %   coordinates are with reference to a centered, non-rotated ellipsoid.
 %   The variable S can be supplied in either vector or matrix form. The
 %   quadric (and associated point X) is translated to place the center at
@@ -70,9 +70,6 @@ function X = ellipsoidalGeoToCart( geodetic, S )
             coords(end+1,:)=quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
         end
         plot3(coords(:,1),coords(:,2),coords(:,3),'-b');
-        beta
-        drawnow
-        pause
     end
     fprintf('Lines of constant beta in blue\n');
     % Plot lines of varying omega
@@ -82,9 +79,6 @@ function X = ellipsoidalGeoToCart( geodetic, S )
             coords(end+1,:)=quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
         end
         plot3(coords(:,1),coords(:,2),coords(:,3),'-g');
-        omega
-        drawnow
-        pause
     end
     fprintf('Lines of constant omega in green\n');
 %}
@@ -100,6 +94,7 @@ end
 origCenter = quadric.center(S);
 S = quadric.translate(S,-origCenter);
 
+
 % Rotate the quadric so that it is aligned with the cardinal axes.
 % Store the rotation matrix to be applied to the Cartesian coordinate later
 [S, rotMat] = quadric.alignAxes(S);
@@ -109,6 +104,7 @@ S = quadric.translate(S,-origCenter);
 % the axes is a <= b <= c. This is why c is mapped to the first value in
 % the radii, and why the Cartesian coordinate is later assembled as [z y x]
 radii = quadric.radii(S);
+
 a=radii(3);b=radii(2);c=radii(1);
 
 ro=180/pi; % convert degrees to radians
@@ -118,6 +114,7 @@ x=a*cos(omega/ro)*(sqrt(a^2-b^2*sin(beta/ro)^2-c^2*cos(beta/ro)^2)/sqrt(a^2-c^2)
 y=b*cos(beta/ro)*sin(omega/ro);
 z=c*sin(beta/ro)*(sqrt(a^2*sin(omega/ro)^2+b^2*cos(omega/ro)^2-c^2)/sqrt(a^2-c^2));
 
+% Assemble the coordinate
 X=[z; y; x];
 
 % Now counter-rotate and then counter-translate the X coordinate

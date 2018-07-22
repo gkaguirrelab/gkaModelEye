@@ -8,8 +8,7 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
 %   Returns the geodesic distance between two points on the tri-axial
 %   ellipsoidal surface. This is (effectively) the minimum length path on
 %   the ellipsoidal surface that connects the two points. The code was
-%   provided by Georgios Panou, and is based upon the approach described
-%   in:
+%   provided by Georgios Panou, and is based upon:
 %
 %       Panou, G. "The geodesic boundary value problem and its solution on
 %       a triaxial ellipsoid." Journal of Geodetic Science 3.3 (2013):
