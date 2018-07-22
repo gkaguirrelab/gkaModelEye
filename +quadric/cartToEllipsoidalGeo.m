@@ -2,7 +2,7 @@ function geodetic = cartToEllipsoidalGeo( X, S )
 % Converts Cartesian to ellipsoidal, Jacobian geodetic coordinates
 %
 % Syntax:
-%  geodetic = quadric.cartToParametricGeo( X, S )
+%  geodetic = quadric.cartToEllipsoidalGeo( X, S )
 %
 % Description:
 %   Converts from Cartesian (x, y, z) coordinates on the ellipsoidal
@@ -50,12 +50,31 @@ function geodetic = cartToEllipsoidalGeo( X, S )
     % Define an ellipsoidal surface
     S = quadric.scale(quadric.unitSphere,[4,2,5]);
     % Pick a point on the surface
-    G = [-90; -65; 0];
+    G = [90; -65; 0];
     X = quadric.ellipsoidalGeoToCart( G , S );
     Gprime = quadric.cartToEllipsoidalGeo( X, S );
     assert(max(abs(G-Gprime)) < 1e-6);
 %}
-
+%{
+    %% Confirm the invertibility of the transform across quadrants
+    % Define an ellipsoidal surface
+    S = quadric.scale(quadric.unitSphere,[4.7,3,16]);
+    % Find a point on the surface by intersecting a ray
+    p = [0;0;0];
+    u = [1;tand(15);tand(15)];
+    R = quadric.normalizeRay([p, u]);
+    X = quadric.intersectRay(S,R);
+    for p1=[-1 1]
+        for p2=[-1 1]
+            for p3=[-1 1]
+                quadrant = [p1; p2; p3];
+                geodetic = quadric.cartToEllipsoidalGeo( X.*quadrant, S );
+                Xprime = quadric.ellipsoidalGeoToCart( geodetic, S);
+                assert(max(abs((X.*quadrant)-Xprime)) < 1e-6);
+            end
+        end
+    end
+%}
 
 
 % If the quadric surface was passed in vector form, convert to matrix
@@ -90,24 +109,35 @@ radii = quadric.radii(S);
 a=radii(3);b=radii(2);c=radii(1);
 x=X(3);y=X(2);z=X(1);
 
-% Constants
+% Save a store the sign of the y coordinate. We perform the computation
+% with abs(y) and thus for omega values in the range 0-180. We then apply
+% the sign of y to the omega value after the computation.
+ySign = sign(y);
+y = abs(y);
+
+% Examine the signs of the Cartesian coordinate to supply the first guess
+betaLast = 45.*sign(z);
+omegaLast = 45 + 90.*(sign(x)==-1);
+
+% Constants for the iterative solution
 nIterations= 20; % number of loops to refine the estimate
 ro=180/pi; % convert degrees to radians
 
+% Define a quantity used repeatedly for the calculation
 p = sqrt((a^2-b^2)/(a^2-c^2));
 
-parametricGeodetic = quadric.cartToParametricGeo( X, S );
-betaLast = parametricGeodetic(1);
-omegaLast = parametricGeodetic(2);
-
+% Refine the estimates of beta and omega
 for ii=1:nIterations
-    omega = rad2deg(atan2( a*y*sqrt((p^2-1)*sin(betaLast/ro)^2+1) , b*x*cos(betaLast/ro) ));
-    beta = rad2deg(atan2( b*z*sin(omegaLast/ro), c*y*sqrt(1-(p^2*cos(omegaLast/ro)^2)) ));
-    omegaLast = omega;
+    beta = rad2deg(atan2( b*z*sin(omegaLast/ro),c*y*sqrt(1-(p^2*cos(omegaLast/ro)^2)) ));
+    omega = rad2deg(atan2( a*y*sqrt((p^2-1)*sin(betaLast/ro)^2+1),b*x*cos(betaLast/ro) ));
     betaLast = beta;
+    omegaLast = omega;
 end
 
 elevation = 0;
+
+% Apply the stored sign of the y coordinate to omega
+omega = omega.*ySign;
 
 % Assemble the geodetic to return
 geodetic=[beta; omega; elevation];

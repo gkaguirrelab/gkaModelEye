@@ -54,8 +54,7 @@ function geodetic = cartToParametricGeo( X, S )
     % Find a point on the surface by intersecting a ray
     p = [0;0;0];
     u = [1;tand(15);tand(-15)];
-    u = u./sqrt(sum(u.^2));
-    R = [p, u];
+    R = quadric.normalizeRay([p, u]);
     X = quadric.intersectRay(S,R);
     geodetic = quadric.cartToParametricGeo( X, S );
     Xprime = quadric.parametricGeoToCart( geodetic, S );
@@ -68,16 +67,15 @@ function geodetic = cartToParametricGeo( X, S )
     % Find a point on the surface by intersecting a ray
     p = [0;0;0];
     u = [1;tand(15);tand(15)];
-    u = u./sqrt(sum(u.^2));
-    R = [p, u];
+    R = quadric.normalizeRay([p, u]);
     X = quadric.intersectRay(S,R);
-    for p1=-1:2:1
-        for p2=-1:2:1
-            for p3=-1:2:1
+    for p1=[-1 1]
+        for p2=[-1 1]
+            for p3=[-1 1]
                 quadrant = [p1; p2; p3];
                 geodetic = quadric.cartToParametricGeo( X.*quadrant, S );
                 Xprime = quadric.parametricGeoToCart( geodetic, S);
-                fprintf('X: %d %d %d; geo: %d %d %f; Xp: %d %d %d \n',sign(p1),sign(p2),sign(p3),sign(geodetic(1)),sign(geodetic(2)),geodetic(3),sign(Xprime(1)),sign(Xprime(2)),sign(Xprime(3)));
+                assert(max(abs((X.*quadrant)-Xprime)) < 1e-6);
             end
         end
     end

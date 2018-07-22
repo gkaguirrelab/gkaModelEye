@@ -5,7 +5,7 @@ function X = ellipsoidalGeoToCart( geodetic, S )
 %  X = quadric.ellipsoidalGeoToCart( geodetic, S )
 %
 % Description:
-%   Converts from the parametric geodetic coordinates (beta, omega,
+%   Converts from the ellipsoidal geodetic coordinates (beta, omega,
 %   elevation) on the ellipsoidal surface to Cartesian (x, y, z)
 %   coordinates.
 %
@@ -17,9 +17,7 @@ function X = ellipsoidalGeoToCart( geodetic, S )
 %   coordinates are with reference to a centered, non-rotated ellipsoid.
 %   The variable S can be supplied in either vector or matrix form. The
 %   quadric (and associated point X) is translated to place the center at
-%   the origin, and rotated to be axis-aligned. The semi-axes of the
-%   quadric and point are re-ordered to match the standard form and the
-%   geodetic coordinates computed.
+%   the origin, and rotated to be axis-aligned.
 %
 %   The distinction between parametric and orthogonal geodetic coordinates
 %   on the ellipsoidal surface is discussed here:
@@ -72,6 +70,9 @@ function X = ellipsoidalGeoToCart( geodetic, S )
             coords(end+1,:)=quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
         end
         plot3(coords(:,1),coords(:,2),coords(:,3),'-b');
+        beta
+        drawnow
+        pause
     end
     fprintf('Lines of constant beta in blue\n');
     % Plot lines of varying omega
@@ -81,6 +82,9 @@ function X = ellipsoidalGeoToCart( geodetic, S )
             coords(end+1,:)=quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
         end
         plot3(coords(:,1),coords(:,2),coords(:,3),'-g');
+        omega
+        drawnow
+        pause
     end
     fprintf('Lines of constant omega in green\n');
 %}
