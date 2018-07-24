@@ -9,7 +9,8 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
 %   quadric surface.
 %
 % Inputs:
-%   S                     - 4x4 quadric surface matrix
+%   S                     - 1x10 vector or 4x4 matrix of the quadric
+%                           surface.
 %   R                     - 3x2 matrix that specifies the ray as a unit 
 %                           vector of the form [p; u], corresponding to
 %                               R = p + t*u
@@ -120,6 +121,11 @@ p = R(:,1);
 u = R(:,2);
 px=p(1); py=p(2); pz=p(3);
 ux=u(1); uy=u(2); uz=u(3);
+
+% If the quadric surface was passed in vector form, convert to matrix
+if isequal(size(S),[1 10])
+    S = quadric.vecToMatrix(S);
+end
 
 % Decompose the quadric matrix into individual variables
 [A, B, C, D, E, F, G, H, I, K] = quadric.matrixToVars(S);
