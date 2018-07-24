@@ -37,6 +37,13 @@ end
 % Store the original scale
 Sscale = S(4,4);
 
+% Here and elsewhere, detect the case in which the scale is close to zero,
+% in which case no adjustment is made. This can occur when the quadric is
+% translated so that an apex is positioned at the origin.
+if Sscale < realmin 
+    Sscale = 1;
+end
+
 % Find the center of the quadric
 center = -S( 1:3, 1:3 ) \ S( 1:3,4 );
 
@@ -50,7 +57,14 @@ Q = T * S * transpose(T);
 % Store the translated scale
 Qscale = Q(4,4);
 
-% Solve the eigenproblem
+% Here and elsewhere, detect the case in which the scale is close to zero,
+% in which case no adjustment is made. This can occur when the quadric is
+% translated so that an apex is positioned at the origin.
+if Qscale < realmin 
+    Qscale = 1;
+end
+
+% Solve the eigenproblem.
 [evecs,~] = svd(Q(1:3,1:3) / -Qscale);
 
 % Apply the inverse rotation
@@ -64,8 +78,10 @@ T = eye( 4 );
 T( 4, 1:3 ) = -center';
 S = T * Q * transpose(T);
 
-% Restore the original scale
-S = (S./S(4,4)).*Sscale;
+% Restore the original scale.
+if Sscale > 1e-12
+    S = (S./S(4,4)).*Sscale;
+end
 
 % Return a vector if that was the original input
 if returnVecFlag
