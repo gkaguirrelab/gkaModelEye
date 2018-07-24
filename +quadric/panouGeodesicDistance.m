@@ -1,4 +1,4 @@
-function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistance(S,X0,X1)
+function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistance(S,G0,G1,X0,X1)
 % Find the geodesic distance between two points on a tri-axial ellipsoid
 %
 % Syntax:
@@ -14,8 +14,18 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
 %       a triaxial ellipsoid." Journal of Geodetic Science 3.3 (2013):
 %       240-249.
 %
+%   The routine can accept points on the ellipsoidal surface specified in
+%   either Cartesian or ellipsoidal geodetic coordinates.
+%
 % Inputs:
-%   S                     - 4x4 quadric surface matrix
+%   S                     - 1x10 vector or 4x4 matrix of the quadric
+%                           surface.
+%   G0, G1                - 3x1 vectors that provide the geodetic
+%                           coordinates beta, omega, and elevation in units
+%                           of degrees. Beta is defined over the range
+%                           -90:90, and omega over the range -180:180.
+%                           Elevation has an obligatory value of zero as
+%                           this solution is only defined on the surface.
 %   X0, X1                - 3x1 vectors that specify the Cartesian
 %                           location of points on the quadric surface.
 %
@@ -31,14 +41,15 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
 %{
     % Numeric example provided by G. Panou in the original code
     S = quadric.scale(quadric.unitSphere,[0.015, 0.010, 0.009]);
-    X0 = quadric.ellipsoidalGeoToCart( [5 5 0], S );
-    X1 = quadric.ellipsoidalGeoToCart( [60 120 0], S );
-    [distance,startAngle,endAngle,geodeticPathCoords] = quadric.panouGeodesicDistance(S,X0,X1);
+    boundingBox = [-0.02,0.02,-0.02,0.02,-0.02,0.02];
+    G0 = [5; 5; 0];
+    G1 = [60; 120; 0];
+    [distance,startAngle,endAngle,geodeticPathCoords] = quadric.panouGeodesicDistance(S,G0,G1);
     % Check the result against Panou's value
     assert( max(abs(distance - 0.0259)) < 1e-3 );
     % Plot the result
     figure
-    quadric.plotSurface(S,[-0.02,0.02,-0.02,0.02,-0.02,0.02],[0.9 0.9 0.9],0.8);
+    quadric.plotSurface(S,boundingBox,[0.9 0.9 0.9],0.8);
     camlight
     lighting gouraud
     hold on
@@ -82,6 +93,15 @@ if isequal(size(S),[1 10])
     S = quadric.vecToMatrix(S);
 end
 
+% If five input values were passed, assume that the G0/G1 variables are
+% empty, and compute these from the passed X0/X1 cartesian coordinates
+if nargin==5
+    % Obtain the ellipsoidal geodetic coordinates for the two points, and
+    % convert to radians
+    G0 = quadric.cartToEllipsoidalGeo( X0, S );
+    G1 = quadric.cartToEllipsoidalGeo( X1, S );
+end
+    
 % Obtain the radii of the quadric surface and distribute the values. We
 % adopt the canonical order of a => b => c, but the order returned after
 % alignment of the axes is a <= b <= c. This is why c is mapped to the
@@ -89,11 +109,22 @@ end
 radii = quadric.radii(quadric.alignAxes(S));
 a=radii(3);b=radii(2);c=radii(1);
 
-% Obtain the ellipsoidal geodetic coordinates for the two points, and
-% convert to radians
-G0 = deg2rad(quadric.cartToEllipsoidalGeo( X0, S ));
-G1 = deg2rad(quadric.cartToEllipsoidalGeo( X1, S ));
+% Convert the geodetic coordinates to radians
+G0 = deg2rad(G0);
+G1 = deg2rad(G1);
 
+% Strange results are obtained when the coordinates are exactly on
+% umbilical points. I detect some special cases here and provide warnings
+if abs(G0(1))==pi/2
+    if abs(G0(2))==pi/2
+        if sign(G0(2))~=sign(G1(2))
+            warning('This solution undefined at umbilicus. Try passing -omega at the first coordinate');
+        else            
+        end
+    end
+end
+
+% Peform the Panou computation
 if G0(2) == G1(2)
     [nIterations,LiouvilleConstant,startAngle,endAngle,distance,geodeticPathCoords] = ...
         Geodesics_dbeta(a,b,c,G0(1),G0(2),G1(1),G1(2),nSubspaces,epsilonAccuracy);
@@ -110,14 +141,13 @@ geodeticPathCoords=geodeticPathCoords(sampleBase',:);
 % they reflect the axis order of the passed quadric surface
 geodeticPathCoords = geodeticPathCoords(:,[3 2 1]);
 
-% Rotate and translate the geodetic path coords so that they correspond to
-% the surface of the original quadric
-% Now counter-rotate and then counter-translate the X coordinate
+% Rotate the geodetic path coords so that they correspond to the surface of
+% the original quadric
 [~, rotMat] = quadric.alignAxes(S);
 for ii = 1:pathResolution
     geodeticPathCoords(ii,:) = (geodeticPathCoords(ii,:)*rotMat');
 end
-
+% And now translate
 origCenter = quadric.center(S);
 geodeticPathCoords = geodeticPathCoords+origCenter';
 
@@ -283,6 +313,7 @@ end
 x = ax.*sqrt(cos(beta).^2+((he/hx)^2).*sin(beta).^2).*cos(lambda);
 y = ay.*cos(beta).*sin(lambda);
 z = b.*sin(beta).*sqrt(1-((he/hx)^2).*cos(lambda).^2);
+
 geodeticPathCoords = [x y z];
 % plot3(x,y,z)
 
