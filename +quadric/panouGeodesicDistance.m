@@ -1,4 +1,4 @@
-function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistance(S,G0,G1,X0,X1)
+function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistance(S,G0,G1,X0,X1,maxIterations)
 % Find the geodesic distance between two points on a tri-axial ellipsoid
 %
 % Syntax:
@@ -101,7 +101,11 @@ if nargin==5
     G0 = quadric.cartToEllipsoidalGeo( X0, S );
     G1 = quadric.cartToEllipsoidalGeo( X1, S );
 end
-    
+
+if nargin<6
+    maxIterations=20;
+end
+
 % Obtain the radii of the quadric surface and distribute the values. We
 % adopt the canonical order of a => b => c, but the order returned after
 % alignment of the axes is a <= b <= c. This is why c is mapped to the
@@ -127,10 +131,10 @@ end
 % Peform the Panou computation
 if G0(2) == G1(2)
     [nIterations,LiouvilleConstant,startAngle,endAngle,distance,geodeticPathCoords] = ...
-        Geodesics_dbeta(a,b,c,G0(1),G0(2),G1(1),G1(2),nSubspaces,epsilonAccuracy);
+        Geodesics_dbeta(a,b,c,G0(1),G0(2),G1(1),G1(2),nSubspaces,epsilonAccuracy,maxIterations);
 else
     [nIterations,LiouvilleConstant,startAngle,endAngle,distance,geodeticPathCoords] = ...
-        Geodesics(a,b,c,G0(1),G0(2),G1(1),G1(2),nSubspaces,epsilonAccuracy);
+        Geodesics(a,b,c,G0(1),G0(2),G1(1),G1(2),nSubspaces,epsilonAccuracy,maxIterations);
 end
 
 % Prepare a subset of the geodeticPathCoords to return
@@ -156,7 +160,7 @@ end % panouGeodesicDistance
 
 
 
-function [n,c,a0,a1,s,geodeticPathCoords] = Geodesics_dbeta(ax,ay,b,beta0,lambda0,beta1,lambda1,Sub,epsilon)
+function [n,c,a0,a1,s,geodeticPathCoords] = Geodesics_dbeta(ax,ay,b,beta0,lambda0,beta1,lambda1,Sub,epsilon,maxIterations)
 
 %----- Ellipsoid -----
 hx = sqrt(ax^2-b^2);
@@ -179,7 +183,7 @@ dlambda0 = cos(lambda0)*cot(Alpha);
 ddlambda0 = 0;
 
 n=1;
-while n<100
+while n<maxIterations
     n;
     
     Dlambda0 = dlambda0;
@@ -259,7 +263,7 @@ s = (h/3)*sum(S*Fv);
 end
 
 
-function [n,c,a0,a1,s,geodeticPathCoords] = Geodesics(ax,ay,b,beta0,lambda0,beta1,lambda1,Sub,epsilon)
+function [n,c,a0,a1,s,geodeticPathCoords] = Geodesics(ax,ay,b,beta0,lambda0,beta1,lambda1,Sub,epsilon,maxIterations)
 
 %----- Ellipsoid -----
 hx = sqrt(ax^2-b^2);
@@ -282,7 +286,7 @@ dbeta0 = cos(beta0)*cot(Alpha);
 ddbeta0 = 0;
 
 n=1;
-while n<100
+while n<maxIterations
     n;
     
     Dbeta0 = dbeta0;
