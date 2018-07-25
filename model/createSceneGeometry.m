@@ -182,7 +182,7 @@ p.addParameter('radialDistortionVector',[0 0],@isnumeric);
 p.addParameter('cameraTranslation',[0; 0; 120],@isnumeric);
 p.addParameter('cameraTorsion',0,@isnumeric);
 p.addParameter('constraintTolerance',0.02,@isscalar);
-p.addParameter('surfaceSetName','pupilToCamera',@ischar);
+p.addParameter('surfaceSetName',{'pupilToCamera','retinaToPupil'},@ischar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('cameraMedium','air',@ischar);
@@ -224,11 +224,12 @@ end
 
 
 %% refraction - optical system
-[opticalSystem, surfaceLabels, surfaceColors] = assembleOpticalSystem( sceneGeometry.eye, varargin{:});
-sceneGeometry.refraction.surfaceSetName = p.Results.surfaceSetName;
-sceneGeometry.refraction.opticalSystem = opticalSystem;
-sceneGeometry.refraction.surfaceLabels = surfaceLabels;
-sceneGeometry.refraction.surfaceColors = surfaceColors;
+for ii = 1:length(p.Results.surfaceSetName)
+[opticalSystem, surfaceLabels, surfaceColors] = ...
+    assembleOpticalSystem( sceneGeometry.eye, 'surfaceSetName', p.Results.surfaceSetName{ii}, 'cameraMedium', p.Results.cameraMedium);
+sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).opticalSystem = opticalSystem;
+sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceLabels = surfaceLabels;
+sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceColors = surfaceColors;
 
  
 %% constraintTolerance
