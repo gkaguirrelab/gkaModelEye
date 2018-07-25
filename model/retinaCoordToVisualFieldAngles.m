@@ -2,7 +2,7 @@ function foo
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 
-sceneGeometry = createSceneGeometry('sphericalAmetropia',-1);
+sceneGeometry = createSceneGeometry('sphericalAmetropia',-6);
 
 % Obtain the quadric form of the retinal surface
 S = sceneGeometry.refraction.retinaToPupil.opticalSystem(1,1:10);
@@ -57,28 +57,15 @@ assert(max(abs(visualAngleBetweenRetinalCoords(sceneGeometry,foveaG,opticDiscG)-
 % Check if the returned distance value is nan
 if isnan(geoDistance)
     % The geodesic crosses the umbilicus, and thus the Panou solution is
-    % undefined. In this case, I approximate the solution by taking the
-    % geodesic on a bi-axial ellipsoid.
-    radii = quadric.radii(quadric.alignAxes(S));
-    a = mean(radii(3)); % The semi-major axis
-    b = radii(1); % The semi-minor axis
-    sharedLongitude=mean(abs([foveaG(2) opticDiscG(2)]));    
-    geoDistanceA = distance('gc',foveaG(1),foveaG(2),-90,-sharedLongitude,[a sqrt(a^2-b^2)/a],'degrees');
-    geoDistanceB = distance('gc',-90,sharedLongitude,opticDiscG(1),opticDiscG(2),[a sqrt(a^2-b^2)/a],'degrees');
-    geoDistance = geoDistanceA+geoDistanceB;
+    % undefined.
     geodeticPathCoords = [];
-    [lattrk,lontrk] = track('gc',[foveaG(1) -90],[foveaG(2) -sharedLongitude],[a sqrt(a^2-b^2)/a],'degrees',10);
-    for ii=1:10
-        geodeticPathCoords(end+1,:)=quadric.ellipsoidalGeoToCart([lattrk(ii);lontrk(ii);0],S);
-    end
-    [lattrk,lontrk] = track('gc',[opticDiscG(1) -90],[opticDiscG(2) sharedLongitude ],[a sqrt(a^2-b^2)/a],'degrees',10);
-    for ii=1:10
-        geodeticPathCoords(end+1,:)=quadric.ellipsoidalGeoToCart([lattrk(ii);lontrk(ii);0],S);
-    end
-    fprintf('Bi-axial estimated distance fovea -> optic disc center = %0.2f mm\n',geoDistance);
+    fprintf('Surface geodesic distance fovea -> optic disc center is undefined due to umbilical crossing\n');
 else
-    fprintf('Distance fovea -> optic disc center = %0.2f mm\n',geoDistance);
+    fprintf('Surface geodesic distance fovea -> optic disc center = %0.2f mm\n',geoDistance);
 end
+
+eucDistance = sqrt(sum((quadric.ellipsoidalGeoToCart(foveaG,S)-quadric.ellipsoidalGeoToCart(opticDiscG,S)).^2));
+fprintf('Euclidean distance fovea -> optic disc center = %0.2f mm\n',eucDistance);
 
 % Plot the surface
 figure
@@ -110,13 +97,16 @@ end
 eyePoint = quadric.ellipsoidalGeoToCart( retinalApexG, S );
 plot3(eyePoint(1),eyePoint(2),eyePoint(3),'+r','MarkerSize',10);
 
-eyePoint = quadric.ellipsoidalGeoToCart( foveaG, S );
-plot3(eyePoint(1),eyePoint(2),eyePoint(3),'*r','MarkerSize',10);
+eyePointFovea = quadric.ellipsoidalGeoToCart( foveaG, S );
+plot3(eyePointFovea(1),eyePointFovea(2),eyePointFovea(3),'*r','MarkerSize',10);
 
-eyePoint = quadric.ellipsoidalGeoToCart( opticDiscG, S );
-plot3(eyePoint(1),eyePoint(2),eyePoint(3),'*m','MarkerSize',10);
+eyePointOpticDisc = quadric.ellipsoidalGeoToCart( opticDiscG, S );
+plot3(eyePointOpticDisc(1),eyePointOpticDisc(2),eyePointOpticDisc(3),'*m','MarkerSize',10);
 
-plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'-y');
-
+if ~isempty(geodeticPathCoords)
+    plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'-.y');
+else
+    plot3([eyePointFovea(1) eyePointOpticDisc(1)],[eyePointFovea(2) eyePointOpticDisc(2)],[eyePointFovea(3) eyePointOpticDisc(3)],'-y');
+end
 
 end %foo
