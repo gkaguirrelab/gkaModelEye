@@ -37,9 +37,16 @@ u1_xy = [R1(1,2);R1(2,2);0];
 u2_xy = [R2(1,2);R2(2,2);0];
 angle_xy = rad2deg(atan2(norm(cross(u1_xy,u2_xy)), dot(u1_xy,u2_xy)));
 
+% Make the angle signed with respect to the R1 vector
+angle_xy = angle_xy*sign(dot([0;0;1],cross(u1_xy,u2_xy)));
+
+
 u1_xz = [R1(1,2);0;R1(3,2)];
 u2_xz = [R2(1,2);0;R2(3,2)];
 angle_xz = rad2deg(atan2(norm(cross(u1_xz,u2_xz)), dot(u1_xz,u2_xz)));
+
+% Make the angle signed with respect to the R1 vector
+angle_xz = angle_xz*sign(dot([0;1;0],cross(u1_xz,u2_xz)));
 
 
 end
