@@ -1,8 +1,8 @@
-function [virtualEyePoint, nodalPointIntersectError, angle_p1p2, angle_p1p3] = virtualImageFunc( eyePoint, eyePose, cameraTranslation, rotationCenters, opticalSystem )
-% Returns the virtual image location of a point in eyeWorld coordinates
+function [virtualImageRay, nodalPointIntersectError, angle_p1p2, angle_p1p3] = virtualImageFunc( eyePoint, eyePose, cameraTranslation, rotationCenters, opticalSystem )
+% Returns the virtual image ray of a point in eyeWorld coordinates
 %
 % Syntax:
-%  [virtualEyePoint, nodalPointIntersectError] = virtualImageFunc( eyePoint, eyePose, cameraTranslation, rotationCenters, opticalSystem )
+%  [virtualImageRay, nodalPointIntersectError] = virtualImageFunc( eyePoint, eyePose, cameraTranslation, rotationCenters, opticalSystem )
 %
 % Description:
 %   This routine returns the virtual image location of a point that has
@@ -25,7 +25,7 @@ function [virtualEyePoint, nodalPointIntersectError, angle_p1p2, angle_p1p3] = v
 %   opticalSystem         - Equal to sceneGeometry.refraction.opticalSystem
 %
 % Outputs:
-%   virtualEyeWorldPoint  - A 1x3 vector that gives the coordinates (in mm)
+%   virtualImageRay       - A 2x3 vector that gives the coordinates (in mm)
 %                           of a point in eyeWorld space with the
 %                           dimensions p1, p2, p3.
 %   nodalPointIntersectError - The distance (in mm) between the nodal point
@@ -42,11 +42,11 @@ function [virtualEyePoint, nodalPointIntersectError, angle_p1p2, angle_p1p3] = v
     % Assemble the args for the virtualImageFunc
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.opticalSystem};
-    virtualEyePoint = sceneGeometry.refraction.handle( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
+    	sceneGeometry.refraction.pupilToCamera.opticalSystem};
+    virtualImageRay = sceneGeometry.refraction.handle( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
     % Test output against cached value
-    virtualEyePointCached = [-3.925000000000000   2.284274108241066  -0.000000000000000];
-    assert(max(abs(virtualEyePoint - virtualEyePointCached)) < 1e-6)
+    virtualImageRayCached = [-3.925000000000000   2.284274108241066  -0.000000000000000];
+    assert(max(abs(virtualImageRay - virtualImageRayCached)) < 1e-6)
 %}
 %{
     %% Confirm that nodalPointIntersectError remains small across eye poses
@@ -76,7 +76,7 @@ function [virtualEyePoint, nodalPointIntersectError, angle_p1p2, angle_p1p3] = v
 
 % Pre-define the output variables to keep the compiler happy
 nodalPointIntersectError = Inf;
-virtualEyePoint = nan(1,3);
+virtualImageRay = nan(2,3);
 
 % Set some parameters for the search
 nodalErrorTolerance = 1e-4;
@@ -116,7 +116,7 @@ while searchingFlag
     % zero. If we have encountered a bad ray trace away from zero, exit the
     % routine.
     if badTraceFlag && angle_p1p2 > (TolX*10)
-        virtualEyePoint = nan(1,3);
+        virtualImageRay = nan(2,3);
         nodalPointIntersectError = Inf;
         return
     else
@@ -135,7 +135,7 @@ while searchingFlag
 
     % Detect if we hit a bad ray trace.
     if badTraceFlag && angle_p1p3 > (TolX*10)
-        virtualEyePoint = nan(1,3);
+        virtualImageRay = nan(2,3);
         nodalPointIntersectError = Inf;
         return
     else
@@ -168,7 +168,7 @@ end
 %% Obtain the virtual image location
 % With both theta values calculated, now obtain the virtual image ray
 % arising from the pupil plane that reflects the corneal optics
-virtualEyePoint = calcVirtualImagePoint(eyePoint, angle_p1p2, angle_p1p3, opticalSystem);
+virtualImageRay = calcVirtualImageRay(eyePoint, angle_p1p2, angle_p1p3, opticalSystem);
 
 
 end % virtualImageFunc -- MAIN
@@ -272,12 +272,12 @@ end % calcCameraNodeDistanceError
 
 
 
-%% calcVirtualImagePoint
-function [virtualEyePoint] = calcVirtualImagePoint(eyePoint, angle_p1p2, angle_p1p3, opticalSystem)
+%% calcVirtualImageRay
+function [virtualImageRay] = calcVirtualImageRay(eyePoint, angle_p1p2, angle_p1p3, opticalSystem)
 % Returns the coordinates of a virtual image point at the initial depth
 %
 % Syntax:
-%  [virtualEyePoint] = calcVirtualImagePoint(eyePoint, angle_p1p2, angle_p1p3, opticalSystem)
+%  [virtualImageRay] = calcVirtualImageRay(eyePoint, angle_p1p2, angle_p1p3, opticalSystem)
 %
 % Description:
 %   For a given point in eyeWorld coordinates, and for a given pair of
@@ -298,7 +298,7 @@ function [virtualEyePoint] = calcVirtualImagePoint(eyePoint, angle_p1p2, angle_p
 %   opticalSytem
 %
 % Outputs:
-%   virtualEyePoint       - A 1x3 matrix that is the position of the
+%   virtualImageRay       - A 1x3 matrix that is the position of the
 %                           virtual image.
 %
 
@@ -319,7 +319,7 @@ outputRayEyeWorld = outputRayEyeWorld';
 % If any "must intersect" surfaces were missed, the output ray will contain
 % nans. In this case, return return nans for output ray
 if any(isnan(outputRayEyeWorld))
-    virtualEyePoint = nan(2,3);
+    virtualImageRay = nan(2,3);
     return
 end
 
@@ -332,7 +332,7 @@ outputRayEyeWorld(:,1)=outputRayEyeWorld(:,1)-zOffset;
 outputRayEyeWorld(:,2)=outputRayEyeWorld(:,2)-(zOffset*slope_p1p2);
 outputRayEyeWorld(:,3)=outputRayEyeWorld(:,3)-(zOffset*slope_p1p3);
 
-virtualEyePoint = outputRayEyeWorld(1,:);
+virtualImageRay = outputRayEyeWorld;
 
 end % calcVirtualImageRay
 
