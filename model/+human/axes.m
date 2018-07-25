@@ -83,8 +83,9 @@ end
     eccen_p1p3 = (1-probeEye.vitreousChamber.radii(1)/probeEye.vitreousChamber.radii(3))
     format
 %}
-foveaPostionScaler(1) = (1-eye.vitreousChamber.radii(1)/eye.vitreousChamber.radii(2))/0.111716335829885;
-foveaPostionScaler(2) = (1-eye.vitreousChamber.radii(1)/eye.vitreousChamber.radii(3))/0.105571718627770;
+retinaRadii = quadric.radii(eye.retina.S);
+foveaPostionScaler(1) = (1-retinaRadii(1)/retinaRadii(2))/0.111716335829885;
+foveaPostionScaler(2) = (1-retinaRadii(1)/retinaRadii(3))/0.105571718627770;
 foveaPostionScaler(3) = 1;
 axes.visual.degRetina = fovea_WRT_opticAxisDegRetina_emmetrope.*foveaPostionScaler;
 
@@ -106,10 +107,10 @@ end
 % retina. This requires the elliptic integral. The parameter
 % "theta" has a value of zero at the apex of the ellipse along the
 % axial dimension (p1).
-ellipticIntegral_p1p2=@(theta) sqrt(1-sqrt(1-eye.vitreousChamber.radii(2).^2/eye.vitreousChamber.radii(1).^2)^2.*(sin(theta)).^2);
-ellipticIntegral_p1p3=@(theta) sqrt(1-sqrt(1-eye.vitreousChamber.radii(3).^2/eye.vitreousChamber.radii(1).^2)^2.*(sin(theta)).^2);
-arcLength_p1p2 = @(theta1,theta2) eye.vitreousChamber.radii(1).*integral(ellipticIntegral_p1p2, theta1, theta2);
-arcLength_p1p3 = @(theta1,theta2) eye.vitreousChamber.radii(1).*integral(ellipticIntegral_p1p3, theta1, theta2);
+ellipticIntegral_p1p2=@(theta) sqrt(1-sqrt(1-retinaRadii(2).^2/retinaRadii(1).^2)^2.*(sin(theta)).^2);
+ellipticIntegral_p1p3=@(theta) sqrt(1-sqrt(1-retinaRadii(3).^2/retinaRadii(1).^2)^2.*(sin(theta)).^2);
+arcLength_p1p2 = @(theta1,theta2) retinaRadii(1).*integral(ellipticIntegral_p1p2, theta1, theta2);
+arcLength_p1p3 = @(theta1,theta2) retinaRadii(1).*integral(ellipticIntegral_p1p3, theta1, theta2);
 
 % For the calculation, the first theta value is zero, as we are
 % calculating distance from the vitreous chamber apex (i.e., the
@@ -120,22 +121,22 @@ axes.opticDisc.mmRetina = [arcLength_p1p2(0,deg2rad(axes.opticDisc.degRetina(1))
 % Calculate the foveal position in eyeWorld coordinates.
 phi = -axes.visual.degRetina(1);
 theta = -axes.visual.degRetina(2);
-x = eye.vitreousChamber.radii(1) * cosd(theta) * cosd(phi);
-y = eye.vitreousChamber.radii(2) * cosd(theta) * sind(phi);
-z = eye.vitreousChamber.radii(3) * sind(theta);
+x = retinaRadii(1) * cosd(theta) * cosd(phi);
+y = retinaRadii(2) * cosd(theta) * sind(phi);
+z = retinaRadii(3) * sind(theta);
 
 % Note this location in the vitreous chamber field
-axes.visual.coords = [-x y -z] + eye.vitreousChamber.center;
+axes.visual.coords = [-x y -z] + quadric.center(eye.retina.S);
 
 % Calculate the optic disc position in eyeWorld coordinates.
 phi = -axes.opticDisc.degRetina(1);
 theta = -axes.opticDisc.degRetina(2);
-x = eye.vitreousChamber.radii(1) * cosd(theta) * cosd(phi);
-y = eye.vitreousChamber.radii(2) * cosd(theta) * sind(phi);
-z = eye.vitreousChamber.radii(3) * sind(theta);
+x = retinaRadii(1) * cosd(theta) * cosd(phi);
+y = retinaRadii(2) * cosd(theta) * sind(phi);
+z = retinaRadii(3) * sind(theta);
 
 % Store this location
-axes.opticDisc.coords = [-x y -z] + eye.vitreousChamber.center;
+axes.opticDisc.coords = [-x y -z] + quadric.center(eye.retina.S);
 
 % Calcuate the optic disc and visual axes in deg of visual field,
 % using the nodal point of the eye. For the visual axis, these

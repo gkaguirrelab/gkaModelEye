@@ -51,12 +51,11 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %  'nIrisPerimPoints'     - The number of points that are distributed
 %                           around the iris circle. A minimum of 5 is
 %                           required to uniquely specify the image ellipse.
-%  'vitreousChamberMeshDensity' - The number of points that are on
-%                           each latitude line of the vitreous chamber
-%                           ellipsoid. About 45 makes a nice image.
-%  'anteriorChamberMeshDensity' - The number of points that are on
-%                           each longitude line of the anterior chamber
-%                           ellipsoid. About 36 makes a nice image.
+%  'retinaMeshDensity'    - The number of geodetic lines used to render the
+%                           retina ellipsoid. About 24 makes a nice image.
+%  'corneaMeshDensity'    - The number of geodetic lines used to 
+%                           render the corneal ellipsoid. About 20 makes a
+%                           nice image.
 %
 % Outputs:
 %   pupilEllipseOnImagePlane - A 1x5 vector with the parameters of the
@@ -78,9 +77,9 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %   pointLabels           - An nx1 cell array that identifies each of the
 %                           points, from the set {'pupilCenter',
 %                           'irisCenter', 'aziRotationCenter',
-%                           'eleRotationCenter', 'vitreousChamber',
+%                           'eleRotationCenter', 'retina',
 %                           'irisPerimeter', 'pupilPerimeter',
-%                           'anteriorChamber','cornealApex'}.
+%                           'cornea','cornealApex'}.
 %   nodalPointIntersectError - A nx1 vector that contains the distance (in
 %                           mm) between the nodal point of the camera and
 %                           the intersection of a ray on the camera plane.
@@ -100,7 +99,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
     % Obtain the pupil ellipse parameters in transparent format
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
     % Test against cached result
-    pupilEllipseOnImagePlaneCached = [0.027839132089926   0.022398638702744   1.547917599920448   0.000025771313824   0.000191221941167].*1e4;
+    pupilEllipseOnImagePlaneCached = [0.027825794309963   0.022382474890666   1.549688076087988   0.000024212593255   0.000193684606931].*1e4;
     assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-6)
 %}
 %{
@@ -114,7 +113,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
     % Perform the projection and request the full eye model
     [~, ~, worldPoints, ~, pointLabels] = pupilProjection_fwd(eyePose,sceneGeometry,'fullEyeModelFlag',true);
     % Define some settings for display
-    eyePartLabels = {'aziRotationCenter', 'eleRotationCenter', 'vitreousChamber' 'irisPerimeter' 'pupilPerimeterFront' 'pupilPerimeterBack' 'anteriorChamber' 'cornealApex' 'fovea' 'opticDisc'};
+    eyePartLabels = {'aziRotationCenter', 'eleRotationCenter', 'retina' 'irisPerimeter' 'pupilPerimeterFront' 'pupilPerimeterBack' 'cornea' 'cornealApex' 'fovea' 'opticDisc'};
     plotColors = {'>r' '^m' '.k' '*b' '*g' '*g' '.y' '*y' '*r' 'xk'};
     % Prepare a figure
     figure
@@ -177,8 +176,8 @@ p.addParameter('fullEyeModelFlag',false,@islogical);
 p.addParameter('nPupilPerimPoints',5,@(x)(isnumeric(x) && x>4));
 p.addParameter('pupilPerimPhase',0,@isnumeric);
 p.addParameter('nIrisPerimPoints',5,@isnumeric);
-p.addParameter('anteriorChamberMeshDensity',20,@isnumeric);
-p.addParameter('vitreousChamberMeshDensity',24,@isnumeric);
+p.addParameter('corneaMeshDensity',20,@isnumeric);
+p.addParameter('retinaMeshDensity',24,@isnumeric);
 
 % parse
 p.parse(eyePose, sceneGeometry, varargin{:})
@@ -294,50 +293,50 @@ if p.Results.fullEyeModelFlag
     pointLabels = [pointLabels; tmpLabels];
     
     % Create the anterior chamber vertices
-    anteriorChamberPoints = quadric.surfaceGrid(...
+    corneaPoints = quadric.surfaceGrid(...
         sceneGeometry.eye.cornea.front.S,...
         sceneGeometry.eye.cornea.front.boundingBox,...
-        p.Results.anteriorChamberMeshDensity, ...
+        p.Results.corneaMeshDensity, ...
         'parametricPolar');
 
     % Identify the index of the corneal apex
-    [~,apexIdx]=max(anteriorChamberPoints(:,1));
+    [~,apexIdx]=max(corneaPoints(:,1));
     
     % Save the corneal apex coordinates
-    cornealApex = anteriorChamberPoints(apexIdx,:);
+    cornealApex = corneaPoints(apexIdx,:);
         
     % Add the points and labels
-    eyePoints = [eyePoints; anteriorChamberPoints];
-    tmpLabels = cell(size(anteriorChamberPoints,1), 1);
-    tmpLabels(:) = {'anteriorChamber'};
+    eyePoints = [eyePoints; corneaPoints];
+    tmpLabels = cell(size(corneaPoints,1), 1);
+    tmpLabels(:) = {'cornea'};
     pointLabels = [pointLabels; tmpLabels];
     
     % Add an entry for the corneal apex
     eyePoints = [eyePoints; cornealApex];
     pointLabels = [pointLabels; 'cornealApex'];
     
-    % Create the vitreous chamber vertices
-    vitreousChamberPoints = quadric.surfaceGrid(...
-        sceneGeometry.eye.vitreousChamber.S,...
-        sceneGeometry.eye.vitreousChamber.boundingBox,...
-        p.Results.vitreousChamberMeshDensity, ...
+    % Create the retina vertices
+    retinaPoints = quadric.surfaceGrid(...
+        sceneGeometry.eye.retina.S,...
+        sceneGeometry.eye.retina.boundingBox,...
+        p.Results.retinaMeshDensity, ...
         'ellipsoidalPolar');
     
     % Retain those points that are posterior to the iris plane, and have a
     % distance from the optical axis in the p2xp3 plane of greater than the
     % iris radius
     retainIdx = logical(...
-        (vitreousChamberPoints(:,1) < sceneGeometry.eye.iris.center(1)) .* ...
-        sqrt(vitreousChamberPoints(:,2).^2+vitreousChamberPoints(:,3).^2) > sceneGeometry.eye.iris.radius );
+        (retinaPoints(:,1) < sceneGeometry.eye.iris.center(1)) .* ...
+        sqrt(retinaPoints(:,2).^2+retinaPoints(:,3).^2) > sceneGeometry.eye.iris.radius );
     if all(~retainIdx)
-        error('pupilProjection_fwd:irisCenterPosition','The iris center is behind the center of the vitreous chamber');
+        error('pupilProjection_fwd:irisCenterPosition','The iris center is behind the center of the retina');
     end
-    vitreousChamberPoints = vitreousChamberPoints(retainIdx,:);
+    retinaPoints = retinaPoints(retainIdx,:);
     
     % Add the points and labels
-    eyePoints = [eyePoints; vitreousChamberPoints];
-    tmpLabels = cell(size(vitreousChamberPoints,1), 1);
-    tmpLabels(:) = {'vitreousChamber'};
+    eyePoints = [eyePoints; retinaPoints];
+    tmpLabels = cell(size(retinaPoints,1), 1);
+    tmpLabels(:) = {'retina'};
     pointLabels = [pointLabels; tmpLabels];
     
 end
@@ -356,7 +355,7 @@ if isfield(sceneGeometry,'refraction')
         % Assemble the static args for the virtualImageFunc
         args = {sceneGeometry.cameraPosition.translation, ...
                 sceneGeometry.eye.rotationCenters, ...
-                sceneGeometry.refraction.opticalSystem};
+                sceneGeometry.refraction.pupilToCamera.opticalSystem};
         % Identify the eyePoints subject to refraction by the cornea
         refractPointsIdx = find(...
             strcmp(pointLabels,'pupilPerimeterFront')+...
@@ -369,9 +368,11 @@ if isfield(sceneGeometry,'refraction')
             % Get this eyeWorld point
             eyePoint=eyePoints(refractPointsIdx(ii),:);
             % Perform the computation using the passed function handle.
-            [eyePoints(refractPointsIdx(ii),:), nodalPointIntersectError(refractPointsIdx(ii))] = ...
+            [virtualImageRay, intersectError] = ...
                 sceneGeometry.refraction.handle(...
                 eyePoint, eyePose, args{:});
+            eyePoints(refractPointsIdx(ii),:) = virtualImageRay(1,:);
+            nodalPointIntersectError(refractPointsIdx(ii)) = intersectError;
         end
     end
 end
@@ -407,8 +408,8 @@ end
 % chamber points that are posterior to the most posterior of the centers of
 % rotation of the eye, and thus would not be visible to the camera.
 if p.Results.fullEyeModelFlag
-    seenIdx = strcmp(pointLabels,'vitreousChamber') .* (eyePoints(:,1) >= min([sceneGeometry.eye.rotationCenters.azi(1) sceneGeometry.eye.rotationCenters.ele(1)]));
-    seenIdx = logical(seenIdx + ~strcmp(pointLabels,'vitreousChamber'));
+    seenIdx = strcmp(pointLabels,'retina') .* (eyePoints(:,1) >= min([sceneGeometry.eye.rotationCenters.azi(1) sceneGeometry.eye.rotationCenters.ele(1)]));
+    seenIdx = logical(seenIdx + ~strcmp(pointLabels,'retina'));
     pointLabels(~seenIdx) = strcat(pointLabels(~seenIdx),'_hidden');
 end
 

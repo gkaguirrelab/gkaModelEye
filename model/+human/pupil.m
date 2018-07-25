@@ -1,31 +1,28 @@
 function pupil = pupil( eye )
 
-% The pupil is an aperture in the iris, centered on the optical
-% axis
+% The pupil is an aperture in the iris, centered on the optical axis
 pupil.center = [eye.iris.center(1) 0 0];
 
-% The actual pupil of the eye is elliptical. Further, the
-% eccentricity and theta of the entrance pupil ellipse changes with
-% pupil dilation:
+% The actual pupil of the eye is elliptical. Further, the eccentricity and
+% theta of the entrance pupil ellipse changes with pupil dilation:
 %
 %   Wyatt, Harry J. "The form of the human pupil." Vision Research
 %   35.14 (1995): 2021-2036.
 %
-% Wyatt reported the average ellipse parameters for the entrance
-% pupil (with the visual axis aligned with camera axis) under dim
-% and bright light conditions. We calculate the corresponding
-% parameters of the actual pupil on the optical axis. We then fit a
-% hyperbolic tangent (sigmoidal) function to the the eccentricity
-% of the actual pupil as a function of the actual pupil radius. The
-% theta values observed by Wyatt were close to vertically
-% orientated in the dark, and horizontally oriented in the light.
-% We find that a slight tilt away from vertical for the dilated
+% Wyatt reported the average ellipse parameters for the entrance pupil
+% (with the visual axis aligned with camera axis) under dim and bright
+% light conditions. We calculate the corresponding parameters of the actual
+% pupil on the optical axis. We then fit a hyperbolic tangent (sigmoidal)
+% function to the the eccentricity of the actual pupil as a function of the
+% actual pupil radius. The theta values observed by Wyatt were close to
+% vertically orientated in the dark, and horizontally oriented in the
+% light. We find that a slight tilt away from vertical for the dilated
 % pupil allows our model to fit the Mathur 2013 obliquity component
-% perfectly. When the actual pupil eccentricity is below zero, the
-% theta is set to zero (horizontal), and above zero value it is set
-% to ~pi/2 (vertical). In the forward model, we take the absolute
-% value of the eccentricity returned by the parameters for the
-% actual pupil eccentrivity.
+% perfectly. When the actual pupil eccentricity is below zero, the theta is
+% set to zero (horizontal), and above zero value it is set to ~pi/2
+% (vertical). In the forward model, we take the absolute value of the
+% eccentricity returned by the parameters for the actual pupil
+% eccentrivity.
 %{
     % Observed entrance pupil diameters reported in Wyatt 1995.
     entranceRadius = [3.09/2 4.93/2];
@@ -87,13 +84,13 @@ pupil.center = [eye.iris.center(1) 0 0];
     hold on
     plot(0.5:.1:3,fitEccen(0.5:.1:3),'-r');
 %}
-% Specify the params and equation that defines the actual pupil
-% ellipse. This can be invoked as a function using str2func.
+% Specify the params and equation that defines the actual pupil ellipse.
+% This can be invoked as a function using str2func.
 pupil.eccenParams = [-1.749 -4.770 0.099 -0.145];
 pupil.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',pupil.eccenParams(1),pupil.eccenParams(2),pupil.eccenParams(3),pupil.eccenParams(4));
 
-% The theta values of the actual pupil ellipse for eccentricities
-% less than, and greater than, zero.
+% The theta values of the actual pupil ellipse for eccentricities less
+% than, and greater than, zero.
 switch eye.meta.eyeLaterality
     case 'Right'
         pupil.thetas = [0  3/7*pi];

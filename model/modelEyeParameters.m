@@ -122,8 +122,8 @@ switch eye.meta.species
         % Pupil
         eye.pupil = human.pupil(eye);
 
-        % vitreous chamber
-        eye.vitreousChamber = human.vitreousChamber(eye);
+        % retina
+        eye.retina = human.retina(eye);
 
         % Lens
         eye.lens = human.lens(eye);
@@ -225,13 +225,13 @@ switch eye.meta.species
         
 
         %% vitreous chamber
-        eye.vitreousChamber.radii = [ 8.25 8.25 8.25];
+        eye.retina.radii = [ 8.25 8.25 8.25];
         
         % This is the human value; Need to do the computation for the dog.
-        vitreousChamberApexDepth = 3.25;
+        retinaApexDepth = 3.25;
 
         if isempty(p.Results.axialLength)
-            eye.axialLength = vitreousChamberApexDepth + eye.vitreousChamber.radii(1)*2;
+            eye.axialLength = retinaApexDepth + eye.vitreousChamber.radii(1)*2;
         else
             % If a specific axial length was passed (perhaps obtained by
             % measurement using the IOL Master apparatus), set the model

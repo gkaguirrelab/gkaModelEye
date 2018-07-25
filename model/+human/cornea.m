@@ -2,39 +2,37 @@ function cornea = cornea(eye, cornealAxis)
 
 % The corneal front surface is taken from Table 1 of Navarro 2006:
 %
-%   Navarro, Rafael, Luis González, and José L. Hernández. "Optics
-%   of the average normal cornea from general and canonical
-%   representations of its surface topography." JOSA A 23.2 (2006):
-%   219-232.
+%   Navarro, Rafael, Luis González, and José L. Hernández. "Optics of the
+%   average normal cornea from general and canonical representations of its
+%   surface topography." JOSA A 23.2 (2006): 219-232.
 %
-% Their dimensions [a,b,c] correspond to our [p2, p3, p1].
+% Their dimensions [a,b,c] correspond to [p2, p3, p1] in the current model.
 %
-% The radius of curvature at the vertex of the cornea was found by
-% Atchison to vary as a function of spherical ametropia (Table 1):
+% The radius of curvature at the vertex of the cornea was found by Atchison
+% to vary as a function of spherical ametropia (Table 1):
 %
 %	Atchison, David A. "Optical models for human myopic eyes."
 %	Vision research 46.14 (2006): 2236-2250.
 %
-% Atchison provides parameters for a radially symmetric ellipsoid
-% in terms of the radius of curvature (R) at the vertex and its
-% asphericity (Q). R varies with spherical ametropia (D):
+% Atchison provides parameters for a radially symmetric ellipsoid in terms
+% of the radius of curvature (R) at the vertex and its asphericity (Q). R
+% varies with spherical ametropia (D):
 %
 %   R = 7.77 + 0.022 * D
 %   Q = -0.15
 %
-% Because the asphericity of the cornea did not change, the change
-% in R corresponds to an overall scaling of the ellipsoid in all
-% dimensions. We adjust the Navarro values to account for this
-% effect. R and Q are related to the radii of an ellipse along the
-% primary and secondy axes (a, b) by:
+% Because the asphericity of the cornea did not change, the change in R
+% corresponds to an overall scaling of the ellipsoid in all dimensions. We
+% adjust the Navarro values to account for this effect. R and Q are related
+% to the radii of an ellipse along the primary and secondy axes (a, b) by:
 %
 %   R = b^2/a
 %	Q = (b^2 / a^2) - 1
 %
-% when Q < 0. Therefore, given R and Q, we can obtain a and b,
-% which correspond to the radii of the ellipsoid model, with a
-% corresponding to the axial dimension, and b to the horizontal and
-% vertical dimensions. Checking my algebra here:
+% when Q < 0. Therefore, given R and Q, we can obtain a and b, which
+% correspond to the radii of the ellipsoid model, with a corresponding to
+% the axial dimension, and b to the horizontal and vertical dimensions.
+% Checking my algebra here:
 %{
     syms a b R Q
     eqn1 = R == b^2/a;
@@ -43,8 +41,8 @@ function cornea = cornea(eye, cornealAxis)
     solution.a
     solution.b
 %}
-% We calculate the change in parameters of the Navarro model that
-% would be expected given the Atchison effect for ametropia.
+% We calculate the change in parameters of the Navarro model that would be
+% expected given the Atchison effect for ametropia.
 %{
     R = @(D) 7.77 + 0.022 .* D;
     Q = -0.15;
@@ -61,8 +59,8 @@ function cornea = cornea(eye, cornealAxis)
     % for the front surface of the cornea; we use this below.
     atchNavScaler = a(0) ./ radiiNavFront(1)
 %}
-% We set the center of the cornea front surface ellipsoid so that
-% the axial apex (prior to rotation) is at position [0, 0, 0]
+% We set the center of the cornea front surface ellipsoid so that the axial
+% apex (prior to rotation) is at position [0, 0, 0]
 radii = [14.26   10.43   10.27] .* ...
     ((eye.meta.sphericalAmetropia .* -0.0028)+1);
 S = quadric.scale(quadric.unitSphere,radii);
@@ -73,8 +71,8 @@ cornea.front.boundingBox=[-4 0 -8 8 -8 8];
 
 % Atchison finds that the back surface of cornea does not vary by
 % ametropia. Navarro does not provide posterior cornea parameters.
-% Therefore, we scale the parameters provided by Atchison to relate
-% to the axial corneal radius specified by Navarro:
+% Therefore, we scale the parameters provided by Atchison to relate to the
+% axial corneal radius specified by Navarro:
 %{
     R = 6.4;
     Q = -0.275;
