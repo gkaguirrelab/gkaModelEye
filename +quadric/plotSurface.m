@@ -1,4 +1,4 @@
-function p = plotSurface(S,boundingBox,surfColor,surfAlpha)
+function p = plotSurface(S,boundingBox,surfColor,surfAlpha,bbTol)
 % Add a 3D plot of the quadric surface to the active figure
 %
 % Syntax:
@@ -26,13 +26,29 @@ function p = plotSurface(S,boundingBox,surfColor,surfAlpha)
 %   p                     - Handle to the surface plot object
 %
 
+% Handle incomplete input arguments
+if nargin==2
+    surfColor=[0.9 0.9 0.9];
+    surfAlpha=0.8;
+    bbTol = 1e-2;
+end
+
+if nargin==3
+    surfAlpha=0.8;
+    bbTol = 1e-2;
+end
+
+if nargin==4
+    bbTol = 1e-2;
+end
+
 % Define the level of detail of the surface mesh.
 meshGridSamples = 100;
 
 % Create a linear meshgrid within the boundingBox range
-[xx, yy, zz]=meshgrid( linspace(boundingBox(1),boundingBox(2),meshGridSamples),...
-    linspace(boundingBox(3),boundingBox(4),meshGridSamples),...
-    linspace(boundingBox(5),boundingBox(6),meshGridSamples));
+[xx, yy, zz]=meshgrid( linspace(boundingBox(1)-bbTol,boundingBox(2)+bbTol,meshGridSamples),...
+    linspace(boundingBox(3)-bbTol,boundingBox(4)+bbTol,meshGridSamples),...
+    linspace(boundingBox(5)-bbTol,boundingBox(6)+bbTol,meshGridSamples));
 
 % Obtain the polynomial function for the quadric surface
 F = quadric.vecToFunc(S);
