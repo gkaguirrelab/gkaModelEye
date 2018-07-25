@@ -144,7 +144,7 @@ dynamicArgs = {[0,0,0], [0,0,0,0]};
 % Define the form of the staticArgs (which are sceneGeometry components)
 staticArgs = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.opticalSystem};
+    	sceneGeometry.refraction.pupilToCamera.opticalSystem};
 % Assemble the full args
 args = [dynamicArgs, staticArgs{:}];
 
