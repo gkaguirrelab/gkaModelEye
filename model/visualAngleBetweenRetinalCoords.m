@@ -1,4 +1,4 @@
-function visualAngles = visualAngleBetweenRetinalCoords(sceneGeometry,G0,G1,X0,X1)
+function visualAngles = visualAngleBetweenRetinalCoords(eye,G0,G1,X0,X1)
 % The visual angles between two retinal points
 %
 % Syntax:
@@ -14,7 +14,7 @@ function visualAngles = visualAngleBetweenRetinalCoords(sceneGeometry,G0,G1,X0,X
 %   either Cartesian or ellipsoidal geodetic coordinates.
 %
 % Inputs:
-%   sceneGeometry         - Structure. SEE: createSceneGeometry
+%   eye                   - Structure. SEE: modelEyeParameters
 %   G0, G1                - 3x1 vectors that provide the geodetic
 %                           coordinates beta, omega, and elevation in units
 %                           of degrees. Beta is defined over the range
@@ -36,25 +36,32 @@ function visualAngles = visualAngleBetweenRetinalCoords(sceneGeometry,G0,G1,X0,X
 % If only three input values were passed, derive the X0/X1 Cartesian
 % coordinates from the ellipsoidal geodetic coordinates.
 if nargin==3
-    S = sceneGeometry.refraction.retinaToPupil.opticalSystem(1,1:10);
+    S = eye.retina.S;
     X0 = quadric.ellipsoidalGeoToCart( G0, S )';
     X1 = quadric.ellipsoidalGeoToCart( G1, S )';
+end
+
+% Handle to the virtual image function; use the MEX version if available
+if exist('virtualImageFuncMex')==3
+    refractionHandle = @virtualImageFuncMex;
+else
+    refractionHandle = @virtualImageFunc;
 end
 
 % Assemble arguments for the virtual image function to trace from the
 % retina to the center of the pupil aperture. The "camera" position is set
 % as the pupil center, with the dimensions rearranged for world
 % coordinates.
-args = {sceneGeometry.eye.pupil.center([2 3 1])', ...
-    sceneGeometry.eye.rotationCenters, ...
-    sceneGeometry.refraction.retinaToPupil.opticalSystem};
+args = {eye.pupil.center([2 3 1])', ...
+    eye.rotationCenters, ...
+    assembleOpticalSystem( eye, 'surfaceSetName','retinaToPupil' )};
 
 % Set eyePose to all zeros (i.e., the eye is not rotated).
 eyePose = [0 0 0 0];
 
 % Ray trace to the center of the pupil
-R0 = sceneGeometry.refraction.handle(X0, eyePose, args{:});
-R1 = sceneGeometry.refraction.handle(X1, eyePose, args{:});
+R0 = refractionHandle(X0, eyePose, args{:});
+R1 = refractionHandle(X1, eyePose, args{:});
 
 % Normalize the rays, and reverse the direction so that the ray is headed
 % from the pupil center out towards the cornea
@@ -64,8 +71,8 @@ R1 = quadric.normalizeRay(R1');
 R1(:,2)=-R1(:,2);
 
 % Ray trace from the pupil center through the cornea
-R0 = rayTraceQuadrics(R0, sceneGeometry.refraction.pupilToCamera.opticalSystem);
-R1 = rayTraceQuadrics(R1, sceneGeometry.refraction.pupilToCamera.opticalSystem);
+R0 = rayTraceQuadrics(R0, assembleOpticalSystem( eye, 'surfaceSetName','pupilToCamera','cameraMedium','air' ));
+R1 = rayTraceQuadrics(R1, assembleOpticalSystem( eye, 'surfaceSetName','pupilToCamera','cameraMedium','air' ));
 
 % Calculate and return the signed angles between the two rays
 [~, angle_p1p2, angle_p1p3] = quadric.angleRays( R0, R1 );

@@ -78,8 +78,6 @@ p.addParameter('cornealAxis',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
 p.addParameter('spectralDomain','nir',@ischar);
-p.addParameter('visualAxisDegRetina',[],@(x)(isempty(x) || isnumeric(x)));
-p.addParameter('opticDiscAxisDegRetina',[],@(x)(isempty(x) || isnumeric(x)));
 
 % parse
 p.parse(varargin{:})
@@ -128,11 +126,11 @@ switch eye.meta.species
         % Lens
         eye.lens = human.lens(eye);
 
-        % Axes
-        eye.axes = human.axes(eye, p.Results.visualAxisDegRetina, p.Results.opticDiscAxisDegRetina);
-
         % Rotation centers
         eye.rotationCenters = human.rotationCenters(eye);
+
+        % Axes
+        eye.axes = human.axes(eye);
 
         %% Refractive indices
         % Obtain refractive index values for this spectral domain.

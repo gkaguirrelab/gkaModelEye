@@ -1,155 +1,160 @@
-function axes = axes( eye, visualAxisDegRetina, opticDiscAxisDegRetina )
+function axes = axes( eye )
 
-%% Axes - optical
+%{
+% Obtain the distance in mm between the optic disc and fovea.
+[geoDistance,~,~,geodeticPathCoords] = quadric.panouGeodesicDistance(S,axes.visual.geodetic,axes.opticDisc.geodetic);
+
+% Check if the returned distance value is nan
+if isnan(geoDistance)
+    % The geodesic crosses the umbilicus, and thus the Panou solution is
+    % undefined.
+    geodeticPathCoords = [];
+    fprintf('Surface geodesic distance fovea -> optic disc center is undefined due to umbilical crossing\n');
+else
+    fprintf('Surface geodesic distance fovea -> optic disc center = %0.2f mm\n',geoDistance);
+end
+
+eucDistance = sqrt(sum((quadric.ellipsoidalGeoToCart(axes.visual.geodetic,S)-quadric.ellipsoidalGeoToCart(axes.opticDisc.geodetic,S)).^2));
+fprintf('Euclidean distance fovea -> optic disc center = %0.2f mm\n',eucDistance);
+
+% Plot the surface
+figure
+boundingBox = sceneGeometry.refraction.retinaToPupil.opticalSystem(1,12:17);
+quadric.plotSurface(S,boundingBox,[0.9 0.9 0.9],0.8);
+camlight
+lighting gouraud
+hold on
+
+% Plot lines of constant beta
+for beta = -90:10:50
+    coords =[];
+    for omega = -180:3:180
+        coords(end+1,:)=quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
+    end
+    plot3(coords(:,1),coords(:,2),coords(:,3),'-b');
+end
+
+% Plot lines of constant omega
+for omega = -180:10:180
+    coords =[];
+    for beta = -90:3:50
+        coords(end+1,:)=quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
+    end
+    plot3(coords(:,1),coords(:,2),coords(:,3),'-g');
+end
+
+% Add the retinal landmarks
+eyePoint = quadric.ellipsoidalGeoToCart( axes.optical.geodetic, S );
+plot3(eyePoint(1),eyePoint(2),eyePoint(3),'+r','MarkerSize',10);
+
+eyePointFovea = quadric.ellipsoidalGeoToCart( axes.visual.geodetic, S );
+plot3(eyePointFovea(1),eyePointFovea(2),eyePointFovea(3),'*r','MarkerSize',10);
+
+eyePointOpticDisc = quadric.ellipsoidalGeoToCart( opticDiscG, S );
+plot3(eyePointOpticDisc(1),eyePointOpticDisc(2),eyePointOpticDisc(3),'*m','MarkerSize',10);
+
+if ~isempty(geodeticPathCoords)
+    plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'-.y');
+else
+    plot3([eyePointFovea(1) eyePointOpticDisc(1)],[eyePointFovea(2) eyePointOpticDisc(2)],[eyePointFovea(3) eyePointOpticDisc(3)],'-y');
+end
+%}
+
+
+% Obtain the quadric form of the retinal surface
+S = eye.retina.S;
+
+% Set some fmincon options we will be using below
+options = optimoptions(@fmincon,...
+    'Display','off');
+
+
+%% optical axis
 % Eye axes are specified as rotations (in degrees) within the eye
 % world coordinate frame for azimuth, elevation, and rotation. Axes
 % are defined relative to the optical axis, which itself is set to
 % be aligned with the p1 dimension of the eye world coordinate
 % frame.
-axes.optical.degRetina = [0 0 0];
-axes.optical.mmRetina = [0 0 0];
 axes.optical.degField = [0 0 0];
+axes.optical.geodetic = [-90 -90 0];
+axes.optical.cartesian = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
 
 
-%% Axes - visual and blind spot
-% The model establishes the position of the fovea and then sets the
-% optic disc at a constant distance from the fovea in units of
-% retinal degrees. The lines that connect these points on the fovea
-% to the posterior nodal point of the eye define the visual and
-% blind spot axes, respectively. The difference between these gives
-% the position of the blind spot relative to fixation.
-%
-% Find the azimuthal arc in deg retina that produces a blind spot
-% position in the horizontal and vertical directions that is equal
-% to specified values from the literature. Values taken from Safren
-% 1993 for their dim stimulus, under the assumption that this will
-% be the most accurate given the minimization of light scatter. We
-% model the fovea as being 3x closer to the optical axis than is
-% the optic disc.
-%{
-    % Position of the blind spot in degrees of visual field
-    % relative to fixation
-    targetBlindSpotAngle = [-16.02 -1.84 0];
-    blindSpotAngle = @(eye) axes.opticDisc.degField - axes.visual.degField;
-    myObj = @(x) sum((blindSpotAngle(modelEyeParameters('opticDiscAxisDegRetina',[3/4*x(1),x(2)/2,0],'visualAxisDegRetina',-[1/4*x(1),x(2)/2,0])) - targetBlindSpotAngle).^2);
-    options = optimoptions('fmincon','Display','off');
-    retinalArcDeg = fmincon(myObj,[20 4],[],[],[],[],[],[],[],options);
-    fprintf('Distance between the fovea and the center of the optic disc in retinal degrees in the right eye:\n');
-    fprintf('\tazimuth = %4.4f; elevation = %4.4f \n\n', retinalArcDeg([1 2]));
-%}
+%% visual axis
+% Set the desired angle in degrees of visual field between the optic and
+% visual axes of the eye (effectively, kappa). We assume an azimuth alpha
+% of 5.8 degrees for an emmetropic right eye (Figure 8 of Mathur 2013). We
+% assume an elevation alpha of 2.5 degrees.
 switch eye.meta.eyeLaterality
     case 'Right'
-        opticDisc_WRT_foveaDegRetina = [-22.9384, 2.6078 ,0];
+        axes.visual.degField = [5.8 2.5 0];
     case 'Left'
-        opticDisc_WRT_foveaDegRetina = [22.9384, 2.6078 ,0];
+        axes.visual.degField = [-5.8 2.5 0];
 end
 
-% We next require the position of the fovea with respect to the
-% optic axis in the emmetropic eye. We identify the position (in
-% retinal degrees) of the fovea that results in a visual axis that
-% has resulting alpha angles that match empirical results.  We
-% assume an azimuth alpha of 5.8 degrees for an emmetropic eye
-% (Figure 8 of Mathur 2013). We assume an elevation alpha of 2.5
-% degrees, as this value, when adjusted to account for the longer
-% axial length of the subjects in the Mathur study, best fits the
-% Mathur data. Given these angles, we then calculate the
-% corresponding position of the fovea w.r.t. the the optical axis
-% of the eye (adjusted for eye laterality).
-%{
-    eye = modelEyeParameters();
-    % These are the visual axis angles for an emmetropic eye
-    targetAlphaAngle = [5.8  2.5  0];
-    myComputedAlphaAzi = @(eye) axes.visual.degField(1);
-    myObj = @(x) (targetAlphaAngle(1) - myComputedAlphaAzi(modelEyeParameters('visualAxisDegRetina',[x 0 0])))^2;
-    aziFoveaEmmetropic = fminsearch(myObj,9)
-    myComputedAlphaEle = @(eye) axes.visual.degField(2);
-    myObj = @(x) (targetAlphaAngle(2) - myComputedAlphaEle(modelEyeParameters('visualAxisDegRetina',[aziFoveaEmmetropic x 0])))^2;
-    eleFoveaEmmetropic = fminsearch(myObj,2)
-%}
+% We now calculate the location on the retina corresponding to this visual
+% angle. The objective function is the difference in the visual field
+% position of a candidate retinal point (G) and the desired value. Note
+% that the elevational angle is inverted, to account for the reversed
+% rotation convention that we have for positive rotation values elevating
+% the eye.
+myObj = @(G) sum(angdiff(deg2rad(visualAngleBetweenRetinalCoords(eye,axes.optical.geodetic,G)),deg2rad(axes.visual.degField(1:2).*[1 -1])).^2).*1e100;
+
+% Supply an initial guess as to the geodetic coords of the fovea, guided by
+% spherical ametropia and laterality.
+if (-0.5<eye.meta.sphericalAmetropia) && (eye.meta.sphericalAmetropia<0.5)
+    x0 = [-85 -121 0];
+end
+if isequal(eye.meta.eyeLaterality,'Left')
+    x0(2)=-x0(2);
+end
+
+% Perform the search
+axes.visual.geodetic = fmincon(myObj, x0, [], [], [], [], [-89 -180 0], [-70 0 0], [], options);
+
+% Confirm that the visual angles are as desired
+assert(max(abs(visualAngleBetweenRetinalCoords(eye,axes.optical.geodetic,axes.visual.geodetic)-axes.visual.degField(1:2).*[1 -1]))<1e-2);
+
+% Obtain the Cartesian coordinates of the fovea
+axes.visual.cartesian = quadric.ellipsoidalGeoToCart(axes.visual.geodetic,S)';
+
+
+%% optic disc axis (physiologic blind spot)
+% Values taken from Safren 1993 for their dim stimulus, under the
+% assumption that this will be the most accurate given the minimization of
+% light scatter.
 switch eye.meta.eyeLaterality
     case 'Right'
-        fovea_WRT_opticAxisDegRetina_emmetrope = [8.2964 -3.5762 0];
+        axes.opticDisc.degField = [-16.02 -1.84 0];
     case 'Left'
-        fovea_WRT_opticAxisDegRetina_emmetrope = [-8.2964 -3.5762 0];
+        axes.opticDisc.degField = [16.02 -1.84 0];
 end
 
-% In our model, the fovea moves towards the apex of the posterior
-% chamber as the eye becomes closer to spherical. We implement this
-% effect by calculating the ratio of the vitreous chamber axes.
-%{
-    format long
-    probeEye = modelEyeParameters('sphericalAmetropia',0);
-    eccen_p1p2 = (1-probeEye.vitreousChamber.radii(1)/probeEye.vitreousChamber.radii(2))
-    eccen_p1p3 = (1-probeEye.vitreousChamber.radii(1)/probeEye.vitreousChamber.radii(3))
-    format
-%}
-retinaRadii = quadric.radii(eye.retina.S);
-foveaPostionScaler(1) = (1-retinaRadii(1)/retinaRadii(2))/0.111716335829885;
-foveaPostionScaler(2) = (1-retinaRadii(1)/retinaRadii(3))/0.105571718627770;
-foveaPostionScaler(3) = 1;
-axes.visual.degRetina = fovea_WRT_opticAxisDegRetina_emmetrope.*foveaPostionScaler;
+% Define the objective. Again note that the vertical target angle in
+% degrees of visual field is reversed.
+myObj = @(G) sum(angdiff(deg2rad(visualAngleBetweenRetinalCoords(eye,axes.visual.geodetic,G)),deg2rad(axes.opticDisc.degField(1:2).*[1 -1])).^2).*1e100;
 
-% The optic disc maintains a fixed distance (in retinal degrees)
-% from the fovea
-axes.opticDisc.degRetina = opticDisc_WRT_foveaDegRetina + axes.visual.degRetina;
-
-% If a visualAxisDegRetina or opticDiscAxisDegRetina key-value pair
-% was passed, override the computed value. This is used primarily
-% during model development.
-if ~isempty(visualAxisDegRetina)
-    axes.visual.degRetina = visualAxisDegRetina;
+% Define some x0 values to initialize the search, varying by ametropia
+if isequal(quadric.dimensionSizeRank(S),[1 3 2])
+    x0 = [-78 -5 0];
+    lb = [-89 -30 0];
+    ub = [-70 30 0];
 end
-if ~isempty(opticDiscAxisDegRetina)
-    axes.opticDisc.degRetina = opticDiscAxisDegRetina;
+if isequal(quadric.dimensionSizeRank(S),[1 2 3])
+    x0 = [-75 120 0];
+    lb = [-89 -30 0];
+    ub = [-70 180 0];
 end
 
-% Calculate the foveal and optic disc positions in terms of mm of
-% retina. This requires the elliptic integral. The parameter
-% "theta" has a value of zero at the apex of the ellipse along the
-% axial dimension (p1).
-ellipticIntegral_p1p2=@(theta) sqrt(1-sqrt(1-retinaRadii(2).^2/retinaRadii(1).^2)^2.*(sin(theta)).^2);
-ellipticIntegral_p1p3=@(theta) sqrt(1-sqrt(1-retinaRadii(3).^2/retinaRadii(1).^2)^2.*(sin(theta)).^2);
-arcLength_p1p2 = @(theta1,theta2) retinaRadii(1).*integral(ellipticIntegral_p1p2, theta1, theta2);
-arcLength_p1p3 = @(theta1,theta2) retinaRadii(1).*integral(ellipticIntegral_p1p3, theta1, theta2);
+% Perform the search
+axes.opticDisc.geodetic = fmincon(myObj, x0, [], [], [], [], lb, ub, [], options);
 
-% For the calculation, the first theta value is zero, as we are
-% calculating distance from the vitreous chamber apex (i.e., the
-% intersection of the optical axis with the retina).
-axes.visual.mmRetina = [arcLength_p1p2(0,deg2rad(axes.visual.degRetina(1))), arcLength_p1p3(0,deg2rad(axes.visual.degRetina(2))), 0];
-axes.opticDisc.mmRetina = [arcLength_p1p2(0,deg2rad(axes.opticDisc.degRetina(1))), arcLength_p1p3(0,deg2rad(axes.opticDisc.degRetina(2))), 0];
+% Confirm that the visual angles are as desired
+assert(max(abs(visualAngleBetweenRetinalCoords(eye,axes.visual.geodetic,axes.opticDisc.geodetic)-axes.opticDisc.degField(1:2).*[1 -1]))<1e-1);
 
-% Calculate the foveal position in eyeWorld coordinates.
-phi = -axes.visual.degRetina(1);
-theta = -axes.visual.degRetina(2);
-x = retinaRadii(1) * cosd(theta) * cosd(phi);
-y = retinaRadii(2) * cosd(theta) * sind(phi);
-z = retinaRadii(3) * sind(theta);
+% Obtain the Cartesian coordinates of the optic disc
+axes.opticDisc.cartesian = quadric.ellipsoidalGeoToCart(axes.opticDisc.geodetic,S)';
 
-% Note this location in the vitreous chamber field
-axes.visual.coords = [-x y -z] + quadric.center(eye.retina.S);
-
-% Calculate the optic disc position in eyeWorld coordinates.
-phi = -axes.opticDisc.degRetina(1);
-theta = -axes.opticDisc.degRetina(2);
-x = retinaRadii(1) * cosd(theta) * cosd(phi);
-y = retinaRadii(2) * cosd(theta) * sind(phi);
-z = retinaRadii(3) * sind(theta);
-
-% Store this location
-axes.opticDisc.coords = [-x y -z] + quadric.center(eye.retina.S);
-
-% Calcuate the optic disc and visual axes in deg of visual field,
-% using the nodal point of the eye. For the visual axis, these
-% values correspond to alpha / kappa, the angles between the visual
-% and optical /pupillary axes. The difference between the visual
-% and optic disc axes specifies the location of the physiologic
-% blind spot relative to fixation.
-axes.visual.degField(1) = atand((axes.visual.coords(2) - eye.lens.nodalPoint(2)) / (axes.visual.coords(1) - eye.lens.nodalPoint(1)));
-axes.visual.degField(2) = -(-atand((axes.visual.coords(3) - eye.lens.nodalPoint(3)) / (axes.visual.coords(1) - eye.lens.nodalPoint(1))));
-axes.visual.degField(3) = 0;
-axes.opticDisc.degField(1) = atand((axes.opticDisc.coords(2) - eye.lens.nodalPoint(2)) / (axes.opticDisc.coords(1) - eye.lens.nodalPoint(1)));
-axes.opticDisc.degField(2) = -(-atand((axes.opticDisc.coords(3) - eye.lens.nodalPoint(3)) / (axes.opticDisc.coords(1) - eye.lens.nodalPoint(1))));
-axes.opticDisc.degField(3) = 0;
 
 end
 
