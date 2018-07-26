@@ -178,6 +178,7 @@ p.addParameter('pupilPerimPhase',0,@isnumeric);
 p.addParameter('nIrisPerimPoints',5,@isnumeric);
 p.addParameter('corneaMeshDensity',20,@isnumeric);
 p.addParameter('retinaMeshDensity',24,@isnumeric);
+p.addParameter('refractionHandle',@virtualImageFuncMex,@(x)(isa(x,'function_handle')));
 
 % parse
 p.parse(eyePose, sceneGeometry, varargin{:})
@@ -271,9 +272,9 @@ if p.Results.fullEyeModelFlag
     pointLabels = [pointLabels; 'opticalAxisOrigin'];
     eyePoints = [eyePoints; sceneGeometry.eye.lens.nodalPoint];
     pointLabels = [pointLabels; 'nodalPoint'];
-    eyePoints = [eyePoints; sceneGeometry.eye.axes.visual.coords];
+    eyePoints = [eyePoints; sceneGeometry.eye.axes.visual.cartesian];
     pointLabels = [pointLabels; 'fovea'];
-    eyePoints = [eyePoints; sceneGeometry.eye.axes.opticDisc.coords];
+    eyePoints = [eyePoints; sceneGeometry.eye.axes.opticDisc.cartesian];
     pointLabels = [pointLabels; 'opticDisc'];
     
     % Define points around the perimeter of the iris
@@ -369,8 +370,7 @@ if isfield(sceneGeometry,'refraction')
             eyePoint=eyePoints(refractPointsIdx(ii),:);
             % Perform the computation using the passed function handle.
             [virtualImageRay, intersectError] = ...
-                sceneGeometry.refraction.handle(...
-                eyePoint, eyePose, args{:});
+                p.Results.refractionHandle(eyePoint, eyePose, args{:});
             eyePoints(refractPointsIdx(ii),:) = virtualImageRay(1,:);
             nodalPointIntersectError(refractPointsIdx(ii)) = intersectError;
         end

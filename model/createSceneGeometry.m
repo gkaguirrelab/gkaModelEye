@@ -26,9 +26,9 @@ function sceneGeometry = createSceneGeometry(varargin)
 %           measured for a camera using a resectioning approach
 %           (https://www.mathworks.com/help/vision/ref/cameramatrix.html).
 %           Note that the values in the matrix returned by the MATLAB
-%           camera resectioning routine must be re-arranged to correspond 
+%           camera resectioning routine must be re-arranged to correspond
 %           to the X Y image dimension specifications used here.
-%       
+%
 %      'radialDistortion' - A 1x2 vector that models the radial distortion
 %           introduced by the lens. This is an empirically measured
 %           property of the camera system.
@@ -69,14 +69,10 @@ function sceneGeometry = createSceneGeometry(varargin)
 %       key-value pairs passed to createSceneGeometry are passed to
 %       modelEyeParameters.
 %
-%  'refraction' - A structure that identifies the function to be used
-%       to compute the virtual image location of eyePoints subject to
-%       refraction by the optical system (cornea and corrective lenses, if
-%       any). The MATLAB virtualImageFunc is specified if the compiled MEX
-%       version is not available. Sub-fields:
-%           
-%          'handle'       - Handle for the function.
-%          'path'         - Full path to the function.
+%  'refraction' - A structure with sub-fields for ray-tracing through sets
+%       of optical surfaces. Standard fields are 'retinaToPupil' and
+%       'pupilToCamera'. Each 
+%
 %          'opticalSystem' - A 10x5 matrix. The first m rows contain
 %                           information regarding the m surfaces of the
 %                           cornea, and any corrective lenses, in a format
@@ -87,13 +83,13 @@ function sceneGeometry = createSceneGeometry(varargin)
 %                           variables. The nan rows are later stripped by
 %                           the rayTraceEllipsoids function.
 %
-%  'lenses' - An optional structure that describes the properties of 
+%  'lenses' - An optional structure that describes the properties of
 %       refractive lenses that are present between the eye and the camera.
 %       Possible sub-fields are 'contact' and 'spectacle', each of which
 %       holds the parameters that were used to add a refractive lens to the
 %       optical path.
 %
-%  'constraintTolerance' - A scalar. This value is used by the function 
+%  'constraintTolerance' - A scalar. This value is used by the function
 %       pupilProjection_inv. The inverse projection from an ellipse on the
 %       image plane to eye params (azimuth, elevation) imposes a constraint
 %       on how well the solution must match the shape and area of the
@@ -110,7 +106,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %       value in the range 0.01 - 0.03 provides an acceptable compromise in
 %       empirical data.
 %
-%  'meta' - A structure that contains information regarding the creation 
+%  'meta' - A structure that contains information regarding the creation
 %       and modification of the sceneGeometry.
 %
 %
@@ -118,7 +114,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %   none
 %
 % Optional key/value pairs
-%  'sceneGeometryFileName' - Full path to file 
+%  'sceneGeometryFileName' - Full path to file
 %  'intrinsicCameraMatrix' - 3x3 matrix
 %  'radialDistortionVector' - 1x2 vector of radial distortion parameters
 %  'cameraTranslation'    - 3x1 vector
@@ -182,12 +178,11 @@ p.addParameter('radialDistortionVector',[0 0],@isnumeric);
 p.addParameter('cameraTranslation',[0; 0; 120],@isnumeric);
 p.addParameter('cameraTorsion',0,@isnumeric);
 p.addParameter('constraintTolerance',0.02,@isscalar);
-p.addParameter('surfaceSetName',{'pupilToCamera','retinaToPupil'},@ischar);
+p.addParameter('surfaceSetName',{'retinaToPupil','pupilToCamera'},@ischar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('cameraMedium','air',@ischar);
 p.addParameter('spectralDomain','nir',@ischar);
-p.addParameter('forceMATLABVirtualImageFunc',false,@islogical);
 
 % parse
 p.parse(varargin{:})
@@ -209,29 +204,20 @@ sceneGeometry.cameraPosition.primaryPosition = [0,0];
 sceneGeometry.eye = modelEyeParameters('spectralDomain',p.Results.spectralDomain,varargin{:});
 
 
-%% refraction - handle and path
-% Handle to the function; use the MEX version if available
-if exist('virtualImageFuncMex')==3 && ~p.Results.forceMATLABVirtualImageFunc
-    sceneGeometry.refraction.handle = @virtualImageFuncMex;
-    sceneGeometry.refraction.path = which('virtualImageFuncMex');
-else
-    sceneGeometry.refraction.handle = @virtualImageFunc;
-    sceneGeometry.refraction.path = which('virtualImageFunc');
-    if ~p.Results.forceMATLABVirtualImageFunc
-        warning('createSceneGeometry:noCompiledVirtualImageFunc','A compiled virtualImageFunc was not found. Using the native MATLAB version, which is 30x slower');
-    end
+%% refraction
+for ii = 1:length(p.Results.surfaceSetName)
+    [opticalSystem, surfaceLabels, surfaceColors] = ...
+        assembleOpticalSystem( sceneGeometry.eye, ...
+        'surfaceSetName', p.Results.surfaceSetName{ii}, ...
+        'cameraMedium', p.Results.cameraMedium, ...
+        'contactLens', p.Results.contactLens, ...
+        'spectacleLens', p.Results.spectacleLens );
+    sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).opticalSystem = opticalSystem;
+    sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceLabels = surfaceLabels;
+    sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceColors = surfaceColors;
 end
 
 
-%% refraction - optical system
-for ii = 1:length(p.Results.surfaceSetName)
-[opticalSystem, surfaceLabels, surfaceColors] = ...
-    assembleOpticalSystem( sceneGeometry.eye, 'surfaceSetName', p.Results.surfaceSetName{ii}, 'cameraMedium', p.Results.cameraMedium);
-sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).opticalSystem = opticalSystem;
-sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceLabels = surfaceLabels;
-sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceColors = surfaceColors;
-
- 
 %% constraintTolerance
 sceneGeometry.constraintTolerance = p.Results.constraintTolerance;
 
