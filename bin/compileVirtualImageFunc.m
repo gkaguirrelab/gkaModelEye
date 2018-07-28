@@ -133,11 +133,14 @@ end
 %% Define argument variables
 % This is so the compiler can deduce variable types
 
-% Create a sceneGeometry. We silence the warning that there is not a
-% compiled virtualImageFunc available, as we know this is the case.
+% Create a sceneGeometry. I silence the warning that there is not a
+% compiled virtualImageFunc available, as we know this is the case. I also
+% instruct the eyeModelParameter routine (through createSceneGeometry) to
+% skip the calculation of the axes of the eye, as this step itself requires
+% the virtual image function.
 warnState = warning();
 warning('Off','createSceneGeometry:noCompiledVirtualImageFunc');
-sceneGeometry = createSceneGeometry();
+sceneGeometry = createSceneGeometry('skipEyeAxes',true);
 warning(warnState);
 % Define the form of the dynamicArgs (the eyePoint and the eyePose)
 dynamicArgs = {[0,0,0], [0,0,0,0]};
