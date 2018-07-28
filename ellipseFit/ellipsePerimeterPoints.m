@@ -7,9 +7,10 @@ function [ Xp, Yp ] = ellipsePerimeterPoints( transparentEllipseParams, steps, p
 % Description:
 %   Given an ellipse in transparent form, the routine returns the
 %   coordinates [Xp, Yp], which are points on the ellipse. The points are
-%   distributed evenly by angle with respect to the center of the ellisep.
+%   distributed evenly by angle with respect to the center of the ellipse.
 %   The number of returned points is specified in the input variable
-%   "steps". Note that 5 points are needed to uniquely specify an ellipse.
+%   "steps". Note that 5 points are needed to uniquely specify an ellipse,
+%   and 6 are needed to characterize any error in fitting.
 %
 % Inputs:
 %   transparentEllipseParams - A 1x5 vector containing the parameters of an
