@@ -1,8 +1,8 @@
-function visualAngles = visualAngle(eye,G0,G1,X0,X1)
+function visualAngles = calcVisualAngle(eye,G0,G1,X0,X1)
 % The visual angles between two retinal points
 %
 % Syntax:
-%  visualAngle = visualAngle(sceneGeometry,G0,G1,X0,X1)
+%  visualAngle = calcVisualAngle(sceneGeometry,G0,G1,X0,X1)
 %
 % Description
 %   Given a sceneGeometry and two coordinates on the retinal surface, the
@@ -47,7 +47,7 @@ function visualAngles = visualAngle(eye,G0,G1,X0,X1)
     for beta = -90:3:30
         for omega = -180:5:180
             coord = quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
-            visualAngles = visualAngle(eye,eye.axes.visual.geodetic,[beta omega 0]);
+            visualAngles = calcVisualAngle(eye,eye.axes.visual.geodetic,[beta omega 0]);
             eccen = sqrt(sum(visualAngles.^2));
             if ~isnan(eccen)
                 if eccen > 90
