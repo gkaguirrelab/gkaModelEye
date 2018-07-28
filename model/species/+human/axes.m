@@ -171,17 +171,26 @@ axes.visual.coords = quadric.ellipsoidalGeoToCart(axes.visual.geodetic,S)';
 
 
 %% optic disc axis (physiologic blind spot)
-% Safren 1993 provided the mean location of the optic disc in degrees of
-% visual field relative to fixation.I used the values for their dim
-% stimulus, under the assumption that this will be the most accurate given
-% the minimization of light scatter. I made the Safren values relative to
-% the optical axis by adding the angular displacement of the visual axis
-% from the optical axis.
+% The center of the optic disc is nasal and superior to the fovea.
+% Rohrschneider measured the distance (in degrees of visual angle) between
+% the center of the optic disc and the fovea in 104 people, and found a
+% mean horizontal value of 15.5 +- 1.1 degrees SD, and a vertical value of
+% ?1.5 +- 0.9 degrees SD. There was no dependence of the value upon
+% ametropia.
+%
+%   Rohrschneider, Klaus. "Determination of the location of the fovea on
+%   the fundus." Investigative ophthalmology & visual science 45.9 (2004):
+%   3257-3258.
+%
+% By adding the position of the visual axis in degrees relative to the
+% optical axis, we obtain the position of the optic disc in degrees
+% relative to the optical axis.
+%
 switch eye.meta.eyeLaterality
     case 'Right'
-        axes.opticDisc.degField = [-16.02 -1.84 0]+axes.visual.degField;
+        axes.opticDisc.degField = [-15.5 -1.5 0]+axes.visual.degField;
     case 'Left'
-        axes.opticDisc.degField = [16.02 -1.84 0]+axes.visual.degField;
+        axes.opticDisc.degField = [15.5 -1.5 0]+axes.visual.degField;
 end
 
 % Define the objective. Again note that the vertical target angle in
