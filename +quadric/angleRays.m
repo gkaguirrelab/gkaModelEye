@@ -1,5 +1,5 @@
 function [angle, angle_xy, angle_xz] = angleRays( R1, R2 )
-% Returns the angle between two rays
+% Returns the angle in degrees between two rays
 %
 % Syntax:
 %  R = quadric.angleRays( R )
