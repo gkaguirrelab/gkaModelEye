@@ -1,8 +1,8 @@
-function visualAngles = visualAngleBetweenRetinalCoords(eye,G0,G1,X0,X1)
+function visualAngles = visualAngle(eye,G0,G1,X0,X1)
 % The visual angles between two retinal points
 %
 % Syntax:
-%  visualAngle = visualAngleBetweenRetinalCoords(sceneGeometry,G0,G1,X0,X1)
+%  visualAngle = visualAngle(sceneGeometry,G0,G1,X0,X1)
 %
 % Description
 %   Given a sceneGeometry and two coordinates on the retinal surface, the
@@ -31,6 +31,38 @@ function visualAngles = visualAngleBetweenRetinalCoords(eye,G0,G1,X0,X1)
 %
 % Examples:
 %{
+    % Display a map of visual angle on the retinal surface
+    eye = modelEyeParameters();
+    S = eye.retina.S;
+    boundingBox = eye.retina.boundingBox;
+    figure
+    quadric.plotSurface(S,boundingBox,[0.9 0.9 0.9],0.8,'b','g');
+    camlight
+    lighting gouraud
+    hold on
+    % Sweep over ellipsoidal geodetic coordinates on the retinal surface
+    % and obtain the visual angle and each point w.r.t. the fovea.
+    c = jet();
+    nColors = size(c,1);
+    for beta = -90:3:30
+        for omega = -180:5:180
+            coord = quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
+            visualAngles = visualAngle(eye,eye.axes.visual.geodetic,[beta omega 0]);
+            eccen = sqrt(sum(visualAngles.^2));
+            if ~isnan(eccen)
+                if eccen > 90
+                    colorTriple = [1 1 1];
+                else
+                    colorTriple = c(round((eccen./90)*(nColors-1)+1),:);
+                end
+                plot3(coord(1),coord(2),coord(3),'.','MarkerSize',50,'Color',colorTriple);
+            end
+        end
+    end
+    % Add the retinal landmarks
+    plot3(eye.axes.optical.cartesian(1),eye.axes.optical.cartesian(2),eye.axes.optical.cartesian(3),'+k','MarkerSize',10);
+    plot3(eye.axes.visual.cartesian(1),eye.axes.visual.cartesian(2),eye.axes.visual.cartesian(3),'*k','MarkerSize',10);
+    plot3(eye.axes.opticDisc.cartesian(1),eye.axes.opticDisc.cartesian(2),eye.axes.opticDisc.cartesian(3),'ok','MarkerSize',10);
 %}
 
 % If only three input values were passed, derive the X0/X1 Cartesian
