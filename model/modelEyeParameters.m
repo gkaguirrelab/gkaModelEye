@@ -78,6 +78,7 @@ p.addParameter('cornealAxis',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
 p.addParameter('spectralDomain','nir',@ischar);
+p.addParameter('skipEyeAxes',false,@islogical);
 
 % parse
 p.parse(varargin{:})
@@ -130,8 +131,10 @@ switch eye.meta.species
         eye.rotationCenters = human.rotationCenters(eye);
 
         % Axes
-        eye.axes = human.axes(eye);
-
+        if ~p.Results.skipEyeAxes
+           eye.axes = human.axes(eye);
+        end
+        
         %% Refractive indices
         % Obtain refractive index values for this spectral domain.
         eye.index.vitreous = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );
