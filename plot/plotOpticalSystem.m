@@ -25,13 +25,13 @@ function figHandle = plotOpticalSystem(varargin)
 %
 % Examples:
 %{
-    %% Foveal retina point through lens and cornea
-    sceneGeometry = createSceneGeometry('surfaceSetName','retinaToCamera');
+    %% Foveal rays through lens and cornea
+    sceneGeometry = createSceneGeometry();
     % Plot the optical system
-    plotOpticalSystem('opticalSystem',sceneGeometry.refraction.opticalSystem,...
-        'surfaceColors',sceneGeometry.refraction.surfaceColors,'addLighting',true);
+    plotOpticalSystem('opticalSystem',sceneGeometry.refraction.retinaToCamera.opticalSystem,...
+        'surfaceColors',sceneGeometry.refraction.retinaToCamera.surfaceColors,'addLighting',true);
     % Define an initial ray arising at the fovea
-    p = sceneGeometry.eye.axes.visual.coords';
+    p = sceneGeometry.eye.axes.visual.cartesian';
     % Loop over horizontal angles relative to the visual axis
     for ii = -2:1:2
         % Assemble the ray
@@ -39,7 +39,7 @@ function figHandle = plotOpticalSystem(varargin)
         u = u./sqrt(sum(u.^2));
         R = [p, u];
         % Perform the ray trace
-        [outputRay, rayPath] = rayTraceQuadrics(R, sceneGeometry.refraction.opticalSystem);
+        [outputRay, rayPath] = rayTraceQuadrics(R, sceneGeometry.refraction.retinaToCamera.opticalSystem);
         % Add this ray to the optical system plot
         plotOpticalSystem('newFigure',false,'outputRay',outputRay,'rayPath',rayPath);
     end
