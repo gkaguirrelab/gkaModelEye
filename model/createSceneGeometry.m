@@ -178,7 +178,7 @@ p.addParameter('radialDistortionVector',[0 0],@isnumeric);
 p.addParameter('cameraTranslation',[0; 0; 120],@isnumeric);
 p.addParameter('cameraTorsion',0,@isnumeric);
 p.addParameter('constraintTolerance',0.02,@isscalar);
-p.addParameter('surfaceSetName',{'retinaToPupil','pupilToCamera'},@ischar);
+p.addParameter('surfaceSetName',{'retinaToPupil','pupilToCamera','retinaToCamera'},@ischar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('cameraMedium','air',@ischar);
