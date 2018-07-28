@@ -73,6 +73,7 @@ p = inputParser; p.KeepUnmatched = true;
 
 % Optional
 p.addParameter('sphericalAmetropia',0,@isscalar);
+p.addParameter('accomodation',0,@isscalar);
 p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('cornealAxis',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('eyeLaterality','Right',@ischar);

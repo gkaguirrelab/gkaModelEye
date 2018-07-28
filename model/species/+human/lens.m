@@ -1,4 +1,4 @@
-function lens = lens( eye )
+function lens = lens( eye, accomodation )
 
 % Currently only supports odd number of shells.
 nShells = 11;
@@ -21,6 +21,8 @@ nCore = returnRefractiveIndex( 'lens.core', eye.meta.spectralDomain );
 % This is the position (on the optical axis) of the point in the lens with
 % the maximal refractive index.
 lensCenter = -5.4;
+
+% The thickness of the back and front of the lens.
 lensThickBack = 2.16;
 lensThickFront = 1.44;
 

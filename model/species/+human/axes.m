@@ -44,6 +44,12 @@ function axes = axes( eye )
     end
     figure
     plot(SRvals,odf,'-*r');
+    hold on
+    % Compare these model values to the measurements reported by Jonas 2015
+    % PloS One
+    axialLengthFromSR = @(SR) 23.58-(SR.*0.299);
+    odf_jonas = @(SR) 0.04 + 0.2.*(axialLengthFromSR(SR));
+    plot(SRvals,odf_jonas(SRvals),'*b')
 %}
 
 % Obtain the quadric form of the retinal surface
