@@ -60,9 +60,9 @@ function visualAngles = calcVisualAngle(eye,G0,G1,X0,X1)
         end
     end
     % Add the retinal landmarks
-    plot3(eye.axes.optical.cartesian(1),eye.axes.optical.cartesian(2),eye.axes.optical.cartesian(3),'+k','MarkerSize',10);
-    plot3(eye.axes.visual.cartesian(1),eye.axes.visual.cartesian(2),eye.axes.visual.cartesian(3),'*k','MarkerSize',10);
-    plot3(eye.axes.opticDisc.cartesian(1),eye.axes.opticDisc.cartesian(2),eye.axes.opticDisc.cartesian(3),'ok','MarkerSize',10);
+    plot3(eye.axes.optical.coords(1),eye.axes.optical.coords(2),eye.axes.optical.coords(3),'+k','MarkerSize',10);
+    plot3(eye.axes.visual.coords(1),eye.axes.visual.coords(2),eye.axes.visual.coords(3),'*k','MarkerSize',10);
+    plot3(eye.axes.opticDisc.coords(1),eye.axes.opticDisc.coords(2),eye.axes.opticDisc.coords(3),'ok','MarkerSize',10);
 %}
 
 % If only three input values were passed, derive the X0/X1 Cartesian

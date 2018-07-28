@@ -26,9 +26,9 @@ function axes = axes( eye )
     hold on
 
     % Add the retinal landmarks
-    plot3(eye.axes.optical.cartesian(1),eye.axes.optical.cartesian(2),eye.axes.optical.cartesian(3),'+m','MarkerSize',10);
-    plot3(eye.axes.visual.cartesian(1),eye.axes.visual.cartesian(2),eye.axes.visual.cartesian(3),'+r','MarkerSize',10);
-    plot3(eye.axes.opticDisc.cartesian(1),eye.axes.opticDisc.cartesian(2),eye.axes.opticDisc.cartesian(3),'*y','MarkerSize',10);
+    plot3(eye.axes.optical.coords(1),eye.axes.optical.coords(2),eye.axes.optical.coords(3),'+m','MarkerSize',10);
+    plot3(eye.axes.visual.coords(1),eye.axes.visual.coords(2),eye.axes.visual.coords(3),'+r','MarkerSize',10);
+    plot3(eye.axes.opticDisc.coords(1),eye.axes.opticDisc.coords(2),eye.axes.opticDisc.coords(3),'*y','MarkerSize',10);
 
     % Add the geodetic path
     [geoDistance,~,~,geodeticPathCoords] = quadric.panouGeodesicDistance(S,eye.axes.visual.geodetic,eye.axes.opticDisc.geodetic);
@@ -40,7 +40,7 @@ function axes = axes( eye )
     SRvals = -10:1:2;
     for ii = 1:length(SRvals)
         eye = modelEyeParameters('sphericalAmetropia',SRvals(ii));
-        odf(ii) = sqrt(sum((eye.axes.visual.cartesian - eye.axes.opticDisc.cartesian).^2));
+        odf(ii) = sqrt(sum((eye.axes.visual.coords - eye.axes.opticDisc.coords).^2));
     end
     figure
     plot(SRvals,odf,'-*r');
@@ -61,7 +61,7 @@ opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','off');
 % frame.
 axes.optical.degField = [0 0 0];
 axes.optical.geodetic = [-90 -90 0];
-axes.optical.cartesian = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
+axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
 
 
 %% visual axis
@@ -166,8 +166,8 @@ ub = [-80 180 0];
 % Perform the search
 axes.visual.geodetic = fmincon(myObj, x0, [], [], [], [], lb, ub, [], opts);
 
-% Obtain the Cartesian coordinates of the fovea
-axes.visual.cartesian = quadric.ellipsoidalGeoToCart(axes.visual.geodetic,S)';
+% Obtain the coords coordinates of the fovea
+axes.visual.coords = quadric.ellipsoidalGeoToCart(axes.visual.geodetic,S)';
 
 
 %% optic disc axis (physiologic blind spot)
@@ -219,8 +219,8 @@ ub = [-60 180 0];
 % Perform the search
 axes.opticDisc.geodetic = fmincon(myObj, x0, [], [], [], [], lb, ub, [], opts);
 
-% Obtain the Cartesian coordinates of the optic disc
-axes.opticDisc.cartesian = quadric.ellipsoidalGeoToCart(axes.opticDisc.geodetic,S)';
+% Obtain the coords coordinates of the optic disc
+axes.opticDisc.coords = quadric.ellipsoidalGeoToCart(axes.opticDisc.geodetic,S)';
 
 
 end

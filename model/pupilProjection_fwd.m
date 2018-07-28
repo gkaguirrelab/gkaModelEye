@@ -270,11 +270,9 @@ if p.Results.fullEyeModelFlag
     pointLabels = [pointLabels; 'eleRotationCenter'];
     eyePoints = [eyePoints; 0 0 0];
     pointLabels = [pointLabels; 'opticalAxisOrigin'];
-    eyePoints = [eyePoints; sceneGeometry.eye.lens.nodalPoint];
-    pointLabels = [pointLabels; 'nodalPoint'];
-    eyePoints = [eyePoints; sceneGeometry.eye.axes.visual.cartesian];
+    eyePoints = [eyePoints; sceneGeometry.eye.axes.visual.coords];
     pointLabels = [pointLabels; 'fovea'];
-    eyePoints = [eyePoints; sceneGeometry.eye.axes.opticDisc.cartesian];
+    eyePoints = [eyePoints; sceneGeometry.eye.axes.opticDisc.coords];
     pointLabels = [pointLabels; 'opticDisc'];
     
     % Define points around the perimeter of the iris

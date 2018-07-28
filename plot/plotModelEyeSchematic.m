@@ -92,7 +92,7 @@ switch p.Results.view
 end
 
 %% Plot the anterior chamber, vitreous chamber, and the lens surfaces
-plotConicSection(eye.vitreousChamber.S(1:10), titleString, p.Results.plotColor, eye.vitreousChamber.boundingBox)
+plotConicSection(eye.retina.S(1:10), titleString, p.Results.plotColor, eye.retina.boundingBox)
 plotConicSection(eye.cornea.S(1,:), titleString, p.Results.plotColor, eye.cornea.boundingBox(1,:))
 plotConicSection(eye.cornea.S(end,:), titleString, p.Results.plotColor, eye.cornea.boundingBox(end,:))
 plotConicSection(eye.lens.S(1,:), titleString, p.Results.plotColor, eye.lens.boundingBox(1,:))
@@ -115,19 +115,19 @@ idx = find(strcmp(pointLabels,'cornealApex'));
 plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColor]);
 
 %% Plot the visual axis
-m = (eye.axes.visual.coords(PdimB) - eye.lens.nodalPoint(PdimB)) / (eye.axes.visual.coords(PdimA) - eye.lens.nodalPoint(PdimA));
-b = eye.lens.nodalPoint(PdimB) -  (eye.lens.nodalPoint(PdimA) * m);
-xRange = xlim;
-plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
+%m = (eye.axes.visual.coords(PdimB) - eye.lens.nodalPoint(PdimB)) / (eye.axes.visual.coords(PdimA) - eye.lens.nodalPoint(PdimA));
+%b = eye.lens.nodalPoint(PdimB) -  (eye.lens.nodalPoint(PdimA) * m);
+%xRange = xlim;
+%plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
 
 %% Plot the blind spot axis
-m = (eye.axes.opticDisc.coords(PdimB) - eye.lens.nodalPoint(PdimB)) / (eye.axes.opticDisc.coords(PdimA) - eye.lens.nodalPoint(PdimA));
-b = eye.lens.nodalPoint(PdimB) -  (eye.lens.nodalPoint(PdimA) * m);
-xRange = xlim;
-plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
+%m = (eye.axes.opticDisc.coords(PdimB) - eye.lens.nodalPoint(PdimB)) / (eye.axes.opticDisc.coords(PdimA) - eye.lens.nodalPoint(PdimA));
+%b = eye.lens.nodalPoint(PdimB) -  (eye.lens.nodalPoint(PdimA) * m);
+%plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
 
 
 %% Reference axis
+xRange = xlim;
 plot(xRange,[0 0],['-' p.Results.plotColor]);
 
 axis equal
