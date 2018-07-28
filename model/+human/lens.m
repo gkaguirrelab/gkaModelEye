@@ -51,7 +51,7 @@ radii(1) = abs(b); radii(2:3) = abs(a);
 % Build the quadric
 S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
 S = quadric.translate(S,[lensCenter-lensThickBack-radii(1) 0 0]);
-boundingBox = [lensCenter-lensThickBack lensCenter -4 4 -4 4];
+boundingBox = [lensCenter-lensThickBack lensCenter -5 5 -5 5];
 
 % Add to the optical system structure
 lens.S = [lens.S; quadric.matrixToVec(S)];
@@ -63,7 +63,7 @@ lens.label = [lens.label; {'lens.back'}];
 lens.plot.color = [lens.plot.color; {'red'}];
 
 %% Back gradient shells
-boundingBox = [lensCenter-lensThickBack lensCenter -4 4 -4 4];
+boundingBox = [lensCenter-lensThickBack lensCenter -5 5 -5 5];
 nLensVals = linspace(nEdge,nCore,nShells*2+1);
 for ii = startShell:endShell
     nBackQuadric = [-0.010073731138546 0 0 0.0; 0 -0.002039930555556 0 0; 0 0 -0.002039930555556 0; 0 0 0 1.418000000000000];
@@ -87,7 +87,7 @@ lens.index(end) = nCore;
 
 
 %% Front gradient shells
-boundingBox = [lensCenter lensCenter+lensThickFront -4 4 -4 4];
+boundingBox = [lensCenter lensCenter+lensThickFront -5 5 -5 5];
 nLensVals = linspace(nEdge,nCore,nShells*2+1);
 for ii = endShell:-1:startShell
     nFrontQuadric = [0.022665895061728 0 0 0; 0 0.002039930555556 0 0; 0 0 0.002039930555556 0; 0 0 0 1.371000000000000];
@@ -123,7 +123,7 @@ radii(2:3) = abs(a);
 S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
 S = quadric.translate(S,[eye.pupil.center(1)+radii(1) 0 0]);
 c = quadric.center(S); r = quadric.radii(S);
-boundingBox = [lensCenter c(1)-r(1) -4 4 -4 4];
+boundingBox = [lensCenter c(1)-r(1) -5 5 -5 5];
 
 % Add to the optical system structure. No refractive index added with this
 % surface, as this is the last surface of this set.
@@ -134,13 +134,6 @@ lens.mustIntersect = [lens.mustIntersect; 1];
 lens.label = [lens.label; {'lens.front'}];
 lens.plot.color = [lens.plot.color; {'red'}];
 
-
-
-% I specify the location of a single nodal point to support
-% calculation of the visual axis. The nodal point is placed at a
-% depth of 7.2 mm, which is mid point of the nodal points specified
-% in the Gullstrand-Emsley simplified schematic eye
-lens.nodalPoint = [-7.2 0 0];
 
 end
 
