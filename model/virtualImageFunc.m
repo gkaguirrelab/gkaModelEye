@@ -1,8 +1,8 @@
-function [virtualImageRay, nodalPointIntersectError, angle_p1p2, angle_p1p3] = virtualImageFunc( eyePoint, eyePose, cameraTranslation, rotationCenters, opticalSystem )
+function [virtualImageRay, targetIntersectError, angle_p1p2, angle_p1p3] = virtualImageFunc( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
 % Returns the virtual image ray of a point in eyeWorld coordinates
 %
 % Syntax:
-%  [virtualImageRay, nodalPointIntersectError] = virtualImageFunc( eyePoint, eyePose, cameraTranslation, rotationCenters, opticalSystem )
+%  [virtualImageRay, targetIntersectError] = virtualImageFunc( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
 %
 % Description:
 %   This routine returns the virtual image location of a point that has
@@ -19,7 +19,11 @@ function [virtualImageRay, nodalPointIntersectError, angle_p1p2, angle_p1p3] = v
 %                           Azimuth, elevation, and torsion are in units of
 %                           head-centered (extrinsic) degrees. The pupil
 %                           radius value is unused by this routine.
-%   cameraTranslation     - Equal to
+%   worldTarget     -       The point in world coordinates that the ray 
+%                           should intersect after exiting the optical
+%                           system. A common application is to set
+%                           worldTarget equal to the nodal point of a
+%                           camera, which is found in:
 %                           	sceneGeometry.cameraPosition.translation
 %   rotationCenters       - Equal to sceneGeometry.eye.rotationCenters
 %   opticalSystem         - Equal to sceneGeometry.refraction.opticalSystem
@@ -28,10 +32,10 @@ function [virtualImageRay, nodalPointIntersectError, angle_p1p2, angle_p1p3] = v
 %   virtualImageRay       - A 2x3 vector that gives the coordinates (in mm)
 %                           of a point in eyeWorld space with the
 %                           dimensions p1, p2, p3.
-%   nodalPointIntersectError - The distance (in mm) between the nodal point
-%                           of the camera and the closest passage of a ray
-%                           arising from the eyeWorld point after it exited
-%                           the optical system.
+%   targetIntersectError  - The distance (in mm) between the worldTarget
+%                           and the closest passage of a ray arising from
+%                           the eyeWorld point after it exited the optical
+%                           system.
 %
 % Examples:
 %{
@@ -49,20 +53,20 @@ function [virtualImageRay, nodalPointIntersectError, angle_p1p2, angle_p1p3] = v
     assert(max(abs(virtualImageRay - virtualImageRayCached)) < 1e-6)
 %}
 %{
-    %% Confirm that nodalPointIntersectError remains small across eye poses
+    %% Confirm that targetIntersectError remains small across eye poses
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Perform 100 forward projections with randomly selected eye poses
     nPoses = 100;
     eyePoses=[(rand(nPoses,1)-0.5)*60, (rand(nPoses,1)-0.5)*60, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
-    clear nodalPointIntersectError
+    clear targetIntersectError
     for pp = 1:nPoses
-    	[~,~,~,~,~,nodalPointIntersectError(:,pp)]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
+    	[~,~,~,~,~,targetIntersectError(:,pp)]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
     end
-    % Make sure the nodalPointIntersectError is small and not
+    % Make sure the targetIntersectError is small and not
     % systematically related to eyePose
     figure
-    plot(sqrt(eyePoses(:,1).^2+eyePoses(:,2).^2),median(nodalPointIntersectError),'.r')
+    plot(sqrt(eyePoses(:,1).^2+eyePoses(:,2).^2),median(targetIntersectError),'.r')
     xlabel('Euclidean rotation distance [deg]');
     ylabel('Ray trace nodal error [mm]');
 %}
@@ -72,10 +76,10 @@ function [virtualImageRay, nodalPointIntersectError, angle_p1p2, angle_p1p3] = v
 %% Find the p1p2 and p1p3 angles
 % For this eyeWorld point, we find the angles of origin of a ray in the
 % p1p2 and p1p3 planes that results in a ray (after passing through the
-% optical system) that passes as close as possible to the camera node
+% optical system) that passes as close as possible to the worldTarget
 
 % Pre-define the output variables to keep the compiler happy
-nodalPointIntersectError = Inf;
+targetIntersectError = Inf;
 virtualImageRay = nan(2,3);
 
 % Set some parameters for the search
@@ -83,8 +87,14 @@ nodalErrorTolerance = 1e-4;
 searchIterTolerance = 6;
 searchIter = 0;
 searchingFlag = true;
-angle_p1p2 = 0;
-angle_p1p3 = 0;
+
+% Set the inital guess for the angles by finding (w.r.t. the optical axis)
+% the angle of the ray that connects the eye point to the worldTarget
+% (after re-arranging the dimensions of the worldTarget variable).
+eyeCoordTarget = worldTarget([3 1 2])';
+[~, angle_p1p2, angle_p1p3] = quadric.angleRays( [0 0 0; 1 0 0]', quadric.normalizeRay([eyePoint; eyeCoordTarget-eyePoint]') );
+angle_p1p2 = deg2rad(angle_p1p2);
+angle_p1p3 = -deg2rad(angle_p1p3);
 
 % Set fminsearch options to tolerate an error of 1e-2, and to make changes
 % in theta as small as 1e-6.
@@ -100,8 +110,8 @@ badTraceFlag = false;
 while searchingFlag
 
     % The distance error function for searching across p1p2 theta values
-    cameraNodeDistanceError_p1p2 = ...
-        @(angleX) calcCameraNodeDistanceError(eyePoint, angleX, angle_p1p3, eyePose, cameraTranslation, rotationCenters, opticalSystem);
+    targetIntersectError_p1p2 = ...
+        @(angleX) calcTargetIntersectError(eyePoint, angleX, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystem);
 
     % Set the x0 value for the search to the current value of angle_p1p2
     x0 = angle_p1p2;
@@ -109,34 +119,29 @@ while searchingFlag
     % Perform the search
     [angle_p1p2,~]=fminsearch(@myObj_p1p2,x0,options);
 
-    % Detect if we hit a bad ray trace. We will tolerate a bad trace if the
-    % solution theta is very close to zero (within an order of magnitude of
-    % TolX). This is because the ray tracing solution is undefined exactly
-    % at zero, so bad ray traces occur when we search for thetas close to
-    % zero. If we have encountered a bad ray trace away from zero, exit the
-    % routine.
-    if badTraceFlag && angle_p1p2 > (TolX*10)
+    % Detect if we hit a bad ray trace.
+    if badTraceFlag
         virtualImageRay = nan(2,3);
-        nodalPointIntersectError = Inf;
+        targetIntersectError = Inf;
         return
     else
         badTraceFlag = false;
     end
     
     % The distance error function for searching across p1p3 theta values    
-    cameraNodeDistanceError_p1p3 = ...
-        @(angleX) calcCameraNodeDistanceError(eyePoint, angle_p1p2, angleX, eyePose, cameraTranslation, rotationCenters, opticalSystem);
+    targetIntersectError_p1p3 = ...
+        @(angleX) calcTargetIntersectError(eyePoint, angle_p1p2, angleX, eyePose, worldTarget, rotationCenters, opticalSystem);
 
     % Set the x0 value for the search to the current value of angle_p1p3
     x0 = angle_p1p3;
 
     % Perform the search
-    [angle_p1p3,nodalPointIntersectError]=fminsearch(@myObj_p1p3,x0,options);
+    [angle_p1p3,targetIntersectError]=fminsearch(@myObj_p1p3,x0,options);
 
     % Detect if we hit a bad ray trace.
-    if badTraceFlag && angle_p1p3 > (TolX*10)
+    if badTraceFlag
         virtualImageRay = nan(2,3);
-        nodalPointIntersectError = Inf;
+        targetIntersectError = Inf;
         return
     else
         badTraceFlag = false;
@@ -146,19 +151,19 @@ while searchingFlag
     searchIter = searchIter+1;
 
     % Determine if we have met a stopping criterion
-    if nodalPointIntersectError<nodalErrorTolerance || searchIter>searchIterTolerance
+    if targetIntersectError<nodalErrorTolerance || searchIter>searchIterTolerance
         searchingFlag = false;
     end
 end
     % Nested objective functions. Needed to handle the badTrace behavior.
     function fval = myObj_p1p2(x)
-        fval = cameraNodeDistanceError_p1p2(x);
+        fval = targetIntersectError_p1p2(x);
         if isinf(fval)
             badTraceFlag = true;
         end
     end
     function fval = myObj_p1p3(x)
-        fval = cameraNodeDistanceError_p1p3(x);
+        fval = targetIntersectError_p1p3(x);
         if isinf(fval)
             badTraceFlag = true;
         end
@@ -181,12 +186,12 @@ end % virtualImageFunc -- MAIN
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-%% calcCameraNodeDistanceError
-function distance = calcCameraNodeDistanceError(eyePoint, angle_p1p2, angle_p1p3, eyePose, cameraTranslation, rotationCenters, opticalSystem)
-% Distance of ray intersection point on a camera plane from camera node
+%% calcTargetIntersectError
+function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystem)
+% Distance of ray intersection point on a camera plane from worldTarget
 %
 % Syntax:
-%  distance = calcCameraNodeDistanceError(eyePoint, angle_p1p2, angle_p1p3, eyePose, cameraTranslation, rotationCenters, opticalSystem)
+%  distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystem)
 %
 % Description:
 %   This function returns the Euclidean distance between the nodal point of
@@ -204,7 +209,7 @@ function distance = calcCameraNodeDistanceError(eyePoint, angle_p1p2, angle_p1p3
 %   angle_p1p2, angle_p1p3 - Scalar in radians. The angle w.r.t. the 
 %                           optical axis of the initial ray. 
 %   eyePose
-%   cameraTranslation
+%   worldTarget
 %   rotationCenters
 %   opticalSystem
 %
@@ -245,7 +250,7 @@ RotTor = [1 0 0; 0 cosd(cameraRot(3)) -sind(cameraRot(3)); 0 sind(cameraRot(3)) 
 
 % Rearrange the camera translation dimensions to switch from world to eye
 % coordinate space.
-Pc = cameraTranslation([3 1 2])';
+Pc = worldTarget([3 1 2])';
 
 % Torsion
 Pc=Pc-rotationCenters.tor;
@@ -268,7 +273,7 @@ d = norm(cross(outputRayEyeWorld(2,:),Pc - outputRayEyeWorld(1,:))) ...
 % Obtain the Euclidean distance in the 3 dimensions.
 distance = sqrt(sum(d.^2));
 
-end % calcCameraNodeDistanceError
+end % calcTargetIntersectError
 
 
 
