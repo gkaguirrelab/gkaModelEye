@@ -136,7 +136,7 @@ end
 % that the elevational angle is inverted. This is because a negative value
 % in this context corresponds to deflection of the visual axis upwards in
 % the visual field.
-myObj = @(G) sum(angdiff(deg2rad(visualAngleBetweenRetinalCoords(eye,axes.optical.geodetic,G)),deg2rad(axes.visual.degField(1:2).*[1 -1])).^2).*1e100;
+myObj = @(G) sum(angdiff(deg2rad(visualAngle(eye,axes.optical.geodetic,G)),deg2rad(axes.visual.degField(1:2).*[1 -1])).^2).*1e100;
 
 % Define an x0 based upon laterality and quadric dimensions
 switch eye.meta.eyeLaterality
@@ -171,7 +171,7 @@ ms = MultiStart; ms.Display = 'off';
 axes.visual.geodetic = run(ms,problem,10);
 
 % Determine the quality of the search result and report it
-maxVisAngleError = max(abs(visualAngleBetweenRetinalCoords(eye,axes.optical.geodetic,axes.visual.geodetic)-axes.visual.degField(1:2).*[1 -1]));
+maxVisAngleError = max(abs(visualAngle(eye,axes.optical.geodetic,axes.visual.geodetic)-axes.visual.degField(1:2).*[1 -1]));
 fprintf('For SR = %0.2f, fovea, max vis angle error = %0.4f, the geodetics are %0.4f, %0.4f \n',eye.meta.sphericalAmetropia,maxVisAngleError,axes.visual.geodetic(1),axes.visual.geodetic(2));
 
 % Obtain the Cartesian coordinates of the fovea
@@ -194,7 +194,7 @@ end
 
 % Define the objective. Again note that the vertical target angle in
 % degrees of visual field is reversed.
-myObj = @(G) sum(angdiff(deg2rad(visualAngleBetweenRetinalCoords(eye,axes.optical.geodetic,G)),deg2rad(axes.opticDisc.degField(1:2).*[1 -1])).^2).*1e100;
+myObj = @(G) sum(angdiff(deg2rad(visualAngle(eye,axes.optical.geodetic,G)),deg2rad(axes.opticDisc.degField(1:2).*[1 -1])).^2).*1e100;
 
 % Define an x0 based upon laterality and quadric dimensions
 switch eye.meta.eyeLaterality
@@ -230,7 +230,7 @@ ms = MultiStart; ms.Display = 'off';
 axes.opticDisc.geodetic = run(ms,problem,20);
 
 % Determine the quality of the search result and report it
-maxVisAngleError = max(abs(visualAngleBetweenRetinalCoords(eye,axes.optical.geodetic,axes.opticDisc.geodetic)-axes.opticDisc.degField(1:2).*[1 -1]));
+maxVisAngleError = max(abs(visualAngle(eye,axes.optical.geodetic,axes.opticDisc.geodetic)-axes.opticDisc.degField(1:2).*[1 -1]));
 fprintf('For SR = %0.2f, optic disc, max vis angle error = %0.4f, the geodetics are %0.4f, %0.4f \n',eye.meta.sphericalAmetropia,maxVisAngleError,axes.opticDisc.geodetic(1),axes.opticDisc.geodetic(2));
 
 % Obtain the Cartesian coordinates of the optic disc
