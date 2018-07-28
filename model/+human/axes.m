@@ -37,7 +37,7 @@ function axes = axes( eye )
 %{
     % Calculate the Euclidean distance between the optic disc and fovea for
     % a range of spherical refractive errors
-    SRvals = -10:5:0;
+    SRvals = -10:1:2;
     for ii = 1:length(SRvals)
         eye = modelEyeParameters('sphericalAmetropia',SRvals(ii));
         odf(ii) = sqrt(sum((eye.axes.visual.cartesian - eye.axes.opticDisc.cartesian).^2));
@@ -51,6 +51,7 @@ S = eye.retina.S;
 
 % Set some fmincon options we will be using below
 opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','off');
+
 
 %% optical axis
 % Eye axes are specified as rotations (in degrees) within the eye
@@ -162,17 +163,8 @@ end
 lb = [-89 -180 0];
 ub = [-80 180 0];
 
-% Perform the search using a multi-start routine. An interior-point
-% algorithm is used as this recovers gracefully from the nans that can
-% occur during the search from the objective function. A search from 10
-% start points works well.
-problem = createOptimProblem('fmincon','objective',myObj,'x0',x0,'lb',lb,'ub',ub,'options',opts);
-ms = MultiStart; ms.Display = 'off';
-axes.visual.geodetic = run(ms,problem,10);
-
-% Determine the quality of the search result and report it
-maxVisAngleError = max(abs(calcVisualAngle(eye,axes.optical.geodetic,axes.visual.geodetic)-axes.visual.degField(1:2).*[1 -1]));
-fprintf('For SR = %0.2f, fovea, max vis angle error = %0.4f, the geodetics are %0.4f, %0.4f \n',eye.meta.sphericalAmetropia,maxVisAngleError,axes.visual.geodetic(1),axes.visual.geodetic(2));
+% Perform the search
+axes.visual.geodetic = fmincon(myObj, x0, [], [], [], [], lb, ub, [], opts);
 
 % Obtain the Cartesian coordinates of the fovea
 axes.visual.cartesian = quadric.ellipsoidalGeoToCart(axes.visual.geodetic,S)';
@@ -225,13 +217,7 @@ lb = [-89 -180 0];
 ub = [-60 180 0];
 
 % Perform the search
-problem = createOptimProblem('fmincon','objective',myObj,'x0',x0,'lb',lb,'ub',ub,'options',opts);
-ms = MultiStart; ms.Display = 'off';
-axes.opticDisc.geodetic = run(ms,problem,20);
-
-% Determine the quality of the search result and report it
-maxVisAngleError = max(abs(calcVisualAngle(eye,axes.optical.geodetic,axes.opticDisc.geodetic)-axes.opticDisc.degField(1:2).*[1 -1]));
-fprintf('For SR = %0.2f, optic disc, max vis angle error = %0.4f, the geodetics are %0.4f, %0.4f \n',eye.meta.sphericalAmetropia,maxVisAngleError,axes.opticDisc.geodetic(1),axes.opticDisc.geodetic(2));
+axes.opticDisc.geodetic = fmincon(myObj, x0, [], [], [], [], lb, ub, [], opts);
 
 % Obtain the Cartesian coordinates of the optic disc
 axes.opticDisc.cartesian = quadric.ellipsoidalGeoToCart(axes.opticDisc.geodetic,S)';
