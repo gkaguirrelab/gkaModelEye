@@ -1,19 +1,46 @@
 function cornea = cornea( eye )
+% Returns the cornea sub-field of an eye model structure
+%
+% Syntax:
+%  cornea = human.cornea( eye )
+%
+% Description:
+%   The corneal front surface is taken from Table 1 of Navarro 2006:
+%
+%       Navarro, Rafael, Luis González, and José L. Hernández. "Optics of
+%       the average normal cornea from general and canonical
+%       representations of its surface topography." JOSA A 23.2 (2006):
+%       219-232.
+%
+%   Their dimensions [a,b,c] correspond to [p2, p3, p1] in the current
+%   model. The Navarro model includes a rotation of the corneal axis such
+%   that the apex is displaced to the nasal visual field. This is modeled
+%   here as well.
+%
+%   The radius of curvature at the vertex of the cornea was found by
+%   Atchison to vary as a function of spherical ametropia (Table 1):
+%
+%       Atchison, David A. "Optical models for human myopic eyes." Vision
+%       research 46.14 (2006): 2236-2250.
+%
+%   The Navarro parameters are adjusted here to reflect this variation by
+%   ametropia.
 
-% The corneal front surface is taken from Table 1 of Navarro 2006:
 %
-%   Navarro, Rafael, Luis González, and José L. Hernández. "Optics of the
-%   average normal cornea from general and canonical representations of its
-%   surface topography." JOSA A 23.2 (2006): 219-232.
+% Inputs:
+%   eye                   - Structure.
 %
-% Their dimensions [a,b,c] correspond to [p2, p3, p1] in the current model.
+% Outputs:
+%   cornea                - Structure.
 %
-% The radius of curvature at the vertex of the cornea was found by Atchison
-% to vary as a function of spherical ametropia (Table 1):
-%
-%	Atchison, David A. "Optical models for human myopic eyes."
-%	Vision research 46.14 (2006): 2236-2250.
-%
+% Examples:
+%{
+    eye.meta.sphericalAmetropia = 0;
+    eye.meta.eyeLaterality = 'Right';
+    cornea = human.cornea( eye );
+%}
+
+%% Front corneal surface
 % Atchison provides parameters for a radially symmetric ellipsoid in terms
 % of the radius of curvature (R) at the vertex and its asphericity (Q). R
 % varies with spherical ametropia (D):
@@ -59,17 +86,25 @@ function cornea = cornea( eye )
     % for the front surface of the cornea; we use this below.
     atchNavScaler = a(0) ./ radiiNavFront(1)
 %}
-% We set the center of the cornea front surface ellipsoid so that the axial
-% apex (prior to rotation) is at position [0, 0, 0]
 radii = [14.26   10.43   10.27] .* ...
     ((eye.meta.sphericalAmetropia .* -0.0028)+1);
 S = quadric.scale(quadric.unitSphere,radii);
+
+% Rotate the quadric surface 3 degrees nasal
+S = quadric.rotate(S,[ 0 0 185 ]);
+
+% We set the center of the cornea front surface ellipsoid so that the axial
+% apex (prior to rotation) is at position [0, 0, 0]
 S = quadric.translate(S,[-radii(1) 0 0]);
+
+% Store thexe values
 cornea.front.S = quadric.matrixToVec(S);
 cornea.front.side = 1;
 cornea.front.boundingBox=[-4 0 -8 8 -8 8];
 
-% Atchison finds that the back surface of cornea does not vary by
+
+%% Back corneal surface
+% Atchison finds that the back surface of the cornea does not vary by
 % ametropia. Navarro does not provide posterior cornea parameters.
 % Therefore, we scale the parameters provided by Atchison to relate to the
 % axial corneal radius specified by Navarro:
@@ -96,16 +131,23 @@ cornea.front.boundingBox=[-4 0 -8 8 -8 8];
     targetBackHorizToAxNav = backHorizToAxAtch / frontHorizToAxAtch * frontHorizToAxNav;
     radiiNavBackCorrected = [a a*targetBackHorizToAxNav a*targetBackHorizToAxNav]./atchNavScaler
 %}
+radii = [ 13.7716    9.3027    9.3027];
+S = quadric.scale(quadric.unitSphere,radii);
+
+% Rotate the quadric surface 3 degrees nasal
+S = quadric.rotate(S,[ 0 0 185 ]);
+
 % The center of the back cornea ellipsoid is positioned so that
 % there is 0.55 mm of corneal thickness between the front and back
 % surface of the cornea at the apex, following Atchison 2006.
-radii = [ 13.7716    9.3027    9.3027];
-S = quadric.scale(quadric.unitSphere,radii);
 S = quadric.translate(S,[-0.55-radii(1) 0 0]);
+
+% Store these values
 cornea.back.S = quadric.matrixToVec(S);
 cornea.back.side = 1;
 cornea.back.boundingBox=[-4 0 -8 8 -8 8];
 
+% Assemble the combined corneal surfaces
 cornea.S = [cornea.back.S; cornea.front.S];
 cornea.boundingBox = [cornea.back.boundingBox; cornea.front.boundingBox];
 cornea.side = [1; 1];
@@ -132,58 +174,6 @@ cornea.plot.color = {'blue'; 'blue'};
     [a b b]
     cornea.front.radii = [10.4324    8.9743    8.9743];
     cornea.back.radii = [6.5000    6.5000    6.5000];
-%}
-
-
-% Navarro 2006 measured the angle of rotation of the axes of the
-% corneal ellipsoid relative to the keratometric axis, which is the
-% axis that connects a fixation point with the center of curvature
-% of the cornea. We convert those angles here to be relative to the
-% optical axis of the eye. To do so, we first assume that the
-% keratometric axis is equal to the fixation axis. Next, we add the
-% Navarro measurements to the alpha angle values that we have for
-% the model.
-%{
-    % Navarro values for the displacement of the corneal axis from
-    % keratometric axis for the right eye (in degrees)
-    keratometricAxisWRTcornealAxis = [2.35 0.85 0.02];
-    % assume that the fixation and keratometric axes are equal
-    fixationAxisWRTcornealAxis = [2.35 0.85 0.02];
-    % specify our alpha angles
-    eye = modelEyeParameters();
-    fixationAxisWRTopticalAxis = eye.axes.visual.degField;
-    % Now obtain the corneal axes relative to optical axis
-    cornealAxisWRTopticalAxis = fixationAxisWRTopticalAxis - fixationAxisWRTcornealAxis
-%}
-
-
-% Navarro original params
-% Navarro 2006, Table 1, mean cornea ellipsoid parameters
-%{
-a11 = 1; a22 = 1.0318; a33 = 0.536; a12 = -0.0006; a13 = -0.038;
-a23 = -0.0147; a1 = -.06; a2 = -0.115; a3 = 13.546; a0 = -23.25;
-
-% Place the Navarro parameters into a polynomial vector. Navarro defines his
-% parameters w.r.t. the polynomial equation as:
-%
-%   0 =
-%     a11x^2 + a22y^2 + a33z^2 + a12xy + a13xz + a23yz + a1x + a2y +a3z+a0
-%
-% To convert to the standard notation, need to account for
-% the factor of 2. Note the cross-terms are in the order [xy, xz, yz].
-v = [a11 a22 a33 a12/2 a13/2 a23/2 a1/2 a2/2 a3/2 a0];
-S = quadric.vecToMatrix(v);
-origCenter = quadric.center(S);
-S = quadric.translate(S,-origCenter);
-Sr = quadric.rotate(S,[90 0 0]);
-Srt = quadric.translate(Sr,origCenter);
-
-S = quadric.vecToMatrix(v);
-origCenter = quadric.center(S);
-S = quadric.translate(S,-origCenter);
-S = quadric.alignAxes(S);
-
-
 %}
 
 end
