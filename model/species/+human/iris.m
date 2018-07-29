@@ -1,27 +1,46 @@
 function iris = iris( eye )
+% Returns the iris sub-field structure of an eye model structure
+%
+% Syntax:
+%  iris = human.iris( eye )
+%
+% Description:
+%   Returns parameters that define the properties of the iris.
+%
+%   The iris has a thickness. This thickness influences the properties of
+%   the entrance pupil, as when the eye is rotated w.r.t. the camera either
+%   the front or back surface of the iris aperture defines the near or far
+%   edge of the entrance pupil.
+%
+%   We position the anterior surface of the iris at a depth of 3.925 mm,
+%   which reflects a cycloplegic eye. We model an eye with zero iris angle,
+%   thus making the iris a plane. We adjust the position of the iris so
+%   that it is centered within the rotated corneal ellipse. This is
+%   consistent with reports that the iris is shifted slightly upward with
+%   respect to the pupil center, although inconsistent with the report that
+%   it is shifted temporally:
+%
+%       ...the typical entrance pupil is decentered approximately 0.15 mm
+%       nasally and 0.1 mm inferior to the geometric center of the visible
+%       iris circumference
+%
+%   Bennett, Edward S., and Barry A. Weissman, eds. Clinical contact lens
+%   practice. Lippincott Williams & Wilkins, 2005, p119
 
-% The iris has a thickness. This thickness influences the properties of the
-% entrance pupil, as when the eye is rotated w.r.t. the camera either the
-% front or back surface of the iris aperture defines the near or far edge
-% of the entrance pupil. A thickness of 0.15 mm was found to produce an
-% entrance pupil ellipse that well matches the Mathur 2013 empirical
-% results.
+%
+% Inputs:
+%   eye                   - Structure.
+%
+% Outputs:
+%   retina                - Structure.
+%
+% Examples:
+
+
+% This value obtained by fitting to the Mathur 2013 measurements of the
+% appearance of the entrance pupil.
 iris.thickness = 0.15;
 
-% We position the anterior surface of the iris at a depth of 3.925 mm,
-% which reflects a cycloplegic eye. We model an eye with zero iris angle,
-% thus making the iris a plane. We adjust the position of the iris so that
-% it is centered within the rotated corneal ellipse. This is consistent
-% with reports that the iris is shifted slightly upward with respect to the
-% pupil center, although inconsistent with the report that it is shifted
-% temporally:
-%
-%   ...the typical entrance pupil is decentered approximately 0.15 mm
-%   nasally and 0.1 mm inferior to the geometric center of the visible iris
-%   circumference
-%
-% Bennett, Edward S., and Barry A. Weissman, eds. Clinical contact lens
-% practice. Lippincott Williams & Wilkins, 2005, p119
 switch eye.meta.eyeLaterality
     case 'Right'
         iris.center = [-4+iris.thickness/2 0.35 0.35];

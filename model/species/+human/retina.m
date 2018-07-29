@@ -14,9 +14,9 @@ function retina = retina(eye)
 %       Atchison, David A. "Optical models for human myopic eyes." Vision
 %       research 46.14 (2006): 2236-2250.
 %
-% The Atchison model is arranged around the visual axis, with the vitreous
-% chamber tilted and shifted. In the current model, the retinal ellipsoid
-% is aligned with and centered on the optical axis.
+%   The Atchison model is arranged around the visual axis, with the
+%   vitreous chamber tilted and shifted. In the current model, the retinal
+%   ellipsoid is aligned with and centered on the optical axis.
 %
 % Inputs:
 %   eye                   - Structure.
