@@ -1,10 +1,12 @@
 function axes = axes( eye )
-% Returns the position of the fovea and optic disc on the retinal surface
+% Returns the axex sub-field structure of an eye model structure
 %
 % Syntax
 %  axes = human.axes( eye )
 %
-% Description
+% Description:
+%   Calculates the position on the retinal surface of the posterior segment
+%   vertex, the fovea, and the center of the optic disc.
 %
 % Inputs
 %   eye                   - Structure.
@@ -51,6 +53,18 @@ function axes = axes( eye )
     odf_jonas = @(SR) 0.04 + 0.2.*(axialLengthFromSR(SR));
     plot(SRvals,odf_jonas(SRvals),'*b')
 %}
+
+% The calculation of the position of the retinal landmarks is based upon
+% empirical measurements of visual field position. These measurements are
+% done in the un-accommodated state, in the visible spectrum, with the eye
+% and targets in air. It is also assumed that the position of the retinal
+% landmarks were fixed at the point of maturity of the visual system.
+% Therefore, the meta values of the passed eye structure are changed here
+% to reflect these circumstances for this calculation.
+eye.meta.spectralDomain = 'vis';
+eye.meta.ageYears = 18;
+eye.meta.accommodationDiopeters = 0;
+cameraMedium = 'air';
 
 % Obtain the quadric form of the retinal surface
 S = eye.retina.S;
@@ -143,7 +157,7 @@ end
 % that the elevational angle is inverted. This is because a negative value
 % in this context corresponds to deflection of the visual axis upwards in
 % the visual field.
-myObj = @(G) sum(angdiff(deg2rad(calcVisualAngle(eye,axes.optical.geodetic,G)),deg2rad(axes.visual.degField(1:2).*[1 -1])).^2).*1e100;
+myObj = @(G) sum(angdiff(deg2rad(calcVisualAngle(eye,axes.optical.geodetic,G,[],[],cameraMedium)),deg2rad(axes.visual.degField(1:2).*[1 -1])).^2).*1e100;
 
 % Define an x0 based upon laterality and quadric dimensions
 switch eye.meta.eyeLaterality
@@ -201,7 +215,7 @@ end
 
 % Define the objective. Again note that the vertical target angle in
 % degrees of visual field is reversed.
-myObj = @(G) sum(angdiff(deg2rad(calcVisualAngle(eye,axes.optical.geodetic,G)),deg2rad(axes.opticDisc.degField(1:2).*[1 -1])).^2).*1e100;
+myObj = @(G) sum(angdiff(deg2rad(calcVisualAngle(eye,axes.optical.geodetic,G,[],[],cameraMedium)),deg2rad(axes.opticDisc.degField(1:2).*[1 -1])).^2).*1e100;
 
 % Define an x0 based upon laterality and quadric dimensions
 switch eye.meta.eyeLaterality
