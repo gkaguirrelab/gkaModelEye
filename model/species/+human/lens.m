@@ -1,9 +1,45 @@
-function lens = lens( eye, accomodation )
+function lens = lens( eye, age, D )
+% Returns the lens sub-field structure of an eye model structure
+%
+% Syntax:
+%  lens = human.lens( eye, age, D )
+%
+% Description:
+%   A model of the crystalline lens is generated, expressed as a set of
+%   quadric surfaces. The anterior and posterior surfaces of the lens are
+%   modeled as one-half of a two-sheeted hyperboloid. The radii of
+%   surfaces, and their dependence upon age and the accomodative state of
+%   the lens, are taken from:
+%
+%       Navarro, Rafael. "Adaptive model of the aging emmetropic eye and
+%       its changes with accommodation." Journal of vision 14.13 (2014):
+%       21-21.
+%
+%   The total lens thickness, and thickness of the anterior and posterior
+%   portions of the lens, are also taken from Navarro 2014.
+%
+%   The interior of the lens is modeled as a GRIN (gradient refractive
+%   index). This is realized as a set of ellipsoidal iso-indicial surfaces.
+%   The particular parameters are taken from Atchison 2006 Vision Research,
+%   which were in turn derived from Jones et al 2005 Vision Research and
+%   Liou & Brennan 1997 JOSA-A.
+%
+%   The lens is modeled as being center aligned with the optical axis of
+%   the eye, and thus no tilt or shift is needed in the current model. The
+%   axial position of the lens center is taken from Atchison 2006.
+%
+% Inputs:
+%   eye                   - Structure.
+%   age                   - Scalar. Age of the human eye in years.
+%   D                     - Scalar. Accomodative state of the eye in
+%                           diopters. Zero is unaccmodated. A young person
+%                           has a maximum accomodation of about 9 diopters.
+%
+% Outputs:
+%   lens                  - Structure.
+%
+% Examples:
 
-% Currently only supports odd number of shells.
-nShells = 11;
-startShell = 2;
-endShell = 11;
 
 % Initialize the components of the optical system
 lens.S = [];
@@ -18,19 +54,43 @@ lens.plot.color = {};
 nEdge = returnRefractiveIndex( 'lens.edge', eye.meta.spectralDomain );
 nCore = returnRefractiveIndex( 'lens.core', eye.meta.spectralDomain );
 
-% This is the position (on the optical axis) of the point in the lens with
-% the maximal refractive index.
+% The position (on the optical axis) of the point in the lens with the
+% maximal refractive index. Taken from Atchison 2006.
 lensCenter = -5.4;
 
-% The thickness of the back and front of the lens.
-lensThickBack = 2.16;
-lensThickFront = 1.44;
+% The thickness of the back and front of the lens, taken from Navarro 2014,
+% table 2.
+lensThick = 2.93 + 0.0236*age + (0.058 - 0.0005*age)*D;
+lensThickBack = 0.6 * lensThick;
+lensThickFront = 0.4 * lensThick;
+
+% The lens has a continuous, gradient refractive index, but is approximated
+% by a number of iso-indicial contours, or "shells". The current model is
+% only defined for a division of the lens into an odd number of shells.
+% Because the lens surfaces are hyperboloids and the gradient shell model
+% is ellipsoidal, it can be the case that for some accommodative states,
+% the outermost modeled shells do not lie entirely within the lens surface.
+% To address this, the current model discards a few of the outermost shells
+% so that the gradient set is enclosed entirely within the lens surfaces.
+% The number of discarded shells varies by the accommodative state of the
+% lens. This has the effect of causing the gradient encountered by the ray
+% to be slightly discontinuous close to the outer edges of the lens.
+nShells = 21;
+endShell = 21;
+if D >= 7
+    startShell = 3;
+end
+if D >= 3 && D < 7
+    startShell = 4;
+end
+if D < 3
+    startShell = 5;
+end
 
 
 %% Back lens surface
 % The back surface of the lens is modeled as a hyperbola. Values taken
-% from Atchison 2006.
-% To convert R and Q to radii of a hyperbola:
+% from Navarro 2016. To convert R and Q to radii of a hyperbola:
 %   R = b^2/a
 %	Q = (a^2 / b^2) + 1
 % Therefore, given R and Q, we can obtain a and b, which correspond
@@ -45,7 +105,8 @@ lensThickFront = 1.44;
             solution.a
             solution.b
 %}
-R = -5.9; Q = -2;
+R = 1./( -(1/(5.9 - 0.013*age)) - 0.0043*D  );
+Q = -3;
 a = R * sqrt(abs( 1 / (Q - 1 ) )) * sign(Q);
 b = R / (Q - 1 );
 radii(1) = abs(b); radii(2:3) = abs(a);
@@ -114,8 +175,9 @@ lens.index(end) = nEdge;
 
 
 %% Front lens surface
-R = 11.48;
-Q = -5;
+% Taken from Navarro 2014.
+R = 1/( 1/(12.7-0.058*age) + 0.0077*D  );
+Q = -4 - (0.5*D);
 a = R * sqrt(abs( 1 / (Q - 1 ) )) * sign(Q);
 b = R / (Q - 1 );
 radii(1) = abs(b);
