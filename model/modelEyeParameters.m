@@ -27,31 +27,24 @@ function eye = modelEyeParameters( varargin )
 %  'axialLength'          - Scalar. This is the axial length along the 
 %                           optical axis. When set, this fixes the axial
 %                           length of the eye to the passed value in
-%                           millimeters. As the modeled anterior chamber
-%                           depth is not variable, this change is enforced
-%                           on the vitreous chamber. The remaining
-%                           dimensions of the vitreous chamber are scaled
-%                           to fit the proportions predicted by the
-%                           Atchison model for the specified degree of
-%                           ametropia.
+%                           millimeters.
 %  'eyeLaterality'        - A text string that specifies which eye (left,
 %                           right) to model. Allowed values (in any case)
 %                           are {'left','right','L','R','OS','OD'}
 %  'species'              - A text string that specifies the species to be
 %                           modeled. Supported values (in any case) are
 %                           {'human','dog'}
+%  'ageYears'             - Scalar that supplies the age in years of the
+%                           eye to be modeled. Modifies the lens.
+%  'accommodationDiopeters' - Scalar that supplies the accommodation state
+%                           of the eye. Valid values range from zero
+%                           (unaccommodated) to +10.
 %  'spectralDomain'       - String, options include {'vis','nir'}.
 %                           This is the wavelength domain within which
 %                           imaging is being performed. The refractive
 %                           indices vary based upon this choice.
-%  'visualAxisDegRetina'  - 1x3 vector. This is the position of the fovea 
-%                           w.r.t. to optical axis in degrees of retina.
-%                           The values are [azimuth, elevation, torsion].
-%                           Used in model development.
-%  'opticDiscAxisDegRegina'  - 1x3 vector. This is the position of the  
-%                           optic disc w.r.t. to optical axis in degrees of
-%                           retina. The values are [azimuth, elevation,
-%                           torsion]. Used in model development.
+%  'skipEyeAxes'          - Logical. If set to true, the computation of
+%                           retinal landmarks and eye axes is skipped.
 %
 % Outputs:
 %   eye                   - A structure with fields that contain the values
@@ -73,11 +66,11 @@ p = inputParser; p.KeepUnmatched = true;
 
 % Optional
 p.addParameter('sphericalAmetropia',0,@isscalar);
-p.addParameter('accomodation',0,@isscalar);
 p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
-p.addParameter('cornealAxis',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
+p.addParameter('ageYears',20,@isscalar);
+p.addParameter('accommodationDiopeters',0,@isscalar);
 p.addParameter('spectralDomain','nir',@ischar);
 p.addParameter('skipEyeAxes',false,@islogical);
 
@@ -105,6 +98,8 @@ eye.meta.dimensions = {'depth (axial)' 'horizontal' 'vertical'};
 eye.meta.eyeLaterality = eyeLaterality;
 eye.meta.sphericalAmetropia = p.Results.sphericalAmetropia;
 eye.meta.species = p.Results.species;
+eye.meta.ageYears = p.Results.ageYears;
+eye.meta.accommodationDiopeters = p.Results.accommodationDiopeters;
 eye.meta.spectralDomain = p.Results.spectralDomain;
 
 % Switch parameters at the top level by species
@@ -114,12 +109,12 @@ switch eye.meta.species
     case {'human','Human','HUMAN'}
                 
         % Eye anatomy
-        eye.cornea = human.cornea(eye, p.Results.cornealAxis);
+        eye.cornea = human.cornea(eye);
         eye.iris = human.iris(eye);
         eye.pupil = human.pupil(eye);
         eye.retina = human.retina(eye);
         eye.lens = human.lens(eye);
-        
+
         % Rotation centers
         eye.rotationCenters = human.rotationCenters(eye);
         
