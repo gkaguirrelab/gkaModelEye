@@ -186,6 +186,9 @@ ub = [-80 180 0];
 % Perform the search
 axes.visual.geodetic = fmincon(myObj, x0, [], [], [], [], lb, ub, [], opts);
 
+% Obtain the initialRay from the fovea that intersects the pupil center
+[~, ~, axes.visual.initialRay] = calcVisualAngle(eye,axes.optical.geodetic,axes.visual.geodetic,[],[],cameraMedium);
+
 % Obtain the coords coordinates of the fovea
 axes.visual.coords = quadric.ellipsoidalGeoToCart(axes.visual.geodetic,S)';
 
@@ -248,7 +251,10 @@ ub = [-60 180 0];
 % Perform the search
 axes.opticDisc.geodetic = fmincon(myObj, x0, [], [], [], [], lb, ub, [], opts);
 
-% Obtain the coords coordinates of the optic disc
+% Obtain the initialRay from the opticDisc that intersects the pupil center
+[~, ~, axes.opticDisc.initialRay] = calcVisualAngle(eye,axes.optical.geodetic,axes.opticDisc.geodetic,[],[],cameraMedium);
+
+% Obtain the coords of the optic disc
 axes.opticDisc.coords = quadric.ellipsoidalGeoToCart(axes.opticDisc.geodetic,S)';
 
 
