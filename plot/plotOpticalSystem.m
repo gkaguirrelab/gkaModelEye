@@ -31,7 +31,7 @@ function figHandle = plotOpticalSystem(varargin)
     plotOpticalSystem('opticalSystem',sceneGeometry.refraction.retinaToCamera.opticalSystem,...
         'surfaceColors',sceneGeometry.refraction.retinaToCamera.surfaceColors,'addLighting',true);
     % Define an initial ray arising at the fovea
-    p = sceneGeometry.eye.axes.visual.cartesian';
+    p = sceneGeometry.eye.axes.visual.coords';
     % Loop over horizontal angles relative to the visual axis
     for ii = -2:1:2
         % Assemble the ray
