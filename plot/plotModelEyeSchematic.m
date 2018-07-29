@@ -60,7 +60,6 @@ p.addParameter('plotColor','k',@ischar);
 % parse
 p.parse(eye, varargin{:})
 
-
 % Open a figure
 if p.Results.newFigure
     figHandle = figure;
