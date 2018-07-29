@@ -367,7 +367,7 @@ if isfield(sceneGeometry,'refraction')
             % Get this eyeWorld point
             eyePoint=eyePoints(refractPointsIdx(ii),:);
             % Perform the computation using the passed function handle.
-            [virtualImageRay, intersectError] = ...
+            [virtualImageRay, ~, intersectError] = ...
                 p.Results.refractionHandle(eyePoint, eyePose, args{:});
             eyePoints(refractPointsIdx(ii),:) = virtualImageRay(1,:);
             nodalPointIntersectError(refractPointsIdx(ii)) = intersectError;
