@@ -12,7 +12,7 @@ function S = rotate( S, r )
 % Inputs:
 %   S                     - 1x10 vector or 4x4 matrix of the quadric
 %                           surface.
-%   r                     - 1x3 vector of Euler angles
+%   r                     - 1x3 vector of Euler angles in degrees
 % Outputs:
 %   S                     - 1x10 vector or 4x4 matrix of the quadric
 %                           surface, having been subjected to rotation
@@ -21,6 +21,8 @@ function S = rotate( S, r )
 %{
 %}
 
+
+
 % If the quadric surface was passed in vector form, convert to matrix
 returnVecFlag = false;
 if isequal(size(S),[1 10])
@@ -28,45 +30,45 @@ if isequal(size(S),[1 10])
     returnVecFlag = true;
 end
 
-
 % Store the original scale
 Sscale = S(4,4);
 
-% find the center of the quadric
+% Find the center of the quadric
 center = -S( 1:3, 1:3 ) \ S( 1:3,4 );
 
-% form the corresponding translation matrix
+% Form the corresponding translation matrix
 T = eye( 4 );
 T( 4, 1:3 ) = center';
 
-% translate to the center
+% Translate to the center
 Q = T * S * transpose(T);
 
-% Store the translated scale
-Qscale = Q(4,4);
+% Convert deg to rad
+ro = pi/180;
 
-% Construct the rotation matrix from the Euler angles
-R = eul2rotm(deg2rad(r));
+% Create the rotation matrix
+Rx = [1 0 0; 0 cos(r(1)*ro) sin(r(1)*ro); 0 -sin(r(1)*ro) cos(r(1)*ro)];
+Ry = [cos(r(2)*ro) 0 -sin(r(2)*ro); 0 1 0; sin(r(2)*ro) 0 cos(r(2)*ro)];
+Rz = [cos(r(3)*ro) sin(r(3)*ro) 0; -sin(r(3)*ro) cos(r(3)*ro) 0; 0 0 1];
+Rmat = Rx*Ry*Rz;
 
-% Apply the rotation
-Q(1:3,1:3) = R'*Q(1:3,1:3)*R;
-
-% Restore the Q scale
-Q = (Q./Q(4,4)).*Qscale;
+% Apply the rotation rotation
+Q(1:3,1:3) = Rmat'*Q(1:3,1:3)*Rmat;
 
 % Restore the translation
 T = eye( 4 );
 T( 4, 1:3 ) = -center';
 S = T * Q * transpose(T);
 
-% Restore the original scale
-S = (S./S(4,4)).*Sscale;
+% Restore the original scale.
+if abs(Sscale) > realmin
+    S = (S./S(4,4)).*Sscale;
+end
 
 % Return a vector if that was the original input
 if returnVecFlag
     S = quadric.matrixToVec(S);
 end
-
 
 end
 
