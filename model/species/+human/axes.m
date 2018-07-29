@@ -198,7 +198,7 @@ axes.visual.coords = quadric.ellipsoidalGeoToCart(axes.visual.geodetic,S)';
 % Rohrschneider measured the distance (in degrees of visual angle) between
 % the center of the optic disc and the fovea in 104 people, and found a
 % mean horizontal value of 15.5 +- 1.1 degrees SD, and a vertical value of
-% ?1.5 +- 0.9 degrees SD. There was no dependence of the value upon
+% 1.5 +- 0.9 degrees SD. There was no dependence of the value upon
 % ametropia.
 %
 %   Rohrschneider, Klaus. "Determination of the location of the fovea on

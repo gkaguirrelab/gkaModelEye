@@ -26,18 +26,16 @@ pupil.center = [eye.iris.center(1) 0 0];
 %{
     % Observed entrance pupil diameters reported in Wyatt 1995.
     entranceRadius = [3.09/2 4.93/2];
-    % Wyatt reported an eccentricity of the pupil of 0.21 under
-    % dark conditions. We find that using that value produces
-    % model results that disagree with Malthur 2013. We have
-    % adopted an upper value of 0.18 instead. We also use the
-    % convention of a negative eccentricity for a horizontal major
-    % axis and a positive eccentricity for vertical.
+    % Wyatt reported an eccentricity of the pupil of 0.21 under dark
+    % conditions. We find that using that value produces model results that
+    % disagree with Malthur 2013. We have adopted an upper value of 0.18
+    % instead. We also use the convention of a negative eccentricity for a
+    % horizontal major axis and a positive eccentricity for vertical.
     entranceEccen = [-0.12 0.18];
     % Prepare scene geometry and eye pose aligned with visual axis
     sceneGeometry = createSceneGeometry();
     % Fix the actual pupil eccentricity at 0
     sceneGeometry.pupil.eccenFcnString = '@(x) 0';
-    sceneGeometry.pupil.thetas = [0, 0];
     % Obtain the pupil area in the image for each entrance radius
     % assuming no ray tracing
     sceneGeometry.refraction = [];
@@ -47,6 +45,8 @@ pupil.center = [eye.iris.center(1) 0 0];
     actualArea(2) = pupilImage(3);
     % Add the ray tracing function to the sceneGeometry
     sceneGeometry = createSceneGeometry();
+    % Fix the actual pupil eccentricity at 0
+    sceneGeometry.pupil.eccenFcnString = '@(x) 0';
     % Search across actual pupil radii to find the values that match
     % the observed entrance areas.
     myPupilEllipse = @(radius) pupilProjection_fwd([-sceneGeometry.eye.axes.visual.degField(1), -sceneGeometry.eye.axes.visual.degField(2), 0, radius],sceneGeometry);
@@ -57,14 +57,14 @@ pupil.center = [eye.iris.center(1) 0 0];
     actualRadius(2) = fminunc(myObj, entranceRadius(2));
     % Now find the actual pupil eccentricity that produces the
     % observed entrance pupil eccentricity
+    sceneGeometry.eye.pupil.thetas=[0 0];
     place = {'eye' 'pupil' 'eccenFcnString'};
-    sceneGeometry.pupil.thetas = [0, 0];
     mySceneGeom = @(eccen) setfield(sceneGeometry,place{:},['@(x) ' num2str(eccen)]);
     myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.visual.degField(1), -sceneGeometry.eye.axes.visual.degField(2), 0, actualRadius(1)],mySceneGeom(eccen));
     myEccen = @(ellipseParams) ellipseParams(4);
     myObj = @(eccen) 1e4*(myEccen(myPupilEllipse(eccen))-abs(entranceEccen(1))).^2;
     actualEccen(1) = -fminsearch(myObj, 0.1);
-    sceneGeometry.pupil.thetas = [pi/2, pi/2];
+    sceneGeometry.eye.pupil.thetas = [pi/2, pi/2];
     mySceneGeom = @(eccen) setfield(sceneGeometry,place{:},['@(x) ' num2str(eccen)]);
     myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.visual.degField(1), -sceneGeometry.eye.axes.visual.degField(2), 0, actualRadius(2)],mySceneGeom(eccen));
     myEccen = @(ellipseParams) ellipseParams(4);
@@ -86,7 +86,7 @@ pupil.center = [eye.iris.center(1) 0 0];
 %}
 % Specify the params and equation that defines the actual pupil ellipse.
 % This can be invoked as a function using str2func.
-pupil.eccenParams = [-1.749 -4.770 0.099 -0.145];
+pupil.eccenParams = [-1.847 6.431 0.184 0.113];
 pupil.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',pupil.eccenParams(1),pupil.eccenParams(2),pupil.eccenParams(3),pupil.eccenParams(4));
 
 % The theta values of the actual pupil ellipse for eccentricities less
