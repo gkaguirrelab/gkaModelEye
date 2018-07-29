@@ -1,4 +1,4 @@
-function [virtualImageRay, targetIntersectError, angle_p1p2, angle_p1p3] = virtualImageFunc( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
+function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
 % Returns the virtual image ray of a point in eyeWorld coordinates
 %
 % Syntax:
@@ -32,6 +32,9 @@ function [virtualImageRay, targetIntersectError, angle_p1p2, angle_p1p3] = virtu
 %   virtualImageRay       - A 2x3 vector that gives the coordinates (in mm)
 %                           of a point in eyeWorld space with the
 %                           dimensions p1, p2, p3.
+%   initialRay            - A 2x3 vector that specifies in eyeWorld space
+%                           the vector arising from the eyePoint that will
+%                           intersect the worldTarget.
 %   targetIntersectError  - The distance (in mm) between the worldTarget
 %                           and the closest passage of a ray arising from
 %                           the eyeWorld point after it exited the optical
@@ -79,8 +82,9 @@ function [virtualImageRay, targetIntersectError, angle_p1p2, angle_p1p3] = virtu
 % optical system) that passes as close as possible to the worldTarget
 
 % Pre-define the output variables to keep the compiler happy
-targetIntersectError = Inf;
 virtualImageRay = nan(2,3);
+initialRay = nan(2,3);
+targetIntersectError = Inf;
 
 % Set some parameters for the search
 nodalErrorTolerance = 1e-4;
@@ -170,10 +174,9 @@ end
     end
 
 
-%% Obtain the virtual image location
-% With both theta values calculated, now obtain the virtual image ray
-% arising from the pupil plane that reflects the corneal optics
-virtualImageRay = calcVirtualImageRay(eyePoint, angle_p1p2, angle_p1p3, opticalSystem);
+%% Obtain the initial and virtual image rays
+% With both theta values calculated, now obtain the rays
+[virtualImageRay, initialRay] = calcVirtualImageRay(eyePoint, angle_p1p2, angle_p1p3, opticalSystem);
 
 
 end % virtualImageFunc -- MAIN
@@ -194,9 +197,10 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 %  distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystem)
 %
 % Description:
-%   This function returns the Euclidean distance between the nodal point of
-%   the camera and a ray that has exited from the optical system of a
-%   rotated eye. This distance is calculated within eyeWorld coordinates.
+%   This function returns the Euclidean distance between a target in the
+%   world coordinate system and a ray that has exited from the optical
+%   system of a rotated eye. This distance is calculated within eyeWorld
+%   coordinates.
 %
 %   This function is used to find angles in the p1p2 and p1p3 planes that
 %   minimize the distance between the intersection point of the ray in the
@@ -218,7 +222,7 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 %                           distance between the nodal point of the camera
 %                           and a ray exiting the optical system of the
 %                           rotated eye. Set to Inf if an error is returned
-%                           by rayTraceEllipsoids.
+%                           by rayTraceQuadrics.
 %
 
 % Assemble the input ray. Note that the rayTraceQuadrics routine handles
@@ -278,7 +282,7 @@ end % calcTargetIntersectError
 
 
 %% calcVirtualImageRay
-function [virtualImageRay] = calcVirtualImageRay(eyePoint, angle_p1p2, angle_p1p3, opticalSystem)
+function [virtualImageRay, initialRay] = calcVirtualImageRay(eyePoint, angle_p1p2, angle_p1p3, opticalSystem)
 % Returns the coordinates of a virtual image point at the initial depth
 %
 % Syntax:
@@ -315,10 +319,10 @@ function [virtualImageRay] = calcVirtualImageRay(eyePoint, angle_p1p2, angle_p1p
 p = eyePoint';
 u = [1; tan(angle_p1p2); tan(angle_p1p3)];
 u = u./sqrt(sum(u.^2));
-inputRay = [p, u];
+initialRay = [p, u];
 
 % Ray trace
-outputRayEyeWorld = rayTraceQuadrics(inputRay, opticalSystem);
+outputRayEyeWorld = rayTraceQuadrics(initialRay, opticalSystem);
 outputRayEyeWorld = outputRayEyeWorld';
 
 % If any "must intersect" surfaces were missed, the output ray will contain
