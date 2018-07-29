@@ -25,9 +25,13 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %
 % Examples:
 %{
-    % Basic call for an axial and sagittal view plot in new windows
+    % Basic call for an axial view plot
     eye = modelEyeParameters;
     plotModelEyeSchematic(eye);
+%}
+%{
+    % Basic call for an sagittal view plot
+    eye = modelEyeParameters;
     plotModelEyeSchematic(eye,'view','sag');
 %}
 %{
@@ -114,15 +118,14 @@ idx = find(strcmp(pointLabels,'cornealApex'));
 plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColor]);
 
 %% Plot the visual axis
-%m = (eye.axes.visual.coords(PdimB) - eye.lens.nodalPoint(PdimB)) / (eye.axes.visual.coords(PdimA) - eye.lens.nodalPoint(PdimA));
-%b = eye.lens.nodalPoint(PdimB) -  (eye.lens.nodalPoint(PdimA) * m);
-%xRange = xlim;
-%plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
+% Obtain the rayPath through the optical system from the fovea to cornea
+[~, rayPath] = rayTraceQuadrics(eye.axes.visual.initialRay, assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera','cameraMedium','air' ));
+plot(rayPath(PdimA,:),rayPath(PdimB,:),[':' p.Results.plotColor]);
 
 %% Plot the blind spot axis
-%m = (eye.axes.opticDisc.coords(PdimB) - eye.lens.nodalPoint(PdimB)) / (eye.axes.opticDisc.coords(PdimA) - eye.lens.nodalPoint(PdimA));
-%b = eye.lens.nodalPoint(PdimB) -  (eye.lens.nodalPoint(PdimA) * m);
-%plot(xRange,xRange.*m+b,[':' p.Results.plotColor]);
+% Obtain the rayPath through the optical system from the opticDisc to cornea
+[~, rayPath] = rayTraceQuadrics(eye.axes.opticDisc.initialRay, assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera','cameraMedium','air' ));
+plot(rayPath(PdimA,:),rayPath(PdimB,:),[':' p.Results.plotColor]);
 
 
 %% Reference axis
