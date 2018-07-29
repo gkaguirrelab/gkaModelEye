@@ -90,8 +90,15 @@ radii = [14.26   10.43   10.27] .* ...
     ((eye.meta.sphericalAmetropia .* -0.0028)+1);
 S = quadric.scale(quadric.unitSphere,radii);
 
-% Rotate the quadric surface 3 degrees nasal
-S = quadric.rotate(S,[ 0 0 185 ]);
+% Rotate the quadric surface towards the nasal field
+switch eye.meta.eyeLaterality
+    case 'Right'
+        S = quadric.rotate(S,[ 0 0 181.5 ]);
+    case 'Left'
+        S = quadric.rotate(S,[ 0 0 -181.5 ]);
+    otherwise
+        error('eye laterality not defined')
+end
 
 % We set the center of the cornea front surface ellipsoid so that the axial
 % apex (prior to rotation) is at position [0, 0, 0]
@@ -134,8 +141,15 @@ cornea.front.boundingBox=[-4 0 -8 8 -8 8];
 radii = [ 13.7716    9.3027    9.3027];
 S = quadric.scale(quadric.unitSphere,radii);
 
-% Rotate the quadric surface 3 degrees nasal
-S = quadric.rotate(S,[ 0 0 185 ]);
+% Rotate the quadric surface towards the nasal field
+switch eye.meta.eyeLaterality
+    case 'Right'
+        S = quadric.rotate(S,[ 0 0 181.5 ]);
+    case 'Left'
+        S = quadric.rotate(S,[ 0 0 -181.5 ]);
+    otherwise
+        error('eye laterality not defined')
+end
 
 % The center of the back cornea ellipsoid is positioned so that
 % there is 0.55 mm of corneal thickness between the front and back
