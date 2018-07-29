@@ -1,4 +1,4 @@
-function cornea = cornea(eye, cornealAxis)
+function cornea = cornea( eye )
 
 % The corneal front surface is taken from Table 1 of Navarro 2006:
 %
@@ -155,17 +155,7 @@ cornea.plot.color = {'blue'; 'blue'};
     % Now obtain the corneal axes relative to optical axis
     cornealAxisWRTopticalAxis = fixationAxisWRTopticalAxis - fixationAxisWRTcornealAxis
 %}
-if isempty(cornealAxis)
-    switch eye.meta.eyeLaterality
-        case 'Right'
-            cornea.axis = [3.4460    1.6500   -0.0200];
-        case 'Left'
-            cornea.axis = [-3.4460    1.6500   -0.0200];
-    end
-else
-    cornea.axis = cornealAxis;
-end
-cornea.axis=[0 0 0];
+
 
 % Navarro original params
 % Navarro 2006, Table 1, mean cornea ellipsoid parameters
