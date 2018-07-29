@@ -1,14 +1,14 @@
-function lens = lens( eye, age, D )
+function lens = lens( eye )
 % Returns the lens sub-field structure of an eye model structure
 %
 % Syntax:
-%  lens = human.lens( eye, age, D )
+%  lens = human.lens( eye )
 %
 % Description:
 %   A model of the crystalline lens is generated, expressed as a set of
 %   quadric surfaces. The anterior and posterior surfaces of the lens are
 %   modeled as one-half of a two-sheeted hyperboloid. The radii of
-%   surfaces, and their dependence upon age and the accomodative state of
+%   surfaces, and their dependence upon age and the accommodative state of
 %   the lens, are taken from:
 %
 %       Navarro, Rafael. "Adaptive model of the aging emmetropic eye and
@@ -28,12 +28,18 @@ function lens = lens( eye, age, D )
 %   the eye, and thus no tilt or shift is needed in the current model. The
 %   axial position of the lens center is taken from Atchison 2006.
 %
+%   The current implementation is a bit of a hodge-podge of different
+%   models (Atchison, Navarro, and Jones). It would be nice to implement a
+%   more comprehensive model that has an adaptive geometry of the lens
+%   interior with accommodative changes, such as:
+%
+%       Sheil, Conor J., and Alexander V. Goncharov. "Accommodating
+%       volume-constant age-dependent optical (AVOCADO) model of the
+%       crystalline GRIN lens." Biomedical optics express 7.5 (2016):
+%       1985-1999.
+%
 % Inputs:
 %   eye                   - Structure.
-%   age                   - Scalar. Age of the human eye in years.
-%   D                     - Scalar. Accomodative state of the eye in
-%                           diopters. Zero is unaccmodated. A young person
-%                           has a maximum accomodation of about 9 diopters.
 %
 % Outputs:
 %   lens                  - Structure.
@@ -49,6 +55,10 @@ lens.mustIntersect = [];
 lens.index = [];
 lens.label = {};
 lens.plot.color = {};
+
+% Extract the age and accommodative state from the meta field
+D = eye.meta.accommodationDiopeters;
+age = eye.meta.ageYears;
 
 % Obtain the core and edge refractive indices
 nEdge = returnRefractiveIndex( 'lens.edge', eye.meta.spectralDomain );
