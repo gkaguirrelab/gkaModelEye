@@ -1,8 +1,8 @@
-function visualAngles = calcVisualAngle(eye,G0,G1,X0,X1,cameraMedium)
+function [visualAngles, initialRay0, initialRay1 ] = calcVisualAngle(eye,G0,G1,X0,X1,cameraMedium)
 % The visual angles between two retinal points
 %
 % Syntax:
-%  visualAngle = calcVisualAngle(sceneGeometry,G0,G1,X0,X1)
+%  visualAngles = calcVisualAngle(sceneGeometry,G0,G1,X0,X1)
 %
 % Description
 %   Given a sceneGeometry and two coordinates on the retinal surface, the
@@ -27,9 +27,14 @@ function visualAngles = calcVisualAngle(eye,G0,G1,X0,X1,cameraMedium)
 %                           Defaults to 'air'.
 %
 % Outputs:
-%   visualAngles          - 1x2 vector with the visual angle, in degrees
+%   visualAngles          - 1x2 vector with the visual angles, in degrees
 %                           between the two points within the p1p2 and p1p3
 %                           planes.
+%   initialRay0, initialRay1 - 3xm matrix that provides the ray coordinates
+%                           at each surface. The value for rayPath(1,:)
+%                           is equal to initial position. If a surface is
+%                           missed, then the coordinates for that surface
+%                           will be nan.
 %
 % Examples:
 %{
@@ -125,8 +130,8 @@ args = {eye.pupil.center([2 3 1])', ...
 eyePose = [0 0 0 0];
 
 % Ray trace to the center of the pupil
-R0 = refractionHandle(X0, eyePose, args{:});
-R1 = refractionHandle(X1, eyePose, args{:});
+[R0, initialRay0] = refractionHandle(X0, eyePose, args{:});
+[R1, initialRay1] = refractionHandle(X1, eyePose, args{:});
 
 % Normalize the rays, and reverse the direction so that the ray is headed
 % from the pupil center out towards the cornea
