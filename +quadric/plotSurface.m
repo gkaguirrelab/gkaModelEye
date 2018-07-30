@@ -1,4 +1,4 @@
-function p = plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLineColor,bbTol)
+function p = plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLineColor,lineAlpha,bbTol)
 % Add a 3D plot of the quadric surface to the active figure
 %
 % Syntax:
@@ -69,6 +69,11 @@ if nargin==5
 end
 
 if nargin==6
+    lineAlpha = 1;
+    bbTol = 1e-2;
+end
+
+if nargin==7
     bbTol = 1e-2;
 end
 
@@ -114,7 +119,10 @@ if ~isempty(betaLineColor)
             (coords(:,2) < boundingBox(4)) .* ...
             (coords(:,3) > boundingBox(5)) .* ...
             (coords(:,3) < boundingBox(6)));
-        plot3(coords(inBounds,1),coords(inBounds,2),coords(inBounds,3),'LineStyle','-','Color',betaLineColor);
+        if ~isempty(coords(inBounds,:))
+            lh = plot3(coords(inBounds,1),coords(inBounds,2),coords(inBounds,3),'LineStyle','-','Color',betaLineColor);
+            lh.Color(4) = lineAlpha;
+        end
     end
     if ~holdState
         hold off
@@ -136,7 +144,10 @@ if ~isempty(omegaLineColor)
             (coords(:,2) < boundingBox(4)) .* ...
             (coords(:,3) > boundingBox(5)) .* ...
             (coords(:,3) < boundingBox(6)));
-        plot3(coords(inBounds,1),coords(inBounds,2),coords(inBounds,3),'LineStyle','-','Color',omegaLineColor);
+        if ~isempty(coords(inBounds,:))
+            lh = plot3(coords(inBounds,1),coords(inBounds,2),coords(inBounds,3),'LineStyle','-','Color',omegaLineColor);
+            lh.Color(4) = lineAlpha;
+        end
     end
     if ~holdState
         hold off
