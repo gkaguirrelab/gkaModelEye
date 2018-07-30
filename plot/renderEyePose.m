@@ -86,7 +86,7 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
     eyePose = [0 0 0 3];
     renderEyePose(eyePose, sceneGeometry);
     % Adjust the position in the positive x and y direction
-    sceneGeometry.cameraPosition.translation = sceneGeometry.cameraPosition.translation + [5; 5; 0];
+    sceneGeometry.cameraPosition.translation = sceneGeometry.cameraPosition.translation + [5; 5; 25];
     renderEyePose(eyePose, sceneGeometry);
 %}
 %{
@@ -113,10 +113,11 @@ p.addParameter('backgroundImage',[],@isnumeric);
 p.addParameter('newFigure',true,@islogical);
 p.addParameter('visible',true,@islogical);
 p.addParameter('showPupilTextLabels',false,@islogical);
-p.addParameter('nPupilPerimPoints',8,@isnumeric);
-p.addParameter('nIrisPerimPoints',20,@isnumeric);
-p.addParameter('modelEyeLabelNames', {'aziRotationCenter', 'eleRotationCenter', 'vitreousChamber' 'irisPerimeter' 'pupilPerimeterBack' 'pupilEllipse' 'pupilPerimeterFront' 'anteriorChamber' 'cornealApex'}, @iscell);
-p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '*g' '-g' '*g' '.y' '*y'}, @iscell);
+p.addParameter('nPupilPerimPoints',8,@isscalar);
+p.addParameter('nIrisPerimPoints',20,@isscalar);
+p.addParameter('modelIrisThickness',false,@islogical);
+p.addParameter('modelEyeLabelNames', {'aziRotationCenter', 'eleRotationCenter', 'retina' 'irisPerimeter' 'pupilPerimeterBack' 'pupilPerimeter' 'pupilEllipse' 'pupilPerimeterFront' 'cornea' 'cornealApex'}, @iscell);
+p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '*g' '*g' '-g' '*g' '.y' '*y'}, @iscell);
 p.addParameter('modelEyeAlpha',1,@isnumeric);
 p.addParameter('modelEyeSymbolSizeScaler',1,@isnumeric);
 
@@ -164,18 +165,9 @@ axis off
 axis equal
 xlim([0 imageSizeX]);
 ylim([0 imageSizeY]);
-    
-% Silence a ray tracing warning that can occur when the eye is rotated at a
-% large angle and points in the iris (and sometimes pupil) encounter
-% internal reflection
-warnState = warning();
-warning('Off','rayTraceEllipsoids:criticalAngle');
 
 % Obtain the pupilProjection of the model eye to the image plane
-[pupilEllipseParams, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nPupilPerimPoints',p.Results.nPupilPerimPoints, 'nIrisPerimPoints',p.Results.nIrisPerimPoints);
-
-% Restore the warning state
-warning(warnState);
+[pupilEllipseParams, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nPupilPerimPoints',p.Results.nPupilPerimPoints, 'modelIrisThickness', p.Results.modelIrisThickness, 'nIrisPerimPoints',p.Results.nIrisPerimPoints);
 
 % Set up an empty variable to hold plot object handles
 plotObjectHandles = gobjects(0);
@@ -218,12 +210,14 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
         end
         % If we are plotting the pupil perimeter points, see if we would
         % like to label them
-        if p.Results.showPupilTextLabels && strcmp(p.Results.modelEyeLabelNames{pp},'pupilPerimeterFront')
+        if p.Results.showPupilTextLabels
+            if strcmp(p.Results.modelEyeLabelNames{pp},'pupilPerimeterFront') || strcmp(p.Results.modelEyeLabelNames{pp},'pupilPerimeter')
             % Put text labels for the pupil perimeter points so that we can
             % follow them through rotations and translations to validate
             % the projection model
             txtHandles = text(imagePoints(idx,1), imagePoints(idx,2), num2str(find(idx)));
             plotObjectHandles = [plotObjectHandles txtHandles'];
+            end
         end
 
     end
