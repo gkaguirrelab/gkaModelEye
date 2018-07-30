@@ -31,7 +31,7 @@ pupil.center = [eye.iris.center(1) 0 0];
     % disagree with Malthur 2013. We have adopted an upper value of 0.18
     % instead. We also use the convention of a negative eccentricity for a
     % horizontal major axis and a positive eccentricity for vertical.
-    entranceEccen = [-0.12 0.18];
+    entranceEccen = [-0.12 0.17];
     % Prepare scene geometry and eye pose aligned with visual axis
     sceneGeometry = createSceneGeometry();
     % Fix the actual pupil eccentricity at 0
@@ -86,7 +86,7 @@ pupil.center = [eye.iris.center(1) 0 0];
 %}
 % Specify the params and equation that defines the actual pupil ellipse.
 % This can be invoked as a function using str2func.
-pupil.eccenParams = [-1.847 6.431 0.184 0.113];
+pupil.eccenParams = [-1.743 4.784 0.149 0.103];
 pupil.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',pupil.eccenParams(1),pupil.eccenParams(2),pupil.eccenParams(3),pupil.eccenParams(4));
 
 % The theta values of the actual pupil ellipse for eccentricities less
