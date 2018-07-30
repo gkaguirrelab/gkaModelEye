@@ -28,8 +28,7 @@ function figHandle = plotOpticalSystem(varargin)
     %% Foveal rays through lens and cornea
     sceneGeometry = createSceneGeometry();
     % Plot the optical system
-    plotOpticalSystem('opticalSystem',sceneGeometry.refraction.retinaToCamera.opticalSystem,...
-        'surfaceColors',sceneGeometry.refraction.retinaToCamera.surfaceColors,'addLighting',true);
+    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
     % Define an initial ray arising at the fovea
     p = sceneGeometry.eye.axes.visual.coords';
     % Loop over horizontal angles relative to the visual axis
@@ -52,15 +51,14 @@ p = inputParser; p.KeepUnmatched = true;
 % Optional
 p.addParameter('newFigure',true,@islogical);
 p.addParameter('visible',true,@islogical);
-p.addParameter('opticalSystem',[], @(x)(isempty(x) | isnumeric(x)));
+p.addParameter('surfaceSet',[], @isstruct);
+p.addParameter('surfaceAlpha', 0.1,@isnumeric);
+p.addParameter('retinaGeodetics', true,@islogical);
 p.addParameter('rayPath',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('outputRay',[], @(x)(isempty(x) | isnumeric(x)));
-p.addParameter('addLighting',false, @islogical);
-p.addParameter('surfaceColors', {[0.5 0.5 0.5]}, @iscell);
-p.addParameter('surfaceAlpha', 0.1,@isnumeric);
-p.addParameter('viewAngle',[40 40],@isnumeric);
-
 p.addParameter('rayColor','red',@(x)(ischar(x) | isnumeric(x)));
+p.addParameter('addLighting',false, @islogical);
+p.addParameter('viewAngle',[40 40],@isnumeric);
 
 % parse
 p.parse(varargin{:})
@@ -79,21 +77,19 @@ else
 end
 hold on
 
-% Plot the opticalSystem if provided
-if ~isempty(p.Results.opticalSystem)
+% Plot the surfaceSet if provided
+if ~isempty(p.Results.surfaceSet)
 
     % Create a local variable for the optical system and strip any nan rows
-    opticalSystem=p.Results.opticalSystem;
+    opticalSystem=p.Results.surfaceSet.opticalSystem;
     opticalSystem=opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
 
     % Determine the number of surfaces
     nSurfaces = size(opticalSystem,1);
 
-    % Create a vector of surface colors
-    surfaceColors=p.Results.surfaceColors;
-    if length(surfaceColors)==1
-        surfaceColors = repmat(surfaceColors,nSurfaces,1);
-    end
+    % Obtain the surface Labels and colors
+    surfaceColors=p.Results.surfaceSet.surfaceColors;
+    surfaceLabels=p.Results.surfaceSet.surfaceLabels;
     
     % Loop over the surfaces
     for ii=1:nSurfaces
@@ -102,8 +98,13 @@ if ~isempty(p.Results.opticalSystem)
         if ~any(isnan(S))
             % Obtain the bounding box
             boundingBox = opticalSystem(ii,12:17);
-            % Plot the surface
-            quadric.plotSurface(S,boundingBox,surfaceColors{ii},p.Results.surfaceAlpha);
+            % Plot the surface. If it is the retinal surface, and geodetic
+            % lines have been requested, include these.
+            if strcmp(surfaceLabels{ii},'retina') && p.Results.retinaGeodetics
+                quadric.plotSurface(S,boundingBox,surfaceColors{ii},p.Results.surfaceAlpha,'g','b',p.Results.surfaceAlpha);
+            else
+                quadric.plotSurface(S,boundingBox,surfaceColors{ii},p.Results.surfaceAlpha);
+            end
         end
     end
 end
