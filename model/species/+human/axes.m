@@ -121,7 +121,7 @@ axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
     ametropiaFromLength = @(x) (23.58 - x)./0.299;
     taberneroData(1,:) = ametropiaFromLength(taberneroData(1,:));
     % Obtain the mean emmetropic kappa
-    k0=mean(hashemiData(2,logical((hashemiData(1,:)>-0.5).*(hashemiData(1,:)<0.5))))
+    k0=median(hashemiData(2,logical((hashemiData(1,:)>-0.5).*(hashemiData(1,:)<0.5))))
     expFunc = fittype( @(v,x) k0 .* sqrt(((x+v)./v)),'independent','x','dependent','y');
     dataX = [hashemiData(1,:) taberneroData(1,:)]';
     dataY = [hashemiData(2,:) taberneroData(2,:)]';
@@ -136,7 +136,7 @@ axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
 % For the vertical kappa, we assume an elevation of 2.5 degrees in the
 % emmetropic eye, and use the same function with v=17.8.
 %
-kappa0 = [5.7285 2.5 0];
+kappa0 = [5.8 3.0 0];
 vParam = 17.8;
 kappa = @(SR) kappa0 .* (sqrt( (SR+vParam)./vParam) );
 axes.visual.degField = kappa(eye.meta.sphericalAmetropia);

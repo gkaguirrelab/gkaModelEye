@@ -39,7 +39,7 @@ function iris = iris( eye )
 
 % This value obtained by fitting to the Mathur 2013 measurements of the
 % appearance of the entrance pupil.
-iris.thickness = 0.025;
+iris.thickness = 0.01;
 
 switch eye.meta.eyeLaterality
     case 'Right'
