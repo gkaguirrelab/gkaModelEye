@@ -105,12 +105,12 @@ axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
 % to determine across studies. As a practical matter, I set the kappa
 % value following the expression:
 %
-%   kappa(SR) = kappa0 * sqrt( (SR - v)/(-v) )
+%   kappa(SR) = kappa0 * ( (SR - v)/(-v) ).^n
 %
 % where SR is spherical refractive error in diopters, kappa0 is the kappa
-% value for an emmetropic eye, and v is the refractive error at which kappa
-% would be expected to be zero. I set kappa0 equal to the median kappa
-% value found in emmetropes in Hashemi 2010. Lacking data to strongly
+% value for an emmetropic eye, v is the refractive error at which kappa
+% would be expected to be zero, an n is 0.5. I set kappa0 equal to the median
+% kappa value found in emmetropes in Hashemi 2010. Lacking data to strongly
 % constrain the choice, I set v equal to the refractive error at which the
 % axial radius of the retinal ellipsoid is equal to the horizontal radius.
 %{
@@ -120,20 +120,26 @@ axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
     ametropiaFromLength = @(x) (23.58 - x)./0.299;
     taberneroData(1,:) = ametropiaFromLength(taberneroData(1,:));
     % Obtain the mean emmetropic kappa
-    kappa0=median(hashemiData(2,logical((hashemiData(1,:)>-0.5).*(hashemiData(1,:)<0.5))))
-    vParam = -10.8917;
-    kappa = @(SR) kappa0 .* ((SR-vParam)./(-vParam));
+    fo = fitoptions('Method','NonlinearLeastSquares');
+    k0=median(hashemiData(2,logical((hashemiData(1,:)>-0.5).*(hashemiData(1,:)<0.5))))
+    expFunc = fittype( @(v,n,x) k0 .* ((x-v)./(-v)).^n,'independent','x','dependent','y','options',fo);
+    dataX = [hashemiData(1,:) taberneroData(1,:)]';
+    dataY = [hashemiData(2,:) taberneroData(2,:)]';
+    expFit = fit(dataX,dataY,expFunc, ...
+        'StartPoint',[16,0.5], ...
+        'Lower',[-30,.5],'Upper',[-16,3],'Robust','Bisquare')
     plot(hashemiData(1,:),hashemiData(2,:),'or');
     hold on
     plot(taberneroData(1,:),taberneroData(2,:),'ob');
-    plot(vParam:0.1:10,kappa(vParam:0.1:10),'-k')
+    plot(expFit.v:0.1:10,expFit(expFit.v:0.1:10),'-k')
 %}
 % For the vertical kappa, I assume an elevation of 3 degrees in the
 % emmetropic eye, and use the same function.
 %
-kappa0 = [5.8 3.0 0];
-vParam = -10.8917;
-kappa = @(SR) kappa0 .* ((SR-vParam)./(-vParam));
+k0 = [5.8 3.0 0];
+v = -18;
+n = 0.5;
+kappa = @(SR) k0 .* ((SR-v)./(-v)).^n;
 axes.visual.degField = kappa(eye.meta.sphericalAmetropia);
 switch eye.meta.eyeLaterality
     case 'Right'
