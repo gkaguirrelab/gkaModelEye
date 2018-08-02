@@ -46,7 +46,7 @@ function [G1, distanceError, angleError] = geodesicByReckoning( S,G0,targetDista
     opticalSystem = assembleOpticalSystem( eye, 'surfaceSetName', 'retinaToPupil' );
     S = opticalSystem(1,1:10);
     G0 = [-90;-90;0];
-    G1 = [-87;-15;0];
+    G1 = [-87;-85;0];
     [distance,startAngle] = quadric.panouGeodesicDistance(S,G0,G1);
     tic
     [G1prime, distanceError, angleError] = quadric.geodesicByReckoning(S,G0,startAngle,distance);

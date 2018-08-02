@@ -34,7 +34,6 @@ function iris = iris( eye )
 % Outputs:
 %   retina                - Structure.
 %
-% Examples:
 
 
 % This value obtained by fitting to the Mathur 2013 measurements of the

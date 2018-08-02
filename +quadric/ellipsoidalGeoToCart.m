@@ -49,27 +49,10 @@ function X = ellipsoidalGeoToCart( geodetic, S )
     % Show an ellipsoidal surface with lines of constant beta and omega
     S = quadric.scale(quadric.unitSphere,[1 1.5 0.5]);
     figure
-    plotSurface(S,[-2,2,-2,2,-2,2],[.9 .9 .9],0.8)
+    quadric.plotSurface(S,[-2,2,-2,2,-2,2],[.9 .9 .9],0.8,'b','g');
     camlight
     lighting gouraud
-    hold on
-    % Plot lines of constant beta
-    for beta = -90:10:90
-        coords =[];
-        for omega = -180:3:180
-            coords(end+1,:)=quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
-        end
-        plot3(coords(:,1),coords(:,2),coords(:,3),'-b');
-    end
     fprintf('Lines of constant beta in blue\n');
-    % Plot lines of constant omega
-    for omega = -180:10:180
-        coords =[];
-        for beta = -90:3:90
-            coords(end+1,:)=quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
-        end
-        plot3(coords(:,1),coords(:,2),coords(:,3),'-g');
-    end
     fprintf('Lines of constant omega in green\n');
 %}
 

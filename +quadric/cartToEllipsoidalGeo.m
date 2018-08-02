@@ -53,7 +53,7 @@ function geodetic = cartToEllipsoidalGeo( X, S )
     G = [90; -65; 0];
     X = quadric.ellipsoidalGeoToCart( G , S );
     Gprime = quadric.cartToEllipsoidalGeo( X, S );
-    assert(max(abs(G-Gprime)) < 1e-6);
+    assert(max(abs(G-Gprime)) < 1e-3);
 %}
 %{
     %% Confirm the invertibility of the transform across quadrants

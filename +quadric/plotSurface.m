@@ -2,7 +2,7 @@ function p = plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLi
 % Add a 3D plot of the quadric surface to the active figure
 %
 % Syntax:
-%  p = quadric.plotSurface(S,boundingBox,surfColor,surfAlpha)
+%  p = quadric.plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLineColor,lineAlpha,bbTol)
 %
 % Description:
 %   Creates a meshgrid on the quadric surface and plots this as a mesh
@@ -107,7 +107,7 @@ holdState = ishold;
 % Plot lines of constant beta
 if ~isempty(betaLineColor)
     hold on
-    for beta = -90:10:50
+    for beta = -90:10:90
         coords =[];
         for omega = -180:3:180
             coords(end+1,:)=quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
@@ -134,7 +134,7 @@ if ~isempty(omegaLineColor)
     hold on
     for omega = -180:10:180
         coords =[];
-        for beta = -90:3:50
+        for beta = -90:3:90
             coords(end+1,:)=quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
         end
         inBounds = logical( ...

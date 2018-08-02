@@ -31,32 +31,26 @@ function compileVirtualImageFunc( varargin )
 % Examples:
 %{
     % Confirm that compiled and native virtualImageFunc yield same value
-    sceneGeometry = createSceneGeometry('forceMATLABVirtualImageFunc',true);
-    % Assemble the args for the virtualImageFunc
-    args = {sceneGeometry.cameraPosition.translation, ...
-    	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.opticalSystem};
-    virtualEyePointNative = sceneGeometry.refraction.handle( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
-    compileVirtualImageFunc
     sceneGeometry = createSceneGeometry();
     % Assemble the args for the virtualImageFunc
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.opticalSystem};
-    virtualEyePointCompiled = sceneGeometry.refraction.handle( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
+    	sceneGeometry.refraction.pupilToCamera.opticalSystem};
+    virtualRayNative = virtualImageFunc( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
+    virtualRayCompiled = virtualImageFuncMex( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
     % Test if the outputds agree
-    assert(max(abs(virtualEyePointNative - virtualEyePointCompiled)) < 1e-6)
+    assert(max(max(abs(virtualRayNative - virtualRayCompiled))) < 1e-6)
 %}
 %{
     % Compare computation time for MATLAB and compiled code
     nComputes = 100;
     fprintf('\nTime to execute virtualImageFunc (average over %d projections):\n',nComputes);
     % Native function
-    sceneGeometry = createSceneGeometry('forceMATLABVirtualImageFunc',true);
+    sceneGeometry = createSceneGeometry();
     % Assemble the args for the virtualImageFunc
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.opticalSystem};
+    	sceneGeometry.refraction.pupilToCamera.opticalSystem};
     tic
     for ii=1:nComputes
         virtualImageFunc( [-3.7 2 0], [0 0 0 2], args{:} );
@@ -67,7 +61,7 @@ function compileVirtualImageFunc( varargin )
     sceneGeometry = createSceneGeometry();
     tic
     for ii=1:nComputes
-        sceneGeometry.refraction.handle( [-3.7 2 0], [0 0 0 2], args{:} );
+        virtualImageFuncMex( [-3.7 2 0], [0 0 0 2], args{:} );
     end
     msecPerComputeCompile = toc / nComputes * 1000;
     fprintf('\tUsing the compiled function: %4.2f msecs.\n',msecPerComputeCompile);

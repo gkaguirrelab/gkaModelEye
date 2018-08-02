@@ -45,15 +45,16 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
     % Basic example that finds the virtual image location for a point from
     % the top of a 2 mm radius exit pupil, with the eye posed straight
     % ahead, and the camera in its default location.
-    sceneGeometry = createSceneGeometry('forceMATLABVirtualImageFunc',true);
+    sceneGeometry = createSceneGeometry();
     % Assemble the args for the virtualImageFunc
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.pupilToCamera.opticalSystem};
-    virtualImageRay = sceneGeometry.refraction.handle( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
+    virtualImageRay = virtualImageFunc( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
     % Test output against cached value
-    virtualImageRayCached = [-3.925000000000000   2.284274108241066  -0.000000000000000];
-    assert(max(abs(virtualImageRay - virtualImageRayCached)) < 1e-6)
+    virtualImageRayCached = [  -3.995000000000000,   2.270595908686316,  0; ...
+        -2.719715110474354,   0.049803422245694, 0];
+    assert(max(max(abs(virtualImageRay - virtualImageRayCached))) < 1e-6)
 %}
 %{
     %% Confirm that targetIntersectError remains small across eye poses

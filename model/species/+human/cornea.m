@@ -33,12 +33,7 @@ function cornea = cornea( eye )
 % Outputs:
 %   cornea                - Structure.
 %
-% Examples:
-%{
-    eye.meta.sphericalAmetropia = 0;
-    eye.meta.eyeLaterality = 'Right';
-    cornea = human.cornea( eye );
-%}
+
 
 %% Front corneal surface
 % Atchison provides parameters for a radially symmetric ellipsoid in terms

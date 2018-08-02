@@ -72,23 +72,7 @@ function Rr = refractRay(R,N,nRel)
     Rr = quadric.refractRay(R,N,nRel);
     assert(max(abs(Rr(:,2)-[0.629;0.661;0.409]))<0.001);
 %}
-%{
-    % Elagha 2017 numerical example
-    % The paper provides a numerical example in section C. Test that we get
-    % the same value.
-    % First surface from Elagha 
-    S = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 -1];
-    S = quadric.scale(S,[10 10 10]);
-    S = quadric.translate(S,[22; 0; 0]);
-    p = [0;0;0];
-    u = [1;tand(17.309724);0];
-    R = quadric.normalizeRay([p, u]);
-    side = 1;
-    X = quadric.intersectRay(S,R,side);
-    N = quadric.surfaceNormal(S,X);
-    Rr = quadric.refractRay(R,N,1/1.2);
-    assert(abs(atan(Rr(2,2)/Rr(1,2))-0.1655)<0.001);
-%}
+
 
 % Pre-allocate the output variable
 Rr = nan(3,2);
