@@ -1,5 +1,5 @@
 function rotationCenters = rotationCenters( eye )
-% Returns the rotationCenters sub-field structure of an eye model structure
+% Returns the rotationCenters sub-field of an eye model structure
 %
 % Syntax:
 %  rotationCenters = human.rotationCenters( eye )
@@ -7,11 +7,11 @@ function rotationCenters = rotationCenters( eye )
 % Description:
 %   The centers of rotation of the eye are calculated for the different
 %   directions of rotation (elevation, azimuth) and adjusted for the axial
-%   length of the eye. The values also differ by eye because of the nasal
-%   displacement of the rotation center.
+%   length of the eye. The values also differ by eye laterality because of
+%   the nasal displacement of the rotation center.
 %
 %   The rotation center of the eye is often treated as a single, fixed
-%   point. A typical assumption is that the eye center of rotation in
+%   point. A typical assumption is that the center of rotation in
 %   emmetropes is 13.3 mm behind the corneal apex:
 %
 %       Gunter K. vonNoorden, MD; Emilio C. Campos "Binocular Vision and
@@ -72,7 +72,7 @@ function rotationCenters = rotationCenters( eye )
 % Outputs:
 %   rotationCenters       - Structure.
 %
-% Examples:
+
 
 % Assign the emetropic rotation centers, by eye laterality.
 switch eye.meta.eyeLaterality

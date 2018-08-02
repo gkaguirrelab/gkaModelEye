@@ -1,5 +1,5 @@
 function retina = retina(eye)
-% Returns the retina sub-field structure of an eye model structure
+% Returns the retina sub-field of an eye model structure
 %
 % Syntax:
 %  retina = human.retina( eye )

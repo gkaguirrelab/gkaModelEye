@@ -1,5 +1,5 @@
 function iris = iris( eye )
-% Returns the iris sub-field structure of an eye model structure
+% Returns the iris sub-field of an eye model structure
 %
 % Syntax:
 %  iris = human.iris( eye )
@@ -12,8 +12,8 @@ function iris = iris( eye )
 %   the front or back surface of the iris aperture defines the near or far
 %   edge of the entrance pupil.
 %
-%   We position the anterior surface of the iris at a depth of 3.925 mm,
-%   which reflects a cycloplegic eye. We model an eye with zero iris angle,
+%   I position the anterior surface of the iris at a depth of 3.925 mm,
+%   which reflects a cycloplegic eye. I model the eye with zero iris angle,
 %   thus making the iris a plane. We adjust the position of the iris so
 %   that it is centered within the rotated corneal ellipse. This is
 %   consistent with reports that the iris is shifted slightly upward with

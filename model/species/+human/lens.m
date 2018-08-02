@@ -1,5 +1,5 @@
 function lens = lens( eye )
-% Returns the lens sub-field structure of an eye model structure
+% Returns the lens sub-field of an eye model structure
 %
 % Syntax:
 %  lens = human.lens( eye )
@@ -7,9 +7,9 @@ function lens = lens( eye )
 % Description:
 %   A model of the crystalline lens is generated, expressed as a set of
 %   quadric surfaces. The anterior and posterior surfaces of the lens are
-%   modeled as one-half of a two-sheeted hyperboloid. The radii of
+%   modeled as one-half of a two-sheeted hyperboloid. The radii of the
 %   surfaces, and their dependence upon age and the accommodative state of
-%   the lens, are taken from:
+%   the eye, are taken from:
 %
 %       Navarro, Rafael. "Adaptive model of the aging emmetropic eye and
 %       its changes with accommodation." Journal of vision 14.13 (2014):
@@ -44,7 +44,6 @@ function lens = lens( eye )
 % Outputs:
 %   lens                  - Structure.
 %
-% Examples:
 
 
 % Initialize the components of the optical system
@@ -108,12 +107,12 @@ end
 % axial dimension, and b to the horizontal and verical dimensions.
 % Checking my algebra here:
 %{
-            syms a b R Q
-            eqn1 = R == a^2/b;
-            eqn2 = Q == (a^2 / b^2) + 1;
-            solution = solve([eqn1, eqn2]);
-            solution.a
-            solution.b
+    syms a b R Q
+    eqn1 = R == a^2/b;
+    eqn2 = Q == (a^2 / b^2) + 1;
+    solution = solve([eqn1, eqn2]);
+    solution.a
+    solution.b
 %}
 R = 1./( -(1/(5.9 - 0.013*age)) - 0.0043*D  );
 Q = -3;

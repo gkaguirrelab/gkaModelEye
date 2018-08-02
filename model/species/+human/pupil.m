@@ -1,10 +1,28 @@
 function pupil = pupil( eye )
+% Returns the pupil sub-field of an eye model structure
+%
+% Syntax:
+%  pupil = human.pupil( eye )
+%
+% Description:
+%   The pupil is an aperture in the iris, centered on the optical axis.
+%   The pupil aperture is modeled as an ellipse, with the eccentricity and
+%   theta varying with pupil dilation.
+%
+% Inputs:
+%   eye                   - Structure.
+%
+% Outputs:
+%   pupil                - Structure.
+%
+% 
 
-% The pupil is an aperture in the iris, centered on the optical axis
+
+% Center the pupil on the optical axis within the iris
 pupil.center = [eye.iris.center(1) 0 0];
 
-% The actual pupil of the eye is elliptical. Further, the eccentricity and
-% theta of the entrance pupil ellipse changes with pupil dilation:
+% The pupil aperture of the eye is elliptical. Further, the eccentricity
+% and theta of the entrance pupil ellipse changes with pupil dilation:
 %
 %   Wyatt, Harry J. "The form of the human pupil." Vision Research
 %   35.14 (1995): 2021-2036.
@@ -22,7 +40,7 @@ pupil.center = [eye.iris.center(1) 0 0];
 % set to zero (horizontal), and above zero value it is set to ~pi/2
 % (vertical). In the forward model, we take the absolute value of the
 % eccentricity returned by the parameters for the actual pupil
-% eccentrivity.
+% eccentricity.
 %{
     % Observed entrance pupil diameters reported in Wyatt 1995.
     entranceRadius = [3.09/2 4.93/2];

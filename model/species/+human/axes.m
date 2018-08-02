@@ -1,5 +1,5 @@
 function axes = axes( eye )
-% Returns the axes sub-field structure of an eye model
+% Returns the axes sub-field of an eye model structure
 %
 % Syntax
 %  axes = human.axes( eye )

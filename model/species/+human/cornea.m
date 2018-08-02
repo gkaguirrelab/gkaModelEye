@@ -25,7 +25,6 @@ function cornea = cornea( eye )
 %
 %   The Navarro parameters are adjusted here to reflect this variation by
 %   ametropia.
-
 %
 % Inputs:
 %   eye                   - Structure.
@@ -99,7 +98,7 @@ end
 % apex (prior to rotation) is at position [0, 0, 0]
 S = quadric.translate(S,[-radii(1) 0 0]);
 
-% Store thexe values
+% Store these values
 cornea.front.S = quadric.matrixToVec(S);
 cornea.front.side = 1;
 cornea.front.boundingBox=[-4 0 -8 8 -8 8];
