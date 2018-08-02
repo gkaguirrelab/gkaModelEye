@@ -14,8 +14,8 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
 %   degrees. These values correspond to degrees of rotation of the eye
 %   relative to a head-fixed (extrinsic) coordinate frame. Note that this
 %   is different from an eye-fixed (intrinsic) coordinate frame (such as
-%   the Fick coordinate sysem). Azimuth, Elevation of [0,0] corresponds
-%   to the position of the eye when a line that connects the center of
+%   the Fick coordinate sysem). Azimuth, Elevation of [0,0] corresponds to
+%   the position of the eye when a line that connects the center of
 %   rotation of the eye with the center of the pupil is normal to the image
 %   plane. Positive rotations correspond to rightward, upward, translation
 %   of the pupil center in the image.
