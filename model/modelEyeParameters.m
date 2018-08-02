@@ -13,7 +13,7 @@ function eye = modelEyeParameters( varargin )
 %   optical / pupillary axis, with the apex of the cornea set as zero in
 %   depth. The space has the dimensions [depth, horizontal, vertical];
 %   negative values of depth are towards the back of the eye. The model
-%   assumes the optical and pupil axis of the eye are algined.
+%   assumes the optical and pupil axes of the eye are algined.
 %
 % Inputs:
 %   none
@@ -25,9 +25,11 @@ function eye = modelEyeParameters( varargin )
 %                           negative number is the correction that would be
 %                           used for a myopic person.
 %  'axialLength'          - Scalar. This is the axial length along the 
-%                           optical axis. When set, this fixes the axial
-%                           length of the eye to the passed value in
-%                           millimeters.
+%                           optical axis. This value is converted into an
+%                           equivalent spherical error and then used to set
+%                           the eye biometry. If both sphericalAmetropia
+%                           and axialLength are passed, then inly spherical
+%                           error will be used.
 %  'eyeLaterality'        - A text string that specifies which eye (left,
 %                           right) to model. Allowed values (in any case)
 %                           are {'left','right','L','R','OS','OD'}
@@ -44,7 +46,9 @@ function eye = modelEyeParameters( varargin )
 %                           imaging is being performed. The refractive
 %                           indices vary based upon this choice.
 %  'skipEyeAxes'          - Logical. If set to true, the computation of
-%                           retinal landmarks and eye axes is skipped.
+%                           retinal landmarks and eye axes is skipped. This
+%                           is used internally by routines during code
+%                           complilation.
 %
 % Outputs:
 %   eye                   - A structure with fields that contain the values
@@ -65,7 +69,7 @@ function eye = modelEyeParameters( varargin )
 p = inputParser; p.KeepUnmatched = true;
 
 % Optional
-p.addParameter('sphericalAmetropia',0,@isscalar);
+p.addParameter('sphericalAmetropia',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
@@ -90,17 +94,45 @@ end
 % Create an empty eye struct
 eye = struct();
 
+% Spherical refractive error (ametropia) is strongly correlated with axial
+% length. The model uses spherical ametropia to determine several
+% biometric properties of the eye. If axial length is provided instead of
+% spherical error, then Eq 9 of Atchison (2006) Vision Research is used to
+% assign a spherical ametropia. If both ametropia and axial length are
+% provided, the axial length is ignored.
+
+% Atchison 2006 Eq 9.
+ametropiaFromLength = @(x) (23.58 - x)./0.299;
+
+if isempty(p.Results.sphericalAmetropia) && isempty(p.Results.axialLength)
+    sphericalAmetropia = 0;
+    notes = 'Spherical refractive error not set; assuming emmetropia';
+end
+if isempty(p.Results.sphericalAmetropia) && ~isempty(p.Results.axialLength)
+    sphericalAmetropia = ametropiaFromLength(p.Results.axialLength);
+    notes = 'Spherical refractive error derived from axial length';
+end
+if ~isempty(p.Results.sphericalAmetropia) && isempty(p.Results.axialLength)
+    sphericalAmetropia = p.Results.sphericalAmetropia;
+    notes = 'Spherical refractive provided';
+end
+if ~isempty(p.Results.sphericalAmetropia) && ~isempty(p.Results.axialLength)
+    sphericalAmetropia = p.Results.sphericalAmetropia;
+    notes = 'Ignoring axial length and using provided spherical refractive error';
+end
+
 % Meta data regarding the units of the model
 eye.meta.p = p.Results;
 eye.meta.units = 'mm';
 eye.meta.coordinates = 'eyeWorld';
 eye.meta.dimensions = {'depth (axial)' 'horizontal' 'vertical'};
 eye.meta.eyeLaterality = eyeLaterality;
-eye.meta.sphericalAmetropia = p.Results.sphericalAmetropia;
+eye.meta.sphericalAmetropia = sphericalAmetropia;
 eye.meta.species = p.Results.species;
 eye.meta.ageYears = p.Results.ageYears;
 eye.meta.accommodationDiopeters = p.Results.accommodationDiopeters;
 eye.meta.spectralDomain = p.Results.spectralDomain;
+eye.meta.notes = notes;
 
 % Switch parameters at the top level by species
 switch eye.meta.species
@@ -126,12 +158,11 @@ switch eye.meta.species
         % Refractive indices
         eye.index.vitreous = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );
         eye.index.aqueous = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
-
         
     %% Canine
     case {'dog','Dog','canine','Canine'}
-
-
+        error('Geoff needs to implement the canine model here');
+        
         
     otherwise
         error('Please specify a valid species for the eye model');
