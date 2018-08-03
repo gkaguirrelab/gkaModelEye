@@ -1,7 +1,81 @@
 function [opticalSystem, surfaceLabels, surfaceColors] = assembleOpticalSystem( eye, varargin )
-% 
-
-% Assemble the system from retina to camera
+% Create a matrix to be used for ray tracing a set of optical surfaces
+%
+% Syntax:
+%  [opticalSystem, surfaceLabels, surfaceColors] = assembleOpticalSystem( eye )
+%
+% Description:
+%   This routine assembles a matrix that contains the parameters that
+%   define a set of optical surfaces for ray tracing. In addition to an eye
+%   structure, the routine requires specification of the particular set of
+%   surfaces to be assembled. By default, the surfaces that define the
+%   pupil to camera path are returned.
+%
+% Inputs:
+%   eye                   - A model eye structure.
+%
+% Optional key/values pairs:
+%  'surfaceSetName'       - A string or char vector that from the set
+%                           {'retinaToPupil','pupilToCamera',
+%                           'retinaToCamera'}
+%  'cameraMedium'         - String, options include:
+%                           {'air','water','vacuum'}. This sets the index
+%                           of refraction of the medium between the eye and
+%                           the camera.
+%  'contactLens'          - Scalar or 1x2 vector, with values for the lens
+%                           refraction in diopters, and (optionally) the
+%                           index of refraction of the lens material. If
+%                           left empty, no contact lens is added to the
+%                           model.
+%  'spectacleLens'        - Scalar, 1x2, or 1x3 vector, with values for the
+%                           lens refraction in diopters, (optionally) the
+%                           index of refraction of the lens material, and
+%                           (optinally) the vertex distance in mm. If left
+%                           empty, no spectacle is added to the model.
+%  'opticalSystemNumRows' - Scalar. The optical system is defined with a
+%                           fixed number of rows. This is done so that the
+%                           compiled ray trace routines can expect input
+%                           parameters of fixed size. If there are m
+%                           surfaces defined in the surfaceSet, then the
+%                           optical system will have 100-m rows of nans.
+%
+% Outputs:
+%   opticalSystem         - An mx19 matrix, where m is set by the key value
+%                           opticalSystemNumRows. Each row contains the 
+%                           values:
+%                               [S side bb must n]
+%                           where:
+%                               S     - 1x10 quadric surface vector
+%                               side  - Scalar taking the value -1 or 1
+%                                       that defines which of the two
+%                                       points of intersection on the
+%                                       quadric should be used as the
+%                                       refractive surface.
+%                               bb    - 1x6 vector defining the bounding
+%                                       box within which the refractive
+%                                       surface is present.
+%                               must  - Scalar taking the value of 0 or 1,
+%                                       where 1 indicates that the ray must
+%                                       intersect the surface. If the ray
+%                                       misses a required surface, the
+%                                       routine exits with nans for the
+%                                       outputRay.
+%                               n     - Refractive index of the surface.
+%                           The first row corresponds to the initial
+%                           conditions of the ray. Thus, the refractive
+%                           index value given in the first row specifies
+%                           the index of the medium in which the ray
+%                           arises. The other values for the first row are
+%                           ignored. The matrix may have rows of all nans.
+%                           These are used to define a fixed sized input
+%                           variable for compiled code. They are removed
+%                           from the matrix and have no effect.
+%	surfaceLabels         - A cell array of strings or character vectors
+%                           that identify each of the optical surfaces
+%   surfaceColors         - A cell array of 3x1 vectors that provide the
+%                           color specification for plotting each surface
+%                           of the optical system.
+%
 
 %% input parser
 p = inputParser; p.KeepUnmatched = true;
