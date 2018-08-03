@@ -1,9 +1,10 @@
 # A model of the entrance pupil and retinal landmarks
 
 <p float="left">
-  <img src="img/renderEyePose.png" height="200" />
-  <img src="img/modelEyeSchematic.png" height="200" />
-  <img src="img/opticalSystem3D.png" height="200" /> 
+  <img src="img/renderEyePose.png" height="150" />
+  <img src="img/modelEyeSchematic.png" height="150" />
+  <img src="img/opticalSystem3D.png" height="150" /> 
+  <img src="img/visualFieldMap.png" height="150" />
 </p>
 
 
