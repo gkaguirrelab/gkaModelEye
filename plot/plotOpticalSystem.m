@@ -53,7 +53,7 @@ p.addParameter('newFigure',true,@islogical);
 p.addParameter('visible',true,@islogical);
 p.addParameter('surfaceSet',[], @isstruct);
 p.addParameter('surfaceAlpha', 0.1,@isnumeric);
-p.addParameter('retinaGeodetics', true,@islogical);
+p.addParameter('retinaGeodetics', false,@islogical);
 p.addParameter('rayPath',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('outputRay',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('rayColor','red',@(x)(ischar(x) | isnumeric(x)));
