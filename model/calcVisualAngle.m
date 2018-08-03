@@ -43,7 +43,7 @@ function [visualAngles, initialRay0, initialRay1 ] = calcVisualAngle(eye,G0,G1,X
     S = eye.retina.S;
     boundingBox = eye.retina.boundingBox;
     figure
-    quadric.plotSurface(S,boundingBox,[0.9 0.9 0.9],0.8,'b','g');
+    quadric.plotSurface(S,boundingBox,[0.9 0.9 0.9],0.8);
     camlight
     lighting gouraud
     hold on
@@ -59,10 +59,12 @@ function [visualAngles, initialRay0, initialRay1 ] = calcVisualAngle(eye,G0,G1,X
             if ~isnan(eccen)
                 if eccen > 90
                     colorTriple = [1 1 1];
+                    markerSize = 50;
                 else
                     colorTriple = c(round((eccen./90)*(nColors-1)+1),:);
+                    markerSize = 100;
                 end
-                plot3(coord(1),coord(2),coord(3),'.','MarkerSize',50,'Color',colorTriple);
+                plot3(coord(1),coord(2),coord(3),'.','MarkerSize',markerSize,'Color',colorTriple);
             end
         end
     end
