@@ -43,11 +43,11 @@ Also as a 3D ray-traced system:
 ```
 
 
-<p align="center">
+<p align="right">
 	<img src="img/modelEyeSchematic.png" height="400">
 </p>
 
-<p align="center">
+<p align="left">
 	<img src="img/opticalSystem3D.png" height="400">
 </p>
 
