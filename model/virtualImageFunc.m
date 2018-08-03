@@ -2,10 +2,10 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
 % Returns the virtual image ray of a point in eyeWorld coordinates
 %
 % Syntax:
-%  [virtualImageRay, targetIntersectError] = virtualImageFunc( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
+%  [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
 %
 % Description:
-%   This routine returns the virtual image location of a point that has
+%   This routine returns the virtual image ray of a point that has
 %   passed through an optical system. The function requires specification
 %   of the eyeWorld coordinates of the point, the pose of the eye, as well
 %   as several features of sceneGeometry.
@@ -19,14 +19,15 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
 %                           Azimuth, elevation, and torsion are in units of
 %                           head-centered (extrinsic) degrees. The pupil
 %                           radius value is unused by this routine.
-%   worldTarget     -       The point in world coordinates that the ray 
-%                           should intersect after exiting the optical
-%                           system. A common application is to set
+%   worldTarget     -       The point in world coordinates (x, y, z) that  
+%                           the ray should intersect after exiting the
+%                           optical system. A common application is to set
 %                           worldTarget equal to the nodal point of a
 %                           camera, which is found in:
 %                           	sceneGeometry.cameraPosition.translation
 %   rotationCenters       - Equal to sceneGeometry.eye.rotationCenters
-%   opticalSystem         - Equal to sceneGeometry.refraction.opticalSystem
+%   opticalSystem         - Typically set equal to: sceneGeometry.
+%                               refraction.pupilToCamera.opticalSystem
 %
 % Outputs:
 %   virtualImageRay       - A 2x3 vector that gives the coordinates (in mm)
@@ -37,7 +38,7 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
 %                           intersect the worldTarget.
 %   targetIntersectError  - The distance (in mm) between the worldTarget
 %                           and the closest passage of a ray arising from
-%                           the eyeWorld point after it exited the optical
+%                           the eyeWorld point after it exits the optical
 %                           system.
 %
 % Examples:
@@ -79,8 +80,8 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
 
 %% Find the p1p2 and p1p3 angles
 % For this eyeWorld point, we find the angles of origin of a ray in the
-% p1p2 and p1p3 planes that results in a ray (after passing through the
-% optical system) that passes as close as possible to the worldTarget
+% p1p2 and p1p3 planes that results in an exit ray (after passing through
+% the optical system) that passes as close as possible to the worldTarget
 
 % Pre-define the output variables to keep the compiler happy
 virtualImageRay = nan(2,3);
@@ -192,7 +193,7 @@ end % virtualImageFunc -- MAIN
 
 %% calcTargetIntersectError
 function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystem)
-% Distance of ray intersection point on a camera plane from worldTarget
+% Smallest distance of the exit ray from worldTarget
 %
 % Syntax:
 %  distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystem)
@@ -213,17 +214,17 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 %   eyePoint
 %   angle_p1p2, angle_p1p3 - Scalar in radians. The angle w.r.t. the 
 %                           optical axis of the initial ray. 
-%   eyePose
+%   eyePose               - As defined in the main function.
 %   worldTarget
 %   rotationCenters
 %   opticalSystem
 %
 % Outputs:
 %   distance              - Scalar in units of mm. The minimum Euclidean 
-%                           distance between the nodal point of the camera
-%                           and a ray exiting the optical system of the
-%                           rotated eye. Set to Inf if an error is returned
-%                           by rayTraceQuadrics.
+%                           distance between the worldTarget and a ray
+%                           exiting the optical system of the rotated eye.
+%                           Set to Inf if an error is returned by
+%                           rayTraceQuadrics.
 %
 
 % Assemble the input ray. Note that the rayTraceQuadrics routine handles
@@ -245,34 +246,34 @@ if any(isnan(outputRayEyeWorld))
     return
 end
 
-% We express the position of the camera (PC) in eye world coordinates. 
-% Then, the point is counter-rotated by the eye pose, so that the camera
-% is in a position equivalent to if the eye had rotated.
+% We assign the variable ET the coordinates of the target after conversion
+% to eye coordinates. Then, the point is counter-rotated by the eye pose,
+% so that the ET is in a position equivalent to if the eye had rotated.
 cameraRot = -eyePose;
 RotAzi = [cosd(cameraRot(1)) -sind(cameraRot(1)) 0; sind(cameraRot(1)) cosd(cameraRot(1)) 0; 0 0 1];
 RotEle = [cosd(-cameraRot(2)) 0 sind(-cameraRot(2)); 0 1 0; -sind(-cameraRot(2)) 0 cosd(-cameraRot(2))];
 RotTor = [1 0 0; 0 cosd(cameraRot(3)) -sind(cameraRot(3)); 0 sind(cameraRot(3)) cosd(cameraRot(3))];
 
-% Rearrange the camera translation dimensions to switch from world to eye
-% coordinate space.
-Pc = worldTarget([3 1 2])';
+% Rearrange the worldTarget dimensions to switch from world to eye
+% coordinate space. This is now the eyeTarget or ET
+ET = worldTarget([3 1 2])';
 
 % Torsion
-Pc=Pc-rotationCenters.tor;
-Pc = (RotTor*Pc')';
-Pc=Pc+rotationCenters.tor;
+ET=ET-rotationCenters.tor;
+ET = (RotTor*ET')';
+ET=ET+rotationCenters.tor;
 % Elevation
-Pc=Pc-rotationCenters.ele;
-Pc = (RotEle*Pc')';
-Pc=Pc+rotationCenters.ele;
+ET=ET-rotationCenters.ele;
+ET = (RotEle*ET')';
+ET=ET+rotationCenters.ele;
 % Azimuth
-Pc=Pc-rotationCenters.azi;
-Pc = (RotAzi*Pc')';
-Pc=Pc+rotationCenters.azi;
+ET=ET-rotationCenters.azi;
+ET = (RotAzi*ET')';
+ET=ET+rotationCenters.azi;
 
 % Calculate the distance between the closest approach of the outputRay to
-% the camera nodal point.
-d = norm(cross(outputRayEyeWorld(2,:),Pc - outputRayEyeWorld(1,:))) ...
+% the target.
+d = norm(cross(outputRayEyeWorld(2,:),ET - outputRayEyeWorld(1,:))) ...
     / norm(outputRayEyeWorld(2,:));
       
 % Obtain the Euclidean distance in the 3 dimensions.

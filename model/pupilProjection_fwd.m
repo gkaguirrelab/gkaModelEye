@@ -2,7 +2,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 % Obtain the parameters of the entrance pupil ellipse on the image plane
 %
 % Syntax:
-%  [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLabels] = pupilProjection_fwd(eyePoses, sceneGeometry)
+%  [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLabels, nodalPointIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
 %
 % Description:
 %   Given the sceneGeometry, this routine simulates a pupil aperture in a
@@ -39,8 +39,8 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
 %
 % Optional key/value pairs:
-%  'fullEyeModelFlag'     - Logical. Determines if the full posterior and
-%                           anterior chamber eye model will be created.
+%  'fullEyeModelFlag'     - Logical. Determines if the full eye model will
+%                           be created.
 %  'nPupilPerimPoints'    - Scalar. The number of points that are 
 %                           distributed around the pupil circle. A minimum
 %                           of 5 is required to uniquely specify the image
@@ -50,14 +50,12 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %                           perimeter of the pupil aperture is modeled and
 %                           used to define the visible entrance pupil. By
 %                           default set to false, as this model component
-%                           as not needed to replicate empirical pupil
+%                           is not needed to replicate empirical pupil
 %                           measurements.
 %  'pupilPerimPhase'      - Scalar. The phase (in radians) of the position
 %                           of the pupil perimeter points.
 %  'nIrisPerimPoints'     - Scalar. The number of points that are 
-%                           distributed around the iris circle. A minimum
-%                           of 5 isrequired to uniquely specify the image
-%                           ellipse.
+%                           distributed around the iris circle.
 %  'corneaMeshDensity'    - Scalar. The number of geodetic lines used to 
 %                           render the corneal ellipsoid. About 20 makes a
 %                           nice image.
@@ -88,7 +86,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %                           points of the eye model in the eyeWorld
 %                           coordinate frame.
 %   pointLabels           - An nx1 cell array that identifies each of the
-%                           points, from the set {'pupilCenter',
+%                           points, with values such as: {'pupilCenter',
 %                           'irisCenter', 'aziRotationCenter',
 %                           'eleRotationCenter', 'retina',
 %                           'irisPerimeter', 'pupilPerimeter',
@@ -98,7 +96,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %                           the intersection of a ray on the camera plane.
 %                           The value is nan for points not subject to
 %                           refraction by the cornea. All values will be
-%                           nan sceneGeometry.refraction is empty.
+%                           nan if sceneGeometry.refraction is empty.
 %   pupilFitError         - The RMSE distance (in pixels) of the pupil
 %                           perimeter points to the pupil ellipse.
 %
@@ -209,8 +207,10 @@ nPupilPerimPoints = p.Results.nPupilPerimPoints;
 
 
 %% Define points around the elliptical pupil aperture
+
 % The eccentricity of the pupil aperture is given by a stored function
 pupilApertureEccenFunc = str2func(sceneGeometry.eye.pupil.eccenFcnString);
+
 % Determine the parameters of the ellipse that defines the pupil aperture
 % in the plane of the pupil. The absolute value of pupilApertureEccenFunc
 % gives the eccentricity. The theta of the pupil aperture switches from
@@ -221,8 +221,10 @@ pupilApertureEllipse = [sceneGeometry.eye.pupil.center(2) , ...
     pi*pupilRadius^2, ...
     abs(pupilApertureEccenFunc(pupilRadius)),...
     sceneGeometry.eye.pupil.thetas(1+(pupilApertureEccenFunc(pupilRadius)>0))];
+
 % Obtain the points on the perimeter of the ellipse
 [p2p, p3p] = ellipsePerimeterPoints( pupilApertureEllipse, nPupilPerimPoints, p.Results.pupilPerimPhase );
+
 % Place these points into the eyeWorld coordinates. Optionally create
 % separate front and back pupil perimeters to model iris thickness.
 if p.Results.modelIrisThickness
@@ -230,6 +232,7 @@ if p.Results.modelIrisThickness
     pupilPoints(1:nPupilPerimPoints*2,2) = [p2p; p2p];
     pupilPoints(1:nPupilPerimPoints,1) = sceneGeometry.eye.pupil.center(1)+sceneGeometry.eye.iris.thickness/2;
     pupilPoints(nPupilPerimPoints+1:nPupilPerimPoints*2,1) = sceneGeometry.eye.pupil.center(1)-sceneGeometry.eye.iris.thickness/2;
+
     % Create labels for the pupilPerimeter points
     tmpLabelsFront = cell(nPupilPerimPoints, 1);
     tmpLabelsFront(:) = {'pupilPerimeterFront'};
@@ -240,6 +243,7 @@ else
     pupilPoints(1:nPupilPerimPoints,3) = p3p;
     pupilPoints(1:nPupilPerimPoints,2) = p2p;
     pupilPoints(1:nPupilPerimPoints,1) = sceneGeometry.eye.pupil.center(1);
+
     % Create labels for the pupilPerimeter points
     tmpLabels = cell(nPupilPerimPoints, 1);
     tmpLabels(:) = {'pupilPerimeter'};
@@ -342,14 +346,18 @@ end
 
 % Define a variable to hold the calculated ray tracing errors
 nodalPointIntersectError = nan(length(pointLabels),1);
+
 % If we have a refraction field, proceed
 if isfield(sceneGeometry,'refraction')
+
     % If this field is not set to empty, proceed    
     if ~isempty(sceneGeometry.refraction)
+
         % Assemble the static args for the virtualImageFunc
         args = {sceneGeometry.cameraPosition.translation, ...
                 sceneGeometry.eye.rotationCenters, ...
                 sceneGeometry.refraction.pupilToCamera.opticalSystem};
+
         % Identify the eyePoints subject to refraction by the cornea
         refractPointsIdx = find(...
             strcmp(pointLabels,'pupilPerimeter')+...
@@ -358,10 +366,13 @@ if isfield(sceneGeometry,'refraction')
             strcmp(pointLabels,'pupilCenter')+...
             strcmp(pointLabels,'irisPerimeter')+...
             strcmp(pointLabels,'irisCenter'));
+
         % Loop through the eyePoints that are to be refracted
         for ii=1:length(refractPointsIdx)
+
             % Get this eyeWorld point
             eyePoint=eyePoints(refractPointsIdx(ii),:);
+
             % Perform the computation using the passed function handle.
             [virtualImageRay, ~, intersectError] = ...
                 p.Results.refractionHandle(eyePoint, eyePose, args{:});
@@ -591,6 +602,7 @@ else
     % Silence a warning that can arise regarding a nearly singular matrix
     warnState = warning;
     warning('off','MATLAB:nearlySingularMatrix');
+
     % We place the ellipse fit in a try-catch block, as the fit can fail
     % when the ellipse is so eccentric that it approaches a line
     try

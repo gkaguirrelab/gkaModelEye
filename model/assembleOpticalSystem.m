@@ -1,5 +1,5 @@
 function [opticalSystem, surfaceLabels, surfaceColors] = assembleOpticalSystem( eye, varargin )
-
+% 
 
 % Assemble the system from retina to camera
 

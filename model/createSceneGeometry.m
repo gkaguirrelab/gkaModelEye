@@ -29,9 +29,9 @@ function sceneGeometry = createSceneGeometry(varargin)
 %           camera resectioning routine must be re-arranged to correspond
 %           to the X Y image dimension specifications used here.
 %
-%      'radialDistortion' - A 1x2 vector that models the radial distortion
-%           introduced by the lens. This is an empirically measured
-%           property of the camera system.
+%      'radialDistortionVector' - A 1x2 vector that models the radial 
+%           distortion introduced by the lens. This is an empirically 
+%           measured property of the camera system.
 %
 %      'sensorResolution' - A 1x2 vector that provides the dimension of the
 %           camera image in pixels, along the X and Y dimensions,
@@ -49,7 +49,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %           to be the apex of the corneal surface.
 %
 %      'torsion' - Scalar in units of degrees that specifies the torsional
-%           rotation of the camera relative to the origin of the world
+%           rotation of the camera relative to the z-axis of the world
 %           coordinate space. Because eye rotations are set have a value of
 %           zero when the camera axis is aligned with the pupil axis of the
 %           eye, the camera rotation around the X and Y axes of the
@@ -65,29 +65,32 @@ function sceneGeometry = createSceneGeometry(varargin)
 %  'eye' - A structure that is returned by the function modelEyeParameters.
 %       The parameters define the anatomical properties of the eye. These
 %       parameters are adjusted for the measured spherical refractive error
-%       of the subject and (optionally) measured axial length. Unmatched
-%       key-value pairs passed to createSceneGeometry are passed to
-%       modelEyeParameters.
+%       of the subject or measured axial length. Unmatched key-value pairs
+%       passed to createSceneGeometry are passed to modelEyeParameters.
 %
 %  'refraction' - A structure with sub-fields for ray-tracing through sets
-%       of optical surfaces. Standard fields are 'retinaToPupil' and
-%       'pupilToCamera'. Each 
+%       of optical surfaces. Standard fields are 'retinaToPupil',
+%       'pupilToCamera', and 'retinaToCamera'. Each subset has the fields:
 %
-%          'opticalSystem' - A 10x5 matrix. The first m rows contain
-%                           information regarding the m surfaces of the
-%                           cornea, and any corrective lenses, in a format
-%                           needed for ray tracing. The trailing (10-m)
-%                           rows contain nans. The variable must be a
-%                           fixed size matrix so that the compiled
-%                           virtualImageFuncMex is able to pre-allocate
-%                           variables. The nan rows are later stripped by
-%                           the rayTraceEllipsoids function.
-%
-%  'lenses' - An optional structure that describes the properties of
-%       refractive lenses that are present between the eye and the camera.
-%       Possible sub-fields are 'contact' and 'spectacle', each of which
-%       holds the parameters that were used to add a refractive lens to the
-%       optical path.
+%         'opticalSystem' - An mx19 matrix, where m is the number of
+%                           surfaces in the model, including the initial
+%                           state of the ray. The matrix may have rows of
+%                           all nans. These are used to define a fixed
+%                           sized input variable for compiled code. They
+%                           are removed from the matrix and have no effect.
+%                           Further details in assembleOpticalSystem.
+%         'surfaceLabels' - A cell array of strings or character vectors
+%                           that identify each of the optical surfaces
+%         'surfaceColors' - A cell array of 3x1 vectors that provide the
+%                           color specification for plotting each surface
+%                           of the optical system.
+%         'lenses'        - An optional structure that describes the 
+%                           properties of refractive lenses that are
+%                           present between the eye and the camera.
+%                           Possible sub-fields are 'contact' and
+%                           'spectacle', each of which holds the parameters
+%                           that were used to add a refractive lens to the
+%                           optical path.
 %
 %  'constraintTolerance' - A scalar. This value is used by the function
 %       pupilProjection_inv. The inverse projection from an ellipse on the
@@ -130,7 +133,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %                           index of refraction of the lens material, and
 %                           (optinally) the vertex distance in mm. If left
 %                           empty, no spectacle is added to the model.
-%  'cameraMedium'               - String, options include:
+%  'cameraMedium'         - String, options include:
 %                           {'air','water','vacuum'}. This sets the index
 %                           of refraction of the medium between the eye and
 %                           the camera.
@@ -138,11 +141,6 @@ function sceneGeometry = createSceneGeometry(varargin)
 %                           This is the light domain within which imaging
 %                           is being performed. The refractive indices vary
 %                           based upon this choice.
-%  'forceMATLABVirtualImageFunc' - Logical, default false. If set to
-%                           true, the native MATLAB code for the
-%                           virtualImageFunc is used for refraction,
-%                           instead of a compiled MEX file. This is used
-%                           for debugging and demonstration purposes.
 %
 % Outputs
 %	sceneGeometry         - A structure.
