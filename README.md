@@ -1,5 +1,11 @@
 # A model of the entrance pupil and retinal landmarks
-<img src="img/renderEyePose.png" height="150">
+
+<p float="left">
+  <img src="img/renderEyePose.png" height="200" />
+  <img src="img/modelEyeSchematic.png" height="200" />
+  <img src="img/opticalSystem3D.png" height="200" /> 
+</p>
+
 
 These routines implement a ray-traced model eye in MATLAB. One application of the model is to specify the location of retinal landmarks (fovea, optic disc) in eyes of varying spherical refractive error. A related result is the map of visual field assignment across the retinal surface. A second application is to describe the appearance of the entrance pupil in the image plane for a rotated eye. The entrance pupil is described by the parameters of an ellipse fit to the pupil perimeter, and those parameters are given in "transparent" form (center x, center y, area, non-linear eccentricity, tilt).
 
@@ -41,12 +47,6 @@ Also as a 3D ray-traced system:
     sceneGeometry=createSceneGeometry();
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
 ```
-
-
-<p float="left">
-  <img src="img/modelEyeSchematic.png" height="300" />
-  <img src="img/opticalSystem3D.png" height="300" /> 
-</p>
 
 
 A hierarchy of the functions is as follows:
