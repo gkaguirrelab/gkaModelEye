@@ -76,7 +76,11 @@ end
 % The HVID is the refracted iris size. We can use the forward model to find
 % the size of the true iris.
 %{
+    % Mean and SD radius value from prior block of code
+    hvidRadiusMean = 5.9161;
+    hvidRadiusSD = 0.2830;
     sceneGeometry = createSceneGeometry();
+    % Inactivate ray-tracing
     sceneGeometry.refraction = [];
     % Get the area in pixels of a "pupil" that is the same radius
     % as the HVID when there is no ray tracing
@@ -91,7 +95,7 @@ end
 %}
 % We use this true iris size and then subject the iris perimeter points to
 % refraction
-iris.radius = 5.57;
+iris.radius = 5.55;
 
 end
 
