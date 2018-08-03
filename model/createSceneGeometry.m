@@ -26,12 +26,12 @@ function sceneGeometry = createSceneGeometry(varargin)
 %           measured for a camera using a resectioning approach
 %           (https://www.mathworks.com/help/vision/ref/cameramatrix.html).
 %           Note that the values in the matrix returned by the MATLAB
-%           camera resectioning routine must be re-arranged to correspond 
+%           camera resectioning routine must be re-arranged to correspond
 %           to the X Y image dimension specifications used here.
-%       
-%      'radialDistortion' - A 1x2 vector that models the radial distortion
-%           introduced by the lens. This is an empirically measured
-%           property of the camera system.
+%
+%      'radialDistortionVector' - A 1x2 vector that models the radial 
+%           distortion introduced by the lens. This is an empirically 
+%           measured property of the camera system.
 %
 %      'sensorResolution' - A 1x2 vector that provides the dimension of the
 %           camera image in pixels, along the X and Y dimensions,
@@ -49,7 +49,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %           to be the apex of the corneal surface.
 %
 %      'torsion' - Scalar in units of degrees that specifies the torsional
-%           rotation of the camera relative to the origin of the world
+%           rotation of the camera relative to the z-axis of the world
 %           coordinate space. Because eye rotations are set have a value of
 %           zero when the camera axis is aligned with the pupil axis of the
 %           eye, the camera rotation around the X and Y axes of the
@@ -65,35 +65,34 @@ function sceneGeometry = createSceneGeometry(varargin)
 %  'eye' - A structure that is returned by the function modelEyeParameters.
 %       The parameters define the anatomical properties of the eye. These
 %       parameters are adjusted for the measured spherical refractive error
-%       of the subject and (optionally) measured axial length. Unmatched
-%       key-value pairs passed to createSceneGeometry are passed to
-%       modelEyeParameters.
+%       of the subject or measured axial length. Unmatched key-value pairs
+%       passed to createSceneGeometry are passed to modelEyeParameters.
 %
-%  'refraction' - A structure that identifies the function to be used
-%       to compute the virtual image location of eyePoints subject to
-%       refraction by the optical system (cornea and corrective lenses, if
-%       any). The MATLAB virtualImageFunc is specified if the compiled MEX
-%       version is not available. Sub-fields:
-%           
-%          'handle'       - Handle for the function.
-%          'path'         - Full path to the function.
-%          'opticalSystem' - A 10x5 matrix. The first m rows contain
-%                           information regarding the m surfaces of the
-%                           cornea, and any corrective lenses, in a format
-%                           needed for ray tracing. The trailing (10-m)
-%                           rows contain nans. The variable must be a
-%                           fixed size matrix so that the compiled
-%                           virtualImageFuncMex is able to pre-allocate
-%                           variables. The nan rows are later stripped by
-%                           the rayTraceEllipsoids function.
+%  'refraction' - A structure with sub-fields for ray-tracing through sets
+%       of optical surfaces. Standard fields are 'retinaToPupil',
+%       'pupilToCamera', and 'retinaToCamera'. Each subset has the fields:
 %
-%  'lenses' - An optional structure that describes the properties of 
-%       refractive lenses that are present between the eye and the camera.
-%       Possible sub-fields are 'contact' and 'spectacle', each of which
-%       holds the parameters that were used to add a refractive lens to the
-%       optical path.
+%         'opticalSystem' - An mx19 matrix, where m is the number of
+%                           surfaces in the model, including the initial
+%                           state of the ray. The matrix may have rows of
+%                           all nans. These are used to define a fixed
+%                           sized input variable for compiled code. They
+%                           are removed from the matrix and have no effect.
+%                           Further details in assembleOpticalSystem.
+%         'surfaceLabels' - A cell array of strings or character vectors
+%                           that identify each of the optical surfaces
+%         'surfaceColors' - A cell array of 3x1 vectors that provide the
+%                           color specification for plotting each surface
+%                           of the optical system.
+%         'lenses'        - An optional structure that describes the 
+%                           properties of refractive lenses that are
+%                           present between the eye and the camera.
+%                           Possible sub-fields are 'contact' and
+%                           'spectacle', each of which holds the parameters
+%                           that were used to add a refractive lens to the
+%                           optical path.
 %
-%  'constraintTolerance' - A scalar. This value is used by the function 
+%  'constraintTolerance' - A scalar. This value is used by the function
 %       pupilProjection_inv. The inverse projection from an ellipse on the
 %       image plane to eye params (azimuth, elevation) imposes a constraint
 %       on how well the solution must match the shape and area of the
@@ -110,7 +109,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %       value in the range 0.01 - 0.03 provides an acceptable compromise in
 %       empirical data.
 %
-%  'meta' - A structure that contains information regarding the creation 
+%  'meta' - A structure that contains information regarding the creation
 %       and modification of the sceneGeometry.
 %
 %
@@ -118,7 +117,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %   none
 %
 % Optional key/value pairs
-%  'sceneGeometryFileName' - Full path to file 
+%  'sceneGeometryFileName' - Full path to file
 %  'intrinsicCameraMatrix' - 3x3 matrix
 %  'radialDistortionVector' - 1x2 vector of radial distortion parameters
 %  'cameraTranslation'    - 3x1 vector
@@ -134,7 +133,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %                           index of refraction of the lens material, and
 %                           (optinally) the vertex distance in mm. If left
 %                           empty, no spectacle is added to the model.
-%  'medium'               - String, options include:
+%  'cameraMedium'         - String, options include:
 %                           {'air','water','vacuum'}. This sets the index
 %                           of refraction of the medium between the eye and
 %                           the camera.
@@ -142,11 +141,6 @@ function sceneGeometry = createSceneGeometry(varargin)
 %                           This is the light domain within which imaging
 %                           is being performed. The refractive indices vary
 %                           based upon this choice.
-%  'forceMATLABVirtualImageFunc' - Logical, default false. If set to
-%                           true, the native MATLAB code for the
-%                           virtualImageFunc is used for refraction,
-%                           instead of a compiled MEX file. This is used
-%                           for debugging and demonstration purposes.
 %
 % Outputs
 %	sceneGeometry         - A structure.
@@ -162,7 +156,7 @@ function sceneGeometry = createSceneGeometry(varargin)
     % Create a sceneGeometry file for a myopic eye wearing spectacles
     % of appropriate correction. Place the system under water, and imaged
     % in the visible range
-    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2,'medium','water','spectralDomain','vis');
+    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2,'cameraMedium','water','spectralDomain','vis');
     % Plot a figure that traces a ray arising from the optical axis at the
     % pupil plane, departing at 15 degrees.
     clear figureFlag
@@ -182,11 +176,11 @@ p.addParameter('radialDistortionVector',[0 0],@isnumeric);
 p.addParameter('cameraTranslation',[0; 0; 120],@isnumeric);
 p.addParameter('cameraTorsion',0,@isnumeric);
 p.addParameter('constraintTolerance',0.02,@isscalar);
+p.addParameter('surfaceSetName',{'retinaToPupil','pupilToCamera','retinaToCamera'},@ischar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
-p.addParameter('medium','air',@ischar);
+p.addParameter('cameraMedium','air',@ischar);
 p.addParameter('spectralDomain','nir',@ischar);
-p.addParameter('forceMATLABVirtualImageFunc',false,@islogical);
 
 % parse
 p.parse(varargin{:})
@@ -208,78 +202,18 @@ sceneGeometry.cameraPosition.primaryPosition = [0,0];
 sceneGeometry.eye = modelEyeParameters('spectralDomain',p.Results.spectralDomain,varargin{:});
 
 
-%% refraction - handle and path
-% Handle to the function; use the MEX version if available
-if exist('virtualImageFuncMex')==3 && ~p.Results.forceMATLABVirtualImageFunc
-    sceneGeometry.refraction.handle = @virtualImageFuncMex;
-    sceneGeometry.refraction.path = which('virtualImageFuncMex');
-else
-    sceneGeometry.refraction.handle = @virtualImageFunc;
-    sceneGeometry.refraction.path = which('virtualImageFunc');
-    if ~p.Results.forceMATLABVirtualImageFunc
-        warning('createSceneGeometry:noCompiledVirtualImageFunc','A compiled virtualImageFunc was not found. Using the native MATLAB version, which is 30x slower');
-    end
+%% refraction
+for ii = 1:length(p.Results.surfaceSetName)
+    [opticalSystem, surfaceLabels, surfaceColors] = ...
+        assembleOpticalSystem( sceneGeometry.eye, ...
+        'surfaceSetName', p.Results.surfaceSetName{ii}, ...
+        'cameraMedium', p.Results.cameraMedium, ...
+        'contactLens', p.Results.contactLens, ...
+        'spectacleLens', p.Results.spectacleLens );
+    sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).opticalSystem = opticalSystem;
+    sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceLabels = surfaceLabels;
+    sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceColors = surfaceColors;
 end
-
-
-%% refraction - optical system
-
-% Obtain the refractive index of the medium between the eye and the camera
-mediumRefractiveIndex = returnRefractiveIndex( p.Results.medium, p.Results.spectralDomain );
-
-% The center of the cornea front surface is at a position equal to its
-% radius of curvature, thus placing the apex of the front corneal surface
-% at a z position of zero. The back surface is shifted back to produce
-% the appropriate corneal thickness.
-cornealThickness = -sceneGeometry.eye.cornea.back.center(1)-sceneGeometry.eye.cornea.back.radii(1);
-
-% The axis of the cornea is rotated w.r.t. the optical axis of the eye.
-% Here, we derive the radii for the ellipse that is the intersection of the
-% p1p2 and p1p3 planes with the ellipsoids for the back and front corneal
-% surfaces
-corneaBackRotRadii=ellipsesFromEllipsoid(sceneGeometry.eye.cornea.back.radii,sceneGeometry.eye.cornea.axis);
-corneaFrontRotRadii=ellipsesFromEllipsoid(sceneGeometry.eye.cornea.front.radii,sceneGeometry.eye.cornea.axis);
-
-% Build the optical system matrix
-sceneGeometry.refraction.opticalSystem = [nan, nan, nan, nan, sceneGeometry.eye.index.aqueous; ...
-    -sceneGeometry.eye.cornea.back.radii(1)-cornealThickness, -corneaBackRotRadii(1), -corneaBackRotRadii(2), -corneaBackRotRadii(3), sceneGeometry.eye.index.cornea; ...
-    -sceneGeometry.eye.cornea.front.radii(1), -corneaFrontRotRadii(1), -corneaFrontRotRadii(2), -corneaFrontRotRadii(3), mediumRefractiveIndex];
-
-
-%% Lenses
-% Add a contact lens if requested
-if ~isempty(p.Results.contactLens)
-    switch length(p.Results.contactLens)
-        case 1
-            lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', p.Results.spectralDomain );
-            [sceneGeometry.refraction.opticalSystem, pOutFun] = addContactLens(sceneGeometry.refraction.opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex);
-        case 2
-            [sceneGeometry.refraction.opticalSystem, pOutFun] = addContactLens(sceneGeometry.refraction.opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2));
-        otherwise
-            error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
-    end
-    sceneGeometry.lenses.contact = pOutFun.Results;
-end
-
-% Add a spectacle lens if requested
-if ~isempty(p.Results.spectacleLens)
-    switch length(p.Results.spectacleLens)
-        case 1
-            lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', p.Results.spectralDomain );
-            [sceneGeometry.refraction.opticalSystem, pOutFun] = addSpectacleLens(sceneGeometry.refraction.opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex);
-        case 2
-            [sceneGeometry.refraction.opticalSystem, pOutFun] = addSpectacleLens(sceneGeometry.refraction.opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2));
-        case 3
-            [sceneGeometry.refraction.opticalSystem, pOutFun] = addSpectacleLens(sceneGeometry.refraction.opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3));
-        otherwise
-            error('The key-value pair spectacleLens is limited to three elements: [refractionDiopters, refractionIndex, vertexDistance]');
-    end
-    sceneGeometry.lenses.spectacle = pOutFun.Results;
-end
-
-% Pad the optical system with nan rows to reach a fixed 10x5 size
-sceneGeometry.refraction.opticalSystem = [sceneGeometry.refraction.opticalSystem; ...
-    nan(10-size(sceneGeometry.refraction.opticalSystem,1),5)];
 
 
 %% constraintTolerance
@@ -297,46 +231,3 @@ end
 
 end % createSceneGeometry
 
-
-%% LOCAL FUNCTIONS
-
-function rotRadii = ellipsesFromEllipsoid(radii,angles)
-% Returns ellipse radii that are derived from a rotated ellipsoid
-%
-% Syntax:
-%  rotRadii = ellipsesFromEllipsoid(radii,angles)
-%
-% Description:
-%   The ellipsoids that describe the back and front surface of the cornea
-%   are rotated with respect to the optical axis of the eye. Here, we
-%   calculate the ellipse radii that correspond to the p1p2 and p1p3 axes
-%   as they intersect with the rotated ellipsoid.
-%
-
-
-% The angles specify the rotation of the corneal ellipsoid w.r.t. the
-% optical axis of the eye. As we are rotating the axes here, we need to
-% take the negative of the angles.
-angles = -angles;
-
-R.azi = [cosd(angles(1)) -sind(angles(1)) 0; sind(angles(1)) cosd(angles(1)) 0; 0 0 1];
-R.ele = [cosd(-angles(2)) 0 sind(-angles(2)); 0 1 0; -sind(-angles(2)) 0 cosd(-angles(2))];
-R.tor = [1 0 0; 0 cosd(angles(3)) -sind(angles(3)); 0 sind(angles(3)) cosd(angles(3))];
-
-rotMat = R.tor * R.ele * R.azi;
-
-% Obtain the semi-axes of the ellipses in each of the planes p1p2 and p1p3
-
-% p1p2
-rotPlane = rotMat * [0; 0; 1];
-[Aye,Bye]=EllipsoidPlaneIntersection(rotPlane(1),rotPlane(2),rotPlane(3),0,radii(1),radii(2),radii(3));
-
-rotRadii([1 2]) = real([Aye, Bye]);
-
-% p1p3
-rotPlane = rotMat * [0; 1; 0];
-[~,Bye]=EllipsoidPlaneIntersection(rotPlane(1),rotPlane(2),rotPlane(3),0,radii(1),radii(2),radii(3));
-rotRadii([3]) = real(Bye);
-
-
-end

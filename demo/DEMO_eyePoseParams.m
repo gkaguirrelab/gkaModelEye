@@ -29,7 +29,7 @@ eyePoses=[-20 20 0 3; 0 20 0 3; 20 20 0 3; -20 0 0 3; 0 0 0 3; 20 0 0 3; -20 -20
 
 for pose = 1:size(eyePoses,1)
     % Obtain the rendering of the model for this pose
-    [figHandle, renderedFrame] = renderEyePose(eyePoses(pose,:), sceneGeometry, 'visible', false);
+    [figHandle, ~, renderedFrame] = renderEyePose(eyePoses(pose,:), sceneGeometry, 'visible', false);
     % Close the fig handle, as we will be displaying a mosaic of the
     % rendered images
     close(figHandle);
@@ -58,7 +58,7 @@ for laterality = 1:2
     % prepare the model eye for this laterality
     sceneGeometry = createSceneGeometry('eyeLaterality',eyeSides{laterality});
     sceneGeometry.cameraPosition.translation(3)=50;
-    [figHandle, renderedFrame] = renderEyePose([0 0 0 3], sceneGeometry, 'visible', false,'modelEyeLabelNames',modelEyeLabelNames,'modelEyePlotColors',modelEyePlotColors);
+    [figHandle, ~, renderedFrame] = renderEyePose([0 0 0 3], sceneGeometry, 'visible', false,'modelEyeLabelNames',modelEyeLabelNames,'modelEyePlotColors',modelEyePlotColors);
     % Close the fig handle, as we will be displaying a mosaic of the
     % rendered images
     close(figHandle);

@@ -31,32 +31,26 @@ function compileVirtualImageFunc( varargin )
 % Examples:
 %{
     % Confirm that compiled and native virtualImageFunc yield same value
-    sceneGeometry = createSceneGeometry('forceMATLABVirtualImageFunc',true);
-    % Assemble the args for the virtualImageFunc
-    args = {sceneGeometry.cameraPosition.translation, ...
-    	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.opticalSystem};
-    virtualEyePointNative = sceneGeometry.refraction.handle( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
-    compileVirtualImageFunc
     sceneGeometry = createSceneGeometry();
     % Assemble the args for the virtualImageFunc
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.opticalSystem};
-    virtualEyePointCompiled = sceneGeometry.refraction.handle( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
+    	sceneGeometry.refraction.pupilToCamera.opticalSystem};
+    virtualRayNative = virtualImageFunc( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
+    virtualRayCompiled = virtualImageFuncMex( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
     % Test if the outputds agree
-    assert(max(abs(virtualEyePointNative - virtualEyePointCompiled)) < 1e-6)
+    assert(max(max(abs(virtualRayNative - virtualRayCompiled))) < 1e-6)
 %}
 %{
     % Compare computation time for MATLAB and compiled code
     nComputes = 100;
     fprintf('\nTime to execute virtualImageFunc (average over %d projections):\n',nComputes);
     % Native function
-    sceneGeometry = createSceneGeometry('forceMATLABVirtualImageFunc',true);
+    sceneGeometry = createSceneGeometry();
     % Assemble the args for the virtualImageFunc
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.opticalSystem};
+    	sceneGeometry.refraction.pupilToCamera.opticalSystem};
     tic
     for ii=1:nComputes
         virtualImageFunc( [-3.7 2 0], [0 0 0 2], args{:} );
@@ -67,7 +61,7 @@ function compileVirtualImageFunc( varargin )
     sceneGeometry = createSceneGeometry();
     tic
     for ii=1:nComputes
-        sceneGeometry.refraction.handle( [-3.7 2 0], [0 0 0 2], args{:} );
+        virtualImageFuncMex( [-3.7 2 0], [0 0 0 2], args{:} );
     end
     msecPerComputeCompile = toc / nComputes * 1000;
     fprintf('\tUsing the compiled function: %4.2f msecs.\n',msecPerComputeCompile);
@@ -133,18 +127,21 @@ end
 %% Define argument variables
 % This is so the compiler can deduce variable types
 
-% Create a sceneGeometry. We silence the warning that there is not a
-% compiled virtualImageFunc available, as we know this is the case.
+% Create a sceneGeometry. I silence the warning that there is not a
+% compiled virtualImageFunc available, as we know this is the case. I also
+% instruct the eyeModelParameter routine (through createSceneGeometry) to
+% skip the calculation of the axes of the eye, as this step itself requires
+% the virtual image function.
 warnState = warning();
 warning('Off','createSceneGeometry:noCompiledVirtualImageFunc');
-sceneGeometry = createSceneGeometry();
+sceneGeometry = createSceneGeometry('skipEyeAxes',true);
 warning(warnState);
 % Define the form of the dynamicArgs (the eyePoint and the eyePose)
 dynamicArgs = {[0,0,0], [0,0,0,0]};
 % Define the form of the staticArgs (which are sceneGeometry components)
 staticArgs = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.opticalSystem};
+    	sceneGeometry.refraction.pupilToCamera.opticalSystem};
 % Assemble the full args
 args = [dynamicArgs, staticArgs{:}];
 
@@ -154,8 +151,12 @@ args = [dynamicArgs, staticArgs{:}];
 initialDir = cd(functionDirPath);
 % Compile the mex file
 codegen -o virtualImageFuncMex virtualImageFunc -args args
-% Clean up the compile dir
+% Clean up the compile dir. Turn off warnings regarding the removal of
+% these files
+warnState = warning();
+warning('Off','MATLAB:RMDIR:RemovedFromPath');
 rmdir('codegen', 's');
+warning(warnState);
 % Refresh the path to add the compiled function
 addpath(functionDirPath,'-begin');
 % Change back to the initial directory

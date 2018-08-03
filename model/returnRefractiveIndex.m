@@ -57,11 +57,22 @@ switch material
         % in the near infrared region." Lasers in medical science 22.1
         % (2007): 46-52.
         ns = [1.357 1.345];
-    case 'lens'
-        % The refractive index of the lens of the eye varies along a
-        % gradient in thickness. Until such time as I implement these
-        % values properly, I will leave the index undefined.
-        ns = [nan nan];
+    case 'lens.core'
+        % Jones, Catherine E., et al. "Refractive index distribution and
+        % optical properties of the isolated human lens measured using
+        % magnetic resonance imaging (MRI)." Vision research 45.18 (2005):
+        % 2352-2366.        
+        %
+        % NEED THE VALUE FOR NIR
+        ns = [1.418 1.418];
+    case 'lens.edge'
+        % Jones, Catherine E., et al. "Refractive index distribution and
+        % optical properties of the isolated human lens measured using
+        % magnetic resonance imaging (MRI)." Vision research 45.18 (2005):
+        % 2352-2366.        
+        %
+        % NEED THE VALUE FOR NIR
+        ns = [1.371 1.371];
     case 'aqueous'
         % Sardar, Dhiraj K., et al. "Optical properties of ocular tissues
         % in the near infrared region." Lasers in medical science 22.1
