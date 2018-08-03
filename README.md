@@ -47,6 +47,10 @@ Also as a 3D ray-traced system:
 	<img src="img/plotModelEyeSchematic.png" height="400">
 </p>
 
+<p align="center">
+	<img src="img/opticalSystem3D.png" height="400">
+</p>
+
 
 A hierarchy of the functions is as follows:
 ```
