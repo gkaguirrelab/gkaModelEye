@@ -43,12 +43,9 @@ Also as a 3D ray-traced system:
 ```
 
 
-<p align="right">
-	<img src="img/modelEyeSchematic.png" height="400">
-</p>
-
-<p align="left">
-	<img src="img/opticalSystem3D.png" height="400">
+<p float="left">
+  <img src="img/modelEyeSchematic.png" height="300" />
+  <img src="img/opticalSystem3D.png" height="300" /> 
 </p>
 
 
