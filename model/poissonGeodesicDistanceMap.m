@@ -2,13 +2,12 @@ function [phi, X] = poissonGeodesicDistanceMap(S,G0,X0, nVertices)
 % Compute a map of geodesic distance on a tri-axial ellipsoid
 %
 % Syntax:
-%  [distance,startAngle,endAngle,geodeticPathCoords] = poissonGeodesicDistance(S,X0,X1)
+%  [phi, X] = poissonGeodesicDistanceMap(S,G0,X0, nVertices)
 %
 % Description:
-%   Returns the geodesic distance between two points on the tri-axial
-%   ellipsoidal surface. This is (effectively) the minimum length path on
-%   the ellipsoidal surface that connects the two points. This routine
-%   is based on the approach of Crane and colleagues:
+%   Returns a mapping of geodesic distance from a point on the tri-axial
+%   ellipsoidal surface. This routine is based on the approach of Crane and
+%   colleagues:
 %
 %       Crane, Keenan, Clarisse Weischedel, and Max Wardetzky. "Geodesics
 %       in heat: A new approach to computing distance based on heat flow."
@@ -41,9 +40,9 @@ function [phi, X] = poissonGeodesicDistanceMap(S,G0,X0, nVertices)
 %                           somewhat from this value.
 %
 % Outputs:
-%   phi                   - 1xnVertices vector. Distance of the geodetic
+%   phi                   - 1 x nVertices vector. Distance of the geodetic
 %                           between X0 and each of the points listed in X. 
-%   X                     - 3xnVertices matrix. The set of points in 
+%   X                     - 3 x nVertices matrix. The set of points in 
 %                           Cartesian coordinates that triangulate the
 %                           ellipsoidal surface.
 %
@@ -52,7 +51,7 @@ function [phi, X] = poissonGeodesicDistanceMap(S,G0,X0, nVertices)
     eye = modelEyeParameters();
     S = eye.retina.S;
     X0 = eye.axes.visual.coords;
-    [phi, X] = quadric.poissonGeodesicDistanceMap(S,[],X0 );
+    [phi, X] = poissonGeodesicDistanceMap(S,[],X0 );
     c = jet();
     nColors = size(c,1);
     figure
@@ -62,7 +61,19 @@ function [phi, X] = poissonGeodesicDistanceMap(S,G0,X0, nVertices)
     	plot3(X(1,ii),X(2,ii),X(3,ii),'.','MarkerSize',20,'Color',colorTriple);
     end
 %}
-
+%{
+    % Compare the output of the poisson geodesic to the Panou result
+    eye = modelEyeParameters();
+    S = eye.retina.S;
+    G0 = eye.axes.visual.geodetic;
+    X0 = eye.axes.visual.coords;
+    G1 = eye.axes.opticDisc.geodetic;
+    X1 = eye.axes.opticDisc.coords;
+    odf_distance_Panou = quadric.panouGeodesicDistance(S,G0,G1)
+    [phi, X] = poissonGeodesicDistanceMap(S,[],X0,1e5);
+    [~,idx] = min(sum((X'-X1).^2,2));
+    odf_distance_Poisson = phi(idx)
+%}
 
 % If the quadric surface was passed in vector form, convert to matrix
 if isequal(size(S),[1 10])
