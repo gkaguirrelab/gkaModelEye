@@ -71,7 +71,7 @@ function X = parametricGeoToCart( geodetic, S )
         end
         plot3(coords(:,1),coords(:,2),coords(:,3),'-b');
     end
-    fprintf('Lines of constant beta in blue\n');
+    fprintf('Lines of constant phi in blue\n');
     % Plot lines of varying omega
     for lambda = -180:10:180
         coords =[];
@@ -80,7 +80,7 @@ function X = parametricGeoToCart( geodetic, S )
         end
         plot3(coords(:,1),coords(:,2),coords(:,3),'-g');
     end
-    fprintf('Lines of constant omega in green\n');
+    fprintf('Lines of constant lambda in green\n');
 %}
 %{
     %% Confirm the invertibility of the transform
