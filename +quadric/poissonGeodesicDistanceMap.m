@@ -1,5 +1,5 @@
-function [distance,startAngle,endAngle,geodeticPathCoords] = poissonGeodesicDistance(S,G0,G1,X0,X1)
-% Find the geodesic distance between two points on a tri-axial ellipsoid
+function [phi, X] = poissonGeodesicDistanceMap(S,G0,X0, nVertices)
+% Compute a map of geodesic distance on a tri-axial ellipsoid
 %
 % Syntax:
 %  [distance,startAngle,endAngle,geodeticPathCoords] = poissonGeodesicDistance(S,X0,X1)
@@ -7,12 +7,19 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = poissonGeodesicDist
 % Description:
 %   Returns the geodesic distance between two points on the tri-axial
 %   ellipsoidal surface. This is (effectively) the minimum length path on
-%   the ellipsoidal surface that connects the two points. This approach
-%   makes use of:
+%   the ellipsoidal surface that connects the two points. This routine
+%   is based on the approach of Crane and colleagues:
 %
 %       Crane, Keenan, Clarisse Weischedel, and Max Wardetzky. "Geodesics
 %       in heat: A new approach to computing distance based on heat flow."
 %       ACM Transactions on Graphics (TOG) 32.5 (2013): 152.
+%
+%   With the MATLAB implementation taken from:
+%
+%       G. Peyré, The Numerical Tours of Signal Processing - Advanced
+%       Computational Signal and Image Processing IEEE Computing in Science
+%       and Engineering, vol. 13(4), pp. 94-97, 2011.
+%       http://www.numerical-tours.com/matlab/meshproc_7_geodesic_poisson/
 %
 %   The routine can accept points on the ellipsoidal surface specified in
 %   either Cartesian or ellipsoidal geodetic coordinates.
@@ -20,39 +27,42 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = poissonGeodesicDist
 % Inputs:
 %   S                     - 1x10 vector or 4x4 matrix of the quadric
 %                           surface.
-%   G0, G1                - 3x1 vectors that provide the geodetic
+%   G0                    - 3x1 vector that provides the geodetic
 %                           coordinates beta, omega, and elevation in units
 %                           of degrees. Beta is defined over the range
 %                           -90:90, and omega over the range -180:180.
 %                           Elevation has an obligatory value of zero as
 %                           this solution is only defined on the surface.
-%   X0, X1                - 3x1 vectors that specify the Cartesian
-%                           location of points on the quadric surface.
+%   X0                    - 3x1 vector that specifies the Cartesian
+%                           location of a point on the quadric surface.
+%   nVertices             - Scalar. The requested number of vertices used
+%                           to triangulate the ellipsoidal surface. The
+%                           precise number of vertices obtained will differ
+%                           somewhat from this value.
 %
 % Outputs:
-%   distance              - Scalar. Distance of the geodetic between the
-%                           two points.
-%   startAngle, endAngle  - Scalars. The heading of the geodetic path, in
-%                           degrees, relative to a line of constant omega
-%                           in the ellipsoidal geodetic coordinate system
-%                           on the ellipsoidal surface. 
+%   phi                   - 1xnVertices vector. Distance of the geodetic
+%                           between X0 and each of the points listed in X. 
+%   X                     - 3xnVertices matrix. The set of points in 
+%                           Cartesian coordinates that triangulate the
+%                           ellipsoidal surface.
 %
 % Examples:
 %{
     eye = modelEyeParameters();
     S = eye.retina.S;
-    G0 = [90;0;0];
-    G1 = [25;100;0];
-    [distance,startAngle] = quadric.poissonGeodesicDistance(S,G0,G1);
-    tic
-    [G1prime, distanceError, angleError] = quadric.geodesicByReckoning(S,G0,startAngle,distance);
-    
-[distance,startAngle,endAngle,geodeticPathCoords] = poissonGeodesicDistance(S,G0,G1,X0,X1)
-
+    X0 = eye.axes.visual.coords;
+    [phi, X] = quadric.poissonGeodesicDistanceMap(S,[],X0 );
+    c = jet();
+    nColors = size(c,1);
+    figure
+    hold on
+    for ii=1:size(X,2)
+        colorTriple = c(round((phi(ii)./max(phi))*(nColors-1)+1),:);
+    	plot3(X(1,ii),X(2,ii),X(3,ii),'.','MarkerSize',20,'Color',colorTriple);
+    end
 %}
 
-% resolution of the returned path coords
-vertexDensity = 10;
 
 % If the quadric surface was passed in vector form, convert to matrix
 if isequal(size(S),[1 10])
@@ -61,34 +71,43 @@ end
 
 S = quadric.alignAxes(S);
 
-% If three input values were passed, convert the G0/G1 variables to X0/X1
-% cartesian coordinates
-if nargin==3
+% If three input values were passed, assume that the X0/X1 variables are
+% empty, and compute these from the passed G0/G1 geodetic coordinates
+if nargin==2
     % Obtain the ellipsoidal geodetic coordinates for the two points, and
     % convert to radians
     X0 = quadric.ellipsoidalGeoToCart( G0, S );
-    X1 = quadric.ellipsoidalGeoToCart( G1, S );
+    % Set the nVertices
+    nVertices = 10000;
 end
 
+if nargin==3
+    % Set the nVertices
+    nVertices = 10000;
+end
 
-% Obtain a set of points on the surface
-betas = linspace(-90,0,vertexDensity);
-omegas = linspace(-180,180,vertexDensity);
-[BETAS,OMEGAS] = meshgrid(betas,omegas);
-coordinates = [BETAS(:)'; OMEGAS(:)']';
+% Create a triangulation of a unit sphere with nearly equal areas. This step makes use of the spheretri
+% respository, written by Peter Gagarinov, PhD
+%   https://github.com/pgagarinov/spheretri
+[vMat, fMat] = spheretri(nVertices);
 
-% Obtain a Delauny triangulation for these coordinates
-F = delaunay(coordinates);
-
-% Obtain the Cartesian locations for the coordinates
+% Project the vertices from the unit sphere to the ellipsoid
+unitSphere = quadric.unitSphere;
 X=[];
-for ii=1:size(coordinates,1)
-    X(ii,:) = quadric.ellipsoidalGeoToCart( coordinates(ii,:), S );
+for ii = 1: size(vMat,1)
+    geoCoord = quadric.cartToParametricGeo(vMat(ii,:)',unitSphere);
+    X(ii,:) = quadric.parametricGeoToCart(geoCoord',S);
 end
+
+% Find the index of the point in the triangulation that is closest to X0
+[~,idx] = min(sum((X-X0).^2,2));
 
 % Set X and F to have the expected row column order for the next process
 X = X';
-F = F';
+F = fMat';
+
+
+%% The following code is taken directly from Numerical Tours
 
 % Number n vertices and number m faces
 n = size(X,2);
@@ -170,21 +189,9 @@ Wc = sparse(I,J,V,n,n);
 % Laplacian with cotan weights.
 DeltaCot = spdiags(full(sum(Wc))', 0, n,n) - Wc;
 
-fprintf('Should be 0: %e\n', norm(Delta-DeltaCot, 'fro')/norm(Delta, 'fro'));
-
-% Set the index equal to 1 (the X0 point)
-i = 25;
+% Set the index equal to the X0 point
 delta = zeros(n,1);
-delta(i) = 1;
-
-t = 1000;
-u = (Ac+t*Delta)\delta;
-
-options.face_vertex_color = u;
-clf; plot_mesh(X,F,options);
-axis('tight');
-colormap parula(256);
-
+delta(idx) = 1;
 
 % Compute the solution with explicit time stepping
 t = .1;
@@ -199,11 +206,10 @@ h = -normalize(g);
 % Integrate it back
 phi = Delta \ Div(h);
 
-figure
-options.face_vertex_color = phi;
-clf; plot_mesh(X,F,options);
-axis('tight');
-colormap parula(256);
+% Set the distance at the starting point to zero, and transpose to match
+% the orientation of X.
+phi = (phi - phi(idx))';
+
 
 end % panouGeodesicDistance
 
