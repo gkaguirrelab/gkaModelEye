@@ -8,7 +8,7 @@ function coordinates = surfaceGrid(S, boundingBox, vertexDensity, gridType, bbTo
 %   Returns a set of coordinates that are spaced across the quadric
 %   surface. If a polarGrid is requested, then the points are evenly spaced
 %   in geodetic coordinates. Otherwise, the points are evenly spaced in
-%   Cartesian coordinates.
+%   Cartesian (linear) coordinates.
 %
 % Inputs:
 %   S                     - 1x10 vector or 4x4 matrix of the quadric
@@ -38,8 +38,9 @@ function coordinates = surfaceGrid(S, boundingBox, vertexDensity, gridType, bbTo
 %{
     S = quadric.scale(quadric.unitSphere,[4 5 3]);
     boundingBox = [0 50 -30 30 -20 20];
-    coordinates = quadric.surfaceGrid(S,boundingBox,50);
-    plot3(coordinates(:,1),coordinates(:,2),coordinates(:,3),'.r')
+    coordinates = quadric.surfaceGrid(S,boundingBox,200);
+    plot3(coordinates(1,:),coordinates(2,:),coordinates(3,:),'.r')
+    axis equal
 %}
 
 % Handle incomplete input arguments
@@ -61,7 +62,7 @@ switch gridType
     case 'parametricPolar'
         % Assemble the set of coordinates
         coordinates = [];
-        for latitude = linspace(-180,180,vertexDensity*2)
+        for latitude = linspace(-90,90,vertexDensity)
             for longitude=linspace(-180,180,vertexDensity)
                 X = quadric.parametricGeoToCart( [latitude; longitude; 0], S );
                 % Store the coordinate value.
@@ -76,7 +77,7 @@ switch gridType
     case 'ellipsoidalPolar'
         % Assemble the set of coordinates
         coordinates = [];
-        for latitude = linspace(-180,180,vertexDensity*2)
+        for latitude = linspace(-90,90,vertexDensity)
             for longitude=linspace(-180,180,vertexDensity)
                 X = quadric.ellipsoidalGeoToCart( [latitude; longitude; 0], S );
                 % Store the coordinate value.
@@ -91,9 +92,12 @@ switch gridType
     case 'linear'
         % Produce a set of coordinates that are linearly spaced across the
         % boundingBox.
-        coordinates = [linspace(boundingBox(1),boundingBox(2),vertexDensity); ...
-            linspace(boundingBox(3),boundingBox(4),vertexDensity); ...
-            linspace(boundingBox(5),boundingBox(6),vertexDensity)];
+        [X,Y,Z] = meshgrid(linspace(boundingBox(1),boundingBox(2),vertexDensity), ...
+            linspace(boundingBox(3),boundingBox(4),vertexDensity), ...
+            linspace(boundingBox(5),boundingBox(6),vertexDensity));
+        F = quadric.vecToFunc(S);
+        [x,y,z] = ind2sub(size(X),find(F(X,Y,Z) < 1e-6));
+        coordinates = [x y z]';
     otherwise
         error('Not a valid surface grid type');
 end

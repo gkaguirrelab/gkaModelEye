@@ -2,7 +2,7 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
 % Find the geodesic distance between two points on a tri-axial ellipsoid
 %
 % Syntax:
-%  [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistance(S,X0,X1)
+%  [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistance(S,G0,G1,X0,X1,maxIterations)
 %
 % Description:
 %   Returns the geodesic distance between two points on the tri-axial
@@ -75,6 +75,14 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
     plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'*r');
     plot3(geodeticPathCoords(1,1),geodeticPathCoords(1,2),geodeticPathCoords(1,3),'om');
     plot3(geodeticPathCoords(end,1),geodeticPathCoords(end,2),geodeticPathCoords(end,3),'+m');
+%}
+%{
+    % Distance from the fovea to the optic disc
+    eye = modelEyeParameters();
+    S = eye.retina.S;
+    G0 = eye.axes.visual.geodetic;
+    G1 = eye.axes.opticDisc.geodetic;
+    odf_distance = quadric.panouGeodesicDistance(S,G0,G1)
 %}
 
 
