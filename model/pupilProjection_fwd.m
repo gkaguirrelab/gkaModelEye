@@ -163,8 +163,8 @@ p.addParameter('nPupilPerimPoints',5,@(x)(isscalar(x) && x>4));
 p.addParameter('modelIrisThickness',false,@islogical);
 p.addParameter('pupilPerimPhase',0,@isscalar);
 p.addParameter('nIrisPerimPoints',5,@isscalar);
-p.addParameter('corneaMeshDensity',20,@isscalar);
-p.addParameter('retinaMeshDensity',24,@isscalar);
+p.addParameter('corneaMeshDensity',23,@isscalar);
+p.addParameter('retinaMeshDensity',30,@isscalar);
 p.addParameter('refractionHandle',@virtualImageFuncMex,@(x)(isa(x,'function_handle')));
 
 % parse
