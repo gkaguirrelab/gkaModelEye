@@ -119,35 +119,37 @@ switch p.Results.surfaceSetName
         % Assemble the surface plot colors
         surfaceColors = [eye.retina.plot.color; eye.lens.plot.color; eye.cornea.plot.color];
         
-        % % Add a contact lens if requested
-        % if ~isempty(p.Results.contactLens)
-        %     switch length(p.Results.contactLens)
-        %         case 1
-        %             lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', p.Results.spectralDomain );
-        %             [opticalSystem, pOutFun] = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex);
-        %         case 2
-        %             [opticalSystem, pOutFun] = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2));
-        %         otherwise
-        %             error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
-        %     end
-        %     sceneGeometry.lenses.contact = pOutFun.Results;
-        % end
-        %
-        % % Add a spectacle lens if requested
-        % if ~isempty(p.Results.spectacleLens)
-        %     switch length(p.Results.spectacleLens)
-        %         case 1
-        %             lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', p.Results.spectralDomain );
-        %             [opticalSystem, pOutFun] = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex);
-        %         case 2
-        %             [opticalSystem, pOutFun] = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2));
-        %         case 3
-        %             [opticalSystem, pOutFun] = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3));
-        %         otherwise
-        %             error('The key-value pair spectacleLens is limited to three elements: [refractionDiopters, refractionIndex, vertexDistance]');
-        %     end
-        %     sceneGeometry.lenses.spectacle = pOutFun.Results;
-        % end
+        % Add a contact lens if requested
+        if ~isempty(p.Results.contactLens)
+            switch length(p.Results.contactLens)
+                case 1
+                    lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', eye.meta.spectralDomain );
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex);
+                case 2
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2));
+                otherwise
+                    error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
+            end
+            surfaceLabels = [surfaceLabels; {'contactLens'}];
+            surfaceColors = [surfaceColors; {[.5 .5 .5]}];
+        end
+        
+        % Add a spectacle lens if requested
+        if ~isempty(p.Results.spectacleLens)
+            switch length(p.Results.spectacleLens)
+                case 1
+                    lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex);
+                case 2
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2));
+                case 3
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3));
+                otherwise
+                    error('The key-value pair spectacleLens is limited to three elements: [refractionDiopters, refractionIndex, vertexDistance]');
+            end
+            surfaceLabels = [surfaceLabels; {'spectacleLensBack'}; {'spectacleLensFront'}];
+            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[.5 .5 .5]}];
+        end
         
     case 'retinaToPupil'
         
@@ -180,6 +182,38 @@ switch p.Results.surfaceSetName
         
         % Assemble the surface plot colors
         surfaceColors = [{[nan nan nan]}; eye.cornea.plot.color];
+        
+        % Add a contact lens if requested
+        if ~isempty(p.Results.contactLens)
+            switch length(p.Results.contactLens)
+                case 1
+                    lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', eye.meta.spectralDomain );
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex);
+                case 2
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2));
+                otherwise
+                    error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
+            end
+            surfaceLabels = [surfaceLabels; {'contactLens'}];
+            surfaceColors = [surfaceColors; {[.5 .5 .5]}];
+        end
+        
+        % Add a spectacle lens if requested
+        if ~isempty(p.Results.spectacleLens)
+            switch length(p.Results.spectacleLens)
+                case 1
+                    lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex);
+                case 2
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2));
+                case 3
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3));
+                otherwise
+                    error('The key-value pair spectacleLens is limited to three elements: [refractionDiopters, refractionIndex, vertexDistance]');
+            end
+            surfaceLabels = [surfaceLabels; {'spectacleLensBack'}; {'spectacleLensFront'}];
+            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[.5 .5 .5]}];
+        end
         
     case 'cameraToPupil'
         
