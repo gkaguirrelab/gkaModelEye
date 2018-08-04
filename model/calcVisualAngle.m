@@ -1,4 +1,4 @@
-function [visualAngles, initialRay0, initialRay1 ] = calcVisualAngle(eye,G0,G1,X0,X1,cameraMedium)
+function [visualAngles, initialRay0, initialRay1, totalAngle ] = calcVisualAngle(eye,G0,G1,X0,X1,cameraMedium)
 % The visual angles between two retinal points
 %
 % Syntax:
@@ -72,6 +72,35 @@ function [visualAngles, initialRay0, initialRay1 ] = calcVisualAngle(eye,G0,G1,X
     plot3(eye.axes.optical.coords(1),eye.axes.optical.coords(2),eye.axes.optical.coords(3),'+k','MarkerSize',10);
     plot3(eye.axes.visual.coords(1),eye.axes.visual.coords(2),eye.axes.visual.coords(3),'*k','MarkerSize',10);
     plot3(eye.axes.opticDisc.coords(1),eye.axes.opticDisc.coords(2),eye.axes.opticDisc.coords(3),'ok','MarkerSize',10);
+%}
+%{
+    % Calculate deg/mm at the fovea as a function of ametropia and axial
+    % length
+    mmPerDeg = [];
+    axialLengths = [];
+    for SR = -10:1:2
+        eye = modelEyeParameters('sphericalAmetropia',SR);
+        S = eye.retina.S;
+        G0 = eye.axes.opticDisc.geodetic;
+        G1 = G0 + [0.1 0.1 0];
+        [~, ~, ~, totalAngle ] = calcVisualAngle(eye,G0,G1);
+        X0 = quadric.ellipsoidalGeoToCart(G0,S);
+        X1 = quadric.ellipsoidalGeoToCart(G1,S);
+        d = sqrt(sum((X0-X1).^2));
+        mmPerDeg(end+1) = d/totalAngle;
+        radii = quadric.radii(eye.retina.S);
+        center = quadric.center(eye.retina.S);
+        axialLengths(end+1) = radii(1)-center(1);
+    end
+    figure
+    plot(axialLengths,mmPerDeg,'or');
+    p = polyfit(axialLengths,mmPerDeg,1);
+    hold on
+    x = linspace(22,28);
+    y = polyval(p,x);
+    plot(x,y,'-k');
+    xlabel('axial length [mm]');
+    ylabel('mm / degree visual angle at the fovea');
 %}
 
 
@@ -147,7 +176,7 @@ R0 = rayTraceQuadrics(R0, assembleOpticalSystem( eye, 'surfaceSetName','pupilToC
 R1 = rayTraceQuadrics(R1, assembleOpticalSystem( eye, 'surfaceSetName','pupilToCamera','cameraMedium',cameraMedium ));
 
 % Calculate and return the signed angles between the two rays
-[~, angle_p1p2, angle_p1p3] = quadric.angleRays( R0, R1 );
+[totalAngle, angle_p1p2, angle_p1p3] = quadric.angleRays( R0, R1 );
 visualAngles = [angle_p1p2, angle_p1p3];
 
 end
