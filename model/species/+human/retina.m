@@ -42,8 +42,8 @@ retinaRadii = ...
 %   Journal of Refractive Surgery 16.3 (2000): 336-340.
 %
 % To position the retina, we need to know the distance between the apex of
-% the anterior chamber and the apex of the retina. I derive the value for
-% this distance from the Atchison 2006 model eye.
+% the anterior chamber and the apex of the retina. Atchison 2006 provided
+% an axial length of 23.58 mm for the emmetropic eye.
 retinaCenter = ...
     [(-(23.5800 - retinaRadiiEmetrope(1)*2) - retinaRadii(1)) 0 0];
 
