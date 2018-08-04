@@ -12,11 +12,27 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %	curvature for rayTraceEllipsoids().
 %
 % Inputs:
-%   opticalSystemIn       - An mx5 matrix, where m is the number of
-%                           surfaces in the model, including the initial
-%                           position of the ray. Each row contains the
+%   opticalSystemIn       - An mx19 matrix, where m is set by the key value
+%                           opticalSystemNumRows. Each row contains the 
 %                           values:
-%                               [center, radius_p1, radius_p2, radius_p3, refractiveIndex]
+%                               [S side bb must n]
+%                           where:
+%                               S     - 1x10 quadric surface vector
+%                               side  - Scalar taking the value -1 or 1
+%                                       that defines which of the two
+%                                       points of intersection on the
+%                                       quadric should be used as the
+%                                       refractive surface.
+%                               bb    - 1x6 vector defining the bounding
+%                                       box within which the refractive
+%                                       surface is present.
+%                               must  - Scalar taking the value of 0 or 1,
+%                                       where 1 indicates that the ray must
+%                                       intersect the surface. If the ray
+%                                       misses a required surface, the
+%                                       routine exits with nans for the
+%                                       outputRay.
+%                               n     - Refractive index of the surface.
 %   lensRefractionDiopters - Scalar. Refractive power in units of 
 %                           diopters. A negative value specifies a lens
 %                           that would be worn by someone with myopia to
@@ -35,21 +51,11 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %                           plano face of the lens.
 %
 % Outputs:
-%   opticalSystemOut      - An (m+2)x5 matrix, corresponding to the
+%   opticalSystemOut      - An (m+2)x19 matrix, corresponding to the
 %                           opticalSystemIn with the addition of the
-%                           spectacle lens
-%   p                     - The parameters returned by the input parser.
+%                           spectacle lens.
 %
-% Examples:
-%{
-    %% Spectacle lens added to correct myopia
-    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2);
-    clear figureFlag
-    figureFlag.p1Lim = [-20 20];
-    figureFlag.p2Lim = [-15 15];
-    figureFlag.p3Lim = [-15 15];
-    rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1),0],deg2rad(-15),sceneGeometry.refraction.opticalSystem,figureFlag);
-%}
+
 
 %% input parser
 p = inputParser; p.KeepUnmatched = true;
@@ -71,6 +77,9 @@ p.parse(opticalSystemIn, lensRefractionDiopters, varargin{:})
 lensVertexDistance = p.Results.lensVertexDistance;
 lensRefractiveIndex = p.Results.lensRefractiveIndex;
 nearPlanoCurvature = p.Results.nearPlanoCurvature;
+
+% Obtain the quadric for the corneal surface
+corneaLine = opticalSystemIn(end,:);
 
 % Copy the optical system from input to output
 opticalSystemOut = opticalSystemIn;
@@ -95,7 +104,6 @@ if lensRefractionDiopters > 0
     % We first add the near-plano back surface to the optical system
     backCurvature = nearPlanoCurvature;
     backCenter = lensVertexDistance+backCurvature;
-    opticalSystemOut(end+1,:)=[backCenter backCurvature backCurvature backCurvature lensRefractiveIndex];
     backDiopters = (mediumRefractiveIndex-lensRefractiveIndex)/(backCurvature/1000);
  
     % How many diopters of correction do we need from the front surface?
@@ -133,7 +141,7 @@ if lensRefractionDiopters > 0
     clear x
 
     frontCenter = double(subs(frontCenter));
-
+        
 else
     % This is a minus lens for the correction of myopia. It has a
     % relatively flat front surface and a more curved back surface. It will
@@ -158,8 +166,25 @@ else
     
 end % positive or negative lens
 
-% Add the surfaces to the optical system
-opticalSystemOut(end+1,:)=[backCenter backCurvature backCurvature backCurvature lensRefractiveIndex];
-opticalSystemOut(end+1,:)=[frontCenter frontCurvature frontCurvature frontCurvature mediumRefractiveIndex];
+% Define a bounding box
+boundingBoxLens = [0 frontCenter-frontCurvature -lensVertexDistance*2 lensVertexDistance*2 -lensVertexDistance*2 lensVertexDistance*2];
+
+% Add the back spectacle surface to the optical system.
+SlensBack = quadric.scale(quadric.unitSphere,[backCurvature backCurvature backCurvature]);
+SlensBack = quadric.translate(SlensBack,[backCenter 0 0]);
+lensLine = corneaLine;
+lensLine(1:10) = quadric.matrixToVec(SlensBack);
+lensLine(12:17) = boundingBoxLens;
+lensLine(end) = p.Results.lensRefractiveIndex;
+opticalSystemOut = [opticalSystemOut; lensLine];
+
+% Add the back spectacle surface to the optical system.
+SlensFront = quadric.scale(quadric.unitSphere,[frontCurvature frontCurvature frontCurvature]);
+SlensFront = quadric.translate(SlensFront,[frontCenter 0 0]);
+lensLine = corneaLine;
+lensLine(1:10) = quadric.matrixToVec(SlensFront);
+lensLine(12:17) = boundingBoxLens;
+lensLine(end) = mediumRefractiveIndex;
+opticalSystemOut = [opticalSystemOut; lensLine];
 
 end % function - addSpectacleLens

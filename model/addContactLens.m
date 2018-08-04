@@ -12,11 +12,27 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %	curvature for rayTraceEllipsoids().
 %
 % Inputs:
-%   opticalSystemIn       - An mx5 matrix, where m is the number of
-%                           surfaces in the model, including the initial
-%                           position of the ray. Each row contains the
+%   opticalSystem         - An mx19 matrix, where m is set by the key value
+%                           opticalSystemNumRows. Each row contains the 
 %                           values:
-%                               [center, radiusZ, radiusH, refractiveIndex]
+%                               [S side bb must n]
+%                           where:
+%                               S     - 1x10 quadric surface vector
+%                               side  - Scalar taking the value -1 or 1
+%                                       that defines which of the two
+%                                       points of intersection on the
+%                                       quadric should be used as the
+%                                       refractive surface.
+%                               bb    - 1x6 vector defining the bounding
+%                                       box within which the refractive
+%                                       surface is present.
+%                               must  - Scalar taking the value of 0 or 1,
+%                                       where 1 indicates that the ray must
+%                                       intersect the surface. If the ray
+%                                       misses a required surface, the
+%                                       routine exits with nans for the
+%                                       outputRay.
+%                               n     - Refractive index of the surface.
 %   lensRefractionDiopters - Scalar. Refractive power in units of
 %                           diopters. A negative value specifies a lens
 %                           that would be worn by someone with myopia to
@@ -30,10 +46,9 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %                           imaging domains.
 %
 % Outputs:
-%   opticalSystemOut      - An (m+1)x5 matrix, corresponding to the
+%   opticalSystemOut      - An (m+1)x19 matrix, corresponding to the
 %                           opticalSystemIn with the addition of the
 %                           contact lens.
-%   p                     - The parameters returned by the input parser.
 %
 % Examples:
 %{
@@ -51,11 +66,7 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
     opticalSystemOut = addContactLens(opticalSystemIn, -10, 'lensRefractiveIndex', 1.43 );
     assert(abs(opticalSystemOut(end,2) - -9.56)<0.1);
 %}
-%{
-    %% Contact lens added to correct myopia
-    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'contactLens',-2);
-    rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1),0],deg2rad(-15),sceneGeometry.refraction.opticalSystem,true);
-%}
+
 
 
 %% input parser
@@ -90,16 +101,22 @@ priorRefractiveIndex = opticalSystemIn(end-1,end);
 mediumRefractiveIndex = opticalSystemIn(end,end);
 opticalSystemOut(end,end) = lensRefractiveIndex;
 
+% Obtain the quadric for the corneal surface
+corneaLine = opticalSystemIn(end,:);
+S = corneaLine(1:10);
+radii = quadric.radii(S);
+
 % Calculate the diopters of the corneal surface without a contact lens. We
 % consider only the radius of curvature at the apex along the optical axis.
 % Our goal is to create a front surface of the contact lens that produces a
 % refractive correction equal to:
 %   cornealSurfaceDiopters + lensRefractionDiopters
 t=0;
-cornealSurfaceCurvature = -((opticalSystemIn(end,2)^2*sin(t)^2 + opticalSystemIn(end,3)^2*cos(t)^2)^(3/2))/(opticalSystemIn(end,2)*opticalSystemIn(end,3));
+
+cornealSurfaceCurvature = -((radii(2)^2*sin(t)^2 + radii(3)^2*cos(t)^2)^(3/2))/(radii(2)*radii(3));
 cornealSurfaceDiopters = (mediumRefractiveIndex-priorRefractiveIndex)/(cornealSurfaceCurvature/1000);
 
-% Calculate the refractive power of the back surface of the lens.
+% Calculate the refractive power of the back surface of the contact lens.
 backCurvature = cornealSurfaceCurvature;
 backDiopters = (lensRefractiveIndex-priorRefractiveIndex)/(backCurvature/1000);
 
@@ -137,7 +154,11 @@ if lensRefractionDiopters > 0
 
     % Calculate the location of the center of curvature for the front lens.
     frontCenter = frontCurvature + (frontCurvature-backCurvature);
-    
+
+    % Calculate the bounding box
+    boundingBoxLens = corneaLine(12:17);
+    boundingBoxLens(2) = boundingBoxLens(2)+thickness;
+
 else
     % This is a minus lens for the correction of myopia.
     % It will be thinnest at the center of the lens on the optical axis.
@@ -165,9 +186,20 @@ else
     % Calculate the location of the center of curvature for the front lens.
     frontCenter = frontCurvature + p.Results.minimumLensThickness;
 
+    % Calculate the bounding box
+    boundingBoxLens = corneaLine(12:17);
+    boundingBoxLens(2) = boundingBoxLens(2)+p.Results.minimumLensThickness;
 end
 
-% Add the contact lens to the optical system
-opticalSystemOut(end+1,:)=[frontCenter frontCurvature frontCurvature frontCurvature mediumRefractiveIndex];
+% Add the contact lens to the optical system.
+Slens = quadric.scale(quadric.unitSphere,[frontCurvature frontCurvature frontCurvature]);
+Slens = quadric.translate(Slens,[frontCenter 0 0]);
 
+lensLine = corneaLine;
+lensLine(1:10)=quadric.matrixToVec(Slens);
+lensLine(12:17) = boundingBoxLens;
+lensLine(end) = mediumRefractiveIndex;
+
+opticalSystemOut = [opticalSystemOut; lensLine];
+    
 end % function - addContactLens
