@@ -264,7 +264,7 @@ warning(warningState);
 % stuck in a recursion loop of bad fits
 [~,warnID] = lastwarn();
 if ~isempty(warnID)
-    message = ['Received warning during eyePoseEllipseFit: ' warnID ' /n'];
+    message = ['Received warning during eyePoseEllipseFit: ' warnID ' \n'];
     fprintf(message);
     return
 end
