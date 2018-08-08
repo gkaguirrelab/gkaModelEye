@@ -192,7 +192,6 @@ options = optimoptions(@fmincon,...
 
 % Turn off warnings that can arise during the search
 warningState = warning;
-warning('off','rayTraceEllipsoids:criticalAngle');
 warning('off','pupilProjection_fwd:ellipseFitFailed');
 warning('off','MATLAB:nearlySingularMatrix');
 
@@ -256,6 +255,13 @@ RMSE = bestFVal;
 
 % Restore the warning state
 warning(warningState);
+
+% If a warning was received during the execution, exit here to avoid being
+% stuck in a recursion loop of bad fits
+[~,warnID] = lastwarn();
+if strcmp(warnID,'MATLAB:nearlySingularMatrix')
+    return
+end
 
 % If the solution has an RMSE that is larger than repeatSearchThresh, we
 % consider the possibility that the solution represents a local minimum. We
