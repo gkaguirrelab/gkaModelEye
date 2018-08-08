@@ -194,6 +194,10 @@ options = optimoptions(@fmincon,...
 warningState = warning;
 warning('off','pupilProjection_fwd:ellipseFitFailed');
 warning('off','MATLAB:nearlySingularMatrix');
+warning('off','MATLAB:singularMatrix');
+
+% Clear the warning buffer
+lastwarn('');
 
 % Perform the search with nested objfun and outfun
 fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, [], options);
@@ -259,7 +263,9 @@ warning(warningState);
 % If a warning was received during the execution, exit here to avoid being
 % stuck in a recursion loop of bad fits
 [~,warnID] = lastwarn();
-if strcmp(warnID,'MATLAB:nearlySingularMatrix')
+if ~isempty(warnID)
+    message = ['Received warning during eyePoseEllipseFit: ' warnID ' /n'];
+    fprintf(message);
     return
 end
 
