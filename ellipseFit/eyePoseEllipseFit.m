@@ -112,6 +112,13 @@ end
 eyePoseLB = p.Results.eyePoseLB;
 eyePoseUB = p.Results.eyePoseUB;
 
+% Clear the case of nans in the input
+if any(isnan(eyePoseLB)) || any(isnan(eyePoseUB)) || any(isnan(p.Results.x0)) 
+    eyePose = [nan nan nan nan];
+    RMSE = nan;
+    return
+end
+
 % Identify the center of projection
 rotationCenterEllipse = pupilProjection_fwd([0 0 0 2], sceneGeometry);
 CoP = [rotationCenterEllipse(1),rotationCenterEllipse(2)];
