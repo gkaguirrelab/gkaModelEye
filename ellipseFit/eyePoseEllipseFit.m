@@ -272,7 +272,7 @@ warning(warningState);
 [~,warnID] = lastwarn();
 if ~isempty(warnID)
     % message = ['Received warning during eyePoseEllipseFit: ' warnID ' \n'];
-    fprintf(message);
+    % fprintf(message);
     return
 end
 
