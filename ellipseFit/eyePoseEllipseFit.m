@@ -187,8 +187,8 @@ end
 % Define variables used in the nested functions
 lastFVal = realmax;
 bestFVal = realmax;
-xLast = []; % Last place pupilProjection_fwd was called
-xBest = []; % The x with the lowest objective function value that meets
+xLast = [nan nan nan nan]; % Last place pupilProjection_fwd was called
+xBest = [nan nan nan nan]; % The x with the lowest objective function value that meets
 rmseThresh = p.Results.rmseThresh;
 
 % define some search options
@@ -206,8 +206,16 @@ warning('off','MATLAB:singularMatrix');
 % Clear the warning buffer
 lastwarn('');
 
-% Perform the search with nested objfun and outfun
-fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, [], options);
+% Perform the search with nested objfun and outfun. We place the fmincon
+% search within a try-catch block, as mysterious errors rarely occur deep
+% within the fmincon routine, and I can't figure out why.
+try
+    fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, [], options);
+catch
+    eyePose = xBest;
+    RMSE = bestFVal;
+    return
+end
     function fVal = objfun(x)
         xLast = x;
         % Obtain the entrance pupil ellipse for this eyePose
@@ -215,9 +223,9 @@ fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, [], options);
         % Check for the case in which the transparentEllipse contains nan
         % values, which can arise if there were an insufficient number of
         % pupil border points remaining after refraction to define an
-        % ellipse. In this case, we return a realMax value for the fVal.
+        % ellipse. In this case, we return a large value for the fVal.
         if any(isnan(pupilEllipseOnImagePlane))
-            fVal = realmax;
+            fVal = 1e12;
         else
             % This is the RMSE of the distance values of the boundary
             % points to the ellipse fit.
@@ -233,7 +241,6 @@ fmincon(@objfun, x0, [], [], [], [], eyePoseLB, eyePoseUB, [], options);
             end
         end
     end % local objective function
-
     function stop = outfun(~,optimValues,state)
         stop = false;
         switch state
