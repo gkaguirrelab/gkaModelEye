@@ -288,7 +288,7 @@ end
 % repeat the search, passing a value close to the eyePose solution as x0.
 % This process terminates when the search count exceeds nMaxSearches.
 if RMSE > p.Results.repeatSearchThresh && ...
-        p.Results.searchCount <= p.Results.nMaxSearches
+        p.Results.searchCount < p.Results.nMaxSearches
     % Make sure that the search yielded an actual solution for the eyePose.
     % If not, simply re-use the x0 (with a small shift).
     if ~isempty(eyePose)
