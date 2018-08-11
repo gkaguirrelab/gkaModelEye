@@ -2,7 +2,7 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
 % Creates an image of the eye for a given eyePose and sceneGeometry
 %
 % Syntax:
-%  figHandle = renderEyePose(eyePose, sceneGeometry)
+%  [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, sceneGeometry)
 %
 % Description:
 %   Create an image of the model eye given the sceneGeometry and a specific
