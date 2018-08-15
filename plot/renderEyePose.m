@@ -113,6 +113,7 @@ p.addParameter('backgroundImage',[],@isnumeric);
 p.addParameter('newFigure',true,@islogical);
 p.addParameter('visible',true,@islogical);
 p.addParameter('showPupilTextLabels',false,@islogical);
+p.addParameter('showAzimuthPlane',false,@islogical);
 p.addParameter('nPupilPerimPoints',8,@isscalar);
 p.addParameter('nIrisPerimPoints',20,@isscalar);
 p.addParameter('modelIrisThickness',false,@islogical);
@@ -140,7 +141,7 @@ imageSizeY = sceneGeometry.cameraIntrinsic.sensorResolution(2);
 % A blank frame to initialize the figure
 if ~isempty(p.Results.backgroundImage)
     backgroundImage = p.Results.backgroundImage;
-    if size(backgroundImage) ~= [imageSizeX imageSizeY]
+    if size(backgroundImage) ~= [imageSizeY imageSizeX 3]
         error('renderEyePose:backgroundImageSize','The passed background image does not match the camera sensor specified in sceneGeometry');
     end
 else
@@ -222,9 +223,20 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
 
     end
 end % loop over label names
+
+% Add a line that shows the azimuthal plane of rotation. This reflects
+% camera torsion
+if p.Results.showAzimuthPlane
+    [~, imagePoints] = pupilProjection_fwd([-50 0 0 1], sceneGeometry);
+    A = nanmean(imagePoints);
+    [~, imagePoints] = pupilProjection_fwd([50 0 0 1], sceneGeometry);
+    B = nanmean(imagePoints);
+    plot([A(1) B(1)],[A(2) B(2)],'-r')
+end
+
 hold off
 
 % Get the rendered frame
-renderedFrame=getframe(gcf);
+renderedFrame=getframe(figHandle);
 
 end
