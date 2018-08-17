@@ -42,9 +42,11 @@ iris.thickness = 0.01;
 
 switch eye.meta.eyeLaterality
     case 'Right'
-        iris.center = [-4+iris.thickness/2 0.35 0.35];
+%        iris.center = [-4+iris.thickness/2 0.35 0.35];
+        iris.center = [-4+iris.thickness/2 0 0];
     case 'Left'
-        iris.center = [-4+iris.thickness/2 -0.35 0.35];
+%        iris.center = [-4+iris.thickness/2 -0.35 0.35];
+        iris.center = [-4+iris.thickness/2 0 0];
 end
 
 % Define the iris radius. One study measured the horizontal visible iris
