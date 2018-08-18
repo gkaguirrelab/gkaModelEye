@@ -604,6 +604,7 @@ else
     % Silence a warning that can arise regarding a nearly singular matrix
     warnState = warning;
     warning('off','MATLAB:nearlySingularMatrix');
+    warning('off','MATLAB:singularMatrix');
 
     % We place the ellipse fit in a try-catch block, as the fit can fail
     % when the ellipse is so eccentric that it approaches a line
@@ -627,6 +628,7 @@ else
             case {'MATLAB:badsubscript','MATLAB:realsqrt:complexResult','MATLAB:expectedReal','MATLAB:quad2dproj:expectedFinite'}
                 warning('pupilProjection_fwd:ellipseFitFailed','Could not fit a valid ellipse to the pupil points; returning nans.');
             otherwise
+                ME.identifier
                 warning('pupilProjection_fwd:ellipseFitUnknownError','Undefined error during ellipse fitting to pupil perimeter; returning nans.');
         end
     end % try-catch block
