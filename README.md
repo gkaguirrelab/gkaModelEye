@@ -56,7 +56,7 @@ A hierarchy of the functions is as follows:
             |
             V
     pupilProjection_fwd  <--  createSceneGeometry
-            |                   |-- modelEyeParameters
+            |                   ├── modelEyeParameters
             V                   |    ├─ human.pupil
     virtualImageFunc            |    ├─ human.cornea
             |                   |    └─ human.retina, etc.
