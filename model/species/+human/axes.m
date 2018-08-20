@@ -168,6 +168,8 @@ switch eye.meta.eyeLaterality
         end
         if isequal(quadric.dimensionSizeRank(S),[2 1 3])
             % Need to handle this case for extreme myopia
+            error('The axes routine cannot model this extreme degree of myopia; exiting');
+            return
         end
     case 'Left'
         if isequal(quadric.dimensionSizeRank(S),[1 2 3]) || ...
@@ -176,6 +178,8 @@ switch eye.meta.eyeLaterality
         end
         if isequal(quadric.dimensionSizeRank(S),[2 1 3])
             % Need to handle this case for extreme myopia
+            error('The axes routine cannot model this extreme degree of myopia; exiting');
+            return
         end
 end
 
