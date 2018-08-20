@@ -57,11 +57,11 @@ A hierarchy of the functions is as follows:
             V
     pupilProjection_fwd  <--  createSceneGeometry
             |                   |-- modelEyeParameters
-            V                   |    |-- human.pupil
-    virtualImageFunc            |    |-- human.cornea
-            |                   |    |-- human.retina, etc.
+            V                   |    ├─ human.pupil
+    virtualImageFunc            |    ├─ human.cornea
+            |                   |    └─ human.retina, etc.
             V                   |    
-    rayTraceQuadrics            |-- assembleOpticalSystem
+    rayTraceQuadrics            └─ assembleOpticalSystem
 ```
 
 Most functions have associated examples in the header comments. To automatically run all examples, ensure that the [ExampleTest toolbox](https://github.com/isetbio/ExampleTestToolbox.git) is on the path. This command will then test all examples:
