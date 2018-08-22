@@ -28,6 +28,10 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
 %                           points are labeled with numbers. This is used,
 %                           for example, to illustrate the effects of
 %                           torsion.
+%  'showAzimuthPlane'     - Logical. If set to true, a magenta line is
+%                           added to the rendering. The line connects the
+%                           center of the pupil for a -50 and +50 rotation
+%                           of azimuth and zero elevation.
 %  'nPupilPerimPoints'    - Scalar. The number of pupil perimeter points.
 %  'nIrisPerimPoints'     - Scalar. The number of iris perimeter points
 %  'modelEyeLabelNames'   - Cell array of character vectors. Identifies the
