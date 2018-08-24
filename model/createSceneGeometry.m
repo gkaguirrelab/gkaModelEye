@@ -76,8 +76,15 @@ function sceneGeometry = createSceneGeometry(varargin)
 %           screen.
 %
 %      'torsion' - Scalar in units of degrees that specifies the torsional
-%           rotation of the screen relative to axial axis of the eye when the 
-%           eye is fixated upon the center of the screen.
+%           rotation of the screen relative to axial axis of the eye when
+%           the eye is fixated upon the center of the screen.
+%
+%      'R' - 2x2 matrix. This is the rotation matrix implied by the torsion
+%           value. A given eye pose p of the form [azimuth, elevation] may
+%           be converted to a fixation location f [horizontal, vertical] in
+%           degrees visual angle on the screen using:
+%
+%               f = p*R + fixationAngles(1:2)
 %
 %  'eye' - A structure that is returned by the function modelEyeParameters.
 %       The parameters define the anatomical properties of the eye. These
@@ -223,6 +230,7 @@ sceneGeometry.screenPosition.dimensions = p.Results.screenDimensions;
 sceneGeometry.screenPosition.resolutions = p.Results.screenResolutions;
 sceneGeometry.screenPosition.fixationAngles = [0 0 0];
 sceneGeometry.screenPosition.torsion = 0;
+sceneGeometry.screenPosition.R = [1 0; 0 1];
 
 %% eye
 sceneGeometry.eye = modelEyeParameters('spectralDomain',p.Results.spectralDomain,varargin{:});
