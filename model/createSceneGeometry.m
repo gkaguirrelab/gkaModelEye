@@ -58,9 +58,26 @@ function sceneGeometry = createSceneGeometry(varargin)
 %           movement properties in the azimuthal and elevational
 %           directions, and has a non circular exit pupil.
 %
-%      'primaryPosition' - A 1x2 vector of [eyeAzimuth, eyeElevation] at
-%           which the eye is in primary position (as defined by Listing*s
-%           Law) and thus has zero torsion.
+%  'screenPosition' - A structure that defines the spatial position of a
+%           screen that the eye is fixating upon. Sub-fields:
+%
+%      'distance' - Scalar in units of mm. The distance of the screen from
+%           the corneal apex when the eye is fixating the center of
+%           the screen.
+%
+%      'dimensions' - 1x2 vector in units of mm that provides the width and
+%           height of the screen
+%
+%      'resolutions' - 1x2 vector in units of pixels for the width and
+%           height.
+%
+%      'fixationAngles' - A 1x3 vector of [eyeAzimuth, eyeElevation,
+%           eyeTorsion] for which the eye is fixated upon the center of the
+%           screen.
+%
+%      'torsion' - Scalar in units of degrees that specifies the torsional
+%           rotation of the screen relative to axial axis of the eye when the 
+%           eye is fixated upon the center of the screen.
 %
 %  'eye' - A structure that is returned by the function modelEyeParameters.
 %       The parameters define the anatomical properties of the eye. These
@@ -105,9 +122,10 @@ function sceneGeometry = createSceneGeometry(varargin)
 %       that even in a noise-free simulation, it is not possible to
 %       perfectly match ellipse shape and area while matching ellipse
 %       center position, as the shape of the projection of the pupil upon
-%       the image plane deviates from perfectly elliptical. We find that a
-%       value in the range 0.01 - 0.03 provides an acceptable compromise in
-%       empirical data.
+%       the image plane deviates from perfectly elliptical. Further, in
+%       empirical data, the entrance pupil of the eye can be irregular and
+%       depart from ellipitical. We find that a value of ~0.05 provides an
+%       acceptable compromise in empirical data.
 %
 %  'meta' - A structure that contains information regarding the creation
 %       and modification of the sceneGeometry.
@@ -175,7 +193,10 @@ p.addParameter('sensorResolution',[640 480],@isnumeric);
 p.addParameter('radialDistortionVector',[0 0],@isnumeric);
 p.addParameter('cameraTranslation',[0; 0; 120],@isnumeric);
 p.addParameter('cameraTorsion',0,@isnumeric);
-p.addParameter('constraintTolerance',0.02,@isscalar);
+p.addParameter('screenDistance',1065,@isnumeric);
+p.addParameter('screenDimensions',[697.347,392.257],@isnumeric);
+p.addParameter('screenResolutions',[1920,1080],@isnumeric);
+p.addParameter('constraintTolerance',0.05,@isscalar);
 p.addParameter('surfaceSetName',{'retinaToPupil','pupilToCamera','retinaToCamera'},@ischar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
@@ -192,11 +213,16 @@ sceneGeometry.cameraIntrinsic.radialDistortion = p.Results.radialDistortionVecto
 sceneGeometry.cameraIntrinsic.sensorResolution = p.Results.sensorResolution;
 
 
-%% cameraExtrinsic
+%% cameraPosition
 sceneGeometry.cameraPosition.translation = p.Results.cameraTranslation;
 sceneGeometry.cameraPosition.torsion = p.Results.cameraTorsion;
-sceneGeometry.cameraPosition.primaryPosition = [0,0];
 
+%% screenPosition
+sceneGeometry.screenPosition.distance = p.Results.screenDistance;
+sceneGeometry.screenPosition.dimensions = p.Results.screenDimensions;
+sceneGeometry.screenPosition.resolutions = p.Results.screenResolutions;
+sceneGeometry.screenPosition.fixationAngles = [0 0 0];
+sceneGeometry.screenPosition.torsion = 0;
 
 %% eye
 sceneGeometry.eye = modelEyeParameters('spectralDomain',p.Results.spectralDomain,varargin{:});
