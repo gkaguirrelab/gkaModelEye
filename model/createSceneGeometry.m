@@ -147,7 +147,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %  'radialDistortionVector' - 1x2 vector of radial distortion parameters
 %  'cameraTranslation'    - 3x1 vector
 %  'cameraRotation'       - 1x3 vector
-%  'constraintTolerance'  - Scalar. Range 0-1. Typical value 0.01 - 0.03
+%  'constraintTolerance'  - Scalar. Range 0-1. Typical value 0.01 - 0.10
 %  'contactLens'          - Scalar or 1x2 vector, with values for the lens
 %                           refraction in diopters, and (optionally) the
 %                           index of refraction of the lens material. If
@@ -177,17 +177,7 @@ function sceneGeometry = createSceneGeometry(varargin)
     % within the routine
     sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'contactLens',-2);
 %}
-%{
-    % Create a sceneGeometry file for a myopic eye wearing spectacles
-    % of appropriate correction. Place the system under water, and imaged
-    % in the visible range
-    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2,'cameraMedium','water','spectralDomain','vis');
-    % Plot a figure that traces a ray arising from the optical axis at the
-    % pupil plane, departing at 15 degrees.
-    clear figureFlag
-    figureFlag.p1Lim = [-15 20]; figureFlag.p2Lim = [-10 10]; figureFlag.p3Lim = [-10 10];
-    rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1) 2], deg2rad(15), sceneGeometry.refraction.opticalSystem,figureFlag);
-%}
+
 
 
 %% input parser

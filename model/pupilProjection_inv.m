@@ -105,8 +105,8 @@ function [eyePose, bestMatchEllipseOnImagePlane, centerError, shapeError, areaEr
     % Recover the eye pose from the ellipse
     inverseEyePose = pupilProjection_inv(pupilEllipseOnImagePlane, sceneGeometry);
     % Report the difference between the input and recovered eyePose
-    fprintf('Test if the absolute error in the eye pose recovered by pupilProjection_inv is <1e-3\n');
-    assert(max(abs(eyePose - inverseEyePose)) < 1e-3)
+    fprintf('Test if the absolute error in the eye pose recovered by pupilProjection_inv is less than 1 percent\n');
+    assert(max(abs(eyePose - inverseEyePose)./eyePose) < 1e-2)
 %}
 %{
     %% Calculate the time required for the inverse projection
