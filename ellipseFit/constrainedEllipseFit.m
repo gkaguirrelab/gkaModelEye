@@ -70,20 +70,18 @@ p.addRequired('nonlinconst',@(x) (isempty(x) || isa(x, 'function_handle')) );
 p.parse(Xp, Yp, ub, lb, nonlinconst);
 
 
+% save the current warning status and silence anticipated warnings
+warningState = warning;
+warning('off','MATLAB:singularMatrix');
+warning('off','MATLAB:nearlySingularMatrix');
+
 %% Make an initial guess at the ellipse parameters
 % This attempt is placed in a try-catch block, as the attempt can fail and
 % return non-real numbers.
 try
-    % We sometimes obtain a singular matrix warning here; turn it
-    % off temporarily
-    warningState = warning;
-    warning('off','MATLAB:singularMatrix');
-    warning('off','MATLAB:nearlySingularMatrix');
     % use direct least squares ellipse fit to obtain an initial
     % estimate
     pInitImplicit = ellipsefit_direct(Xp,Yp);
-    % Restore the warning state
-    warning(warningState);
     % convert the initial estimate from implicit form to transparent form
     pInitTransparent = ellipse_ex2transparent(ellipse_im2ex(pInitImplicit));
     % place theta within the range of 0 to pi
@@ -91,6 +89,8 @@ try
         pInitTransparent(5) = pInitTransparent(5)+pi;
     end
 catch
+    % Restore the warning state
+    warning(warningState);
     % We couldn't find anything vaguely elliptical; return nans
     transparentEllipseParams=nan(1,5);
     RMSE=nan;
@@ -107,6 +107,8 @@ myFun = @(p) sqrt(nanmean(ellipsefit_distance(Xp,Yp,ellipse_transparent2ex(p)).^
 % If the bounds and the nonlinear constraint function are all empty, then
 % just return the initial estimate (and RMSE) obtained by direct fitting
 if isempty(ub) && isempty(lb) && isempty(nonlinconst)
+    % Restore the warning state
+    warning(warningState);
     transparentEllipseParams = pInitTransparent;
     RMSE = myFun(transparentEllipseParams);
     constraintError = nan;
@@ -129,10 +131,6 @@ options = optimoptions(@fmincon,...
     'Diagnostics','off',...
     'Display','off',...
     'DiffMinChange', 0.001);
-
-% save the current warning status and silence anticipated warnings
-warningState = warning;
-warning('off','MATLAB:nearlySingularMatrix');
 
 % Perform the non-linear search
 [transparentEllipseParams, RMSE, ~, output] = ...
