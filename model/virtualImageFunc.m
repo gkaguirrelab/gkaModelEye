@@ -19,11 +19,12 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
 %                           Azimuth, elevation, and torsion are in units of
 %                           head-centered (extrinsic) degrees. The pupil
 %                           radius value is unused by this routine.
-%   worldTarget     -       The point in world coordinates (x, y, z) that  
-%                           the ray should intersect after exiting the
-%                           optical system. A common application is to set
-%                           worldTarget equal to the nodal point of a
-%                           camera, which is found in:
+%   worldTarget     -       A 3x1 vector that specifies the point in world 
+%                           coordinates (x, y, z) that the ray should
+%                           intersect after exiting the optical system. A
+%                           common application is to set worldTarget equal
+%                           to the nodal point of a camera, which is found
+%                           in:
 %                           	sceneGeometry.cameraPosition.translation
 %   rotationCenters       - Equal to sceneGeometry.eye.rotationCenters
 %   opticalSystem         - Typically set equal to: sceneGeometry.
