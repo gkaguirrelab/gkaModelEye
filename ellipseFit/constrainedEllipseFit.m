@@ -78,6 +78,7 @@ try
     % off temporarily
     warningState = warning;
     warning('off','MATLAB:singularMatrix');
+    warning('off','MATLAB:nearlySingularMatrix');
     % use direct least squares ellipse fit to obtain an initial
     % estimate
     pInitImplicit = ellipsefit_direct(Xp,Yp);
