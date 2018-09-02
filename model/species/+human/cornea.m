@@ -35,36 +35,38 @@ function cornea = cornea( eye )
 
 
 %% Front corneal surface
-% Atchison provides parameters for a radially symmetric ellipsoid in terms
-% of the radius of curvature (R) at the vertex and its asphericity (Q). R
-% varies with spherical ametropia (D):
-%
-%   R = 7.77 + 0.022 * D
-%   Q = -0.15
-%
-% Because the asphericity of the cornea did not change, the change in R
-% corresponds to an overall scaling of the ellipsoid in all dimensions. We
-% adjust the Navarro values to account for this effect. R and Q are related
-% to the radii of an ellipse along the primary and secondy axes (a, b) by:
-%
-%   R = b^2/a
-%	Q = (b^2 / a^2) - 1
-%
-% when Q < 0. Therefore, given R and Q, we can obtain a and b, which
-% correspond to the radii of the ellipsoid model, with a corresponding to
-% the axial dimension, and b to the horizontal and vertical dimensions.
-% Checking my algebra here:
-%{
+
+if isempty(eye.meta.measuredCornealCurvature)
+    % Atchison provides parameters for a radially symmetric ellipsoid in terms
+    % of the radius of curvature (R) at the vertex and its asphericity (Q). R
+    % varies with spherical ametropia (D):
+    %
+    %   R = 7.77 + 0.022 * D
+    %   Q = -0.15
+    %
+    % Because the asphericity of the cornea did not change, the change in R
+    % corresponds to an overall scaling of the ellipsoid in all dimensions. We
+    % adjust the Navarro values to account for this effect. R and Q are related
+    % to the radii of an ellipse along the primary and secondy axes (a, b) by:
+    %
+    %   R = b^2/a
+    %	Q = (b^2 / a^2) - 1
+    %
+    % when Q < 0. Therefore, given R and Q, we can obtain a and b, which
+    % correspond to the radii of the ellipsoid model, with a corresponding to
+    % the axial dimension, and b to the horizontal and vertical dimensions.
+    % Checking my algebra here:
+    %{
     syms a b R Q
     eqn1 = R == b^2/a;
     eqn2 = Q == (b^2 / a^2) - 1;
     solution = solve([eqn1, eqn2]);
     solution.a
     solution.b
-%}
-% We calculate the change in parameters of the Navarro model that would be
-% expected given the Atchison effect for ametropia.
-%{
+    %}
+    % We calculate the change in parameters of the Navarro model that would be
+    % expected given the Atchison effect for ametropia.
+    %{
     R = @(D) 7.77 + 0.022 .* D;
     Q = -0.15;
     a = @(D) R(D) ./ (Q+1);
@@ -79,17 +81,33 @@ function cornea = cornea( eye )
     % Report the ratio of the Atchison and Navarro axial radii
     % for the front surface of the cornea; we use this below.
     atchNavScaler = a(0) ./ radiiNavFront(1)
-%}
-radii = [14.26   10.43   10.27] .* ...
-    ((eye.meta.sphericalAmetropia .* -0.0028)+1);
-S = quadric.scale(quadric.unitSphere,radii);
+    %}
+    radii = [14.26   10.43   10.27] .* ...
+        ((eye.meta.sphericalAmetropia .* -0.0028)+1);
+    S = quadric.scale(quadric.unitSphere,radii);    
+else
+    % If a measured value is provided, use it here to calculate the parameters
+    % of the ellipsoidal surface. We set the axial length of the corneal
+    % ellipsoid equal to the value provided by Navarro 2006.
+    radii(1) = 14.26;
+    % Formula to convert Diopters to radius of curvature in mm
+    RoC = @(D) 1000.*(1.3375-1)./D;
+    % The horizontal and vertical radii are derived from the passed values
+    radii(2:3) = sqrt(radii(1).*RoC(eye.meta.measuredCornealCurvature(1:2)));
+    % Create the quadric
+    S = quadric.scale(quadric.unitSphere,radii);
+    % Apply a torsional rotation to the ellipse if requested
+    if length(eye.meta.measuredCornealCurvature)==3
+        S = quadric.rotate(S,[eye.meta.measuredCornealCurvature(3) 0 0]);
+    end
+end
 
 % Rotate the quadric surface towards the nasal field
 switch eye.meta.eyeLaterality
     case 'Right'
-        S = quadric.rotate(S,[ 0 0 181.5 ]);
+        S = quadric.rotate(S,[ 0 0 1.5 ]);
     case 'Left'
-        S = quadric.rotate(S,[ 0 0 -181.5 ]);
+        S = quadric.rotate(S,[ 0 0 -1.5 ]);
     otherwise
         error('eye laterality not defined')
 end
