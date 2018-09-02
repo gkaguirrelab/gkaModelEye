@@ -41,6 +41,18 @@ function eye = modelEyeParameters( varargin )
 %  'accommodationDiopeters' - Scalar that supplies the accommodation state
 %                           of the eye. Valid values range from zero
 %                           (unaccommodated) to +10.
+%  'measuredCornealCurvature' - 1x2 or 1x3 vector. Provides the horizontal 
+%                           and vertical curvature of the cornea (diopters;
+%                           K1 and K2). The third value is the rotation of
+%                           the "horizontal" axis away from horizontal in
+%                           degrees to allow specification of oblique
+%                           asigmatism. Only the modeling of regular
+%                           corneal astigmatism is supported. In subsequent
+%                           routines the curvature in diopters is converted
+%                           to a radius of curvature in mm using:
+%                               r = 1000*(1.3375-1)/K
+%                           If left undefined, the "canonical" Navarro 2006
+%                           corneal parameters will be used.
 %  'spectralDomain'       - String, options include {'vis','nir'}.
 %                           This is the wavelength domain within which
 %                           imaging is being performed. The refractive
@@ -75,6 +87,7 @@ p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
 p.addParameter('ageYears',20,@isscalar);
 p.addParameter('accommodationDiopeters',0,@isscalar);
+p.addParameter('measuredCornealCurvature',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('spectralDomain','nir',@ischar);
 p.addParameter('skipEyeAxes',false,@islogical);
 
@@ -121,7 +134,7 @@ if ~isempty(p.Results.sphericalAmetropia) && ~isempty(p.Results.axialLength)
     notes = 'Ignoring axial length and using provided spherical refractive error';
 end
 
-% Meta data regarding the units of the model
+% Meta data regarding properties of the model
 eye.meta.p = p.Results;
 eye.meta.units = 'mm';
 eye.meta.coordinates = 'eyeWorld';
@@ -131,6 +144,7 @@ eye.meta.sphericalAmetropia = sphericalAmetropia;
 eye.meta.species = p.Results.species;
 eye.meta.ageYears = p.Results.ageYears;
 eye.meta.accommodationDiopeters = p.Results.accommodationDiopeters;
+eye.meta.measuredCornealCurvature = p.Results.measuredCornealCurvature;
 eye.meta.spectralDomain = p.Results.spectralDomain;
 eye.meta.notes = notes;
 
