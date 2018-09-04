@@ -74,6 +74,8 @@ p.parse(Xp, Yp, ub, lb, nonlinconst);
 warningState = warning;
 warning('off','MATLAB:singularMatrix');
 warning('off','MATLAB:nearlySingularMatrix');
+warning('off','MATLAB:illConditionedMatrix');
+
 
 %% Make an initial guess at the ellipse parameters
 % This attempt is placed in a try-catch block, as the attempt can fail and
