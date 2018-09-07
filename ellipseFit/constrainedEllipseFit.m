@@ -104,7 +104,7 @@ end
 %% Define the objective function
 % This is the RMSE of the distance values of the boundary points to the
 % ellipse fit
-myFun = @(p) sqrt(nanmean(ellipsefit_distance(Xp,Yp,ellipse_transparent2ex(p)).^2));
+myFun = @(p) rmsePerimeterFit(Xp,Yp,p);
 
 % If the bounds and the nonlinear constraint function are all empty, then
 % just return the initial estimate (and RMSE) obtained by direct fitting
@@ -163,4 +163,17 @@ end
 warning(warningState);
 
 end % function -- constrainedEllipseFit
+
+
+%%%% LOCAL FUNCTION
+function fval = rmsePerimeterFit(Xp,Yp,p)
+
+% The ellipse fit distance can occasionally fail. We place it in a
+% try-catch block and return realmax for the error if the fit fails
+try
+    fval = sqrt(nanmean(ellipsefit_distance(Xp,Yp,ellipse_transparent2ex(p)).^2));
+catch
+    fval = realmax;
+end
+end
 
