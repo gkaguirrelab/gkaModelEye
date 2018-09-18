@@ -66,8 +66,8 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
     % Prepare a figure
-    modelEyeLabelNames = {'pupilPerimeterBack_hidden' 'pupilPerimeterBack' 'pupilEllipse' 'pupilPerimeterFront_hidden' 'pupilPerimeterFront'};
-	modelEyePlotColors = {'xr' '*r' '-y' 'xg' '*g'};    
+    modelEyeLabelNames = {'pupilPerimeterBack_hidden' 'pupilPerimeterBack' 'pupilEllipse' 'pupilPerimeterFront_hidden' 'pupilPerimeterFront' 'pupilPerimeter'};
+	modelEyePlotColors = {'xr' '*r' '-y' 'xg' '*g' '*g'};    
     renderEyePose([0 0 0 2], sceneGeometry,'modelEyeLabelNames',modelEyeLabelNames,'modelEyePlotColors',modelEyePlotColors);
     for azi = -35:35:35
         for ele = -35:35:35
@@ -121,8 +121,8 @@ p.addParameter('showAzimuthPlane',false,@islogical);
 p.addParameter('nPupilPerimPoints',8,@isscalar);
 p.addParameter('nIrisPerimPoints',20,@isscalar);
 p.addParameter('modelIrisThickness',false,@islogical);
-p.addParameter('modelEyeLabelNames', {'aziRotationCenter', 'eleRotationCenter', 'retina' 'irisPerimeter' 'pupilPerimeterBack' 'pupilPerimeter' 'pupilEllipse' 'pupilPerimeterFront' 'cornea' 'cornealApex'}, @iscell);
-p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '*g' '*g' '-g' '*g' '.y' '*y'}, @iscell);
+p.addParameter('modelEyeLabelNames', {'aziRotationCenter' 'eleRotationCenter', 'retina' 'irisPerimeter' 'pupilPerimeterBack' 'pupilPerimeter' 'pupilEllipse' 'pupilPerimeterFront' 'pupilPerimeter' 'cornea' 'cornealApex'}, @iscell);
+p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '*g' '*g' '-g' '*g' '*g' '.y' '*y'}, @iscell);
 p.addParameter('modelEyeAlpha',1,@isnumeric);
 p.addParameter('modelEyeSymbolSizeScaler',1,@isnumeric);
 
