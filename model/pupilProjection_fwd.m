@@ -227,7 +227,7 @@ pupilApertureEllipse = [sceneGeometry.eye.pupil.center(2) , ...
 
 % Place these points into the eyeWorld coordinates. Optionally create
 % separate front and back pupil perimeters to model iris thickness.
-if p.Results.modelIrisThickness
+if p.Results.modelIrisThickness && sceneGeometry.eye.iris.thickness~=0
     pupilPoints(1:nPupilPerimPoints*2,3) = [p3p; p3p];
     pupilPoints(1:nPupilPerimPoints*2,2) = [p2p; p2p];
     pupilPoints(1:nPupilPerimPoints,1) = sceneGeometry.eye.pupil.center(1)+sceneGeometry.eye.iris.thickness/2;
@@ -544,7 +544,7 @@ imagePoints = (imagePointsNormalizedDistorted .* [sceneGeometry.cameraIntrinsic.
 %% Obtain the pupil ellipse
 % Proceed with fitting if we have a non-zero pupil radius
 if eyePose(4) > 0
-    if ~p.Results.modelIrisThickness
+    if ~p.Results.modelIrisThickness || sceneGeometry.eye.iris.thickness==0
         % The simple case of a zero-thickness pupil aperture
         pupilPerimIdx = strcmp(pointLabels,'pupilPerimeter');
         [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
