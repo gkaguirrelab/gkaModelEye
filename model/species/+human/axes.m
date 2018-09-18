@@ -109,7 +109,7 @@ axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
 % to determine across studies. As a practical matter, I set the horizontal
 % kappa value following the expression given in Figure 8 of Mathur 2013:
 %
-%   kappa(SR) = kappa0 - 0.105 * SR
+%   kappa(SR) = kappa0 + 0.105 * SR
 %
 % where SR is spherical refractive error in diopters and kappa0 is the
 % kappa value for an emmetropic eye. Effectively, the kappa value changes
@@ -141,7 +141,7 @@ axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
 %
 k0 = [5.8 3.0 0];
 v = 0.105;
-kappa = @(SR) k0 - (SR.*v);
+kappa = @(SR) k0 + (SR.*v);
 axes.visual.degField = kappa(eye.meta.sphericalAmetropia);
 switch eye.meta.eyeLaterality
     case 'Right'
