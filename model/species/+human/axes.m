@@ -86,8 +86,9 @@ axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
 
 %% visual axis
 % Set the desired angle in degrees of visual field between the optical and
-% visual axes of the eye (effectively, kappa). Kappa is found to vary by
-% spherical ametropia:
+% visual axes of the eye (the angle alpha). Alpha (and the related value
+% kappa: the angle between the visual and pupillary axes) is found to vary
+% by spherical ametropia:
 %
 %   Hashemi, Hassan, et al. "Distribution of angle kappa measurements with
 %   Orbscan II in a population-based survey." Journal of Refractive Surgery
@@ -104,16 +105,16 @@ axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
 %   viewed along the horizontal visual field." Journal of vision 13.6
 %   (2013): 3-3.
 %
-% In each case, there appears to be a roughly linear decrease in kappa with
+% In each case, there appears to be a roughly linear decrease in alpha with
 % more negative spherical ametropia. The precise form of this is difficult
 % to determine across studies. As a practical matter, I set the horizontal
-% kappa value following the expression given in Figure 8 of Mathur 2013:
+% alpha value following the expression given in Figure 8 of Mathur 2013:
 %
-%   kappa(SR) = kappa0 + 0.105 * SR
+%   alpha(SR) = alpha + 0.105 * SR
 %
-% where SR is spherical refractive error in diopters and kappa0 is the
-% kappa value for an emmetropic eye. Effectively, the kappa value changes
-% by ~10% for each unit change in SR. The kappa0 value is 5.8, which is
+% where SR is spherical refractive error in diopters and alpha0 is the
+% alpha value for an emmetropic eye. Effectively, the alpha value changes
+% by ~10% for each unit change in SR. The alpha0 value is 5.8, which is
 % both the value given by Mathur 2013 and the median kappa value found in
 % emmetropes in Hashemi 2010.
 %{
@@ -122,7 +123,7 @@ axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
     % Convert axial length in taberneroData to SR
     ametropiaFromLength = @(x) (23.58 - x)./0.299;
     taberneroData(1,:) = ametropiaFromLength(taberneroData(1,:));
-    % Obtain the mean emmetropic kappa
+    % Obtain the mean emmetropic alpha
     fo = fitoptions('Method','NonlinearLeastSquares');
     k0=median(hashemiData(2,logical((hashemiData(1,:)>-0.5).*(hashemiData(1,:)<0.5))))
     expFunc = fittype( @(v,n,x) k0 .* ((x-v)./(-v)).^n,'independent','x','dependent','y','options',fo);
@@ -136,13 +137,13 @@ axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
     plot(taberneroData(1,:),taberneroData(2,:),'ob');
     plot(expFit.v:0.1:10,expFit(expFit.v:0.1:10),'-k')
 %}
-% For the vertical kappa, I assume an elevation of 3 degrees in the
+% For the vertical alpha, I assume an elevation of 3 degrees in the
 % emmetropic eye.
 %
-k0 = [5.8 3.0 0];
+a0 = [5.8 3.0 0];
 v = 0.105;
-kappa = @(SR) k0 + (SR.*v);
-axes.visual.degField = kappa(eye.meta.sphericalAmetropia);
+alpha = @(SR) a0 + (SR.*v);
+axes.visual.degField = alpha(eye.meta.sphericalAmetropia);
 switch eye.meta.eyeLaterality
     case 'Right'
         % No change needed

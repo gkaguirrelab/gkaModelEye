@@ -12,7 +12,7 @@ function iris = iris( eye )
 %   the front or back surface of the iris aperture defines the near or far
 %   edge of the entrance pupil.
 %
-%   I position the anterior surface of the iris at a depth of 3.925 mm,
+%   I position the anterior surface of the iris at a depth of 3.9 mm,
 %   which reflects a cycloplegic eye. I model the eye with zero iris angle,
 %   thus making the iris a plane. We adjust the position of the iris so
 %   that it is centered within the rotated corneal ellipse. This is
@@ -36,17 +36,16 @@ function iris = iris( eye )
 %
 
 
-% This value obtained by fitting to the Mathur 2013 measurements of the
-% appearance of the entrance pupil.
-iris.thickness = 0.025;
+% The model supports specification of a non-zero iris thickness. This was
+% not found to improve the estimation of the appearance of the entrance
+% pupil, however, so this is set to zero.
+iris.thickness = 0.0;
 
 switch eye.meta.eyeLaterality
     case 'Right'
-%        iris.center = [-4+iris.thickness/2 0.35 0.35];
-        iris.center = [-4+iris.thickness/2 0 0];
+        iris.center = [-3.9 0 0];
     case 'Left'
-%        iris.center = [-4+iris.thickness/2 -0.35 0.35];
-        iris.center = [-4+iris.thickness/2 0 0];
+        iris.center = [-3.9 0 0];
 end
 
 % Define the iris radius. One study measured the horizontal visible iris
