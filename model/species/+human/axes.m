@@ -105,17 +105,20 @@ axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
 %   viewed along the horizontal visual field." Journal of vision 13.6
 %   (2013): 3-3.
 %
-% In each case, there appears to be a roughly linear decrease in alpha with
-% more negative spherical ametropia. The precise form of this is difficult
-% to determine across studies. As a practical matter, I set the horizontal
-% alpha value following the expression given in Figure 8 of Mathur 2013:
+% In each case, there is monotonic decrease in alpha with more negative
+% spherical ametropia. The precise form of this is difficult to determine
+% across studies. As a practical matter, I set the horizontal alpha value
+% following the approach given in Figure 14 of Tabernero:
 %
-%   alpha(SR) = alpha + 0.105 * SR
+%{
+    alpha0 = 5.8;
+    L = @(SR) 16.5 / (16.5 - 0.299*SR );
+    taberneroAlpha = @(SR) atand(L(SR)*tand(alpha0));
+%}
 %
 % where SR is spherical refractive error in diopters and alpha0 is the
-% alpha value for an emmetropic eye. Effectively, the alpha value changes
-% by ~10% for each unit change in SR. The alpha0 value is 5.8, which is
-% both the value given by Mathur 2013 and the median kappa value found in
+% alpha value for an emmetropic eye. The alpha0 value is 5.8, which is both
+% the value given by Mathur 2013 and the median kappa value found in
 % emmetropes in Hashemi 2010.
 %{
     hashemiData = [6.75 5.75 4.38 4 3.88 3.75 3.38 3.13 3.13 2.88 2.63 2.63 2.5 2.38 2.25 2.25 2.25 2.13 2.13 1.88 1.88 1.75 1.75 1.75 1.63 1.63 1.63 1.63 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.38 1.38 1.38 1.38 1.38 1.38 1.38 1.38 1.25 1.25 1.25 1.25 1.25 1.25 1.13 1.13 1.13 1.13 1.13 1.13 1.13 1.13 1.13 1.13 1.13 1 1 1 1 1 1 1 1 1 1 0.88 0.88 0.88 0.88 0.88 0.88 0.88 0.88 0.88 0.88 0.88 0.88 0.88 0.75 0.75 0.75 0.75 0.75 0.75 0.75 0.75 0.75 0.75 0.75 0.75 0.75 0.75 0.75 0.75 0.75 0.75 0.75 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.63 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.38 0.38 0.38 0.38 0.38 0.38 0.38 0.38 0.38 0.38 0.38 0.38 0.38 0.38 0.38 0.38 0.38 0.38 0.38 0.38 0.38 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.13 0.13 0.13 0.13 0.13 0.13 0.13 0.13 0.13 0.13 0.13 0.13 0 0 0 0 0 0 0 0 -0.13 -0.13 -0.13 -0.13 -0.25 -0.25 -0.25 -0.25 -0.25 -0.25 -0.37 -0.38 -0.38 -0.5 -0.5 -0.5 -0.5 -0.5 -0.5 -0.63 -0.63 -0.63 -0.75 -0.75 -0.75 -0.75 -0.75 -0.75 -0.75 -0.88 -0.88 -0.88 -0.88 -0.88 -0.88 -0.88 -0.88 -0.94 -1 -1 -1.13 -1.13 -1.25 -1.25 -1.25 -1.25 -1.38 -1.38 -1.5 -1.5 -1.5 -1.75 -1.88 -1.88 -2 -2.13 -2.63 -2.75 -2.75 -2.88 -3.13 -3.25 -3.25 -3.38 -3.75 -3.88 -3.88 -4.13 -4.13 -4.88 -5.25 -5.25 -5.38 -5.5 -6.13 -6.63 -8.13 -8.63 -9.25 -15.38; 8.29 3.09 5.38 6.83 7.15 4.69 4.06 4.1 7.76 4.87 5.05 3.36 6.12 5.11 7.14 4.58 5.33 5.75 5.3 6.85 4.79 4.08 3.66 6.55 5.5 4.82 5.02 4.83 5.09 7.66 3.84 6.09 6.4 4.99 6.31 3.22 5.81 7.11 4.24 5.54 2.1 6.88 4.52 4.18 6.96 6.58 5.56 6.34 6.18 4.86 5.43 5.82 6.14 6.48 6.06 6.11 4.17 5.29 6.68 6.08 6.28 7.13 5.85 7.04 3.7 7.31 5.54 5.11 4.78 6.04 5.9 8.06 6.88 3.32 3.32 4.14 5.54 4.68 5.13 5.36 6.41 5.29 5.63 3.04 3.96 5.92 5.73 5.3 6.19 4.42 4.94 6.49 5.72 4.74 4.57 3.46 6.07 4.91 5.2 5.5 4.5 6.98 5.73 10.75 6.79 5.82 2.71 3.49 7.84 5.9 4.78 2.71 4.93 6.52 5.95 5.21 5.23 4.87 5.59 6.04 6.77 5.67 5.47 5.26 4.49 3.78 6.7 5.36 6.14 7.4 5.14 5.79 4.04 5.95 6.69 4.7 7.52 6.73 5.83 5.81 5.43 6.65 6.49 5.63 5.24 3.97 5.96 6.19 7.67 6.26 7.69 5.83 6.05 5.47 6.41 3.72 5.41 4.43 7.02 5.51 4.31 5.69 6 6.07 4.76 8.27 5.23 4.56 5.85 7.39 6.15 4.9 6.1 5.63 6.13 6.49 6.19 6.31 5.34 6.36 4.42 6.86 5.98 6.63 3.19 4.56 4.81 9.1 4.96 5.57 4 5.8 6.26 4.87 6.49 3.58 4.38 5.71 6.86 4.98 5.18 5.51 6.86 5.5 5.79 5.97 7.06 5.45 6.5 4.96 6.27 4.43 4.78 7.09 5.66 4.88 3.5 6.18 3.49 6.24 5.6 5.69 5.69 7.18 4.81 5.87 5.88 7.65 5.27 7.15 4.66 5.95 5.88 5.74 6.99 5.49 4.01 7.02 4.55 6.07 4.2 4.88 4.54 6.62 7.71 5.57 5.48 1.11 5.11 6.43 6.68 6.19 3.73 7.88 4.49 5.42 5.18 5.92 4.75 6.03 4.58 6.61 6.04 2.94 2.35 4.06 3.48 3.86 4.16 5.4 6.65 3.92 5.2 3.3 3.97 0.94 2.1 5.08 2.37];
@@ -141,8 +144,8 @@ axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
 % emmetropic eye.
 %
 a0 = [5.8 3.0 0];
-v = 0.105;
-alpha = @(SR) a0 + (SR.*v);
+L = @(SR) 16.5 / (16.5 - 0.299*SR );
+alpha = @(SR) atand(L(SR).*tand(a0));
 axes.visual.degField = alpha(eye.meta.sphericalAmetropia);
 switch eye.meta.eyeLaterality
     case 'Right'
