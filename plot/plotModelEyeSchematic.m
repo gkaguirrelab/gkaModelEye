@@ -14,7 +14,7 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %
 % Optional key/value pairs:
 %  'view'                 - String. The view to display. Valid choices
-%                           include {'axial','sagittal'};
+%                           include {'horizontal','vertical'};
 %  'newFigure'            - Logical. Determines if we create a new figure.
 %  'plotColor'            - String. Matlab line spec code for line color,
 %                           e.g., {'k','r','b'};
@@ -25,29 +25,29 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %
 % Examples:
 %{
-    % Basic call for an axial view plot
+    % Basic call for an horizontal view plot
     eye = modelEyeParameters;
     plotModelEyeSchematic(eye);
 %}
 %{
-    % Basic call for an sagittal view plot
+    % Basic call for an vertical view plot
     eye = modelEyeParameters;
-    plotModelEyeSchematic(eye,'view','sag');
+    plotModelEyeSchematic(eye,'view','vert');
 %}
 %{
-    % Two panel plot with axial and sagittal views for eyes with 0 and -10
+    % Two panel plot with horizontal and vertical views for eyes with 0 and -10
     % spherical ametropia
     figure
     subplot(2,1,1)
     eye = modelEyeParameters('sphericalAmetropia',0);
-    plotModelEyeSchematic(eye,'view','axial','newFigure',false,'plotColor','k')
+    plotModelEyeSchematic(eye,'view','horizontal','newFigure',false,'plotColor','k')
     eye = modelEyeParameters('sphericalAmetropia',-10);
-    plotModelEyeSchematic(eye,'view','axial','newFigure',false,'plotColor','r')
+    plotModelEyeSchematic(eye,'view','horizontal','newFigure',false,'plotColor','r')
     subplot(2,1,2)
     eye = modelEyeParameters('sphericalAmetropia',0);
-    plotModelEyeSchematic(eye,'view','sagittal','newFigure',false,'plotColor','k')
+    plotModelEyeSchematic(eye,'view','vertical','newFigure',false,'plotColor','k')
     eye = modelEyeParameters('sphericalAmetropia',-10);
-    plotModelEyeSchematic(eye,'view','sagittal','newFigure',false,'plotColor','r')
+    plotModelEyeSchematic(eye,'view','vertical','newFigure',false,'plotColor','r')
 %}
 
 %% input parser
@@ -57,7 +57,7 @@ p = inputParser; p.KeepUnmatched = true;
 p.addRequired('eye',@isstruct);
 
 % Optional
-p.addParameter('view','axial',@ischar);
+p.addParameter('view','horizontal',@ischar);
 p.addParameter('newFigure',true,@islogical);
 p.addParameter('plotColor','k',@ischar);
 
@@ -78,7 +78,7 @@ switch p.Results.view
         SdimA = 3;
         SdimB = 1;
         rotationField = 'azi';
-        titleString = 'Axial';
+        titleString = 'Horizontal';
         yLabelString = 'temporal <----> nasal';
         xLabelString = 'posterior <----> anterior';
     case {'sagittal','Sagittal','Sag','sag','Vertical','vertical','vert'}
@@ -87,7 +87,7 @@ switch p.Results.view
         SdimA = 3;
         SdimB = 2;
         rotationField = 'ele';
-        titleString = 'Sagittal';
+        titleString = 'Vertical';
         yLabelString = 'inferior <----> superior';
         xLabelString = 'posterior <----> anterior';
     otherwise
@@ -119,14 +119,22 @@ plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColo
 
 %% Plot the visual axis
 % Obtain the rayPath through the optical system from the fovea to cornea
-[~, rayPath] = rayTraceQuadrics(eye.axes.visual.initialRay, assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera','cameraMedium','air' ));
+[outputRay, rayPath] = rayTraceQuadrics(eye.axes.visual.initialRay, assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera','cameraMedium','air' ));
 plot(rayPath(PdimA,:),rayPath(PdimB,:),[':' p.Results.plotColor]);
+p1=outputRay(:,1);
+p2=p1+outputRay(:,2).*3;
+r = [p1 p2];
+plot(r(PdimA,:),r(PdimB,:),[':' p.Results.plotColor]);
+
 
 %% Plot the blind spot axis
 % Obtain the rayPath through the optical system from the opticDisc to cornea
-[~, rayPath] = rayTraceQuadrics(eye.axes.opticDisc.initialRay, assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera','cameraMedium','air' ));
+[outputRay, rayPath] = rayTraceQuadrics(eye.axes.opticDisc.initialRay, assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera','cameraMedium','air' ));
 plot(rayPath(PdimA,:),rayPath(PdimB,:),[':' p.Results.plotColor]);
-
+p1=outputRay(:,1);
+p2=p1+outputRay(:,2).*3;
+r = [p1 p2];
+plot(r(PdimA,:),r(PdimB,:),[':' p.Results.plotColor]);
 
 %% Reference axis
 xRange = xlim;
@@ -142,10 +150,10 @@ end
 function plotConicSection(S,plane,colorCode,boundingBox)
     F = quadric.vecToFunc(S);
     switch plane
-        case 'Axial'
+        case 'Horizontal'
             fh = @(x,y) F(x,y,0);
             rangeVec = boundingBox([1 2 3 4]);
-        case 'Sagittal'
+        case 'Vertical'
             fh = @(x,y) F(x,0,y);
             rangeVec = boundingBox([1 2 5 6]);
         case 'Coronal'
