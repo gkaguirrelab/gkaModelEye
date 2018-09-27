@@ -1,8 +1,8 @@
-function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLabels, nodalPointIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
+function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLabels, cameraIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
 % Obtain the parameters of the entrance pupil ellipse on the image plane
 %
 % Syntax:
-%  [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLabels, nodalPointIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
+%  [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLabels, cameraIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
 %
 % Description:
 %   Given the sceneGeometry, this routine simulates a pupil aperture in a
@@ -46,14 +46,12 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %                           of 5 is required to uniquely specify the image
 %                           ellipse, and 6 to obtain a meaningful
 %                           pupilFitError.
-%  'modelIrisThickness'   - Logical. If set to true, the front and back
-%                           perimeter of the pupil aperture is modeled and
-%                           used to define the visible entrance pupil. By
-%                           default set to false, as this model component
-%                           is not needed to replicate empirical pupil
-%                           measurements.
 %  'pupilPerimPhase'      - Scalar. The phase (in radians) of the position
 %                           of the pupil perimeter points.
+%  'rayTraceErrorThreshold' - Scalar. Pupil perimeter points that have
+%                           a ray trace error above this threshold will not
+%                           be used in the calculation of the pupil
+%                           ellipse.
 %  'nIrisPerimPoints'     - Scalar. The number of points that are 
 %                           distributed around the iris circle.
 %  'corneaMeshDensity'    - Scalar. The number of geodetic lines used to 
@@ -91,11 +89,11 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %                           'eleRotationCenter', 'retina',
 %                           'irisPerimeter', 'pupilPerimeter',
 %                           'cornea','cornealApex'}.
-%   nodalPointIntersectError - A nx1 vector that contains the distance (in
-%                           mm) between the nodal point of the camera and
-%                           the intersection of a ray on the camera plane.
-%                           The value is nan for points not subject to
-%                           refraction by the cornea. All values will be
+%   cameraIntersectError -  A nx1 vector that contains the distance (in
+%                           mm) between the pinhole aperture of the camera
+%                           and the intersection of a ray on the camera
+%                           plane. The value is nan for points not subject
+%                           to refraction by the cornea. All values will be
 %                           nan if sceneGeometry.refraction is empty.
 %   pupilFitError         - The RMSE distance (in pixels) of the pupil
 %                           perimeter points to the pupil ellipse.
@@ -160,8 +158,8 @@ p.addRequired('sceneGeometry',@isstruct);
 % Optional
 p.addParameter('fullEyeModelFlag',false,@islogical);
 p.addParameter('nPupilPerimPoints',5,@(x)(isscalar(x) && x>4));
-p.addParameter('modelIrisThickness',false,@islogical);
 p.addParameter('pupilPerimPhase',0,@isscalar);
+p.addParameter('rayTraceErrorThreshold',0.01,@isscalar);
 p.addParameter('nIrisPerimPoints',5,@isscalar);
 p.addParameter('corneaMeshDensity',23,@isscalar);
 p.addParameter('retinaMeshDensity',30,@isscalar);
@@ -227,7 +225,7 @@ pupilApertureEllipse = [sceneGeometry.eye.pupil.center(2) , ...
 
 % Place these points into the eyeWorld coordinates. Optionally create
 % separate front and back pupil perimeters to model iris thickness.
-if p.Results.modelIrisThickness && sceneGeometry.eye.iris.thickness~=0
+if sceneGeometry.eye.iris.thickness~=0
     pupilPoints(1:nPupilPerimPoints*2,3) = [p3p; p3p];
     pupilPoints(1:nPupilPerimPoints*2,2) = [p2p; p2p];
     pupilPoints(1:nPupilPerimPoints,1) = sceneGeometry.eye.pupil.center(1)+sceneGeometry.eye.iris.thickness/2;
@@ -347,7 +345,7 @@ end
 % refraction upon the appearance of points from the eye.
 
 % Define a variable to hold the calculated ray tracing errors
-nodalPointIntersectError = nan(length(pointLabels),1);
+cameraIntersectError = nan(length(pointLabels),1);
 
 % If we have a refraction field, proceed
 if isfield(sceneGeometry,'refraction')
@@ -379,7 +377,7 @@ if isfield(sceneGeometry,'refraction')
             [virtualImageRay, ~, intersectError] = ...
                 p.Results.refractionHandle(eyePoint, eyePose, args{:});
             eyePoints(refractPointsIdx(ii),:) = virtualImageRay(1,:);
-            nodalPointIntersectError(refractPointsIdx(ii)) = intersectError;
+            cameraIntersectError(refractPointsIdx(ii)) = intersectError;
         end
     end
 end
@@ -544,9 +542,14 @@ imagePoints = (imagePointsNormalizedDistorted .* [sceneGeometry.cameraIntrinsic.
 %% Obtain the pupil ellipse
 % Proceed with fitting if we have a non-zero pupil radius
 if eyePose(4) > 0
-    if ~p.Results.modelIrisThickness || sceneGeometry.eye.iris.thickness==0
+    if sceneGeometry.eye.iris.thickness==0
         % The simple case of a zero-thickness pupil aperture
         pupilPerimIdx = strcmp(pointLabels,'pupilPerimeter');
+        if ~all(isnan(cameraIntersectError(pupilPerimIdx)))
+            % Remove those pupil perimeter points that have had poor ray
+            % tracing
+            pupilPerimIdx = logical(pupilPerimIdx.*(cameraIntersectError<p.Results.rayTraceErrorThreshold));
+        end
         [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
     else
         % The more complicated case of a non-zero thickness pupil aperture.
@@ -575,6 +578,11 @@ if eyePose(4) > 0
             % Fit an ellipse to the non-hidden pupil perimeter points
             pupilPerimIdx = logical(strcmp(pointLabels,{'pupilPerimeterFront'}) + ...
                 strcmp(pointLabels,{'pupilPerimeterBack'}));
+            if ~all(isnan(cameraIntersectError(pupilPerimIdx)))
+                % Remove those pupil perimeter points that have had poor ray
+                % tracing
+                pupilPerimIdx = logical(pupilPerimIdx.*(cameraIntersectError<p.Results.rayTraceErrorThreshold));
+            end
             [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
         end
     end
