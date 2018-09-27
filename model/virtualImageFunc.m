@@ -23,8 +23,8 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
 %                           coordinates (x, y, z) that the ray should
 %                           intersect after exiting the optical system. A
 %                           common application is to set worldTarget equal
-%                           to the nodal point of a camera, which is found
-%                           in:
+%                           to the location of the pinhole aperture of a
+%                           camera, which is found in:
 %                           	sceneGeometry.cameraPosition.translation
 %   rotationCenters       - Equal to sceneGeometry.eye.rotationCenters
 %   opticalSystem         - Typically set equal to: sceneGeometry.
@@ -74,7 +74,7 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
     figure
     plot(sqrt(eyePoses(:,1).^2+eyePoses(:,2).^2),median(targetIntersectError),'.r')
     xlabel('Euclidean rotation distance [deg]');
-    ylabel('Ray trace nodal error [mm]');
+    ylabel('Ray trace camera intersection error [mm]');
 %}
 
 
@@ -90,7 +90,7 @@ initialRay = nan(2,3);
 targetIntersectError = Inf;
 
 % Set some parameters for the search
-nodalErrorTolerance = 1e-4;
+intersectErrorTolerance = 1e-4;
 searchIterTolerance = 6;
 searchIter = 0;
 searchingFlag = true;
@@ -105,7 +105,7 @@ angle_p1p3 = -deg2rad(angle_p1p3);
 
 % Set fminsearch options to tolerate an error of 1e-2, and to make changes
 % in theta as small as 1e-6.
-TolFun = 1e-2; % nodal point intersection error to tolerate
+TolFun = 1e-2; % intersection error to tolerate
 TolX = 1e-6; % precision with which theta is estimated
 options = optimset('TolFun',TolFun,'TolX',TolX);
 
@@ -158,7 +158,7 @@ while searchingFlag
     searchIter = searchIter+1;
 
     % Determine if we have met a stopping criterion
-    if targetIntersectError<nodalErrorTolerance || searchIter>searchIterTolerance
+    if targetIntersectError<intersectErrorTolerance || searchIter>searchIterTolerance
         searchingFlag = false;
     end
 end
@@ -207,9 +207,9 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 %
 %   This function is used to find angles in the p1p2 and p1p3 planes that
 %   minimize the distance between the intersection point of the ray in the
-%   camera plane and the nodal point of the camera. At a distance of zero,
-%   the ray would enter the pinhole aperture of the camera and thus produce
-%   a point on the resulting image.
+%   camera plane and the pinhole aperture of a camera. At a distance of
+%   zero, the ray would enter the pinhole aperture of the camera and thus
+%   produce a point on the resulting image.
 %
 % Inputs:
 %   eyePoint
