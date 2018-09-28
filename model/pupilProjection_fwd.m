@@ -633,7 +633,7 @@ else
         pupilEllipseOnImagePlane=nan(1,5);
         pupilFitError = nan;
         switch ME.identifier
-            case {'MATLAB:badsubscript','MATLAB:realsqrt:complexResult','MATLAB:expectedReal','MATLAB:quad2dproj:expectedFinite'}
+            case {'MATLAB:badsubscript','MATLAB:realsqrt:complexResult','MATLAB:expectedReal','MATLAB:quad2dproj:expectedFinite','MATLAB:eig:matrixWithNaNInf'}
                 warning('pupilProjection_fwd:ellipseFitFailed','Could not fit a valid ellipse to the pupil points; returning nans.');
             otherwise
                 ME.identifier
