@@ -5,5 +5,5 @@ If you need to compile the mex function for your system, issue the command `comp
 
 The compiled function is placed by default in the directory that contains `compileVirtualImageFunc`, which should be:
 ```
-gkaModelEye\bin
+gkaModelEye/bin
 ```
