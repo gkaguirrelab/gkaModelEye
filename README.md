@@ -8,11 +8,11 @@
 </p>
 
 
-These routines implement a ray-traced model eye in MATLAB. One application of the model is to specify the location of retinal landmarks (fovea, optic disc) in eyes of varying spherical refractive error. A related result is the map of visual field assignment across the retinal surface. A second application is to describe the appearance of the entrance pupil in the image plane for a rotated eye. The entrance pupil is described by the parameters of an ellipse fit to the pupil perimeter, and those parameters are given in "transparent" form (center x, center y, area, non-linear eccentricity, tilt).
+These routines implement a ray-traced model eye in MATLAB. One application of the model is to specify the location of retinal landmarks (fovea, optic disc) and visual field assignment in eyes of varying spherical refractive error. A second application is to describe the appearance of the entrance pupil in the image plane for a rotated eye. The entrance pupil is described by the parameters of an ellipse fit to the pupil perimeter, and those parameters are given in "transparent" form (center x, center y, area, non-linear eccentricity, tilt).
 
 The model is described in:
 
- * GK Aguirre (2018) [The Entrance Pupil of the Human Eye](https://www.biorxiv.org/content/early/2018/05/18/325548). bioRxiv.
+ * GK Aguirre (2018) [A Model of the Entrance Pupil of the Human Eye](http://biorxiv.org/cgi/content/short/325548v2). bioRxiv.
 
 The anatomical properties of the eye are described in a set of routines that account for variation in biometric properties as a function of variation in spherical refractive error (ametropia). Ray tracing through the optical components of the eye (and any artificial lenses) is implemented as skew rays through generalized quadric surfaces. The routine `virtualImageFunc.m` calculates the effect of refraction, making use of calls to `rayTraceQuadrics.m`. An improvement in execution time can be achieved by compiling the ray tracing routines. To do so, issue the command `compileVirtualImageFunc` at the MATLAB console. A compiled MEX file version of `virtualImageFunc` will be placed in the `bin` directory of this repository if it is not already present.
 
