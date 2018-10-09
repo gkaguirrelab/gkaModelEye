@@ -18,10 +18,11 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %
 % Inputs:
 %   inputRay              - 3x2 matrix that specifies the ray as a unit 
-%                           vector of the form [p; d], corresponding to
-%                               R = p + t*u
-%                           where p is vector origin, d is the direction
-%                           expressed as a unit step, and t is unity.
+%                           vector of the form [p; u], corresponding to
+%                               R = p + t*u,
+%                           where p is vector origin, u is the direction
+%                           expressed as a unit step, and t has an
+%                           obligatory value of unity.
 %   opticalSystem         - An mx19 matrix, where m is the number of
 %                           surfaces in the model, including the initial
 %                           state of the ray. Each row contains the values:
