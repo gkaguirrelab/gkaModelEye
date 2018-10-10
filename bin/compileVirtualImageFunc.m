@@ -30,6 +30,10 @@ function compileVirtualImageFunc( varargin )
 %
 % Examples:
 %{
+    % Compile the virtualImageFunc, replacing the exisiting version
+    compileVirtualImageFunc('replaceExistingFunc',true);
+%}
+%{
     % Confirm that compiled and native virtualImageFunc yield same value
     sceneGeometry = createSceneGeometry();
     % Assemble the args for the virtualImageFunc
@@ -130,11 +134,11 @@ end
 % Create a sceneGeometry. I silence the warning that there is not a
 % compiled virtualImageFunc available, as we know this is the case. I also
 % instruct the eyeModelParameter routine (through createSceneGeometry) to
-% skip the calculation of the axes of the eye, as this step itself requires
-% the virtual image function.
+% skip the calculation of the axes of the eye and the nodal point, as these
+% steps themselves require the virtual image function.
 warnState = warning();
 warning('Off','createSceneGeometry:noCompiledVirtualImageFunc');
-sceneGeometry = createSceneGeometry('skipEyeAxes',true);
+sceneGeometry = createSceneGeometry('skipEyeAxes',true,'skipNodalPoint',true);
 warning(warnState);
 % Define the form of the dynamicArgs (the eyePoint and the eyePose)
 dynamicArgs = {[0,0,0], [0,0,0,0]};
