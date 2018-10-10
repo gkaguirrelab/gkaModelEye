@@ -61,6 +61,10 @@ function eye = modelEyeParameters( varargin )
 %                           retinal landmarks and eye axes is skipped. This
 %                           is used internally by routines during code
 %                           complilation.
+%  'skipNodalPoint'          - Logical. If set to true, the computation of
+%                           the effective nodal point is skipped. This is
+%                           used internally by routines during code
+%                           complilation.
 %
 % Outputs:
 %   eye                   - A structure with fields that contain the values
@@ -90,6 +94,7 @@ p.addParameter('accommodationDiopeters',0,@isscalar);
 p.addParameter('measuredCornealCurvature',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('spectralDomain','nir',@ischar);
 p.addParameter('skipEyeAxes',false,@islogical);
+p.addParameter('skipNodalPoint',false,@islogical);
 
 % parse
 p.parse(varargin{:})
@@ -112,26 +117,26 @@ eye = struct();
 % biometric properties of the eye. If axial length is provided instead of
 % spherical error, then Eq 9 of Atchison (2006) Vision Research is used to
 % assign a spherical ametropia. If both ametropia and axial length are
-% provided, the axial length is ignored.
-
-% Atchison 2006 Eq 9.
-ametropiaFromLength = @(x) (23.58 - x)./0.299;
-
+% provided, the curvature of the cornea (if not specified) and the
+% curvature of the retina are specified by spherical ametropia. The
+% absolute size of the vitreous chamber, however, is scaled up or down to
+% force the total axial length to be equal to the measured value.
 if isempty(p.Results.sphericalAmetropia) && isempty(p.Results.axialLength)
     sphericalAmetropia = 0;
     notes = 'Spherical refractive error not set; assuming emmetropia';
 end
-if isempty(p.Results.sphericalAmetropia) && ~isempty(p.Results.axialLength)
+if isempty(p.Results.sphericalAmetropia) && ~isempty(p.Results.axialLength)    
+    ametropiaFromLength = @(x) (23.58 - x)./0.299; % Atchison 2006 Eq 9.
     sphericalAmetropia = ametropiaFromLength(p.Results.axialLength);
     notes = 'Spherical refractive error derived from axial length';
 end
 if ~isempty(p.Results.sphericalAmetropia) && isempty(p.Results.axialLength)
     sphericalAmetropia = p.Results.sphericalAmetropia;
-    notes = 'Spherical refractive provided';
+    notes = 'Spherical refractive error provided; axial length derived from SR';
 end
 if ~isempty(p.Results.sphericalAmetropia) && ~isempty(p.Results.axialLength)
     sphericalAmetropia = p.Results.sphericalAmetropia;
-    notes = 'Ignoring axial length and using provided spherical refractive error';
+    notes = 'Spherical refractive error and axial length provided. Retinal curvature set by SR, absolute size by axial length';
 end
 
 % Meta data regarding properties of the model
@@ -141,6 +146,7 @@ eye.meta.coordinates = 'eyeWorld';
 eye.meta.dimensions = {'depth (axial)' 'horizontal' 'vertical'};
 eye.meta.eyeLaterality = eyeLaterality;
 eye.meta.sphericalAmetropia = sphericalAmetropia;
+eye.meta.axialLength = p.Results.axialLength;
 eye.meta.species = p.Results.species;
 eye.meta.ageYears = p.Results.ageYears;
 eye.meta.accommodationDiopeters = p.Results.accommodationDiopeters;
@@ -160,11 +166,18 @@ switch eye.meta.species
         eye.pupil = human.pupil(eye);
         eye.retina = human.retina(eye);
         eye.lens = human.lens(eye);
+        
+        % If the axial length was not passed, calculate and store the value
+        if isempty(eye.meta.axialLength)
+            retinaRadii = quadric.radii(eye.retina.S);
+            retinaCenter = quadric.center(eye.retina.S);
+            eye.meta.axialLength = retinaRadii(1)-retinaCenter(1);
+        end
 
         % Rotation centers
         eye.rotationCenters = human.rotationCenters(eye);
         
-        % Computation of the eye axes is optional
+        % Identification of the eye axes is optional
         if ~p.Results.skipEyeAxes
            eye.axes = human.axes(eye);
         end
@@ -172,6 +185,11 @@ switch eye.meta.species
         % Refractive indices
         eye.index.vitreous = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );
         eye.index.aqueous = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
+         
+        % Identification of the effective nodal point is optional
+        if ~p.Results.skipNodalPoint
+           eye.meta.nodalPoint = calcEffectiveNodalPoint(eye);
+        end
         
     %% Canine
     case {'dog','Dog','canine','Canine'}

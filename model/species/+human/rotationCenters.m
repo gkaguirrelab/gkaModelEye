@@ -106,7 +106,9 @@ rotationCenters.tor = [0 0 0];
 % chamber axial and vertical radii relative to the emmetropic size
 
 % Obtain the radii of the retinal surface for the emmetropic eye
+emmetropicEye = eye;
 emmetropicEye.meta.sphericalAmetropia = 0;
+emmetropicEye.meta.axialLength = [];
 emmetropicRetina = human.retina(emmetropicEye);
 retinaRadiiEmmetrope = quadric.radii(emmetropicRetina.S)';
 

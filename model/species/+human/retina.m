@@ -29,10 +29,10 @@ function retina = retina(eye)
 
 % Semi-radii of the ellipsoid as a function of ametropia, values taken from
 % Atchison 2006.
-retinaRadiiEmetrope = [10.148 11.455 11.365];
+retinaRadiiEmmetrope = [10.148 11.455 11.365];
 retinaRadiiAmetropiaSlope = [-0.163 -0.043 -0.090];
 retinaRadii = ...
-    retinaRadiiEmetrope + retinaRadiiAmetropiaSlope.* eye.meta.sphericalAmetropia;
+    retinaRadiiEmmetrope + retinaRadiiAmetropiaSlope.* eye.meta.sphericalAmetropia;
 
 % The current model holds the depth of the anterior chamber constant across
 % ametropia, consistent with Atchison, although see:
@@ -44,8 +44,17 @@ retinaRadii = ...
 % To position the retina, we need to know the distance between the apex of
 % the anterior chamber and the apex of the retina. Atchison 2006 provided
 % an axial length of 23.58 mm for the emmetropic eye.
+axialLengthEmmetrope = 23.58;
 retinaCenter = ...
-    [(-(23.5800 - retinaRadiiEmetrope(1)*2) - retinaRadii(1)) 0 0];
+    [(-(axialLengthEmmetrope - retinaRadiiEmmetrope(1)*2) - retinaRadii(1)) 0 0];
+
+% If a measured axial length was provided, scale the vitreous chamber so
+% that the total axial length of the eye matches the provided value.
+if ~isempty(eye.meta.axialLength)
+    p1RadiiTarget = eye.meta.axialLength+retinaCenter(1);
+    s = p1RadiiTarget / retinaRadii(1);
+    retinaRadii = retinaRadii.*s;    
+end
 
 % Assemble the components
 S = quadric.scale(quadric.unitSphere,retinaRadii);
