@@ -24,7 +24,7 @@ function [nodalPointCoord, outputRays, rayPaths] = calcEffectiveNodalPoint(eye,c
 %                           Defaults to 'air' if not provided.
 %
 % Outputs:
-%   nodalPointCoord       - 1x3 vector which provides the coordinates in
+%   nodalPointCoord       - 3x1 vector which provides the coordinates in
 %                           the [p1 p2 p3] dimensions of the effective
 %                           nodal point center.
 %   outputRays            - A cell array, with each cell containing a
@@ -66,6 +66,9 @@ if nargin==1
     cameraMedium = 'air';
 end
 
+% Define the output variable
+nodalPointCoord = zeros(3,1);
+
 % Assemble the optical system
 opticalSystem = assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera', 'cameraMedium', cameraMedium );
 
@@ -102,7 +105,7 @@ end
 % one of the shells of the gradient lens model. The presence of a nan in
 % the rayPath vector is expected and proper, but the nan entry must be
 % removed to allow the fminsearch operation below to proceed.
-nanFreeRayPaths = cellfun(@(x) x(:,~isnan(rayPaths{1}(1,:))),rayPaths,'UniformOutput',false);
+nanFreeRayPaths = cellfun(@(x) x(:,~isnan(x(1,:))),rayPaths,'UniformOutput',false);
 
 % Find the waist of the ray bundle along the axial (p1) dimension
 bundleArea = @(p1) range(cellfun(@(x) interp1(x(1,:),x(3,:),p1,'linear'),nanFreeRayPaths)) * ...
