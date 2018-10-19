@@ -44,6 +44,16 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
 %                           perimeter.
 %  'modelEyePlotColors'   - Cell array. Line spec codes for each of the
 %                           elements given in modelEyeLabelNames.
+%  'modelEyeAlpha'        - Scalar or vector that sets the transparency of
+%                           the rendered plot elements as clear (0) or
+%                           opaque (1). If passed as a vector, the length
+%                           should be equal to the length of the cell
+%                           arrays for modelEyeLabelNames and
+%                           modelEyePlotColors. If passed as a scalar, all
+%                           plot elements are assigned this alpha.
+%  'modelEyeSymbolSizeScaler' - Scalar. Determines if the rendered plot
+%                           elements are made larger (>1) or smaller (<1)
+%                           than default.
 %
 % Outputs:
 %   figHandle             - Handle to a created figure.
