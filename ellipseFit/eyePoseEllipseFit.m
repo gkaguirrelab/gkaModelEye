@@ -1,4 +1,4 @@
-function [eyePose, RMSE] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
+function [eyePose, RMSE, ellipseParamsTransparent] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
 % Fit an image plane ellipse by perspective projection of a pupil circle
 %
 % Syntax:
@@ -188,8 +188,10 @@ end
 lastFVal = realmax;
 bestFVal = realmax;
 xLast = [nan nan nan nan]; % Last place pupilProjection_fwd was called
-xBest = [nan nan nan nan]; % The x with the lowest objective function value that meets
+xBest = [nan nan nan nan]; % The x with the lowest objective function value
 rmseThresh = p.Results.rmseThresh;
+ellipseParamsTransparentLast = [nan nan nan nan nan];
+ellipseParamsTransparentBest = [nan nan nan nan nan];
 
 % define some search options
 options = optimoptions(@fmincon,...
@@ -214,22 +216,23 @@ try
 catch
     eyePose = xBest;
     RMSE = bestFVal;
+    ellipseParamsTransparent = ellipseParamsTransparentBest;
     return
 end
     function fVal = objfun(x)
         xLast = x;
         % Obtain the entrance pupil ellipse for this eyePose
-        pupilEllipseOnImagePlane = pupilProjection_fwd(x, sceneGeometry);
+        ellipseParamsTransparentLast = pupilProjection_fwd(x, sceneGeometry);
         % Check for the case in which the transparentEllipse contains nan
         % values, which can arise if there were an insufficient number of
         % pupil border points remaining after refraction to define an
-        % ellipse. In this case, we return a large value for the fVal.
-        if any(isnan(pupilEllipseOnImagePlane))
-            fVal = 1e12;
+        % ellipse.
+        if any(isnan(ellipseParamsTransparentLast))
+            fVal = nan;
         else
             % This is the RMSE of the distance values of the boundary
             % points to the ellipse fit.
-            explicitEllipse = ellipse_transparent2ex(pupilEllipseOnImagePlane);
+            explicitEllipse = ellipse_transparent2ex(ellipseParamsTransparentLast);
             if isempty(explicitEllipse)
                 fVal = nan;
             else
@@ -256,6 +259,7 @@ end
                 if lastFVal < bestFVal
                     bestFVal = lastFVal;
                     xBest = xLast;
+                    ellipseParamsTransparentBest = ellipseParamsTransparentLast;
                 end
                 % Test if we are done the search
                 if lastFVal < rmseThresh
@@ -270,6 +274,7 @@ end
 % Store the best performing values
 eyePose = xBest;
 RMSE = bestFVal;
+ellipseParamsTransparent = ellipseParamsTransparentBest;
 
 % Restore the warning state
 warning(warningState);
@@ -287,32 +292,34 @@ end
 % consider the possibility that the solution represents a local minimum. We
 % repeat the search, passing a value close to the eyePose solution as x0.
 % This process terminates when the search count exceeds nMaxSearches.
-if RMSE > p.Results.repeatSearchThresh && ...
-        p.Results.searchCount < p.Results.nMaxSearches
-    % Make sure that the search yielded an actual solution for the eyePose.
-    % If not, simply re-use the x0 (with a small shift).
-    if ~isempty(eyePose)
-        x0 = eyePose;
-    end
-    x0(1:2) = x0(1:2)+[0.1 0.1]./p.Results.searchCount;
-    [eyePose_r, RMSE_r] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, ...
-        'x0',x0,...
-        'eyePoseLB',p.Results.eyePoseLB,...
-        'eyePoseUB',p.Results.eyePoseUB,...
-        'repeatSearchThresh',p.Results.repeatSearchThresh, ...
-        'searchCount', p.Results.searchCount+1);
-    % Keep this solution if it is better
-    if RMSE_r < RMSE
-        eyePose = eyePose_r;
-        RMSE = RMSE_r;
+if isnan(RMSE) || RMSE > p.Results.repeatSearchThresh
+    if p.Results.searchCount < p.Results.nMaxSearches
+        % Make sure that the search yielded an actual solution for the eyePose.
+        % If not, simply re-use the x0 (with a small shift).
+        if ~isempty(eyePose)
+            x0 = eyePose;
+        end
+        x0(1:2) = x0(1:2)+[0.1 0.1]./p.Results.searchCount;
+        [eyePose_r, RMSE_r] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, ...
+            'x0',x0,...
+            'eyePoseLB',p.Results.eyePoseLB,...
+            'eyePoseUB',p.Results.eyePoseUB,...
+            'repeatSearchThresh',p.Results.repeatSearchThresh, ...
+            'searchCount', p.Results.searchCount+1);
+        % Keep this solution if it is better
+        if RMSE_r < RMSE
+            eyePose = eyePose_r;
+            RMSE = RMSE_r;
+        end
     end
 end
 
-% If the eyePose variable is empty, then not fit could be found. In this 
-% situation return nans for the eyePose and inf for the RMSE
+% If the eyePose variable is empty, then a fit could not be found. In this 
+% situation return nans for the eyePose and nan for the RMSE
 if isempty(eyePose)
     eyePose = [nan nan nan nan];
-    RMSE = inf;
+    RMSE = nan;
+    ellipseParamsTransparent = [nan nan nan nan nan];
 end
 
 end % eyePoseEllipseFit
