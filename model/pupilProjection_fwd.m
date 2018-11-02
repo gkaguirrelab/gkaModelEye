@@ -157,7 +157,7 @@ p.addRequired('sceneGeometry',@isstruct);
 
 % Optional
 p.addParameter('fullEyeModelFlag',false,@islogical);
-p.addParameter('nPupilPerimPoints',5,@(x)(isscalar(x) && x>4));
+p.addParameter('nPupilPerimPoints',6,@(x)(isscalar(x) && x>4));
 p.addParameter('pupilPerimPhase',0,@isscalar);
 p.addParameter('rayTraceErrorThreshold',0.01,@isscalar);
 p.addParameter('nIrisPerimPoints',5,@isscalar);
