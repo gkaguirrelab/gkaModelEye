@@ -185,8 +185,8 @@ end
 
 
 % Define variables used in the nested functions
-lastFVal = realmax;
-bestFVal = realmax;
+lastFVal = nan;
+bestFVal = nan;
 xLast = [nan nan nan nan]; % Last place pupilProjection_fwd was called
 xBest = [nan nan nan nan]; % The x with the lowest objective function value
 rmseThresh = p.Results.rmseThresh;
@@ -256,7 +256,7 @@ end
                 % when azimuth and elevation are close to zero. This
                 % behavior has been seen by others:
                 %   https://groups.google.com/forum/#!topic/comp.soft-sys.matlab/SuNzbhEun1Y
-                if lastFVal < bestFVal
+                if lastFVal < bestFVal || isnan(bestFVal)
                     bestFVal = lastFVal;
                     xBest = xLast;
                     ellipseParamsTransparentBest = ellipseParamsTransparentLast;
