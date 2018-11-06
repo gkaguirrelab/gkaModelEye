@@ -30,7 +30,7 @@ function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G
 %   visualAngles          - 1x2 vector with the visual angles, in degrees
 %                           between the two points within the p1p2 and p1p3
 %                           planes.
-%   rayPath0, rayPath1 - 3xm matrix that provides the ray coordinates
+%   rayPath0, rayPath1    - 3xm matrix that provides the ray coordinates
 %                           at each surface. The value for rayPath(1,:)
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
@@ -51,9 +51,8 @@ function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G
     % and obtain the visual angle and each point w.r.t. the fovea.
     c = jet();
     nColors = size(c,1);
-    for beta = -90:3:40
+    for beta = -90:3:0
         for omega = -180:5:180
-            coord = quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
             visualAngles = calcVisualAngle(eye,eye.axes.visual.geodetic,[beta omega 0]);
             eccen = sqrt(sum(visualAngles.^2));
             if ~isnan(eccen)
@@ -79,9 +78,9 @@ function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G
     mmPerDeg = [];
     axialLengths = [];
     for SR = -10:1:2
-        eye = modelEyeParameters('sphericalAmetropia',SR);
+        eye = modelEyeParameters('sphericalAmetropia',SR,'skipNodalPoint',true);
         S = eye.retina.S;
-        G0 = eye.axes.opticDisc.geodetic;
+        G0 = eye.axes.visual.geodetic;
         G1 = G0 + [0.1 0.1 0];
         [~, ~, ~, totalAngle ] = calcVisualAngle(eye,G0,G1);
         X0 = quadric.ellipsoidalGeoToCart(G0,S);
