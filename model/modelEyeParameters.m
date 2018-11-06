@@ -61,7 +61,7 @@ function eye = modelEyeParameters( varargin )
 %                           retinal landmarks and eye axes is skipped. This
 %                           is used internally by routines during code
 %                           complilation.
-%  'skipNodalPoint'          - Logical. If set to true, the computation of
+%  'skipNodalPoint'       - Logical. If set to true, the computation of
 %                           the effective nodal point is skipped. This is
 %                           used internally by routines during code
 %                           complilation.
