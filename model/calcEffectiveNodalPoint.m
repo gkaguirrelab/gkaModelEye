@@ -13,10 +13,17 @@ function [nodalPointCoord, outputRays, rayPaths] = calcEffectiveNodalPoint(eye,c
 %   routine examines a bundle of rays arising from different points in the
 %   retina. For each point, the ray is found that exits the corneal surface
 %   at the same angles (relative to the optical axis) with which it arose
-%   from the retina. The ray bundle is then examined to identify the axial
-%   position at which the cross-sectional area of the ray bundle is
-%   smallest (i.e., the "waist" fo the bundle). The center of the waist at
-%   this location is returned as the effective nodal point coordinate.
+%   from the retina (a "nodal ray"). The ray bundle is then examined to
+%   identify the axial position at which the cross-sectional area of the
+%   ray bundle is smallest (i.e., the "waist" fo the bundle). The center of
+%   the waist at this location is returned as the effective nodal point
+%   coordinate.
+%
+%   These ideas are discussed in:
+%
+%       Harris, W. F. "Nodes and nodal points and lines in eyes and other
+%       optical systems." Ophthalmic and Physiological Optics 30.1 (2010):
+%       24-42.
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
@@ -69,35 +76,18 @@ end
 % Define the output variable
 nodalPointCoord = zeros(3,1);
 
-% Assemble the optical system
-opticalSystem = assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera', 'cameraMedium', cameraMedium );
-
 % Predefine some variables for use in the upcoming loop
 outputRays={};
 rayPaths={};
-
-% Define some options for the fmincon call in the loop
-options = optimoptions(@fmincon,...
-    'Display','off');
 
 % Loop over a few locations in the retinal surface, specified in
 % ellipsoidal coordinates
 for beta = [-85,-75]
     for omega = -180:40:180
         % Get this retinal coordinate
-        coord = quadric.ellipsoidalGeoToCart( [beta, omega, 0], eye.retina.S );
-        % Define an error function that reflects the difference in angles
-        % from the initial ray and the output ray from the optical system
-        myError = @(x) calcOffsetFromParallel(opticalSystem,assembleInputRay(coord,x(1),x(2)));
-        % Supply an x0 guess as the ray that connects the retinal point
-        % with the center of the pupil
-        [~, angle_p1p2, angle_p1p3] = quadric.angleRays( [0 0 0; 1 0 0]', quadric.normalizeRay([coord'; eye.pupil.center-coord']') );
-        angle_p1p2 = deg2rad(angle_p1p2);
-        angle_p1p3 = -deg2rad(angle_p1p3);
-        % Perform the search
-        inputRayAngles = fmincon(myError,[angle_p1p2 angle_p1p3],[],[],[],[],[-pi/2,-pi/2],[pi/2,pi/2],[],options);
-        % Calculate and save the outputRay and the raypath
-        [outputRays{end+1},rayPaths{end+1}] = rayTraceQuadrics(assembleInputRay(coord,inputRayAngles(1),inputRayAngles(2)), opticalSystem);
+        X = quadric.ellipsoidalGeoToCart( [beta, omega, 0], eye.retina.S );
+        % Get the nodal ray
+        [outputRays{end+1},rayPaths{end+1}] = calcNodalRay(eye,[],X,cameraMedium);
     end
 end
 
@@ -117,20 +107,4 @@ nodalPointCoord(2) = mean(cellfun(@(x) interp1(x(1,:),x(2,:),nodalPointCoord(1),
 nodalPointCoord(3) = mean(cellfun(@(x) interp1(x(1,:),x(3,:),nodalPointCoord(1),'linear'),nanFreeRayPaths));
 
 
-end
-
-% Local function. Converts angles relative to the optical axis to a unit
-% vector ray.
-function inputRay = assembleInputRay(p,angle_p1p2,angle_p1p3)
-u = [1; tan(angle_p1p2); tan(angle_p1p3)];
-u = u./sqrt(sum(u.^2));
-inputRay = [p, u];
-end
-
-% Local function. Performs the ray trace through the optical system of the
-% eye and then calculates the angle between the initial ray and the output
-% ray.
-function angleError = calcOffsetFromParallel(opticalSystem,inputRay)
-    exitRay = rayTraceQuadrics(inputRay, opticalSystem);
-    angleError = quadric.angleRays( inputRay, exitRay );
 end

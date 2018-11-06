@@ -74,11 +74,10 @@ opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','off');
 
 
 %% optical axis
-% Eye axes are specified as rotations (in degrees) within the eye
-% world coordinate frame for azimuth, elevation, and rotation. Axes
-% are defined relative to the optical axis, which itself is set to
-% be aligned with the p1 dimension of the eye world coordinate
-% frame.
+% Eye axes are specified as rotations (in degrees) within the eye world
+% coordinate frame for azimuth, elevation, and rotation. Axes are defined
+% relative to the optical axis, which itself is set to be aligned with the
+% p1 dimension of the eye world coordinate frame.
 axes.optical.degField = [0 0 0];
 axes.optical.geodetic = [-90 -90 0];
 axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
