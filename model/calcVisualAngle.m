@@ -77,7 +77,7 @@ function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G
     % length
     mmPerDeg = [];
     axialLengths = [];
-    for SR = -10:1:2
+    for SR = -5:1:2
         eye = modelEyeParameters('sphericalAmetropia',SR,'skipNodalPoint',true);
         S = eye.retina.S;
         G0 = eye.axes.visual.geodetic;
