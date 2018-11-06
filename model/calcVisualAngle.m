@@ -1,4 +1,4 @@
-function [visualAngles, initialRay0, initialRay1, totalAngle ] = calcVisualAngle(eye,G0,G1,X0,X1,cameraMedium)
+function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G0,G1,X0,X1,cameraMedium)
 % The visual angles between two retinal points
 %
 % Syntax:
@@ -30,7 +30,7 @@ function [visualAngles, initialRay0, initialRay1, totalAngle ] = calcVisualAngle
 %   visualAngles          - 1x2 vector with the visual angles, in degrees
 %                           between the two points within the p1p2 and p1p3
 %                           planes.
-%   initialRay0, initialRay1 - 3xm matrix that provides the ray coordinates
+%   rayPath0, rayPath1 - 3xm matrix that provides the ray coordinates
 %                           at each surface. The value for rayPath(1,:)
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
@@ -142,38 +142,10 @@ if nargin==6
     end
 end
 
-% Handle to the virtual image function; use the MEX version if available
-if exist('virtualImageFuncMex')==3
-    refractionHandle = @virtualImageFuncMex;
-else
-    refractionHandle = @virtualImageFunc;
-end
-
-% Assemble arguments for the virtual image function to trace from the
-% retina to the center of the pupil aperture. The "camera" position is set
-% as the pupil center, with the dimensions rearranged for world
-% coordinates.
-args = {eye.pupil.center([2 3 1])', ...
-    eye.rotationCenters, ...
-    assembleOpticalSystem( eye, 'surfaceSetName','retinaToPupil', 'cameraMedium', cameraMedium )};
-
-% Set eyePose to all zeros (i.e., the eye is not rotated).
-eyePose = [0 0 0 0];
-
-% Ray trace to the center of the pupil
-[R0, initialRay0] = refractionHandle(X0, eyePose, args{:});
-[R1, initialRay1] = refractionHandle(X1, eyePose, args{:});
-
-% Normalize the rays, and reverse the direction so that the ray is headed
-% from the pupil center out towards the cornea
-R0 = quadric.normalizeRay(R0');
-R0(:,2)=-R0(:,2);
-R1 = quadric.normalizeRay(R1');
-R1(:,2)=-R1(:,2);
-
-% Ray trace from the pupil center through the cornea
-R0 = rayTraceQuadrics(R0, assembleOpticalSystem( eye, 'surfaceSetName','pupilToCamera','cameraMedium',cameraMedium ));
-R1 = rayTraceQuadrics(R1, assembleOpticalSystem( eye, 'surfaceSetName','pupilToCamera','cameraMedium',cameraMedium ));
+% Obtain the output ray segments corresponding to the nodal ray for each
+% retinal coordinate
+[R0, rayPath0] = calcNodalRay(eye,[],X0,cameraMedium);
+[R1, rayPath1] = calcNodalRay(eye,[],X1,cameraMedium);
 
 % Calculate and return the signed angles between the two rays
 [totalAngle, angle_p1p2, angle_p1p3] = quadric.angleRays( R0, R1 );
