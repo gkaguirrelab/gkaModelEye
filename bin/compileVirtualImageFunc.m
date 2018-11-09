@@ -30,19 +30,15 @@ function compileVirtualImageFunc( varargin )
 %
 % Examples:
 %{
-    % Compile the virtualImageFunc, replacing the exisiting version
-    compileVirtualImageFunc('replaceExistingFunc',true);
-%}
-%{
     % Confirm that compiled and native virtualImageFunc yield same value
-    sceneGeometry = createSceneGeometry();
+    sceneGeometry = createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
     % Assemble the args for the virtualImageFunc
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.pupilToCamera.opticalSystem};
     virtualRayNative = virtualImageFunc( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
     virtualRayCompiled = virtualImageFuncMex( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
-    % Test if the outputds agree
+    % Test if the outputs agree
     assert(max(max(abs(virtualRayNative - virtualRayCompiled))) < 1e-6)
 %}
 %{
@@ -50,19 +46,19 @@ function compileVirtualImageFunc( varargin )
     nComputes = 100;
     fprintf('\nTime to execute virtualImageFunc (average over %d projections):\n',nComputes);
     % Native function
-    sceneGeometry = createSceneGeometry();
+    sceneGeometry = createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
     % Assemble the args for the virtualImageFunc
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.pupilToCamera.opticalSystem};
+    % Native matlab function
     tic
     for ii=1:nComputes
         virtualImageFunc( [-3.7 2 0], [0 0 0 2], args{:} );
     end
     msecPerComputeNative = toc / nComputes * 1000;
     fprintf('\tUsing the MATLAB function: %4.2f msecs.\n',msecPerComputeNative);
-    % Compiled function
-    sceneGeometry = createSceneGeometry();
+    % Compiled MEX function
     tic
     for ii=1:nComputes
         virtualImageFuncMex( [-3.7 2 0], [0 0 0 2], args{:} );

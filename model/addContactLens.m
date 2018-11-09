@@ -53,18 +53,19 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 % Examples:
 %{
     %% Replicate calculation of contact lens curvature
+    %% CURRENTLY NOT IMPLEMENTED
     % WJ Benajamin provudes an example calculation for a contact lens
     % that provides -10D power. We confirm here that our routine provides
     % the same solution.
     %   Bennett, Edward S., and Barry A. Weissman, eds. Clinical contact 
     %   lens practice. Lippincott Williams & Wilkins, 2005. Chapter 7A, 
     %   "Optical phenomena of contact lenses", WJ Benjamin. p130
-    opticalSystemIn = [nan nan nan nan 1.3760; -7.8  -7.8  -7.8  -7.8  1.0];
+    % opticalSystemIn = [nan nan nan nan 1.3760; -7.8  -7.8  -7.8  -7.8  1.0];
     % The curvature of the front surface of the contact lens should be
     % -9.56. We obtain a slightly lower value (9.5468) as we do not model
     % the effect of the pre-lens tear film.
-    opticalSystemOut = addContactLens(opticalSystemIn, -10, 'lensRefractiveIndex', 1.43 );
-    assert(abs(opticalSystemOut(end,2) - -9.56)<0.1);
+    % opticalSystemOut = addContactLens(opticalSystemIn, -10, 'lensRefractiveIndex', 1.43 );
+    % assert(abs(opticalSystemOut(end,2) - -9.56)<0.1);
 %}
 
 

@@ -102,11 +102,11 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %{
     %% Basic forward projection example
     % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry();
+    sceneGeometry=createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
     % Define an eyePose with the azimuth, elevation, torsion, and pupil radius
     eyePose = [-10 5 0 3];
-    % Obtain the pupil ellipse parameters in transparent format
-    % Assumes default params of 5 pupil points and zero iris thickness
+    % Obtain the pupil ellipse parameters in transparent format for the
+    % default sceneGeometry
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
     % Test against cached result
     pupilEllipseOnImagePlaneCached = [0.027844352830495   0.022400680779535   1.567313438077933   0.000022562179675   0.000191773971573].*1e4;
@@ -114,7 +114,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %}
 %{
     %% Test the accuracy of the ellipse fit to the pupil boundary
-    sceneGeometry=createSceneGeometry();
+    sceneGeometry=createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
     aziVals = -60:5:60;
     pupilFitError = [];
     for aa = 1:length(aziVals)
@@ -127,7 +127,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %{
     %% Calculate the time required for the forward projection
     % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry();
+    sceneGeometry=createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
     % Generate some randomly selected eye poses
     nPoses = 100;
     eyePoses=[(rand(nPoses,1)-0.5)*20, (rand(nPoses,1)-0.5)*10, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];

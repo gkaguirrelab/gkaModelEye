@@ -39,7 +39,7 @@ function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G
 % Examples:
 %{
     % Display a map of visual angle on the retinal surface
-    eye = modelEyeParameters('eyeLaterality','os');
+    eye = modelEyeParameters('eyeLaterality','os','skipNodalPoint',true);
     S = eye.retina.S;
     boundingBox = eye.retina.boundingBox;
     figure
@@ -58,11 +58,12 @@ function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G
             if ~isnan(eccen)
                 if eccen > 90
                     colorTriple = [1 1 1];
-                    markerSize = 50;
+                    markerSize = 25;
                 else
                     colorTriple = c(round((eccen./90)*(nColors-1)+1),:);
-                    markerSize = 100;
+                    markerSize = 50;
                 end
+                coord = quadric.ellipsoidalGeoToCart( [beta omega 0], S );
                 plot3(coord(1),coord(2),coord(3),'.','MarkerSize',markerSize,'Color',colorTriple);
             end
         end
