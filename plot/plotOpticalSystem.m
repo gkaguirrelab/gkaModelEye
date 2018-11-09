@@ -26,7 +26,7 @@ function figHandle = plotOpticalSystem(varargin)
 % Examples:
 %{
     %% Rays from the retina through the eye and a spectacle lens
-    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2);
+    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2,'skipNodalPoint',true);
     % Plot the optical system
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
     % Define an initial ray arising at the fovea

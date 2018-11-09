@@ -126,7 +126,6 @@ p2=p1+outputRay(:,2).*3;
 r = [p1 p2];
 plot(r(PdimA,:),r(PdimB,:),[':' p.Results.plotColor]);
 
-
 %% Plot the blind spot axis
 % Obtain the rayPath through the optical system from the opticDisc to cornea
 [outputRay, rayPath] = rayTraceQuadrics(eye.axes.opticDisc.initialRay, assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera','cameraMedium','air' ));
@@ -135,6 +134,9 @@ p1=outputRay(:,1);
 p2=p1+outputRay(:,2).*3;
 r = [p1 p2];
 plot(r(PdimA,:),r(PdimB,:),[':' p.Results.plotColor]);
+
+%% Plot the effective nodal point
+plot(eye.meta.nodalPoint(PdimA),eye.meta.nodalPoint(PdimB),['o' p.Results.plotColor]);
 
 %% Reference axis
 xRange = xlim;
