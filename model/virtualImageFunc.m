@@ -54,8 +54,8 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
     	sceneGeometry.refraction.pupilToCamera.opticalSystem};
     virtualImageRay = virtualImageFunc( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
     % Test output against cached value
-    virtualImageRayCached = [  -3.995000000000000,   2.270595908686316,  0; ...
-        -2.719715110474354,   0.049803422245694, 0];
+    virtualImageRayCached = [  -3.900000000000000, 2.263158811383167, 0; ...
+        -2.626225754656097, 0.047969912751148, 0];
     assert(max(max(abs(virtualImageRay - virtualImageRayCached))) < 1e-6)
 %}
 %{

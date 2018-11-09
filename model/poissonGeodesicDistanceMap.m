@@ -48,10 +48,10 @@ function [phi, X] = poissonGeodesicDistanceMap(S,G0,X0, nVertices)
 %
 % Examples:
 %{
-    eye = modelEyeParameters();
+    eye = modelEyeParameters('skipNodalPoint',true);
     S = eye.retina.S;
     X0 = eye.axes.visual.coords;
-    [phi, X] = poissonGeodesicDistanceMap(S,[],X0 );
+    [phi, X] = poissonGeodesicDistanceMap(S,[],X0);
     c = jet();
     nColors = size(c,1);
     figure
@@ -63,7 +63,7 @@ function [phi, X] = poissonGeodesicDistanceMap(S,G0,X0, nVertices)
 %}
 %{
     % Compare the output of the poisson geodesic to the Panou result
-    eye = modelEyeParameters();
+    eye = modelEyeParameters('skipNodalPoint',true);
     S = eye.retina.S;
     G0 = eye.axes.visual.geodetic;
     X0 = eye.axes.visual.coords;

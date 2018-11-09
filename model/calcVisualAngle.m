@@ -51,8 +51,9 @@ function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G
     % and obtain the visual angle and each point w.r.t. the fovea.
     c = jet();
     nColors = size(c,1);
-    for beta = -90:3:0
-        for omega = -180:5:180
+    plotRezGeodeticDeg = [15, 20];
+    for beta = -90:plotRezGeodeticDeg(1):0
+        for omega = -180:plotRezGeodeticDeg(2):180
             visualAngles = calcVisualAngle(eye,eye.axes.visual.geodetic,[beta omega 0]);
             eccen = sqrt(sum(visualAngles.^2));
             if ~isnan(eccen)
