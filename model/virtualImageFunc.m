@@ -47,7 +47,7 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
     % Basic example that finds the virtual image location for a point from
     % the top of a 2 mm radius exit pupil, with the eye posed straight
     % ahead, and the camera in its default location.
-    sceneGeometry = createSceneGeometry();
+    sceneGeometry = createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
     % Assemble the args for the virtualImageFunc
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
@@ -61,7 +61,7 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
 %{
     %% Confirm that targetIntersectError remains small across eye poses
     % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry();
+    sceneGeometry=createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
     % Perform 100 forward projections with randomly selected eye poses
     nPoses = 100;
     eyePoses=[(rand(nPoses,1)-0.5)*60, (rand(nPoses,1)-0.5)*60, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
@@ -69,8 +69,8 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
     for pp = 1:nPoses
     	[~,~,~,~,~,targetIntersectError(:,pp)]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
     end
-    % Make sure the targetIntersectError is small and not
-    % systematically related to eyePose
+    % Make sure the targetIntersectError is small and not systematically
+    % related to eyePose
     figure
     plot(sqrt(eyePoses(:,1).^2+eyePoses(:,2).^2),median(targetIntersectError),'.r')
     xlabel('Euclidean rotation distance [deg]');
