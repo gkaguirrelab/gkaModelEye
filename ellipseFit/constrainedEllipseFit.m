@@ -1,8 +1,8 @@
-function [transparentEllipseParams, RMSE, constraintError] = constrainedEllipseFit(Xp, Yp, lb, ub, nonlinconst)
+function [transparentEllipseParams, RMSE, constraintError, fitAtBound] = constrainedEllipseFit(Xp, Yp, lb, ub, nonlinconst)
 % Non-linear fitting of an ellipse to a set of points
 %
 % Syntax:
-%  [transparentEllipseParams, RMSE, constraintError] = constrainedEllipseFit(Xp, Yp, lb, ub, nonlinconst)
+%  [transparentEllipseParams, RMSE, constraintError, fitAtBound] = constrainedEllipseFit(Xp, Yp, lb, ub, nonlinconst)
 %
 % Description:
 %   The routine fits an ellipse to data by minimizing point-to-curve
@@ -34,6 +34,9 @@ function [transparentEllipseParams, RMSE, constraintError] = constrainedEllipseF
 %                           point in the data to the fitted ellipse
 %   constraintError       - The value of the nonlinear constraint function
 %                           for the best fitting ellipse
+%   fitAtBound            - Logical. Indicates if any of the returned
+%                           ellipse parameters are at the upper or lower
+%                           boundary.
 %
 % Examples:
 %{
@@ -97,6 +100,7 @@ catch
     transparentEllipseParams=nan(1,5);
     RMSE=nan;
     constraintError=nan;
+    fitAtBound = false;
     return
 end
 
@@ -114,6 +118,7 @@ if isempty(ub) && isempty(lb) && isempty(nonlinconst)
     transparentEllipseParams = pInitTransparent;
     RMSE = myFun(transparentEllipseParams);
     constraintError = nan;
+    fitAtBound = false;
     return
 end
 
@@ -161,6 +166,9 @@ end
 
 % Restore the warning state
 warning(warningState);
+
+% Check if the fit is at a boundary
+fitAtBound = any([any(transparentEllipseParams==lb) any(transparentEllipseParams==ub)]);
 
 end % function -- constrainedEllipseFit
 

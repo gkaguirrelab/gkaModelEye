@@ -1,8 +1,8 @@
-function [eyePose, RMSE, ellipseParamsTransparent] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
+function [eyePose, RMSE, ellipseParamsTransparent, fitAtBound] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
 % Fit an image plane ellipse by perspective projection of a pupil circle
 %
 % Syntax:
-%  [eyePose, RMSE] = eyePoseEllipseFit(Xp, Yp, sceneGeometry)
+%  [eyePose, RMSE, ellipseParamsTransparent, fitAtBound] = eyePoseEllipseFit(Xp, Yp, sceneGeometry)
 %
 % Description:
 %   The routine fits points on the image plane based upon the eye
@@ -34,6 +34,11 @@ function [eyePose, RMSE, ellipseParamsTransparent] = eyePoseEllipseFit(Xp, Yp, s
 %   RMSE                  - Root mean squared error of the distance of
 %                           boundary point in the image to the fitted
 %                           ellipse
+%   ellipseParamsTransparent - Parameters of the best fitting ellipse
+%                           expressed in transparent form [1x5 vector]
+%   fitAtBound            - Logical. Indicates if any of the returned
+%                           ellipse parameters are at the upper or lower
+%                           boundary.
 %
 % Examples:
 %{
@@ -116,6 +121,7 @@ eyePoseUB = p.Results.eyePoseUB;
 if any(isnan(eyePoseLB)) || any(isnan(eyePoseUB)) || any(isnan(p.Results.x0)) 
     eyePose = [nan nan nan nan];
     RMSE = nan;
+    fitAtBound = false;
     return
 end
 
@@ -217,6 +223,8 @@ catch
     eyePose = xBest;
     RMSE = bestFVal;
     ellipseParamsTransparent = ellipseParamsTransparentBest;
+    % Check if the fit is at a boundary
+    fitAtBound = any([any(eyePose==eyePoseLB) any(eyePose==eyePoseUB)]);
     return
 end
     function fVal = objfun(x)
@@ -276,6 +284,9 @@ eyePose = xBest;
 RMSE = bestFVal;
 ellipseParamsTransparent = ellipseParamsTransparentBest;
 
+% Check if the fit is at a boundary
+fitAtBound = any([any(eyePose==eyePoseLB) any(eyePose==eyePoseUB)]);
+
 % Restore the warning state
 warning(warningState);
 
@@ -310,6 +321,8 @@ if isnan(RMSE) || RMSE > p.Results.repeatSearchThresh
         if RMSE_r < RMSE
             eyePose = eyePose_r;
             RMSE = RMSE_r;
+            % Check if the fit is at a boundary
+            fitAtBound = any([any(eyePose==eyePoseLB) any(eyePose==eyePoseUB)]);
         end
     end
 end
@@ -320,6 +333,7 @@ if isempty(eyePose)
     eyePose = [nan nan nan nan];
     RMSE = nan;
     ellipseParamsTransparent = [nan nan nan nan nan];
+    fitAtBound = false;
 end
 
 end % eyePoseEllipseFit
