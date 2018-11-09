@@ -66,7 +66,7 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
 % Examples:
 %{
     %% Display a 2D image of the right eye
-    sceneGeometry=createSceneGeometry();
+    sceneGeometry=createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
     % Define an eyePose with azimuth, elevation, torsion, and pupil radius
     eyePose = [-30 -5 0 3];
     renderEyePose(eyePose, sceneGeometry);
@@ -74,7 +74,7 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
 %{
     %% Plot the pupil ellipse for various eye poses
     % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry();
+    sceneGeometry=createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
     % Prepare a figure
     modelEyeLabelNames = {'pupilPerimeterBack_hidden' 'pupilPerimeterBack' 'pupilEllipse' 'pupilPerimeterFront_hidden' 'pupilPerimeterFront' 'pupilPerimeter'};
 	modelEyePlotColors = {'xr' '*r' '-y' 'xg' '*g' '*g'};    
@@ -89,13 +89,13 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
 %{
     %% Show the effect of eye torsion
     % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry();
+    sceneGeometry=createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
     renderEyePose([0 0 0 3], sceneGeometry,'showPupilTextLabels',true,'nPupilPerimPoints',5);
     renderEyePose([0 0 45 3], sceneGeometry,'showPupilTextLabels',true,'nPupilPerimPoints',5);
 %}
 %{
     %% Demonstrate the effect of camera translation
-    sceneGeometry=createSceneGeometry();
+    sceneGeometry=createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
     % Define an eyePose with azimuth, elevation, torsion, and pupil radius
     eyePose = [0 0 0 3];
     renderEyePose(eyePose, sceneGeometry);
@@ -105,7 +105,7 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
 %}
 %{
     %% Demonstrate the effect of positive camera torsion
-    sceneGeometry=createSceneGeometry();
+    sceneGeometry=createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
     % Define an eyePose with azimuth, elevation, torsion, and pupil radius
     eyePose = [0 0 0 3];
     renderEyePose(eyePose, sceneGeometry,'showPupilTextLabels',true,'nPupilPerimPoints',5);
