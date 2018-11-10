@@ -286,8 +286,9 @@ eyePose = xBest;
 RMSE = bestFVal;
 ellipseParamsTransparent = ellipseParamsTransparentBest;
 
-% Check if the fit is at a boundary
-fitAtBound = any([any(eyePose==eyePoseLB) any(eyePose==eyePoseUB)]);
+% Check if the fit is at a boundary for any parameter that is not locked
+notLocked = eyePoseLB ~= eyePoseUB;
+fitAtBound = any([any(eyePose(notLocked)==eyePoseLB(notLocked)) any(eyePose(notLocked)==eyePoseUB(notLocked))]);
 
 % Restore the warning state
 warning(warningState);

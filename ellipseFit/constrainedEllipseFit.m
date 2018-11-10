@@ -167,8 +167,9 @@ end
 % Restore the warning state
 warning(warningState);
 
-% Check if the fit is at a boundary
-fitAtBound = any([any(transparentEllipseParams==lb) any(transparentEllipseParams==ub)]);
+% Check if the fit is at a boundary for any parameter that is not locked
+notLocked = lb ~= ub;
+fitAtBound = any([any(transparentEllipseParams(notLocked)==lb(notLocked)) any(transparentEllipseParams(notLocked)==ub(notLocked))]);
 
 end % function -- constrainedEllipseFit
 
