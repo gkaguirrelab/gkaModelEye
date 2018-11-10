@@ -102,6 +102,12 @@ p.addParameter('nMaxSearches',3,@isnumeric);
 p.parse(Xp, Yp, sceneGeometry, varargin{:});
 
 
+% Set the return variables in the event of an error
+eyePose = [nan nan nan nan];
+RMSE = nan;
+ellipseParamsTransparent = [nan nan nan nan nan];
+fitAtBound = false;
+
 % Issue a warning if the bounds do not fully constrain at least one eye
 % rotation parameter. This is because there are multiple combinations of
 % the three axis rotations that can bring an eye to a destination.
@@ -111,7 +117,6 @@ if sum((p.Results.eyePoseUB(1:3) - p.Results.eyePoseLB(1:3))==0) < 1
     warning('eyePoseEllipseFit:underconstrainedSearch','The eye pose search across possible eye rotations is underconstrained');
 end
 
-
 %% Set bounds and x0
 % Identify the center of projection.
 eyePoseLB = p.Results.eyePoseLB;
@@ -119,9 +124,6 @@ eyePoseUB = p.Results.eyePoseUB;
 
 % Clear the case of nans in the input
 if any(isnan(eyePoseLB)) || any(isnan(eyePoseUB)) || any(isnan(p.Results.x0)) 
-    eyePose = [nan nan nan nan];
-    RMSE = nan;
-    fitAtBound = false;
     return
 end
 
@@ -311,7 +313,7 @@ if isnan(RMSE) || RMSE > p.Results.repeatSearchThresh
             x0 = eyePose;
         end
         x0(1:2) = x0(1:2)+[0.1 0.1]./p.Results.searchCount;
-        [eyePose_r, RMSE_r] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, ...
+        [eyePose_r, RMSE_r, ellipseParamsTransparent_r, fitAtBound_r] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, ...
             'x0',x0,...
             'eyePoseLB',p.Results.eyePoseLB,...
             'eyePoseUB',p.Results.eyePoseUB,...
@@ -321,8 +323,8 @@ if isnan(RMSE) || RMSE > p.Results.repeatSearchThresh
         if RMSE_r < RMSE
             eyePose = eyePose_r;
             RMSE = RMSE_r;
-            % Check if the fit is at a boundary
-            fitAtBound = any([any(eyePose==eyePoseLB) any(eyePose==eyePoseUB)]);
+            ellipseParamsTransparent = ellipseParamsTransparent_r;
+            fitAtBound = fitAtBound_r;
         end
     end
 end
