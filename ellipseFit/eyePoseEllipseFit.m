@@ -288,7 +288,7 @@ ellipseParamsTransparent = ellipseParamsTransparentBest;
 
 % Check if the fit is at a boundary for any parameter that is not locked
 notLocked = eyePoseLB ~= eyePoseUB;
-fitAtBound = any([any(eyePose(notLocked)==eyePoseLB(notLocked)) any(eyePose(notLocked)==eyePoseUB(notLocked))]);
+fitAtBound = any([any(abs(eyePose(notLocked)-eyePoseLB(notLocked))<1e-4) any(abs(eyePose(notLocked)-eyePoseUB(notLocked))<1e-4)]);
 
 % Restore the warning state
 warning(warningState);
