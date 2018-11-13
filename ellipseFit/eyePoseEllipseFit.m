@@ -137,14 +137,14 @@ meanYp = mean(Yp);
 % Set the bounds on the eyePose based upon the quadrant of the ellipse
 % center. We provide a few degrees of wiggle in the fit around zero.
 if meanXp < CoP(1)
-    eyePoseUB(1) = 5;
+    eyePoseUB(1) = 15;
 else
-    eyePoseLB(1) = -5;
+    eyePoseLB(1) = -15;
 end
 if meanYp > CoP(2)
-    eyePoseUB(2) = 5;
+    eyePoseUB(2) = 15;
 else
-    eyePoseLB(2) = -5;
+    eyePoseLB(2) = -15;
 end
 
 % If x0 is undefined, we make a guess based upon the location of the center
