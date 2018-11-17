@@ -54,6 +54,19 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
 %  'modelEyeSymbolSizeScaler' - Scalar. Determines if the rendered plot
 %                           elements are made larger (>1) or smaller (<1)
 %                           than default.
+%  'fImplicitPresent'       Logical. Older versions of MATLAB do not have 
+%                           the 'fImplicit' function available for plotting
+%                           of implicit functions. This flag is used to
+%                           indicate if the fImplicit function is
+%                           available. If set to false, the ezplot function
+%                           is used instead. If undefined, the routine will
+%                           test if the function is available. Setting the
+%                           value in the calling routine saves time over
+%                           multiple calls to renderEyePose. Further, the
+%                           value must be set if renderEyePose is to be
+%                           called from within the parpool, as the "exist"
+%                           function call that is otherwise used is not
+%                           allowed in parallel execution.
 %
 % Outputs:
 %   figHandle             - Handle to a created figure.
@@ -135,9 +148,19 @@ p.addParameter('modelEyeLabelNames', {'aziRotationCenter' 'eleRotationCenter', '
 p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '*g' '*g' '-g' '*g' '*g' '.y' '*y'}, @iscell);
 p.addParameter('modelEyeAlpha',1,@isnumeric);
 p.addParameter('modelEyeSymbolSizeScaler',1,@isnumeric);
+p.addParameter('fImplicitPresent',[],@islogical);
+
 
 % parse
 p.parse(eyePose, sceneGeometry, varargin{:})
+
+% If we have not been told if the fImplicit function is present, test for
+% its existence
+if isempty(p.Results.fImplicitPresent)
+    fImplicitPresent = (exist('fimplicit','file')==2);
+else
+    fImplicitPresent = p.Results.fImplicitPresent;
+end
 
 % Expand the modelEyeAlpha parameter to the full length of the model
 % components to be labeled
@@ -196,7 +219,7 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
         fh=@(x,y) pFitImplicit(1).*x.^2 +pFitImplicit(2).*x.*y +pFitImplicit(3).*y.^2 +pFitImplicit(4).*x +pFitImplicit(5).*y +pFitImplicit(6);
         % Superimpose the ellipse using fimplicit or ezplot (ezplot is the
         % fallback option for older Matlab versions)
-        if exist('fimplicit','file')==2
+        if fImplicitPresent
             plotObjectHandles(end+1) = fimplicit(fh,[1, imageSizeX, 1, imageSizeY],'Color', p.Results.modelEyePlotColors{pp}(2),'LineWidth',1);
             set(gca,'position',[0 0 1 1],'units','normalized')
             axis off;
