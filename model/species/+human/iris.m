@@ -7,26 +7,14 @@ function iris = iris( eye )
 % Description:
 %   Returns parameters that define the properties of the iris.
 %
-%   The iris has a thickness. This thickness influences the properties of
-%   the entrance pupil, as when the eye is rotated w.r.t. the camera either
-%   the front or back surface of the iris aperture defines the near or far
-%   edge of the entrance pupil.
+%   The iris can be modeled has having a thickness. This thickness
+%   influences the properties of the entrance pupil, as when the eye is
+%   rotated w.r.t. the camera either the front or back surface of the iris
+%   aperture stop defines the near or far edge of the entrance pupil.
 %
 %   I position the anterior surface of the iris at a depth of 3.9 mm,
 %   which reflects a cycloplegic eye. I model the eye with zero iris angle,
-%   thus making the iris a plane. We adjust the position of the iris so
-%   that it is centered within the rotated corneal ellipse. This is
-%   consistent with reports that the iris is shifted slightly upward with
-%   respect to the pupil center, although inconsistent with the report that
-%   it is shifted temporally:
-%
-%       ...the typical entrance pupil is decentered approximately 0.15 mm
-%       nasally and 0.1 mm inferior to the geometric center of the visible
-%       iris circumference
-%
-%   Bennett, Edward S., and Barry A. Weissman, eds. Clinical contact lens
-%   practice. Lippincott Williams & Wilkins, 2005, p119
-
+%   thus making the iris a plane. The iris is centered on the optical axis.
 %
 % Inputs:
 %   eye                   - Structure.

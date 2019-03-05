@@ -46,7 +46,7 @@ function [outputRay,rayPath] = calcNodalRay(eye,G,X,cameraMedium)
 % Examples:
 %{
     eye = modelEyeParameters('eyeLaterality','os');
-    calcNodalRay(eye,[],eye.axes.visual.coords)
+    calcNodalRay(eye,[],eye.landmarks.fovea.coords)
 %}
 
 

@@ -54,7 +54,7 @@ function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G
     plotRezGeodeticDeg = [15, 20];
     for beta = -90:plotRezGeodeticDeg(1):0
         for omega = -180:plotRezGeodeticDeg(2):180
-            visualAngles = calcVisualAngle(eye,eye.axes.visual.geodetic,[beta omega 0]);
+            visualAngles = calcVisualAngle(eye,eye.landmarks.fovea.geodetic,[beta omega 0]);
             eccen = sqrt(sum(visualAngles.^2));
             if ~isnan(eccen)
                 if eccen > 90
@@ -70,9 +70,9 @@ function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G
         end
     end
     % Add the retinal landmarks
-    plot3(eye.axes.optical.coords(1),eye.axes.optical.coords(2),eye.axes.optical.coords(3),'+k','MarkerSize',10);
-    plot3(eye.axes.visual.coords(1),eye.axes.visual.coords(2),eye.axes.visual.coords(3),'*k','MarkerSize',10);
-    plot3(eye.axes.opticDisc.coords(1),eye.axes.opticDisc.coords(2),eye.axes.opticDisc.coords(3),'ok','MarkerSize',10);
+    plot3(eye.landmarks.vertex.coords(1),eye.landmarks.vertex.coords(2),eye.landmarks.vertex.coords(3),'+k','MarkerSize',10);
+    plot3(eye.landmarks.fovea.coords(1),eye.landmarks.fovea.coords(2),eye.landmarks.fovea.coords(3),'*k','MarkerSize',10);
+    plot3(eye.landmarks.opticDisc.coords(1),eye.landmarks.opticDisc.coords(2),eye.landmarks.opticDisc.coords(3),'ok','MarkerSize',10);
 %}
 %{
     % Calculate deg/mm at the fovea as a function of ametropia and axial
@@ -82,7 +82,7 @@ function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G
     for SR = -5:1:2
         eye = modelEyeParameters('sphericalAmetropia',SR,'skipNodalPoint',true);
         S = eye.retina.S;
-        G0 = eye.axes.visual.geodetic;
+        G0 = eye.landmarks.fovea.geodetic;
         G1 = G0 + [0.1 0.1 0];
         [~, ~, ~, totalAngle ] = calcVisualAngle(eye,G0,G1);
         X0 = quadric.ellipsoidalGeoToCart(G0,S);

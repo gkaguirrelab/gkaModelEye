@@ -10,10 +10,9 @@ function eye = modelEyeParameters( varargin )
 %
 %   The parameters returned by this routine correspond to the eyeWorld
 %   coordinate space used in pupilProjection_fwd, which is relative to the
-%   optical / pupillary axis, with the apex of the cornea set as zero in
-%   depth. The space has the dimensions [depth, horizontal, vertical];
-%   negative values of depth are towards the back of the eye. The model
-%   assumes the optical and pupil axes of the eye are algined.
+%   optical axis, with the apex of the cornea set as zero in depth. The
+%   space has the dimensions [depth, horizontal, vertical]; negative values
+%   of depth are towards the back of the eye.
 %
 % Inputs:
 %   none
@@ -57,14 +56,11 @@ function eye = modelEyeParameters( varargin )
 %                           This is the wavelength domain within which
 %                           imaging is being performed. The refractive
 %                           indices vary based upon this choice.
-%  'skipEyeAxes'          - Logical. If set to true, the computation of
-%                           retinal landmarks and eye axes is skipped. This
-%                           is used internally by routines during code
-%                           complilation.
-%  'skipNodalPoint'       - Logical. If set to true, the computation of
-%                           the effective nodal point is skipped. This is
-%                           used internally by routines during code
-%                           complilation.
+%  'calcLandmarkFovea', 'calcLandmarkOpticDisc', 'calcLandmarkNodalPoint' -
+%                           Logical. If set to true, the computation of
+%                           each of these landmarks is performed. This
+%                           defaults to false given that these are time
+%                           consuming operations.
 %
 % Outputs:
 %   eye                   - A structure with fields that contain the values
@@ -76,7 +72,7 @@ function eye = modelEyeParameters( varargin )
     eye = modelEyeParameters();
 %}
 %{
-    % Parameters for an myopic (-3), left, human eye
+    % Parameters for a myopic (-3), left, human eye
     eye = modelEyeParameters('sphericalAmetropia',-3,'eyeLaterality','left');
 %}
 
@@ -93,8 +89,9 @@ p.addParameter('ageYears',20,@isscalar);
 p.addParameter('accommodationDiopeters',0,@isscalar);
 p.addParameter('measuredCornealCurvature',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('spectralDomain','nir',@ischar);
-p.addParameter('skipEyeAxes',false,@islogical);
-p.addParameter('skipNodalPoint',false,@islogical);
+p.addParameter('calcLandmarkFovea',false,@islogical);
+p.addParameter('calcLandmarkOpticDisc',false,@islogical);
+p.addParameter('calcLandmarkNodalPoint',false,@islogical);
 
 % parse
 p.parse(varargin{:})
@@ -163,7 +160,7 @@ switch eye.meta.species
         % Eye anatomy
         eye.cornea = human.cornea(eye);
         eye.iris = human.iris(eye);
-        eye.pupil = human.pupil(eye);
+        eye.stop = human.stop(eye);
         eye.retina = human.retina(eye);
         eye.lens = human.lens(eye);
         
@@ -177,19 +174,22 @@ switch eye.meta.species
         % Rotation centers
         eye.rotationCenters = human.rotationCenters(eye);
         
-        % Identification of the eye axes is optional
-        if ~p.Results.skipEyeAxes
-           eye.axes = human.axes(eye);
-        end
-        
         % Refractive indices
         eye.index.vitreous = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );
         eye.index.aqueous = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
-         
-        % Identification of the effective nodal point is optional
-        if ~p.Results.skipNodalPoint
-           eye.meta.nodalPoint = calcEffectiveNodalPoint(eye);
+
+        % Landmarks. Some of these are optional
+        eye.landmarks.vertex = human.landmarks.vertex(eye);
+        if p.Results.calcLandmarkFovea
+           eye.landmarks.fovea = human.landmarks.fovea(eye);
         end
+        if p.Results.calcLandmarkOpticDisc
+           eye.landmarks.opticDisc = human.landmarks.opticDisc(eye);
+        end
+        if p.Results.calcLandmarkNodalPoint
+           eye.landmarks.nodalPoint = calcEffectiveNodalPoint(eye);
+        end
+        
         
     %% Canine
     case {'dog','Dog','canine','Canine'}

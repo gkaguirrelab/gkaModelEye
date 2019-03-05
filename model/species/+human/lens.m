@@ -194,7 +194,7 @@ radii(2:3) = abs(a);
 
 % Build the quadric
 S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
-S = quadric.translate(S,[eye.pupil.center(1)+radii(1) 0 0]);
+S = quadric.translate(S,[eye.stop.center(1)+radii(1) 0 0]);
 c = quadric.center(S); r = quadric.radii(S);
 boundingBox = [lensCenter c(1)-r(1) -5 5 -5 5];
 

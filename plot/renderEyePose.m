@@ -32,7 +32,7 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
 %                           added to the rendering. The line connects the
 %                           center of the pupil for a -50 and +50 rotation
 %                           of azimuth and zero elevation.
-%  'nPupilPerimPoints'    - Scalar. The number of pupil perimeter points.
+%  'nStopPerimPoints'     - Scalar. The number of stop perimeter points.
 %  'nIrisPerimPoints'     - Scalar. The number of iris perimeter points
 %  'modelEyeLabelNames'   - Cell array of character vectors. Identifies the
 %                           elements of the 'pointLabels' variable returned
@@ -79,36 +79,21 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
 % Examples:
 %{
     %% Display a 2D image of the right eye
-    sceneGeometry=createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
+    sceneGeometry=createSceneGeometry();
     % Define an eyePose with azimuth, elevation, torsion, and pupil radius
     eyePose = [-30 -5 0 3];
     renderEyePose(eyePose, sceneGeometry);
 %}
 %{
-    %% Plot the pupil ellipse for various eye poses
-    % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
-    % Prepare a figure
-    modelEyeLabelNames = {'pupilPerimeterBack_hidden' 'pupilPerimeterBack' 'pupilEllipse' 'pupilPerimeterFront_hidden' 'pupilPerimeterFront' 'pupilPerimeter'};
-	modelEyePlotColors = {'xr' '*r' '-y' 'xg' '*g' '*g'};    
-    renderEyePose([0 0 0 2], sceneGeometry,'modelEyeLabelNames',modelEyeLabelNames,'modelEyePlotColors',modelEyePlotColors);
-    for azi = -35:35:35
-        for ele = -35:35:35
-            eyePose = [azi ele 0 2];
-            renderEyePose(eyePose, sceneGeometry,'newFigure',false,'modelEyeLabelNames',modelEyeLabelNames,'modelEyePlotColors',modelEyePlotColors);
-        end
-    end
-%}
-%{
     %% Show the effect of eye torsion
     % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
-    renderEyePose([0 0 0 3], sceneGeometry,'showPupilTextLabels',true,'nPupilPerimPoints',5);
-    renderEyePose([0 0 45 3], sceneGeometry,'showPupilTextLabels',true,'nPupilPerimPoints',5);
+    sceneGeometry=createSceneGeometry();
+    renderEyePose([0 0 0 3], sceneGeometry,'showPupilTextLabels',true,'nStopPerimPoints',5);
+    renderEyePose([0 0 45 3], sceneGeometry,'showPupilTextLabels',true,'nStopPerimPoints',5);
 %}
 %{
     %% Demonstrate the effect of camera translation
-    sceneGeometry=createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
+    sceneGeometry=createSceneGeometry();
     % Define an eyePose with azimuth, elevation, torsion, and pupil radius
     eyePose = [0 0 0 3];
     renderEyePose(eyePose, sceneGeometry);
@@ -118,13 +103,13 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
 %}
 %{
     %% Demonstrate the effect of positive camera torsion
-    sceneGeometry=createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
+    sceneGeometry=createSceneGeometry();
     % Define an eyePose with azimuth, elevation, torsion, and pupil radius
     eyePose = [0 0 0 3];
-    renderEyePose(eyePose, sceneGeometry,'showPupilTextLabels',true,'nPupilPerimPoints',5);
+    renderEyePose(eyePose, sceneGeometry,'showPupilTextLabels',true,'nStopPerimPoints',5);
     % Adjust the camera torsion and replot
     sceneGeometry.cameraPosition.torsion = sceneGeometry.cameraPosition.torsion + 45;
-    renderEyePose(eyePose, sceneGeometry,'showPupilTextLabels',true,'nPupilPerimPoints',5);
+    renderEyePose(eyePose, sceneGeometry,'showPupilTextLabels',true,'nStopPerimPoints',5);
 %}
 
 
@@ -141,11 +126,11 @@ p.addParameter('newFigure',true,@islogical);
 p.addParameter('visible',true,@islogical);
 p.addParameter('showPupilTextLabels',false,@islogical);
 p.addParameter('showAzimuthPlane',false,@islogical);
-p.addParameter('nPupilPerimPoints',8,@isscalar);
+p.addParameter('nStopPerimPoints',8,@isscalar);
 p.addParameter('nIrisPerimPoints',20,@isscalar);
 p.addParameter('modelIrisThickness',false,@islogical);
-p.addParameter('modelEyeLabelNames', {'aziRotationCenter' 'eleRotationCenter', 'retina' 'irisPerimeter' 'pupilPerimeterBack' 'pupilPerimeter' 'pupilEllipse' 'pupilPerimeterFront' 'pupilPerimeter' 'cornea' 'cornealApex'}, @iscell);
-p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '*g' '*g' '-g' '*g' '*g' '.y' '*y'}, @iscell);
+p.addParameter('modelEyeLabelNames', {'aziRotationCenter' 'eleRotationCenter', 'retina' 'irisPerimeter' 'stopCenter' 'pupilPerimeter' 'pupilEllipse' 'cornea' 'cornealApex'}, @iscell);
+p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '+r' '*g' '-g' '.y' '*y'}, @iscell);
 p.addParameter('modelEyeAlpha',1,@isnumeric);
 p.addParameter('modelEyeSymbolSizeScaler',1,@isnumeric);
 p.addParameter('fImplicitPresent',[],@islogical);
@@ -205,7 +190,7 @@ xlim([0 imageSizeX]);
 ylim([0 imageSizeY]);
 
 % Obtain the pupilProjection of the model eye to the image plane
-[pupilEllipseParams, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nPupilPerimPoints',p.Results.nPupilPerimPoints, 'modelIrisThickness', p.Results.modelIrisThickness, 'nIrisPerimPoints',p.Results.nIrisPerimPoints);
+[pupilEllipseParams, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nStopPerimPoints',p.Results.nStopPerimPoints, 'nIrisPerimPoints',p.Results.nIrisPerimPoints);
 
 % Set up an empty variable to hold plot object handles
 plotObjectHandles = gobjects(0);

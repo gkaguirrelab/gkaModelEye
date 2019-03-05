@@ -1,19 +1,19 @@
-function axes = axes( eye )
-% Returns the axes sub-field of an eye model structure
+function landmarks = landmarks( eye )
+% Returns the landmarks sub-field of an eye model structure
 %
 % Syntax
-%  axes = human.axes( eye )
+%  landmarks = human.landmarks( eye )
 %
 % Description:
 %   Calculates the position on the retinal surface of the posterior segment
-%   vertex, the fovea, and the center of the optic disc.
+%   vertex, fovea, and the center of the optic disc. 
 %
 % Inputs
 %   eye                   - Structure.
 %
 % Outputs
-%   axes                  - Structure with the fields 'optical','visual',
-%                           and 'opticDisc'
+%   landmarks             - Structure with the fields 'vertex',
+%                           'fovea', and 'opticDisc'
 %
 % Examples:
 %{
@@ -28,12 +28,12 @@ function axes = axes( eye )
     hold on
 
     % Add the retinal landmarks
-    plot3(eye.axes.optical.coords(1),eye.axes.optical.coords(2),eye.axes.optical.coords(3),'+m','MarkerSize',10);
-    plot3(eye.axes.visual.coords(1),eye.axes.visual.coords(2),eye.axes.visual.coords(3),'+r','MarkerSize',10);
-    plot3(eye.axes.opticDisc.coords(1),eye.axes.opticDisc.coords(2),eye.axes.opticDisc.coords(3),'*y','MarkerSize',10);
+    plot3(eye.landmarks.vertex.coords(1),eye.landmarks.vertex.coords(2),eye.landmarks.vertex.coords(3),'+m','MarkerSize',10);
+    plot3(eye.landmarks.fovea.coords(1),eye.landmarks.fovea.coords(2),eye.landmarks.fovea.coords(3),'+r','MarkerSize',10);
+    plot3(eye.landmarks.opticDisc.coords(1),eye.landmarks.opticDisc.coords(2),eye.landmarks.opticDisc.coords(3),'*y','MarkerSize',10);
 
     % Add the geodetic path
-    [geoDistance,~,~,geodeticPathCoords] = quadric.panouGeodesicDistance(S,eye.axes.visual.geodetic,eye.axes.opticDisc.geodetic);
+    [geoDistance,~,~,geodeticPathCoords] = quadric.panouGeodesicDistance(S,eye.landmarks.fovea.geodetic,eye.landmarks.opticDisc.geodetic);
     plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'-y','MarkerSize',10);
 %}
 %{
@@ -42,7 +42,7 @@ function axes = axes( eye )
     SRvals = -10:1:2;
     for ii = 1:length(SRvals)
         eye = modelEyeParameters('sphericalAmetropia',SRvals(ii));
-        odf(ii) = sqrt(sum((eye.axes.visual.coords(2:3) - eye.axes.opticDisc.coords(2:3)).^2));
+        odf(ii) = sqrt(sum((eye.landmarks.fovea.coords(2:3) - eye.landmarks.opticDisc.coords(2:3)).^2));
     end
     figure
     plot(SRvals,odf,'-*r');
@@ -73,32 +73,34 @@ S = eye.retina.S;
 opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','off');
 
 
-%% optical axis
-% Eye axes are specified as rotations (in degrees) within the eye world
-% coordinate frame for azimuth, elevation, and rotation. Axes are defined
-% relative to the optical axis, which itself is set to be aligned with the
-% p1 dimension of the eye world coordinate frame.
-axes.optical.degField = [0 0 0];
-axes.optical.geodetic = [-90 -90 0];
-axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
+%% vertex and optical axis
+% Eye landmarks are specified as rotations (in degrees) within the eye
+% world coordinate frame for azimuth, elevation, and rotation. Axes are
+% defined relative to the optical axis, which itself is set to be aligned
+% with the p1 dimension of the eye world coordinate frame.
+landmarks.vertex.degField = [0 0 0];
+landmarks.vertex.geodetic = [-90 -90 0];
+landmarks.vertex.coords = quadric.ellipsoidalGeoToCart(landmarks.vertex.geodetic,S)';
 
 
-%% visual axis
-% Set the desired angle in degrees of visual field between the optical and
-% visual axes of the eye (the angle alpha). Alpha (and the related value
-% kappa: the angle between the visual and pupillary axes) is found to vary
-% by spherical ametropia:
+%% fovea
+% Here I assign the location of the fovea on the retina. This is done by
+% first assigning an angle alpha between the optical axis of the eye and a
+% second axis that originates in the fovea and arrives at a fixation point.
+% This axis is practically realized here as the ray that connects the fovea
+% through the center of the aperture stop and then exits the cornea at the
+% angles alpha. This is in spirit similar to the "line of sight" axis,
+% which has the property of passing through the center of the entrance
+% pupil. The angle alpha is technically defined as the angle between the
+% optical axis and the visual axis, which is the ray that originates from
+% the fovea, passes through the nodal points of the eye, and arrives at the
+% fixation point. As a practical matter, all three of these foveally-based
+% axes are very similar to one another.
 %
-%   Hashemi, Hassan, et al. "Distribution of angle kappa measurements with
-%   Orbscan II in a population-based survey." Journal of Refractive Surgery
-%   26.12 (2010): 966-971.
+% The angle alpha has been proposed to vary with spherical refractive error:
 %
 %   Tabernero, Juan, et al. "Mechanism of compensation of aberrations in
 %   the human eye." JOSA A 24.10 (2007): 3274-3283.
-%
-%   Basmak, Hikmet, et al. "Measurement of angle kappa with synoptophore
-%   and Orbscan II in a normal population." Journal of Refractive Surgery
-%   23.5 (2007): 456-460.
 %
 %   Mathur, Ankit, Julia Gehrmann, and David A. Atchison. "Pupil shape as
 %   viewed along the horizontal visual field." Journal of vision 13.6
@@ -145,12 +147,12 @@ axes.optical.coords = quadric.ellipsoidalGeoToCart(axes.optical.geodetic,S)';
 a0 = [5.8 3.0 0];
 L = @(SR) 16.5 / (16.5 - 0.299*SR );
 alpha = @(SR) atand(L(SR).*tand(a0));
-axes.visual.degField = alpha(eye.meta.sphericalAmetropia);
+landmarks.fovea.degField = alpha(eye.meta.sphericalAmetropia);
 switch eye.meta.eyeLaterality
     case 'Right'
         % No change needed
     case 'Left'
-        axes.visual.degField(1) = -axes.visual.degField(1);
+        landmarks.fovea.degField(1) = -landmarks.fovea.degField(1);
     otherwise
         error('eye laterality not defined')
 end
@@ -161,7 +163,7 @@ end
 % that the elevational angle is inverted. This is because a negative value
 % in this context corresponds to deflection of the visual axis upwards in
 % the visual field.
-myObj = @(G) sum(angdiff(deg2rad(calcVisualAngle(eye,axes.optical.geodetic,G,[],[],cameraMedium)),deg2rad(axes.visual.degField(1:2).*[1 -1])).^2).*1e100;
+myObj = @(G) sum(angdiff(deg2rad(calcVisualAngle(eye,landmarks.vertex.geodetic,G,[],[],cameraMedium)),deg2rad(landmarks.fovea.degField(1:2).*[1 -1])).^2).*1e100;
 
 % Define an x0 based upon laterality and quadric dimensions
 switch eye.meta.eyeLaterality
@@ -172,8 +174,7 @@ switch eye.meta.eyeLaterality
         end
         if isequal(quadric.dimensionSizeRank(S),[2 1 3])
             % Need to handle this case for extreme myopia
-            error('The axes routine cannot model this extreme degree of myopia; exiting');
-            return
+            error('The landmarks routine cannot model this extreme degree of myopia; exiting');
         end
     case 'Left'
         if isequal(quadric.dimensionSizeRank(S),[1 2 3]) || ...
@@ -182,8 +183,7 @@ switch eye.meta.eyeLaterality
         end
         if isequal(quadric.dimensionSizeRank(S),[2 1 3])
             % Need to handle this case for extreme myopia
-            error('The axes routine cannot model this extreme degree of myopia; exiting');
-            return
+            error('The landmarks routine cannot model this extreme degree of myopia; exiting');
         end
 end
 
@@ -192,16 +192,16 @@ lb = [-89 -180 0];
 ub = [-80 180 0];
 
 % Perform the search
-axes.visual.geodetic = fmincon(myObj, x0, [], [], [], [], lb, ub, [], opts);
+landmarks.fovea.geodetic = fmincon(myObj, x0, [], [], [], [], lb, ub, [], opts);
 
-% Obtain the initialRay from the fovea that intersects the pupil center
-[~, ~, axes.visual.initialRay] = calcVisualAngle(eye,axes.optical.geodetic,axes.visual.geodetic,[],[],cameraMedium);
+% Obtain the initialRay from the fovea that intersects the stop center
+[~, ~, landmarks.fovea.initialRay] = calcVisualAngle(eye,landmarks.vertex.geodetic,landmarks.fovea.geodetic,[],[],cameraMedium);
 
 % Obtain the coords coordinates of the fovea
-axes.visual.coords = quadric.ellipsoidalGeoToCart(axes.visual.geodetic,S)';
+landmarks.fovea.coords = quadric.ellipsoidalGeoToCart(landmarks.fovea.geodetic,S)';
 
 
-%% optic disc axis (physiologic blind spot)
+%% optic disc (physiologic blind spot)
 % The center of the optic disc is nasal and superior to the fovea.
 % Rohrschneider measured the distance (in degrees of visual angle) between
 % the center of the optic disc and the fovea in 104 people, and found a
@@ -213,20 +213,20 @@ axes.visual.coords = quadric.ellipsoidalGeoToCart(axes.visual.geodetic,S)';
 %   the fundus." Investigative ophthalmology & visual science 45.9 (2004):
 %   3257-3258.
 %
-% By adding the position of the visual axis in degrees relative to the
-% optical axis, we obtain the position of the optic disc in degrees
-% relative to the optical axis.
+% By adding the position of fovea in degrees relative to the optical axis,
+% we obtain the position of the optic disc in degrees relative to the
+% optical axis.
 %
 switch eye.meta.eyeLaterality
     case 'Right'
-        axes.opticDisc.degField = [-15.5 -1.5 0]+axes.visual.degField;
+        landmarks.opticDisc.degField = [-15.5 -1.5 0]+landmarks.fovea.degField;
     case 'Left'
-        axes.opticDisc.degField = [15.5 -1.5 0]+axes.visual.degField;
+        landmarks.opticDisc.degField = [15.5 -1.5 0]+landmarks.fovea.degField;
 end
 
 % Define the objective. Again note that the vertical target angle in
 % degrees of visual field is reversed.
-myObj = @(G) sum(angdiff(deg2rad(calcVisualAngle(eye,axes.optical.geodetic,G,[],[],cameraMedium)),deg2rad(axes.opticDisc.degField(1:2).*[1 -1])).^2).*1e100;
+myObj = @(G) sum(angdiff(deg2rad(calcVisualAngle(eye,landmarks.vertex.geodetic,G,[],[],cameraMedium)),deg2rad(landmarks.opticDisc.degField(1:2).*[1 -1])).^2).*1e100;
 
 % Define an x0 based upon laterality and quadric dimensions
 switch eye.meta.eyeLaterality
@@ -259,13 +259,13 @@ lb = [-89 -180 0];
 ub = [-60 180 0];
 
 % Perform the search
-axes.opticDisc.geodetic = fmincon(myObj, x0, [], [], [], [], lb, ub, [], opts);
+landmarks.opticDisc.geodetic = fmincon(myObj, x0, [], [], [], [], lb, ub, [], opts);
 
-% Obtain the initialRay from the opticDisc that intersects the pupil center
-[~, ~, axes.opticDisc.initialRay] = calcVisualAngle(eye,axes.optical.geodetic,axes.opticDisc.geodetic,[],[],cameraMedium);
+% Obtain the initialRay from the opticDisc that intersects the stop center
+[~, ~, landmarks.opticDisc.initialRay] = calcVisualAngle(eye,landmarks.vertex.geodetic,landmarks.opticDisc.geodetic,[],[],cameraMedium);
 
 % Obtain the coords of the optic disc
-axes.opticDisc.coords = quadric.ellipsoidalGeoToCart(axes.opticDisc.geodetic,S)';
+landmarks.opticDisc.coords = quadric.ellipsoidalGeoToCart(landmarks.opticDisc.geodetic,S)';
 
 
 end
