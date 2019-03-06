@@ -56,7 +56,7 @@ function eye = modelEyeParameters( varargin )
 %                           This is the wavelength domain within which
 %                           imaging is being performed. The refractive
 %                           indices vary based upon this choice.
-%  'calcLandmarkFovea', 'calcLandmarkOpticDisc', 'calcLandmarkNodalPoint' -
+%  'calcLandmarkFovea', 'calcLandmarkOpticDisc', 'calcLandmarkOpticalCenter' -
 %                           Logical. If set to true, the computation of
 %                           each of these landmarks is performed. This
 %                           defaults to false given that these are time
@@ -91,7 +91,7 @@ p.addParameter('measuredCornealCurvature',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('spectralDomain','nir',@ischar);
 p.addParameter('calcLandmarkFovea',false,@islogical);
 p.addParameter('calcLandmarkOpticDisc',false,@islogical);
-p.addParameter('calcLandmarkNodalPoint',false,@islogical);
+p.addParameter('calcLandmarkOpticalCenter',false,@islogical);
 
 % parse
 p.parse(varargin{:})
@@ -186,8 +186,8 @@ switch eye.meta.species
         if p.Results.calcLandmarkOpticDisc
            eye.landmarks.opticDisc = human.landmarks.opticDisc(eye);
         end
-        if p.Results.calcLandmarkNodalPoint
-           eye.landmarks.nodalPoint = calcEffectiveNodalPoint(eye);
+        if p.Results.calcLandmarkOpticalCenter
+           eye.landmarks.opticalCenter = calcOpticalCenter(eye);
         end
         
         

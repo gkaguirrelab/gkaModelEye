@@ -69,9 +69,16 @@ switch eye.meta.eyeLaterality
         opticDisc.degField = [15.5 -1.5 0]+eye.landmarks.fovea.degField;
 end
 
-% Define the objective. Again note that the vertical target angle in
-% degrees of visual field is reversed.
-myObj = @(G) sum(angdiff(deg2rad(calcVisualAngle(eye,eye.landmarks.vertex.geodetic,G,[],[],cameraMedium)),deg2rad(opticDisc.degField(1:2).*[1 -1])).^2).*1e100;
+% Now calculate the location on the retina corresponding to this visual
+% angle. The objective function is the difference in the visual field
+% position of a candidate retinal point (G) and the desired value. Note
+% that the elevational angle is inverted. This is because a negative value
+% in this context corresponds to deflection of the visual axis upwards in
+% the visual field.
+
+% Some machinery to extract the second returned value from calcVisualAngle
+theseAngles = @(G) wrapCalcVisualAngle(eye,eye.landmarks.vertex.geodetic,G,cameraMedium);
+myObj = @(G) sum(angdiff(deg2rad(theseAngles(G)),deg2rad(opticDisc.degField(1:2).*[1 -1])).^2).*1e100;
 
 % Define an x0 based upon laterality and quadric dimensions
 switch eye.meta.eyeLaterality
@@ -106,12 +113,23 @@ ub = [-60 180 0];
 % Perform the search
 opticDisc.geodetic = fmincon(myObj, x0, [], [], [], [], lb, ub, [], opts);
 
-% Obtain the initialRay from the opticDisc that intersects the stop center
-[~, ~, initialRay] = calcVisualAngle(eye,eye.landmarks.vertex.geodetic,opticDisc.geodetic,[],[],cameraMedium);
-opticDisc.initialRay = initialRay;
+% Obtain the blind spot ray
+[~, ~, ~, outputRay1, ~, rayPath1] = calcVisualAngle(eye,eye.landmarks.vertex.geodetic,opticDisc.geodetic,[],[],cameraMedium);
+opticDisc.outputRay = outputRay1;
+opticDisc.rayPath = rayPath1;
 
 % Obtain the coords of the optic disc
 opticDisc.coords = quadric.ellipsoidalGeoToCart(opticDisc.geodetic,S)';
 
 
+end
+
+
+
+%% LOCAL FUNCTION
+
+% A miserable little function to return the second output of the
+% calcVisualAngle function. Why oh why is this not built into MATLAB?
+function visualAngleByPlane = wrapCalcVisualAngle(eye,G0,G1,cameraMedium)
+[~, visualAngleByPlane ] = calcVisualAngle(eye,G0,G1,[],[],cameraMedium);
 end

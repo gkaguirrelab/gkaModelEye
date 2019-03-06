@@ -30,9 +30,9 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
     plotModelEyeSchematic(eye);
 %}
 %{
-    % A vertical view plot with the fovea and line-of-sight axis
-    eye = modelEyeParameters('calcLandmarkFovea',true);
-    plotModelEyeSchematic(eye,'view','vert');
+    % A plot with the fovea and optical center
+    eye = modelEyeParameters('calcLandmarkFovea',true,'calcLandmarkOpticalCenter',true);
+    plotModelEyeSchematic(eye);
 %}
 %{
     % Two panel plot with horizontal and vertical views for eyes with 0 and -10
@@ -109,15 +109,14 @@ sg.eye = eye;
 idx = find(strcmp(pointLabels,'cornealApex'));
 plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColor]);
 
-%% Plot the fovea and line-of-sight axis
+%% Plot the fovea and visual axis
 % Obtain the rayPath through the optical system from the fovea to cornea
 if isfield(eye,'landmarks')
     if isfield(eye.landmarks,'fovea')
         plot(eye.landmarks.fovea.coords(PdimA),eye.landmarks.fovea.coords(PdimB),['*' p.Results.plotColor])
-        [outputRay, rayPath] = rayTraceQuadrics(eye.landmarks.fovea.initialRay, assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera','cameraMedium','air' ));
-        plot(rayPath(PdimA,:),rayPath(PdimB,:),[':' p.Results.plotColor]);
-        p1=outputRay(:,1);
-        p2=p1+outputRay(:,2).*3;
+        plot(eye.landmarks.fovea.rayPath(PdimA,:),eye.landmarks.fovea.rayPath(PdimB,:),[':' p.Results.plotColor]);
+        p1=eye.landmarks.fovea.outputRay(:,1);
+        p2=p1+eye.landmarks.fovea.outputRay(:,2).*3;
         r = [p1 p2];
         plot(r(PdimA,:),r(PdimB,:),[':' p.Results.plotColor]);
     end
@@ -128,19 +127,18 @@ end
 if isfield(eye,'landmarks')
     if isfield(eye.landmarks,'opticDisc')
         plot(eye.landmarks.opticDisc.coords(PdimA),eye.landmarks.opticDisc.coords(PdimB),['x' p.Results.plotColor])
-        [outputRay, rayPath] = rayTraceQuadrics(eye.landmarks.opticDisc.initialRay, assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera','cameraMedium','air' ));
-        plot(rayPath(PdimA,:),rayPath(PdimB,:),[':' p.Results.plotColor]);
-        p1=outputRay(:,1);
-        p2=p1+outputRay(:,2).*3;
+        plot(eye.landmarks.opticDisc.rayPath(PdimA,:),eye.landmarks.opticDisc.rayPath(PdimB,:),[':' p.Results.plotColor]);
+        p1=eye.landmarks.opticDisc.outputRay(:,1);
+        p2=p1+eye.landmarks.opticDisc.outputRay(:,2).*3;
         r = [p1 p2];
         plot(r(PdimA,:),r(PdimB,:),[':' p.Results.plotColor]);
     end
 end
 
-%% Plot the effective nodal point
+%% Plot the optical center
 if isfield(eye,'landmarks')
-    if isfield(eye.landmarks,'nodalPoint')
-        plot(eye.landmarks.nodalPoint(PdimA),eye.landmarks.nodalPoint(PdimB),['o' p.Results.plotColor]);
+    if isfield(eye.landmarks,'opticalCenter')
+        plot(eye.landmarks.opticalCenter(PdimA),eye.landmarks.opticalCenter(PdimB),['o' p.Results.plotColor]);
     end
 end
 

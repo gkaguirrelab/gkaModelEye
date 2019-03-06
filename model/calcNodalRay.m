@@ -1,11 +1,11 @@
-function [outputRay,rayPath] = calcNodalRay(eye,G,X,cameraMedium)
+function [outputRay,rayPath, angleError] = calcNodalRay(eye,G,X,cameraMedium)
 % Returns the path of the nodal ray from a retinal point
 %
 % Syntax:
-%  rayPath = calcNodalRay(eye,G0,X0,cameraMedium)
+%  [outputRay,rayPath, angleError] = calcNodalRay(eye,G,X,cameraMedium)
 %
 % Description
-%   Given a sceneGeometry and a coordinate on the retinal surface, the
+%   Given an eye structure and a coordinate on the retinal surface, the
 %   routine returns a matrix that contains the path of a ray that satisfies
 %   the property that the angle (wrt the optical axis) of the ray as it
 %   departs the retina is equal to the angle with which it departs the
@@ -20,13 +20,13 @@ function [outputRay,rayPath] = calcNodalRay(eye,G,X,cameraMedium)
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
-%   G0                    - 3x1 vector that provides the geodetic
+%   G                     - 3x1 vector that provides the geodetic
 %                           coordinates beta, omega, and elevation in units
 %                           of degrees. Beta is defined over the range
 %                           -90:90, and omega over the range -180:180.
 %                           Elevation has an obligatory value of zero as
 %                           this solution is only defined on the surface.
-%   X0                    - 3x1 vector that specifies the Cartesian
+%   X                     - 3x1 vector that specifies the Cartesian
 %                           location of a point on the quadric surface.
 %   cameraMedium          - The medium in which the eye is located.
 %                           Defaults to 'air'.
@@ -42,10 +42,13 @@ function [outputRay,rayPath] = calcNodalRay(eye,G,X,cameraMedium)
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
 %                           will be nan.
+%   angleError            - Scalar. The angle between the initial and
+%                           output rays for the nominal nodal ray. Ideally,
+%                           this value should be zero.
 %
 % Examples:
 %{
-    eye = modelEyeParameters('eyeLaterality','os');
+    eye = modelEyeParameters('calcLandmarkFovea',true);
     calcNodalRay(eye,[],eye.landmarks.fovea.coords)
 %}
 
@@ -109,7 +112,7 @@ angle_p1p2 = deg2rad(angle_p1p2);
 angle_p1p3 = -deg2rad(angle_p1p3);
 
 % Perform the search
-inputRayAngles = fmincon(myError,[angle_p1p2 angle_p1p3],[],[],[],[],[-pi/2,-pi/2],[pi/2,pi/2],[],options);
+[inputRayAngles, angleError] = fmincon(myError,[angle_p1p2 angle_p1p3],[],[],[],[],[-pi/2,-pi/2],[pi/2,pi/2],[],options);
 
 % Calculate and save the outputRay and the raypath
 [outputRay,rayPath] = rayTraceQuadrics(assembleInputRay(X,inputRayAngles(1),inputRayAngles(2)), opticalSystem);

@@ -18,8 +18,8 @@ function fovea = fovea( eye )
 %
 % Examples:
 %{
-    % Plot the retinal surface and the positions of the landmarks
-    eye = modelEyeParameters('sphericalAmetropia',-1.5);
+    % Plot the retinal surface and the positions of the fovea
+    eye = modelEyeParameters('sphericalAmetropia',-1.5,'calcLandmarkFovea',true);
     S = eye.retina.S;
     boundingBox = eye.retina.boundingBox;
     figure
@@ -31,7 +31,6 @@ function fovea = fovea( eye )
     % Add the retinal landmarks
     plot3(eye.landmarks.vertex.coords(1),eye.landmarks.vertex.coords(2),eye.landmarks.vertex.coords(3),'+m','MarkerSize',10);
     plot3(eye.landmarks.fovea.coords(1),eye.landmarks.fovea.coords(2),eye.landmarks.fovea.coords(3),'+r','MarkerSize',10);
-    plot3(eye.landmarks.opticDisc.coords(1),eye.landmarks.opticDisc.coords(2),eye.landmarks.opticDisc.coords(3),'*y','MarkerSize',10);
 
     % Add the geodetic path
     [geoDistance,~,~,geodeticPathCoords] = quadric.panouGeodesicDistance(S,eye.landmarks.fovea.geodetic,eye.landmarks.opticDisc.geodetic);
@@ -159,7 +158,10 @@ end
 % that the elevational angle is inverted. This is because a negative value
 % in this context corresponds to deflection of the visual axis upwards in
 % the visual field.
-myObj = @(G) sum(angdiff(deg2rad(calcVisualAngle(eye,eye.landmarks.vertex.geodetic,G,[],[],cameraMedium)),deg2rad(fovea.degField(1:2).*[1 -1])).^2).*1e100;
+
+% Some machinery to extract the second returned value from calcVisualAngle
+theseAngles = @(G) wrapCalcVisualAngle(eye,eye.landmarks.vertex.geodetic,G,cameraMedium);
+myObj = @(G) sum(angdiff(deg2rad(theseAngles(G)),deg2rad(fovea.degField(1:2).*[1 -1])).^2).*1e100;
 
 % Define an x0 based upon laterality and quadric dimensions
 switch eye.meta.eyeLaterality
@@ -190,12 +192,20 @@ ub = [-80 180 0];
 % Perform the search
 fovea.geodetic = fmincon(myObj, x0, [], [], [], [], lb, ub, [], opts);
 
-% Obtain the initialRay from the fovea that intersects the stop center
-[~, ~, initialRay] = calcVisualAngle(eye,eye.landmarks.vertex.geodetic,fovea.geodetic,[],[],cameraMedium);
-fovea.initialRay = initialRay;
+% Obtain the visual axis ray
+[~, ~, ~, outputRay1, ~, rayPath1] = calcVisualAngle(eye,eye.landmarks.vertex.geodetic,fovea.geodetic,[],[],cameraMedium);
+fovea.outputRay = outputRay1;
+fovea.rayPath = rayPath1;
 
 % Obtain the coords coordinates of the fovea
 fovea.coords = quadric.ellipsoidalGeoToCart(fovea.geodetic,S)';
 
+end
 
+%% LOCAL FUNCTION
+
+% A miserable little function to return the second output of the
+% calcVisualAngle function. Why oh why is this not built into MATLAB?
+function visualAngleByPlane = wrapCalcVisualAngle(eye,G0,G1,cameraMedium)
+[~, visualAngleByPlane ] = calcVisualAngle(eye,G0,G1,[],[],cameraMedium);
 end
