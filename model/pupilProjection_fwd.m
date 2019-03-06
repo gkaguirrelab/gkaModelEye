@@ -1,4 +1,4 @@
-function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLabels, cameraIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
+function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoints, pointLabels, cameraIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
 % Obtain the parameters of the entrance pupil ellipse on the image plane
 %
 % Syntax:
@@ -80,6 +80,10 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
 %                           pupil perimeter. If fullEyeModel is true, then
 %                           the entire model of ~1000 points will be
 %                           returned.
+%   headPoints            - An nx3 matrix of the coordinates of the
+%                           points of the eye model in the headWorld
+%                           coordinate frame. This is the same as the
+%                           eyePoints coordinate frame after eye rotation.
 %   eyePoints             - An nx3 matrix of the coordinates of the
 %                           points of the eye model in the eyeWorld
 %                           coordinate frame.
@@ -119,7 +123,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLa
     pupilFitError = [];
     for aa = 1:length(aziVals)
         eyePose = [aziVals(aa) -3 0 3];
-        [pupilEllipseOnImagePlane, ~, ~, ~, ~, ~, pupilFitError(aa)] = pupilProjection_fwd(eyePose, sceneGeometry,'nStopPerimPoints',6);
+        [pupilEllipseOnImagePlane, ~, ~, ~, ~, ~, ~, pupilFitError(aa)] = pupilProjection_fwd(eyePose, sceneGeometry,'nStopPerimPoints',6);
     end
     figure
     plot(aziVals,pupilFitError,'.r');
@@ -360,7 +364,7 @@ if isfield(sceneGeometry,'refraction')
         % Assemble the static args for the virtualImageFunc
         args = {sceneGeometry.cameraPosition.translation, ...
                 sceneGeometry.eye.rotationCenters, ...
-                sceneGeometry.refraction.pupilToCamera.opticalSystem};
+                sceneGeometry.refraction.stopToCamera.opticalSystem};
 
         % Identify the eyePoints subject to refraction by the cornea
         refractPointsIdx = find(...
@@ -408,6 +412,8 @@ R.tor = [1 0 0; 0 cosd(eyeTorsion) -sind(eyeTorsion); 0 sind(eyeTorsion) cosd(ey
 
 
 %% Apply the eye rotation
+headPoints = eyePoints;
+
 % This order (tor-ele-azi) corresponds to a head-fixed, extrinsic, rotation
 % matrix. The reverse order (azi-ele-tor) would be an eye-fixed, intrinsic
 % rotation matrix and would corresponds to the "Fick coordinate" scheme.
@@ -419,15 +425,15 @@ rotOrder = {'tor','ele','azi'};
 % rotation centers that differ by Euler angle.
 rotatePointsIdx = ~contains(pointLabels,{'Rotation'});
 for rr=1:3
-    eyePoints(rotatePointsIdx,:) = ...
-        (R.(rotOrder{rr})*(eyePoints(rotatePointsIdx,:)-sceneGeometry.eye.rotationCenters.(rotOrder{rr}))')'+sceneGeometry.eye.rotationCenters.(rotOrder{rr});
+    headPoints(rotatePointsIdx,:) = ...
+        (R.(rotOrder{rr})*(headPoints(rotatePointsIdx,:)-sceneGeometry.eye.rotationCenters.(rotOrder{rr}))')'+sceneGeometry.eye.rotationCenters.(rotOrder{rr});
 end
 
 % If we are projecting a full eye model, label as hidden those posterior
-% chamber points that are posterior to the most posterior of the centers of
+% segment points that are posterior to the most posterior of the centers of
 % rotation of the eye, and thus would not be visible to the camera.
 if p.Results.fullEyeModelFlag
-    seenIdx = strcmp(pointLabels,'retina') .* (eyePoints(:,1) >= min([sceneGeometry.eye.rotationCenters.azi(1) sceneGeometry.eye.rotationCenters.ele(1)]));
+    seenIdx = strcmp(pointLabels,'retina') .* (headPoints(:,1) >= min([sceneGeometry.eye.rotationCenters.azi(1) sceneGeometry.eye.rotationCenters.ele(1)]));
     seenIdx = logical(seenIdx + ~strcmp(pointLabels,'retina'));
     pointLabels(~seenIdx) = strcat(pointLabels(~seenIdx),'_hidden');
 end
@@ -459,8 +465,8 @@ end
 % pupil center when the optical axis of the eye and the camera axis are
 % aligned.
 
-% Re-arrange the eyePoints to transform to the world coordinate frame
-worldPoints = eyePoints(:,[2 3 1]);
+% Re-arrange the headPoints to transform to the world coordinate frame
+worldPoints = headPoints(:,[2 3 1]);
 
 
 %% Project the world coordinate points to the image plane

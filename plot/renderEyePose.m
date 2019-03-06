@@ -190,7 +190,7 @@ xlim([0 imageSizeX]);
 ylim([0 imageSizeY]);
 
 % Obtain the pupilProjection of the model eye to the image plane
-[pupilEllipseParams, imagePoints, ~, ~, pointLabels] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nStopPerimPoints',p.Results.nStopPerimPoints, 'nIrisPerimPoints',p.Results.nIrisPerimPoints);
+[pupilEllipseParams, imagePoints, ~, ~, ~, pointLabels] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nStopPerimPoints',p.Results.nStopPerimPoints, 'nIrisPerimPoints',p.Results.nIrisPerimPoints);
 
 % Set up an empty variable to hold plot object handles
 plotObjectHandles = gobjects(0);

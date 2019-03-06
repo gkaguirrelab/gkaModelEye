@@ -67,7 +67,7 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
     eyePoses=[(rand(nPoses,1)-0.5)*60, (rand(nPoses,1)-0.5)*60, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
     clear targetIntersectError
     for pp = 1:nPoses
-    	[~,~,~,~,~,targetIntersectError(:,pp)]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
+    	[~,~,~,~,~,~,targetIntersectError(:,pp)]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
     end
     % Make sure the targetIntersectError is small and not systematically
     % related to eyePose

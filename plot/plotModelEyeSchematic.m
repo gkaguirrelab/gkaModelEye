@@ -30,9 +30,15 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
     plotModelEyeSchematic(eye);
 %}
 %{
-    % A plot with the fovea and optical center
+    % A plot with the fovea, visual axis, and optical center
     eye = modelEyeParameters('calcLandmarkFovea',true,'calcLandmarkOpticalCenter',true);
     plotModelEyeSchematic(eye);
+%}
+%{
+    % A plot with the fovea, visual axis, and line of sight
+    sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
+    [outputRay,rayPath] = calcLineOfSightRay(sceneGeometry);
+    plotModelEyeSchematic(sceneGeometry.eye,'rayPath',rayPath,'outputRay',outputRay);
 %}
 %{
     % Two panel plot with horizontal and vertical views for eyes with 0 and -10
@@ -60,6 +66,8 @@ p.addRequired('eye',@isstruct);
 p.addParameter('view','horizontal',@ischar);
 p.addParameter('newFigure',true,@islogical);
 p.addParameter('plotColor','k',@ischar);
+p.addParameter('rayPath',[],@(x)(isempty(x) || ismatrix()));
+p.addParameter('outputRay',[],@(x)(isempty(x) || ismatrix()));
 
 % parse
 p.parse(eye, varargin{:})
@@ -109,7 +117,7 @@ sg.eye = eye;
 idx = find(strcmp(pointLabels,'cornealApex'));
 plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColor]);
 
-%% Plot the fovea and visual axis
+%% Plot the fovea, the visual axis, and the line of sight
 % Obtain the rayPath through the optical system from the fovea to cornea
 if isfield(eye,'landmarks')
     if isfield(eye.landmarks,'fovea')
@@ -141,6 +149,20 @@ if isfield(eye,'landmarks')
         plot(eye.landmarks.opticalCenter(PdimA),eye.landmarks.opticalCenter(PdimB),['o' p.Results.plotColor]);
     end
 end
+
+%% Plot a passed rayPath
+if ~isempty(p.Results.rayPath)
+        plot(p.Results.rayPath(PdimA,:),p.Results.rayPath(PdimB,:),['--' p.Results.plotColor]);
+end
+
+%% Plot a passed outputRay
+if ~isempty(p.Results.outputRay)
+        p1=p.Results.outputRay(:,1);
+        p2=p1+p.Results.outputRay(:,2).*3;
+        r = [p1 p2];
+        plot(r(PdimA,:),r(PdimB,:),['--' p.Results.plotColor]);
+end
+
 
 %% Reference axis
 xRange = xlim;
