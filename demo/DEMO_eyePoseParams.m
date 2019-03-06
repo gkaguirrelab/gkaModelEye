@@ -56,7 +56,7 @@ modelEyePlotColors = {'.b' '-g' '+g' '+y'};
 partsToPlot = [3 4 7 8 9];
 for laterality = 1:2
     % prepare the model eye for this laterality
-    sceneGeometry = createSceneGeometry('eyeLaterality',eyeSides{laterality});
+    sceneGeometry = createSceneGeometry('eyeLaterality',eyeSides{laterality},'calcLandmarkFovea',true);
     sceneGeometry.cameraPosition.translation(3)=50;
     [figHandle, ~, renderedFrame] = renderEyePose([0 0 0 3], sceneGeometry, 'visible', false,'modelEyeLabelNames',modelEyeLabelNames,'modelEyePlotColors',modelEyePlotColors);
     % Close the fig handle, as we will be displaying a mosaic of the
@@ -75,7 +75,7 @@ for laterality = 1:2
     % Add a point that corresponds to the visual axis at the pupil
     % plane
     [~, imagePointsFixationAxis, ~, ~, pointLabelsFixationAxis] = ...
-        pupilProjection_fwd([sceneGeometry.eye.axes.visual.degField(1) sceneGeometry.eye.axes.visual.degField(2) 0 3],sceneGeometry,'fullEyeModelFlag',true);
+        pupilProjection_fwd([sceneGeometry.eye.landmarks.fovea.degField(1) sceneGeometry.eye.landmarks.fovea.degField(2) 0 3],sceneGeometry,'fullEyeModelFlag',true);
     
     idx = strcmp(pointLabelsFixationAxis,'pupilCenter');
     plot(imagePointsFixationAxis(idx,1), imagePointsFixationAxis(idx,2), '+c')    

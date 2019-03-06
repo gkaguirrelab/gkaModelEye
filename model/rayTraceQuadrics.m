@@ -110,14 +110,14 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
     %% Pupil point through cornea
     sceneGeometry = createSceneGeometry();
     % Define an initial ray
-    p = [sceneGeometry.eye.pupil.center(1); 2; 0];
+    p = [sceneGeometry.eye.stop.center(1); 2; 0];
     u = [1;tand(-15);0];
     u = u./sqrt(sum(u.^2));
     inputRay = [p, u];
     % Perform the ray trace
-    [outputRay, rayPath] = rayTraceQuadrics(inputRay, sceneGeometry.refraction.pupilToCamera.opticalSystem);
+    [outputRay, rayPath] = rayTraceQuadrics(inputRay, sceneGeometry.refraction.stopToCamera.opticalSystem);
     % Plot the optical system
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.pupilToCamera,...
+    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.stopToCamera,...
         'outputRay',outputRay,'rayPath',rayPath, ...
         'addLighting',true);
 %}

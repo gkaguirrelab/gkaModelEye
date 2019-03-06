@@ -15,9 +15,9 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
 %                           of a point in eyeWorld space with the
 %                           dimensions p1, p2, p3.
 %   eyePose               - A 1x4 vector provides values for [eyeAzimuth,
-%                           eyeElevation, eyeTorsion, pupilRadius].
+%                           eyeElevation, eyeTorsion, stopRadius].
 %                           Azimuth, elevation, and torsion are in units of
-%                           head-centered (extrinsic) degrees. The pupil
+%                           head-centered (extrinsic) degrees. The stop
 %                           radius value is unused by this routine.
 %   worldTarget     -       A 3x1 vector that specifies the point in world 
 %                           coordinates (x, y, z) that the ray should
@@ -28,7 +28,7 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
 %                           	sceneGeometry.cameraPosition.translation
 %   rotationCenters       - Equal to sceneGeometry.eye.rotationCenters
 %   opticalSystem         - Typically set equal to: sceneGeometry.
-%                               refraction.pupilToCamera.opticalSystem
+%                               refraction.stopToCamera.opticalSystem
 %
 % Outputs:
 %   virtualImageRay       - A 2x3 vector that gives the coordinates (in mm)
@@ -45,14 +45,14 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
 % Examples:
 %{
     % Basic example that finds the virtual image location for a point from
-    % the top of a 2 mm radius exit pupil, with the eye posed straight
-    % ahead, and the camera in its default location.
-    sceneGeometry = createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
+    % the top of a 2 mm radius stop, with the eye posed straight % ahead,
+    and the camera in its default location.
+    sceneGeometry = createSceneGeometry();
     % Assemble the args for the virtualImageFunc
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.pupilToCamera.opticalSystem};
-    virtualImageRay = virtualImageFunc( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
+    	sceneGeometry.refraction.stopToCamera.opticalSystem};
+    virtualImageRay = virtualImageFunc( [sceneGeometry.eye.stop.center(1) 2 0], [0 0 0 2], args{:} );
     % Test output against cached value
     virtualImageRayCached = [  -3.900000000000000, 2.263158811383167, 0; ...
         -2.626225754656097, 0.047969912751148, 0];
@@ -61,7 +61,7 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
 %{
     %% Confirm that targetIntersectError remains small across eye poses
     % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
+    sceneGeometry=createSceneGeometry();
     % Perform 100 forward projections with randomly selected eye poses
     nPoses = 100;
     eyePoses=[(rand(nPoses,1)-0.5)*60, (rand(nPoses,1)-0.5)*60, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
@@ -336,7 +336,7 @@ if any(isnan(outputRayEyeWorld))
 end
 
 % Adjust the p1 (optical axis) position of the ray to have an initial
-% position at the depth of the pupil
+% position at the depth of the stop
 slope_p1p2 =outputRayEyeWorld(2,2)/outputRayEyeWorld(2,1);
 slope_p1p3 =outputRayEyeWorld(2,3)/outputRayEyeWorld(2,1);
 zOffset=outputRayEyeWorld(1,1)-eyePoint(1);

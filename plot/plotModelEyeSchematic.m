@@ -37,7 +37,7 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %{
     % A plot with the fovea, visual axis, and line of sight
     sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
-    [outputRay,rayPath] = calcLineOfSightRay(sceneGeometry);
+    [outputRay,rayPath] = calcLineOfSightRay(sceneGeometry,);
     plotModelEyeSchematic(sceneGeometry.eye,'rayPath',rayPath,'outputRay',outputRay);
 %}
 %{
@@ -66,8 +66,8 @@ p.addRequired('eye',@isstruct);
 p.addParameter('view','horizontal',@ischar);
 p.addParameter('newFigure',true,@islogical);
 p.addParameter('plotColor','k',@ischar);
-p.addParameter('rayPath',[],@(x)(isempty(x) || ismatrix()));
-p.addParameter('outputRay',[],@(x)(isempty(x) || ismatrix()));
+p.addParameter('rayPath',[],@(x)(isempty(x) || ismatrix(x)));
+p.addParameter('outputRay',[],@(x)(isempty(x) || ismatrix(x)));
 
 % parse
 p.parse(eye, varargin{:})
@@ -113,7 +113,7 @@ plot(eye.iris.center(PdimA),eye.iris.center(PdimB)-eye.iris.radius,['x' p.Result
 
 %% Plot the cornealApex
 sg.eye = eye;
-[~, ~, ~, eyeWorldPoints, pointLabels] = pupilProjection_fwd([0 0 0 1], sg, 'fullEyeModelFlag',true);
+[~, ~, ~, ~, eyeWorldPoints, pointLabels] = pupilProjection_fwd([0 0 0 1], sg, 'fullEyeModelFlag',true);
 idx = find(strcmp(pointLabels,'cornealApex'));
 plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColor]);
 

@@ -31,11 +31,11 @@ function compileVirtualImageFunc( varargin )
 % Examples:
 %{
     % Confirm that compiled and native virtualImageFunc yield same value
-    sceneGeometry = createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
+    sceneGeometry = createSceneGeometry();
     % Assemble the args for the virtualImageFunc
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.pupilToCamera.opticalSystem};
+    	sceneGeometry.refraction.stopToCamera.opticalSystem};
     virtualRayNative = virtualImageFunc( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
     virtualRayCompiled = virtualImageFuncMex( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
     % Test if the outputs agree
@@ -46,11 +46,11 @@ function compileVirtualImageFunc( varargin )
     nComputes = 100;
     fprintf('\nTime to execute virtualImageFunc (average over %d projections):\n',nComputes);
     % Native function
-    sceneGeometry = createSceneGeometry('skipEyeAxes',true','skipNodalPoint',true);
+    sceneGeometry = createSceneGeometry();
     % Assemble the args for the virtualImageFunc
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.pupilToCamera.opticalSystem};
+    	sceneGeometry.refraction.stopToCamera.opticalSystem};
     % Native matlab function
     tic
     for ii=1:nComputes
@@ -128,20 +128,17 @@ end
 % This is so the compiler can deduce variable types
 
 % Create a sceneGeometry. I silence the warning that there is not a
-% compiled virtualImageFunc available, as we know this is the case. I also
-% instruct the eyeModelParameter routine (through createSceneGeometry) to
-% skip the calculation of the axes of the eye and the nodal point, as these
-% steps themselves require the virtual image function.
+% compiled virtualImageFunc available, as we know this is the case.
 warnState = warning();
 warning('Off','createSceneGeometry:noCompiledVirtualImageFunc');
-sceneGeometry = createSceneGeometry('skipEyeAxes',true,'skipNodalPoint',true);
+sceneGeometry = createSceneGeometry();
 warning(warnState);
 % Define the form of the dynamicArgs (the eyePoint and the eyePose)
 dynamicArgs = {[0,0,0], [0,0,0,0]};
 % Define the form of the staticArgs (which are sceneGeometry components)
 staticArgs = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.pupilToCamera.opticalSystem};
+    	sceneGeometry.refraction.stopToCamera.opticalSystem};
 % Assemble the full args
 args = [dynamicArgs, staticArgs{:}];
 

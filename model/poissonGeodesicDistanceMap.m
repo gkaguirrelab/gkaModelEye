@@ -48,9 +48,9 @@ function [phi, X] = poissonGeodesicDistanceMap(S,G0,X0, nVertices)
 %
 % Examples:
 %{
-    eye = modelEyeParameters('skipNodalPoint',true);
+    eye = modelEyeParameters('calcLandmarkFovea',true);
     S = eye.retina.S;
-    X0 = eye.axes.visual.coords;
+    X0 = eye.landmarks.fovea.coords;
     [phi, X] = poissonGeodesicDistanceMap(S,[],X0);
     c = jet();
     nColors = size(c,1);
@@ -63,12 +63,12 @@ function [phi, X] = poissonGeodesicDistanceMap(S,G0,X0, nVertices)
 %}
 %{
     % Compare the output of the poisson geodesic to the Panou result
-    eye = modelEyeParameters('skipNodalPoint',true);
+    eye = modelEyeParameters('calcLandmarkFovea',true);
     S = eye.retina.S;
-    G0 = eye.axes.visual.geodetic;
-    X0 = eye.axes.visual.coords;
-    G1 = eye.axes.opticDisc.geodetic;
-    X1 = eye.axes.opticDisc.coords;
+    G0 = eye.landmarks.fovea.geodetic;
+    X0 = eye.landmarks.fovea.coords;
+    G1 = eye.landmarks.opticDisc.geodetic;
+    X1 = eye.landmarks.opticDisc.coords;
     odf_distance_Panou = quadric.panouGeodesicDistance(S,G0,G1)
     [phi, X] = poissonGeodesicDistanceMap(S,[],X0,1e5);
     [~,idx] = min(sum((X'-X1).^2,2));

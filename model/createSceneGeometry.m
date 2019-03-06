@@ -93,8 +93,8 @@ function sceneGeometry = createSceneGeometry(varargin)
 %       passed to createSceneGeometry are passed to modelEyeParameters.
 %
 %  'refraction' - A structure with sub-fields for ray-tracing through sets
-%       of optical surfaces. Standard fields are 'retinaToPupil',
-%       'pupilToCamera', and 'retinaToCamera'. Each subset has the fields:
+%       of optical surfaces. Standard fields are 'retinaToStop',
+%       'stopToCamera', and 'retinaToCamera'. Each subset has the fields:
 %
 %         'opticalSystem' - An mx19 matrix, where m is the number of
 %                           surfaces in the model, including the initial
