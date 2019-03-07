@@ -31,8 +31,11 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
 %                               refraction.stopToCamera.opticalSystem
 %
 % Outputs:
-%   virtualImageRay       - A 2x3 vector that gives the coordinates (in mm)
-%                           of a point in eyeWorld space with the
+%   virtualImageRay       - 2x3 matrix that specifies the ray as a unit 
+%                           vector of the form [p; d], corresponding to
+%                               R = p + t*u
+%                           where p is vector origin, d is the direction
+%                           expressed as a unit step, and t is unity.
 %                           dimensions p1, p2, p3.
 %   initialRay            - A 2x3 vector that specifies in eyeWorld space
 %                           the vector arising from the eyePoint that will
@@ -44,15 +47,14 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
 %
 % Examples:
 %{
-    % Basic example that finds the virtual image location for a point from
-    % the top of a 2 mm radius stop, with the eye posed straight % ahead,
-    and the camera in its default location.
+    % Basic example that finds the virtual image location for the center of
+    % the aperture stop, with eye and the camera in their default positions
     sceneGeometry = createSceneGeometry();
     % Assemble the args for the virtualImageFunc
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.stopToCamera.opticalSystem};
-    virtualImageRay = virtualImageFunc( [sceneGeometry.eye.stop.center(1) 2 0], [0 0 0 2], args{:} );
+    virtualImageRay = virtualImageFunc( sceneGeometry.eye.stop.center, [0 0 0 2], args{:} );
     % Test output against cached value
     virtualImageRayCached = [  -3.900000000000000, 2.263158811383167, 0; ...
         -2.626225754656097, 0.047969912751148, 0];
