@@ -339,12 +339,12 @@ end
 
 % Adjust the p1 (optical axis) position of the ray to have an initial
 % position at the depth of the stop
-slope_p1p2 =outputRayEyeWorld(2,2)/outputRayEyeWorld(2,1);
-slope_p1p3 =outputRayEyeWorld(2,3)/outputRayEyeWorld(2,1);
-zOffset=outputRayEyeWorld(1,1)-eyePoint(1);
-outputRayEyeWorld(:,1)=outputRayEyeWorld(:,1)-zOffset;
-outputRayEyeWorld(:,2)=outputRayEyeWorld(:,2)-(zOffset*slope_p1p2);
-outputRayEyeWorld(:,3)=outputRayEyeWorld(:,3)-(zOffset*slope_p1p3);
+% slope_p1p2 =outputRayEyeWorld(2,2)/outputRayEyeWorld(2,1);
+% slope_p1p3 =outputRayEyeWorld(2,3)/outputRayEyeWorld(2,1);
+% zOffset=outputRayEyeWorld(1,1)-eyePoint(1);
+% outputRayEyeWorld(:,1)=outputRayEyeWorld(:,1)-zOffset;
+% outputRayEyeWorld(:,2)=outputRayEyeWorld(:,2)-(zOffset*slope_p1p2);
+% outputRayEyeWorld(:,3)=outputRayEyeWorld(:,3)-(zOffset*slope_p1p3);
 
 virtualImageRay = outputRayEyeWorld;
 

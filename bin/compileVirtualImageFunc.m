@@ -36,8 +36,8 @@ function compileVirtualImageFunc( varargin )
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.stopToCamera.opticalSystem};
-    virtualRayNative = virtualImageFunc( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
-    virtualRayCompiled = virtualImageFuncMex( [sceneGeometry.eye.pupil.center(1) 2 0], [0 0 0 2], args{:} );
+    virtualRayNative = virtualImageFunc( [sceneGeometry.eye.stop.center(1) 2 0], [0 0 0 2], args{:} );
+    virtualRayCompiled = virtualImageFuncMex( [sceneGeometry.eye.stop.center(1) 2 0], [0 0 0 2], args{:} );
     % Test if the outputs agree
     assert(max(max(abs(virtualRayNative - virtualRayCompiled))) < 1e-6)
 %}
@@ -86,6 +86,7 @@ functionDirPath = p.Results.functionDirPath;
 if ~p.Results.replaceExistingFunc
     % Exist returns 3 for 'MEX-file on your MATLAB search path'
     if exist('virtualImageFuncMex')==3
+        warning('compileVirtualImageFunc:functionExists','virtualImageFuncMex already exists; set replaceExistingFunc to true to over-write.')
         return
     end
 end
