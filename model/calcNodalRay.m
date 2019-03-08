@@ -120,8 +120,10 @@ angle_p1p3 = -deg2rad(angle_p1p3);
 end
 
 
-% Local function. Converts angles relative to the optical axis to a unit
-% vector ray.
+%% Local functionS
+
+
+% Converts angles relative to the optical axis to a unit vector ray.
 function inputRay = assembleInputRay(p,angle_p1p2,angle_p1p3)
 u = [1; tan(angle_p1p2); tan(angle_p1p3)];
 u = u./sqrt(sum(u.^2));

@@ -123,6 +123,19 @@ cornea.front.side = 1;
 cornea.front.boundingBox=[-4 0 -8 8 -8 8];
 
 
+%% Tear film
+%   Werkmeister, René M., et al. "Measurement of tear film thickness using
+%   ultrahigh-resolution optical coherence tomography." Investigative
+%   ophthalmology & visual science 54.8 (2013): 5578-5583.
+% The tear film is the front corneal surface, translated forward
+tearFilmThickness = 0.005;
+S = quadric.translate(S,[tearFilmThickness 0 0]);
+cornea.tears.S = quadric.matrixToVec(S);
+cornea.tears.side = 1;
+cornea.tears.boundingBox=[-4+tearFilmThickness tearFilmThickness -8 8 -8 8];
+
+
+
 %% Back corneal surface
 % Atchison finds that the back surface of the cornea does not vary by
 % ametropia. Navarro does not provide posterior cornea parameters.
@@ -167,7 +180,8 @@ end
 % The center of the back cornea ellipsoid is positioned so that there is
 % 0.55 mm of corneal thickness between the front and back surface of the
 % cornea at the apex, following Atchison 2006.
-S = quadric.translate(S,[-0.55-radii(1) 0 0]);
+cornealThickness = 0.55;
+S = quadric.translate(S,[-cornealThickness-radii(1) 0 0]);
 
 % Store these values
 cornea.back.S = quadric.matrixToVec(S);
@@ -175,13 +189,14 @@ cornea.back.side = 1;
 cornea.back.boundingBox=[-4 0 -8 8 -8 8];
 
 % Assemble the combined corneal surfaces
-cornea.S = [cornea.back.S; cornea.front.S];
-cornea.boundingBox = [cornea.back.boundingBox; cornea.front.boundingBox];
-cornea.side = [1; 1];
-cornea.mustIntersect = [1; 1];
-cornea.index = returnRefractiveIndex( 'cornea', eye.meta.spectralDomain );
-cornea.label = {'cornea.back'; 'cornea.front'};
-cornea.plot.color = {'blue'; 'blue'};
+cornea.S = [cornea.back.S; cornea.front.S; cornea.tears.S];
+cornea.boundingBox = [cornea.back.boundingBox; cornea.front.boundingBox; cornea.tears.boundingBox];
+cornea.side = [1; 1; 1];
+cornea.mustIntersect = [1; 1;1 ];
+cornea.index = [returnRefractiveIndex( 'cornea', eye.meta.spectralDomain); ...
+    returnRefractiveIndex( 'tears', eye.meta.spectralDomain)];
+cornea.label = {'cornea.back'; 'cornea.front'; 'cornea.tears'};
+cornea.plot.color = {'blue'; 'blue'; 'blue'};
 
 % Code here to calculate the Navarro 1985 corneal parameters that
 % were used by Fedtke 2010 in her simulation. These may be used for

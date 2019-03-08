@@ -113,7 +113,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     % default sceneGeometry
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
     % Test against cached result
-    pupilEllipseOnImagePlaneCached = [0.027812709087498   0.022384557314321   1.558259276811619   0.000022611126408   0.000192106525886].*1e4;
+    pupilEllipseOnImagePlaneCached = [0.027807507552431   0.022393734533602   1.558235355864386   0.000022595196118   0.000192229664666].*1e4;
     assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-6)
 %}
 %{

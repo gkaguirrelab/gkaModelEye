@@ -52,11 +52,11 @@ function [outputRay,rayPath,fixationPose,distanceErrorEntrancePupil,distanceErro
 % Parse inputs
 if nargin==1
     stopRadius = 2;
-    fixTargetDistance = 100;
+    fixTargetDistance = 1000;
 end
 
 if nargin==2
-    fixTargetDistance = 100;
+    fixTargetDistance = 1000;
 end
 
 % Check that the sceneGeometry eye has a foveal landmark

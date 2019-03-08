@@ -56,7 +56,7 @@ switch material
         % Sardar, Dhiraj K., et al. "Optical properties of ocular tissues
         % in the near infrared region." Lasers in medical science 22.1
         % (2007): 46-52.
-        ns = [1.357 1.345];
+        ns = [1.336 1.345];
     case 'lens.core'
         % Jones, Catherine E., et al. "Refractive index distribution and
         % optical properties of the isolated human lens measured using
@@ -64,7 +64,7 @@ switch material
         % 2352-2366.        
         %
         % NEED THE VALUE FOR NIR
-        ns = [1.418 1.418];
+        ns = [1.418 1.418];       
     case 'lens.edge'
         % Jones, Catherine E., et al. "Refractive index distribution and
         % optical properties of the isolated human lens measured using
@@ -77,7 +77,7 @@ switch material
         % Sardar, Dhiraj K., et al. "Optical properties of ocular tissues
         % in the near infrared region." Lasers in medical science 22.1
         % (2007): 46-52.
-        ns = [1.3335 1.337];
+        ns = [1.3374 1.337];
     case 'cornea'
         % Escudero-Sanz, Isabel, and Rafael Navarro. "Off-axis aberrations
         % of a wide-angle schematic eye model." JOSA A 16.8 (1999):

@@ -113,11 +113,6 @@ ub = [-60 180 0];
 % Perform the search
 opticDisc.geodetic = fmincon(myObj, x0, [], [], [], [], lb, ub, [], opts);
 
-% Obtain the blind spot ray
-[~, ~, ~, outputRay1, ~, rayPath1] = calcVisualAngle(eye,eye.landmarks.vertex.geodetic,opticDisc.geodetic,[],[],cameraMedium);
-opticDisc.outputRay = outputRay1;
-opticDisc.rayPath = rayPath1;
-
 % Obtain the coords of the optic disc
 opticDisc.coords = quadric.ellipsoidalGeoToCart(opticDisc.geodetic,S)';
 

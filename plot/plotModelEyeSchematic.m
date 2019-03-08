@@ -37,7 +37,7 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %{
     % A plot with the fovea, visual axis, and line of sight
     sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
-    [outputRay,rayPath] = calcLineOfSightRay(sceneGeometry,);
+    [outputRay,rayPath] = calcLineOfSightRay(sceneGeometry);
     plotModelEyeSchematic(sceneGeometry.eye,'rayPath',rayPath,'outputRay',outputRay);
 %}
 %{
@@ -122,9 +122,12 @@ plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColo
 if isfield(eye,'landmarks')
     if isfield(eye.landmarks,'fovea')
         plot(eye.landmarks.fovea.coords(PdimA),eye.landmarks.fovea.coords(PdimB),['*' p.Results.plotColor])
-        plot(eye.landmarks.fovea.rayPath(PdimA,:),eye.landmarks.fovea.rayPath(PdimB,:),[':' p.Results.plotColor]);
-        p1=eye.landmarks.fovea.outputRay(:,1);
-        p2=p1+eye.landmarks.fovea.outputRay(:,2).*3;
+        
+        % Obtain the nodal ray from the fovea
+        [outputRay,rayPath] = calcNodalRay(eye,[],eye.landmarks.fovea.coords);
+        plot(rayPath(PdimA,:),rayPath(PdimB,:),[':' p.Results.plotColor]);
+        p1=outputRay(:,1);
+        p2=p1+outputRay(:,2).*3;
         r = [p1 p2];
         plot(r(PdimA,:),r(PdimB,:),[':' p.Results.plotColor]);
     end
@@ -135,11 +138,6 @@ end
 if isfield(eye,'landmarks')
     if isfield(eye.landmarks,'opticDisc')
         plot(eye.landmarks.opticDisc.coords(PdimA),eye.landmarks.opticDisc.coords(PdimB),['x' p.Results.plotColor])
-        plot(eye.landmarks.opticDisc.rayPath(PdimA,:),eye.landmarks.opticDisc.rayPath(PdimB,:),[':' p.Results.plotColor]);
-        p1=eye.landmarks.opticDisc.outputRay(:,1);
-        p2=p1+eye.landmarks.opticDisc.outputRay(:,2).*3;
-        r = [p1 p2];
-        plot(r(PdimA,:),r(PdimB,:),[':' p.Results.plotColor]);
     end
 end
 

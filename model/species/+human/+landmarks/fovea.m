@@ -192,11 +192,6 @@ ub = [-80 180 0];
 % Perform the search
 fovea.geodetic = fmincon(myObj, x0, [], [], [], [], lb, ub, [], opts);
 
-% Obtain the visual axis ray
-[~, ~, ~, outputRay1, ~, rayPath1] = calcVisualAngle(eye,eye.landmarks.vertex.geodetic,fovea.geodetic,[],[],cameraMedium);
-fovea.outputRay = outputRay1;
-fovea.rayPath = rayPath1;
-
 % Obtain the coords coordinates of the fovea
 fovea.coords = quadric.ellipsoidalGeoToCart(fovea.geodetic,S)';
 
