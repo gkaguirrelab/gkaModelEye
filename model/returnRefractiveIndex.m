@@ -12,12 +12,12 @@ function n = returnRefractiveIndex( material, lambda, varargin )
 %
 %   The refractive index for a material as a function of wavelength is
 %   given by the Cauchy equation, with the values for biological materials
-%   taken from:
+%   taken (except as noted) from:
 %
 %       Navarro, Rafael. "Adaptive model of the aging emmetropic eye and
 %       its changes with accommodation." Journal of vision 14.13 (2014):
 %       21-21.
-%
+%   
 %
 % Inputs:
 %   material              - Char vector.
@@ -84,10 +84,9 @@ switch material
         % for Optics and Photonics, 2003.
         c = [1.3176, 5.51547658e3, -2.5756e8 9.47474];
     case 'tears'
-        % Patel, Sudi, Karen E. Boyd, and Janet Burns. "Age, stability of
-        % the precorneal tear film and the refractive index of tears."
-        % Contact Lens and Anterior Eye 23.2 (2000): 44-47.
-        c = [1.323757, 5.560240e3, -5.817391e8, 5.036810e13];
+        % Campbell, Charles E. "Relative importance of sources of chromatic
+        % refractive error in the human eye." JOSA A 27.4 (2010): 730-738.
+        c = [1.321631, 6.070796e3, -7.062305e8, 6.147861e13];
     case 'vitreous'
         c = [1.323757, 5.560240e3, -5.817391e8, 5.036810e13];
     case 'lens.core'
