@@ -1,4 +1,4 @@
-function n = returnRefractiveIndex( material, lambda, varargin )
+function n = returnRefractiveIndex( material, wavelength, varargin )
 % Refractice index for a specified material at a specified wavelength
 %
 % Syntax:
@@ -18,10 +18,13 @@ function n = returnRefractiveIndex( material, lambda, varargin )
 %       its changes with accommodation." Journal of vision 14.13 (2014):
 %       21-21.
 %   
+%   and the values for inorganic materials taken from:
+%
+%       https://refractiveindex.info
 %
 % Inputs:
 %   material              - Char vector.
-%   lambda                - Scalar or char vector. Identifies the 
+%   wavelength            - Scalar or char vector. Identifies the 
 %                           wavelength (in nm) for which the refractive
 %                           index should be calculated. If char, valid
 %                           values are {'VIS','NIR'}.
@@ -44,27 +47,28 @@ p = inputParser;
 
 % Required
 p.addRequired('material',@ischar);
-p.addRequired('lambda',@(x)(ischar(x) || isscalar(x)));
+p.addRequired('wavelength',@(x)(ischar(x) || isscalar(x)));
 
 % Optional
 p.addParameter('age',18,@isscalar);
 
 % parse
-p.parse(material,lambda, varargin{:});
+p.parse(material,wavelength, varargin{:});
 
 
 
-% Check or assign lambda
-if ischar(p.Results.lambda)
-    switch p.Results.lambda
+% Check or assign wavelength
+if ischar(p.Results.wavelength)
+    switch p.Results.wavelength
         case {'VIS','vis','Vis','visible'}
-            % Set lambda to 555 nm, the peak of the photopic luminosity
+            % Set wavelength to 555 nm, the peak of the photopic luminosity
             % function
-            lambda = 555;
+            wavelength = 555;
         case {'NIR','nir','Nir','near infrared','near infra-red'}
-            % Set lambda to 950 nm, which is the center frequency of light
-            % emitted by the LED of many active IR cameras
-            lambda = 950;
+            % Set wavelength to 775 nm, which is the peak spectral
+            % sensitivity of the IR camera used for eye tracking in the
+            % GKAguirre lab
+            wavelength = 775;
         otherwise
             error(['I do not have values for the spectral domain of ' spectralDomain]);
     end
@@ -99,33 +103,26 @@ switch material
     case 'cornea'
         c = [1.362994, 6.009687e3, -6.760760e8, 5.908450e13];
     case 'hydrogel'
-        % Childs, Andre, et al. "Fabricating customized hydrogel contact
-        % lens." Scientific reports 6 (2016): 34905.
-        ns = [1.430 1.420];
-    case 'optorez'
-        % Nikolov, Ivan D., and Christo D. Ivanov. "Optical plastic
-        % refractive measurements in the visible and the near-infrared
-        % regions." Applied Optics 39.13 (2000): 2067-2070.
-        % Measured at 594 and 890 nm
-        ns = [1.5089 1.5004];
+        % (C6H11NO)n (Poly(N-isopropylacrylamide), PNIPAM)
+        c = [1.5030, 0, 0, 0]
     case 'cr-39'
         % Traynor, Nathan BJ, et al. "CR-39 (PADC) Reflection and
         % Transmission of Light in the Ultraviolet-Near-Infrared (UV-NIR)
         % Range." Applied spectroscopy (2017): 0003702817745071.
         % NIR value estimated from Figure 5b.
-        ns = [1.51 1.50];
+        c = [1.4980, 0, 0, 0];
     case 'polycarbonate'
         % Nikolov, Ivan D., and Christo D. Ivanov. "Optical plastic
         % refractive index measurements for NIR region." 18th Congress of
         % the International Commission for Optics. Vol. 3749. International
         % Society for Optics and Photonics, 1999.
-        ns = [1.5852 1.5614];
+        c = [1.5846, 0, 0, 0];
     otherwise
         error(['I do not know the index of refraction for ' material]);
 end
 
 % Cauchy?s (1836) equation (cited in Atchison & Smith 2005)
-n = c(1) + c(2)/lambda^2 + c(3)/lambda^4 + c(4)/lambda^6;
+n = c(1) + c(2)/wavelength^2 + c(3)/wavelength^4 + c(4)/wavelength^6;
 
 
 
