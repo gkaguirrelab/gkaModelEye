@@ -10,7 +10,7 @@ function geodetic = cartToEllipsoidalGeo( X, S )
 %   coordinates.
 %
 %   The routine takes a coordinate (X) and a quadric (S). A geodetic
-%   coordinate is returned of the form beta (latitude, omega (longitude),
+%   coordinate is returned of the form beta (latitude), omega (longitude),
 %   and elevation=0. The geodetic coordinates are with reference to a
 %   centered, non-rotated ellipsoid, with the axes arranged in a standard
 %   form such that they are in descending order of length (i.e., semi-axes
