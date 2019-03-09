@@ -36,10 +36,18 @@ function eye = modelEyeParameters( varargin )
 %                           modeled. Supported values (in any case) are
 %                           {'human','dog'}
 %  'ageYears'             - Scalar that supplies the age in years of the
-%                           eye to be modeled. Modifies the lens.
+%                           eye to be modeled. Not currently used, but
+%                           could influence the lens parameters in the
+%                           future.
 %  'accommodationDiopeters' - Scalar that supplies the accommodation state
 %                           of the eye. Valid values range from zero
-%                           (unaccommodated) to +10.
+%                           (unaccommodated) to +10. The value sets the
+%                           distance from the corneal apex to the point of
+%                           best focus, where diopters = 1000 /
+%                           distance(mm).
+%  'navarroD'             - The parameter D of the Navarro 2014 lens model.
+%                           This value is used only during model
+%                           development and can normally be left undefined.
 %  'measuredCornealCurvature' - 1x2 or 1x3 vector. Provides the horizontal 
 %                           and vertical curvature of the cornea (diopters;
 %                           K1 and K2). The third value is the rotation of
@@ -86,6 +94,7 @@ p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
 p.addParameter('ageYears',18,@isscalar);
+p.addParameter('navarroD',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('accommodationDiopeters',0,@isscalar);
 p.addParameter('measuredCornealCurvature',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('spectralDomain','nir',@ischar);
@@ -146,6 +155,7 @@ eye.meta.sphericalAmetropia = sphericalAmetropia;
 eye.meta.axialLength = p.Results.axialLength;
 eye.meta.species = p.Results.species;
 eye.meta.ageYears = p.Results.ageYears;
+eye.meta.navarroD = p.Results.navarroD;
 eye.meta.accommodationDiopeters = p.Results.accommodationDiopeters;
 eye.meta.measuredCornealCurvature = p.Results.measuredCornealCurvature;
 eye.meta.spectralDomain = p.Results.spectralDomain;
