@@ -60,8 +60,8 @@ D = eye.meta.accommodationDiopeters;
 age = eye.meta.ageYears;
 
 % Obtain the core and edge refractive indices
-nEdge = returnRefractiveIndex( 'lens.edge', eye.meta.spectralDomain );
-nCore = returnRefractiveIndex( 'lens.core', eye.meta.spectralDomain );
+nEdge = returnRefractiveIndex( 'lens.edge', eye.meta.spectralDomain, 'age',  age);
+nCore = returnRefractiveIndex( 'lens.core', eye.meta.spectralDomain, 'age',  age);
 
 % The position (on the optical axis) of the point in the lens with the
 % maximal refractive index. Taken from Atchison 2006.
