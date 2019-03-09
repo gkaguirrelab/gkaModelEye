@@ -1,4 +1,4 @@
-function [outputRay,rayPath,fixationPose,distanceErrorEntrancePupil,distanceErrorFixationTarget] = calcLineOfSightRay(sceneGeometry,stopRadius, fixTargetDistance)
+function [outputRay,rayPath,fixationPose,distanceErrorEntrancePupil,distanceErrorFixationTarget] = calcLineOfSightRay(sceneGeometry,stopRadius,fixTargetDistance)
 % Returns the path of the line of sight for a model eye
 %
 % Syntax:
@@ -52,11 +52,11 @@ function [outputRay,rayPath,fixationPose,distanceErrorEntrancePupil,distanceErro
 % Parse inputs
 if nargin==1
     stopRadius = 2;
-    fixTargetDistance = 1000;
+    fixTargetDistance = 1500;
 end
 
 if nargin==2
-    fixTargetDistance = 1000;
+    fixTargetDistance = 1500;
 end
 
 % Check that the sceneGeometry eye has a foveal landmark

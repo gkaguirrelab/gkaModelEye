@@ -85,7 +85,7 @@ p.addParameter('sphericalAmetropia',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
-p.addParameter('ageYears',20,@isscalar);
+p.addParameter('ageYears',18,@isscalar);
 p.addParameter('accommodationDiopeters',0,@isscalar);
 p.addParameter('measuredCornealCurvature',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('spectralDomain','nir',@ischar);
