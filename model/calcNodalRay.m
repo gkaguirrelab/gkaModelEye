@@ -93,26 +93,20 @@ end
 opticalSystem = assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera', 'cameraMedium', cameraMedium );
 
 % Define some options for the fmincon call in the loop
-options = optimoptions(@fmincon,...
-    'Display','off');
+opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','off');
 
 % Define an error function that reflects the difference in angles from the
 % initial ray and the output ray from the optical system
 myError = @(p) calcOffsetFromParallel(opticalSystem,assembleInputRay(X,p(1),p(2)));
 
 % Supply an x0 guess which is the ray that connects the retinal point with
-% the posterior apex of the lens.
-S = eye.lens.S(1,:);
-centerS = quadric.center(S);
-radiiS = quadric.radii(S);
-lensPosteriorApex=(centerS + [radiiS(1);0;0])';
-
-[~, angle_p1p2, angle_p1p3] = quadric.angleRays( [0 0 0; 1 0 0]', quadric.normalizeRay([X'; lensPosteriorApex-X']') );
+% the center of the lens.
+[~, angle_p1p2, angle_p1p3] = quadric.angleRays( [0 0 0; 1 0 0]', quadric.normalizeRay([X'; eye.lens.center-X']') );
 angle_p1p2 = deg2rad(angle_p1p2);
 angle_p1p3 = -deg2rad(angle_p1p3);
 
 % Perform the search
-[inputRayAngles, angleError] = fmincon(myError,[angle_p1p2 angle_p1p3],[],[],[],[],[-pi/2,-pi/2],[pi/2,pi/2],[],options);
+[inputRayAngles, angleError] = fmincon(myError,[angle_p1p2 angle_p1p3],[],[],[],[],[-pi/2,-pi/2],[pi/2,pi/2],[],opts);
 
 % Calculate and save the outputRay and the raypath
 [outputRay,rayPath] = rayTraceQuadrics(assembleInputRay(X,inputRayAngles(1),inputRayAngles(2)), opticalSystem);
