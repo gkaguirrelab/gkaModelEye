@@ -1,14 +1,16 @@
-function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
+function [outputRay, initialRay, targetIntersectError ] = inverseRayTrace( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
 % Returns the virtual image ray of a point in eyeWorld coordinates
 %
 % Syntax:
-%  [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
+%  [outputRay, initialRay, targetIntersectError ] = inverseRayTrace( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
 %
 % Description:
-%   This routine returns the virtual image ray of a point that has
-%   passed through an optical system. The function requires specification
-%   of the eyeWorld coordinates of the point, the pose of the eye, as well
-%   as several features of sceneGeometry.
+%   This routine returns the outputRay from the last surface of an optical
+%   system for a point that has originated from an eyeWorld coordinate
+%   point and has arrived at an observer positioned at the worldTarget
+%   location. The routine accounts for rotation of the eye specified in the
+%   eyePose variable. The outputRay returned by this routine provides the
+%   location of the virtual image of that point.
 %
 % Inputs:
 %   eyePoint              - A 1x3 vector that gives the coordinates (in mm)
@@ -31,7 +33,7 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
 %                               refraction.stopToCamera.opticalSystem
 %
 % Outputs:
-%   virtualImageRay       - 2x3 matrix that specifies the ray as a unit 
+%   outputRay             - 2x3 matrix that specifies the ray as a unit 
 %                           vector of the form [p; d], corresponding to
 %                               R = p + t*u
 %                           where p is vector origin, d is the direction
@@ -50,15 +52,15 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
     % Basic example that finds the virtual image location for the center of
     % the aperture stop, with eye and the camera in their default positions
     sceneGeometry = createSceneGeometry();
-    % Assemble the args for the virtualImageFunc
+    % Assemble the args for the inverseRayTrace
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.stopToCamera.opticalSystem};
-    virtualImageRay = virtualImageFunc( sceneGeometry.eye.stop.center, [0 0 0 2], args{:} );
+    outputRay = inverseRayTrace( sceneGeometry.eye.stop.center, [0 0 0 2], args{:} );
     % Test output against cached value
-    virtualImageRayCached = [  -3.900000000000000, 2.263158811383167, 0; ...
+    outputRayCached = [  -3.900000000000000, 2.263158811383167, 0; ...
         -2.626225754656097, 0.047969912751148, 0];
-    assert(max(max(abs(virtualImageRay - virtualImageRayCached))) < 1e-6)
+    assert(max(max(abs(outputRay - outputRayCached))) < 1e-6)
 %}
 %{
     %% Confirm that targetIntersectError remains small across eye poses
@@ -69,7 +71,8 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
     eyePoses=[(rand(nPoses,1)-0.5)*60, (rand(nPoses,1)-0.5)*60, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
     clear targetIntersectError
     for pp = 1:nPoses
-    	[~,~,~,~,~,~,targetIntersectError(:,pp)]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
+    	[~,~,~,~,~,pointLabels,errors]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,'refractionHandle',@inverseRayTrace);
+        targetIntersectError(:,pp) = errors(strcmp(pointLabels,'pupilPerimeter'));
     end
     % Make sure the targetIntersectError is small and not systematically
     % related to eyePose
@@ -87,7 +90,7 @@ function [virtualImageRay, initialRay, targetIntersectError ] = virtualImageFunc
 % the optical system) that passes as close as possible to the worldTarget
 
 % Pre-define the output variables to keep the compiler happy
-virtualImageRay = nan(2,3);
+outputRay = nan(2,3);
 initialRay = nan(2,3);
 targetIntersectError = Inf;
 
@@ -102,6 +105,9 @@ searchingFlag = true;
 % (after re-arranging the dimensions of the worldTarget variable).
 eyeCoordTarget = worldTarget([3 1 2])';
 [~, angle_p1p2, angle_p1p3] = quadric.angleRays( [0 0 0; 1 0 0]', quadric.normalizeRay([eyePoint; eyeCoordTarget-eyePoint]') );
+
+% Computations are conducted in radians to save time converting back and
+% forth in the subsequent search
 angle_p1p2 = deg2rad(angle_p1p2);
 angle_p1p3 = -deg2rad(angle_p1p3);
 
@@ -130,7 +136,7 @@ while searchingFlag
 
     % Detect if we hit a bad ray trace.
     if badTraceFlag
-        virtualImageRay = nan(2,3);
+        outputRay = nan(2,3);
         targetIntersectError = Inf;
         return
     else
@@ -149,7 +155,7 @@ while searchingFlag
 
     % Detect if we hit a bad ray trace.
     if badTraceFlag
-        virtualImageRay = nan(2,3);
+        outputRay = nan(2,3);
         targetIntersectError = Inf;
         return
     else
@@ -179,12 +185,21 @@ end
     end
 
 
-%% Obtain the initial and virtual image rays
-% With both theta values calculated, now obtain the rays
-[virtualImageRay, initialRay] = calcVirtualImageRay(eyePoint, angle_p1p2, angle_p1p3, opticalSystem);
+%% Obtain the initial and output rays
+% Convert the angles back to degrees
+angle_p1p2 = rad2deg(angle_p1p2);
+angle_p1p3 = rad2deg(angle_p1p3);
 
+% Assemble the input ray. Note that the rayTraceQuadrics routine handles
+% vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
+% Tranpose operations ahead.
+initialRay = quadric.anglesToRay(eyePoint', angle_p1p2, angle_p1p3)';
 
-end % virtualImageFunc -- MAIN
+% Ray trace
+outputRay = rayTraceQuadrics(initialRay', opticalSystem);
+outputRay = outputRay';
+
+end % inverseRayTrace -- MAIN
 
 
 
@@ -215,7 +230,7 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 %
 % Inputs:
 %   eyePoint
-%   angle_p1p2, angle_p1p3 - Scalar in radians. The angle w.r.t. the 
+%   angle_p1p2, angle_p1p3 - Scalars in degrees. The angle w.r.t. the 
 %                           optical axis of the initial ray. 
 %   eyePose               - As defined in the main function.
 %   worldTarget
@@ -234,8 +249,8 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 % vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
 % Tranpose operations ahead.
 p = eyePoint';
-u = [1; tan(angle_p1p2); tan(angle_p1p3)];
-u = u./sqrt(sum(u.^2));
+d = [1; tan(angle_p1p2); tan(angle_p1p3)];
+u = d./sqrt(sum(d.^2));
 inputRay = [p, u];
 
 % Ray trace
@@ -284,70 +299,5 @@ distance = sqrt(sum(d.^2));
 
 end % calcTargetIntersectError
 
-
-
-%% calcVirtualImageRay
-function [virtualImageRay, initialRay] = calcVirtualImageRay(eyePoint, angle_p1p2, angle_p1p3, opticalSystem)
-% Returns the coordinates of a virtual image point at the initial depth
-%
-% Syntax:
-%  [virtualImageRay] = calcVirtualImageRay(eyePoint, angle_p1p2, angle_p1p3, opticalSystem)
-%
-% Description:
-%   For a given point in eyeWorld coordinates, and for a given pair of
-%   angle values, this function returns the coordinates of the point that
-%   corresponds to the virtual image that arises from the optical system,
-%   with the initial point of the virtual image being at the same p1
-%   position as the object point.
-%
-%   Practically, once the p1p2 and p1p3 angles are found, this function is
-%   used to obtain the position within the eyeWorld coordinate frame that
-%   is the apparent location of the point after refraction through the
-%   cornea.
-%
-% Inputs:
-%   eyePoint
-%   angle_p1p2, angle_p1p3 - Scalar in radians. The angle w.r.t. the 
-%                           optical axis of the initial ray. 
-%   opticalSytem
-%
-% Outputs:
-%   virtualImageRay       - A 1x3 matrix that is the position of the
-%                           virtual image.
-%
-
-
-% Ray trace for these angles
-% Assemble the input ray. Note that the rayTraceQuadrics routine handles
-% vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
-% Tranpose operations ahead.
-p = eyePoint';
-u = [1; tan(angle_p1p2); tan(angle_p1p3)];
-u = u./sqrt(sum(u.^2));
-initialRay = [p, u];
-
-% Ray trace
-outputRayEyeWorld = rayTraceQuadrics(initialRay, opticalSystem);
-outputRayEyeWorld = outputRayEyeWorld';
-
-% If any "must intersect" surfaces were missed, the output ray will contain
-% nans. In this case, return return nans for output ray
-if any(isnan(outputRayEyeWorld))
-    virtualImageRay = nan(2,3);
-    return
-end
-
-% Adjust the p1 (optical axis) position of the ray to have an initial
-% position at the depth of the stop
-% slope_p1p2 =outputRayEyeWorld(2,2)/outputRayEyeWorld(2,1);
-% slope_p1p3 =outputRayEyeWorld(2,3)/outputRayEyeWorld(2,1);
-% zOffset=outputRayEyeWorld(1,1)-eyePoint(1);
-% outputRayEyeWorld(:,1)=outputRayEyeWorld(:,1)-zOffset;
-% outputRayEyeWorld(:,2)=outputRayEyeWorld(:,2)-(zOffset*slope_p1p2);
-% outputRayEyeWorld(:,3)=outputRayEyeWorld(:,3)-(zOffset*slope_p1p3);
-
-virtualImageRay = outputRayEyeWorld;
-
-end % calcVirtualImageRay
 
 
