@@ -1,4 +1,4 @@
-function [outputRay,rayPath,fixationPose,distanceErrorEntrancePupil,distanceErrorFixationTarget] = calcLineOfSightRay(sceneGeometry,stopRadius,fixTargetDistance)
+function [outputRay,rayPath,distanceErrorEntrancePupil,distanceErrorFixationTarget] = calcLineOfSightRay(sceneGeometry,stopRadius,fixTargetDistance)
 % Returns the path of the line of sight for a model eye
 %
 % Syntax:
@@ -47,6 +47,7 @@ function [outputRay,rayPath,fixationPose,distanceErrorEntrancePupil,distanceErro
     sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
     [outputRay,rayPath]=calcLineOfSightRay(sceneGeometry);
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true,'rayPath',rayPath,'outputRay',outputRay);
+    [angle_p1p2,angle_p1p3] = quadric.rayToAngles(outputRay);
 %}
 
 % Parse inputs
@@ -91,22 +92,15 @@ ub = [20 10 0 stopRadius];
 % Calculate and save the outputRay and the raypath
 X = sceneGeometry.eye.landmarks.fovea.coords';
 opticalSystem = sceneGeometry.refraction.retinaToCamera.opticalSystem;
-[outputRay,rayPath] = rayTraceQuadrics(assembleInputRay(X,inputRayAngles(1),inputRayAngles(2)), opticalSystem);
+[outputRay,rayPath] = rayTraceQuadrics(quadric.anglesToRay(X,rad2deg(inputRayAngles(1)),rad2deg(inputRayAngles(2))), opticalSystem);
+
+
 
 end
 
 
 %% LOCAL FUNCTIONS
 
-%% fixationTargetIntersectError
-
-%% assembleInputRay
-% Converts angles relative to the optical axis to a unit vector ray.
-function inputRay = assembleInputRay(p,angle_p1p2,angle_p1p3)
-u = [1; tan(angle_p1p2); tan(angle_p1p3)];
-u = u./sqrt(sum(u.^2));
-inputRay = [p, u];
-end
 
 
 %% calcDistanceFromEyeWorldTarget
@@ -134,26 +128,26 @@ entrancePupilCenter = mean(eyePoints(strcmp(pointLabels,'pupilPerimeter'),:));
 
 % Define some options for the fmincon call in the loop
 options = optimoptions(@fmincon,...
-    'Display','off');
+    'Display','iter');
 
 % We will now find the initial angles of a ray leaving the fovea such that
 % it intersects the center of the entrance pupil
 
 % Define an error function that reflects the distance of the ray after it
-% intersects the stop from the center of the entrance pupil
+% intersects the final surface from the center of the entrance pupil
 X = sceneGeometry.eye.landmarks.fovea.coords';
-opticalSystem = sceneGeometry.refraction.retinaToStop.opticalSystem;
-myError = @(p) calcDistanceFromEyeWorldTarget(opticalSystem,assembleInputRay(X,p(1),p(2)),entrancePupilCenter');
+opticalSystem = sceneGeometry.refraction.retinaToCamera.opticalSystem;
+myError = @(p) calcDistanceFromEyeWorldTarget(opticalSystem,quadric.anglesToRay(X,p(1),p(2)),entrancePupilCenter');
 
 % Supply an x0 guess which is the ray that connects the fovea with
 % the center of the entrance pupil.
 [~, angle_p1p2, angle_p1p3] = quadric.angleRays( [0 0 0; 1 0 0]', quadric.normalizeRay([X'; entrancePupilCenter-X']') );
-angle_p1p2 = deg2rad(angle_p1p2);
-angle_p1p3 = -deg2rad(angle_p1p3);
+angle_p1p3 = -angle_p1p3;
+p0 = [angle_p1p2 angle_p1p3];
 
 % Perform the search. This gets us the initial angles for a ray leaving the
 % fovea and hitting the center of the entrance pupil.
-[inputRayAngles, distanceErrorEntrancePupil] = fmincon(myError,[angle_p1p2 angle_p1p3],[],[],[],[],[-pi/2,-pi/2],[pi/2,pi/2],[],options);
+[inputRayAngles, distanceErrorEntrancePupil] = fmincon(myError,p0,[],[],[],[],[-180,-180],[180,180],[],options);
 
 % Now get the distance at which this ray intersects the fixation target in
 % world coordinates. The local function that is called is copied from the
@@ -206,10 +200,7 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 % Assemble the input ray. Note that the rayTraceQuadrics routine handles
 % vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
 % Tranpose operations ahead.
-p = eyePoint';
-u = [1; tan(angle_p1p2); tan(angle_p1p3)];
-u = u./sqrt(sum(u.^2));
-inputRay = [p, u];
+inputRay = quadric.anglesToRay(eyePoint',rad2deg(angle_p1p2),rad2deg(angle_p1p3));
 
 % Ray trace
 outputRayEyeWorld = rayTraceQuadrics(inputRay, opticalSystem);

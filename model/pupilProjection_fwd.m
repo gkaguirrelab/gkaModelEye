@@ -1,8 +1,8 @@
-function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoints, pointLabels, cameraIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
+function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
 % Obtain the parameters of the entrance pupil ellipse on the image plane
 %
 % Syntax:
-%  [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLabels, cameraIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry)
+%  [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry)
 %
 % Description:
 %   Given the sceneGeometry, this routine simulates the aperture stop in a
@@ -93,7 +93,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 %                           'eleRotationCenter', 'retina',
 %                           'irisPerimeter', 'pupilPerimeter',
 %                           'cornea','cornealApex'}.
-%   cameraIntersectError -  A nx1 vector that contains the distance (in
+%   targetIntersectError -  A nx1 vector that contains the distance (in
 %                           mm) between the pinhole aperture of the camera
 %                           and the intersection of a ray on the camera
 %                           plane. The value is nan for points not subject
@@ -113,7 +113,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     % default sceneGeometry
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
     % Test against cached result
-    pupilEllipseOnImagePlaneCached = [0.027807507552431   0.022393734533602   1.558235355864386   0.000022595196118   0.000192229664666].*1e4;
+    pupilEllipseOnImagePlaneCached = [0.027810784439068   0.022395357037422   1.554154443505989   0.000023298899671   0.000191526486274].*1e4;
     assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-6)
 %}
 %{
@@ -144,7 +144,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     fprintf('\tUsing compiled ray tracing: %4.2f msecs.\n',msecPerModel);
     tic
     for pp = 1:nPoses
-    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,'refractionHandle',@virtualImageFunc);
+    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,'refractionHandle',@inverseRayTrace);
     end
     msecPerModel = toc / nPoses * 1000;
     fprintf('\tUsing MATLAB ray tracing: %4.2f msecs.\n',msecPerModel);
@@ -167,7 +167,7 @@ p.addParameter('rayTraceErrorThreshold',0.01,@isscalar);
 p.addParameter('nIrisPerimPoints',5,@isscalar);
 p.addParameter('corneaMeshDensity',23,@isscalar);
 p.addParameter('retinaMeshDensity',30,@isscalar);
-p.addParameter('refractionHandle',@virtualImageFuncMex,@(x)(isa(x,'function_handle')));
+p.addParameter('refractionHandle',@inverseRayTraceMex,@(x)(isa(x,'function_handle')));
 
 % parse
 p.parse(eyePose, sceneGeometry, varargin{:})
@@ -353,7 +353,7 @@ end
 % refraction upon the appearance of points from the eye.
 
 % Define a variable to hold the calculated ray tracing errors
-cameraIntersectError = nan(length(pointLabels),1);
+targetIntersectError = nan(length(pointLabels),1);
 
 % Identify the eyePoints subject to refraction by the cornea
 refractPointsIdx = find(...
@@ -390,7 +390,7 @@ if refractFlag
         
         % Add the refracted point to the set
         eyePoints = [eyePoints; eyePoint];
-        cameraIntersectError = [cameraIntersectError; intersectError];
+        targetIntersectError = [targetIntersectError; intersectError];
         
         % Create a label for the virtual image point
         newPointLabel = pointLabels{refractPointsIdx(ii)};
@@ -409,7 +409,7 @@ else
         
         % Add the refracted point to the set
         eyePoints = [eyePoints; eyePoint];
-        cameraIntersectError = [cameraIntersectError; 0];
+        targetIntersectError = [targetIntersectError; 0];
 
         % Create a label for the virtual image point
         newPointLabel = pointLabels{refractPointsIdx(ii)};
@@ -429,14 +429,14 @@ R.azi = [cosd(eyeAzimuth) -sind(eyeAzimuth) 0; sind(eyeAzimuth) cosd(eyeAzimuth)
 R.ele = [cosd(-eyeElevation) 0 sind(-eyeElevation); 0 1 0; -sind(-eyeElevation) 0 cosd(-eyeElevation)];
 R.tor = [1 0 0; 0 cosd(eyeTorsion) -sind(eyeTorsion); 0 sind(eyeTorsion) cosd(eyeTorsion)];
 
-
-%% Apply the eye rotation
-headPoints = eyePoints;
-
 % This order (tor-ele-azi) corresponds to a head-fixed, extrinsic, rotation
 % matrix. The reverse order (azi-ele-tor) would be an eye-fixed, intrinsic
 % rotation matrix and would corresponds to the "Fick coordinate" scheme.
 rotOrder = {'tor','ele','azi'};
+
+
+%% Apply the eye rotation
+headPoints = eyePoints;
 
 % We shift the points to each rotation center, rotate, shift back, and
 % repeat. Omit the eye rotation centers from this process. We must perform
@@ -584,10 +584,10 @@ if eyePose(4) > 0
     if sceneGeometry.eye.iris.thickness==0
         % The simple case of a zero-thickness aperture stop
         pupilPerimIdx = strcmp(pointLabels,'pupilPerimeter');
-        if ~all(isnan(cameraIntersectError(pupilPerimIdx)))
+        if ~all(isnan(targetIntersectError(pupilPerimIdx)))
             % Remove those pupil perimeter points that have had poor ray
             % tracing
-            pupilPerimIdx = logical(pupilPerimIdx.*(cameraIntersectError<p.Results.rayTraceErrorThreshold));
+            pupilPerimIdx = logical(pupilPerimIdx.*(targetIntersectError<p.Results.rayTraceErrorThreshold));
         end
         [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
     else
@@ -617,10 +617,10 @@ if eyePose(4) > 0
             % Fit an ellipse to the non-hidden pupil perimeter points
             pupilPerimIdx = logical(strcmp(pointLabels,{'pupilPerimeterFront'}) + ...
                 strcmp(pointLabels,{'pupilPerimeterBack'}));
-            if ~all(isnan(cameraIntersectError(pupilPerimIdx)))
+            if ~all(isnan(targetIntersectError(pupilPerimIdx)))
                 % Remove those pupil perimeter points that have had poor
                 % ray tracing
-                pupilPerimIdx = logical(pupilPerimIdx.*(cameraIntersectError<p.Results.rayTraceErrorThreshold));
+                pupilPerimIdx = logical(pupilPerimIdx.*(targetIntersectError<p.Results.rayTraceErrorThreshold));
             end
             [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
         end

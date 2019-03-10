@@ -48,8 +48,8 @@ function [outputRay,rayPath, angleError] = calcNodalRay(eye,G,X,cameraMedium)
 %
 % Examples:
 %{
-    eye = modelEyeParameters('calcLandmarkFovea',true);
-    calcNodalRay(eye,[],eye.landmarks.fovea.coords)
+    eye = modelEyeParameters();
+    [outputRay,rayPath, angleError] = calcNodalRay(eye,[],eye.landmarks.vertex.coords)
 %}
 
 
@@ -97,32 +97,24 @@ opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','off');
 
 % Define an error function that reflects the difference in angles from the
 % initial ray and the output ray from the optical system
-myError = @(p) calcOffsetFromParallel(opticalSystem,assembleInputRay(X,p(1),p(2)));
+myError = @(p) calcOffsetFromParallel(opticalSystem,quadric.anglesToRay(X,p(1),p(2)));
 
 % Supply an x0 guess which is the ray that connects the retinal point with
 % the center of the lens.
 [~, angle_p1p2, angle_p1p3] = quadric.angleRays( [0 0 0; 1 0 0]', quadric.normalizeRay([X'; eye.lens.center-X']') );
-angle_p1p2 = deg2rad(angle_p1p2);
-angle_p1p3 = -deg2rad(angle_p1p3);
+x0 = [angle_p1p2 angle_p1p3];
 
 % Perform the search
-[inputRayAngles, angleError] = fmincon(myError,[angle_p1p2 angle_p1p3],[],[],[],[],[-pi/2,-pi/2],[pi/2,pi/2],[],opts);
+[inputRayAngles, angleError] = fmincon(myError,x0,[],[],[],[],[-180,-180],[180,180],[],opts);
 
 % Calculate and save the outputRay and the raypath
-[outputRay,rayPath] = rayTraceQuadrics(assembleInputRay(X,inputRayAngles(1),inputRayAngles(2)), opticalSystem);
+[outputRay,rayPath] = rayTraceQuadrics(quadric.anglesToRay(X,inputRayAngles(1),inputRayAngles(2)), opticalSystem);
 
 end
 
 
-%% Local functionS
+%% Local functions
 
-
-% Converts angles relative to the optical axis to a unit vector ray.
-function inputRay = assembleInputRay(p,angle_p1p2,angle_p1p3)
-u = [1; tan(angle_p1p2); tan(angle_p1p3)];
-u = u./sqrt(sum(u.^2));
-inputRay = [p, u];
-end
 
 % Local function. Performs the ray trace through the optical system of the
 % eye and then calculates the angle between the initial ray and the output

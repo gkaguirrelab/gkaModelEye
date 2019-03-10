@@ -48,7 +48,7 @@ opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','off');
 
 % To set an x0 guess, identify the retinal point that is at the specified
 % angle w.r.t. to the optical axis and the center of the aperture stop.
-R = rayFromAngles([-5.4 0 0]',-degField(1),-degField(2));
+R = quadric.anglesToRay(eye.stop.center',degField(1),degField(2));
 x0 = quadric.intersectRay(S,R,eye.retina.side,eye.retina.boundingBox);
 
 % Convert the x0 zero guess into ellipsoidal geodetic coordinates, beta
@@ -84,10 +84,4 @@ end
 % Wrap 
 function angles = wrapAngleRays(R0,R1)
 [~, angles(1), angles(2) ] = quadric.angleRays(R0,R1);
-end
-
-% Converts angles relative to the optical axis to a unit vector ray.
-function R = rayFromAngles(p,angle_p1p2,angle_p1p3)
-u = [1; tan(angle_p1p2); tan(angle_p1p3)];
-R = quadric.normalizeRay([p, u]);
 end
