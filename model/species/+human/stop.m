@@ -45,29 +45,29 @@ stop.center = [eye.iris.center(1) 0 0];
     % Observed entrance pupil diameters reported in Wyatt 1995.
     entranceRadius = [3.09/2 4.93/2];
     % Wyatt reported an eccentricity of the pupil of 0.21 under dark
-    % conditions. We find that using that value produces model results that
+    % conditions. I find that using that value produces model results that
     % disagree with Malthur 2013. We have adopted an upper value of 0.17
-    % instead. We also use the convention of a negative eccentricity for a
+    % instead. I also use the convention of a negative eccentricity for a
     % horizontal major axis and a positive eccentricity for vertical.
-    entranceEccen = [-0.12 0.17];
+    entranceEccen = [-0.12 0.18];
     % Prepare scene geometry and eye pose aligned with line of sight
-    sceneGeometry = createSceneGeometry();
-    % Fix the stop eccentricity at 0
-    sceneGeometry.eye.stop.eccenFcnString = '@(x) 0';
+    sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
+    % Fix the stop eccentricity at 0 and remove refraction
+    sg = sceneGeometry;
+    sg.eye.stop.eccenFcnString = '@(x) 0';
+    sg.refraction = [];
     % Obtain the pupil area in the image for each entrance radius
-    % assuming no ray tracing
-    sceneGeometry.refraction = [];
-    pupilImage = pupilProjection_fwd([-sceneGeometry.eye.axes.lineOfSight.degField(1), -sceneGeometry.eye.axes.lineOfSight.degField(2), 0, entranceRadius(1)],sceneGeometry);
+    pupilImage = pupilProjection_fwd([-sg.eye.landmarks.fovea.degField(1), -sg.eye.landmarks.fovea.degField(2), 0, entranceRadius(1)],sg,'nStopPerimPoints',16);
     stopArea(1) = pupilImage(3);
-    pupilImage = pupilProjection_fwd([-sceneGeometry.eye.axes.lineOfSight.degField(1), -sceneGeometry.eye.axes.lineOfSight.degField(2), 0, entranceRadius(2)],sceneGeometry);
+    pupilImage = pupilProjection_fwd([-sg.eye.landmarks.fovea.degField(1), -sg.eye.landmarks.fovea.degField(2), 0, entranceRadius(2)],sg,'nStopPerimPoints',16);
     stopArea(2) = pupilImage(3);
     % Add the ray tracing function to the sceneGeometry
-    sceneGeometry = createSceneGeometry();
+    sg = sceneGeometry;
     % Fix the stop eccentricity at 0
-    sceneGeometry.eye.stop.eccenFcnString = '@(x) 0';
+    sg.eye.stop.eccenFcnString = '@(x) 0';
     % Search across stop radii to find the values that match the observed
     % entrance areas.
-    myPupilEllipse = @(radius) pupilProjection_fwd([-sceneGeometry.eye.axes.lineOfSight.degField(1), -sceneGeometry.eye.axes.lineOfSight.degField(2), 0, radius],sceneGeometry);
+    myPupilEllipse = @(radius) pupilProjection_fwd([-sg.eye.landmarks.fovea.degField(1), -sg.eye.landmarks.fovea.degField(2), 0, radius],sg,'nStopPerimPoints',16);
     myArea = @(ellipseParams) ellipseParams(3);
     myObj = @(radius) (myArea(myPupilEllipse(radius))-stopArea(1)).^2;
     stopRadius(1) = fminunc(myObj, entranceRadius(1));
@@ -75,16 +75,16 @@ stop.center = [eye.iris.center(1) 0 0];
     stopRadius(2) = fminunc(myObj, entranceRadius(2));
     % Now find the stop eccentricity that produces the observed entrance
     % pupil eccentricity
-    sceneGeometry.eye.stop.thetas=[0 0];
+    sg.eye.stop.thetas=[0 0];
     place = {'eye' 'stop' 'eccenFcnString'};
-    mySceneGeom = @(eccen) setfield(sceneGeometry,place{:},['@(x) ' num2str(eccen)]);
-    myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.lineOfSight.degField(1), -sceneGeometry.eye.axes.lineOfSight.degField(2), 0, stopRadius(1)],mySceneGeom(eccen));
+    mySceneGeom = @(eccen) setfield(sg,place{:},['@(x) ' num2str(eccen)]);
+    myPupilEllipse = @(eccen) pupilProjection_fwd([-sg.eye.landmarks.fovea.degField(1), -sg.eye.landmarks.fovea.degField(2), 0, stopRadius(1)],mySceneGeom(eccen),'nStopPerimPoints',16);
     myEccen = @(ellipseParams) ellipseParams(4);
     myObj = @(eccen) 1e4*(myEccen(myPupilEllipse(eccen))-abs(entranceEccen(1))).^2;
     stopEccen(1) = -fminsearch(myObj, 0.1);
-    sceneGeometry.eye.stop.thetas = [pi/2, pi/2];
-    mySceneGeom = @(eccen) setfield(sceneGeometry,place{:},['@(x) ' num2str(eccen)]);
-    myPupilEllipse = @(eccen) pupilProjection_fwd([-sceneGeometry.eye.axes.lineOfSight.degField(1), -sceneGeometry.eye.axes.lineOfSight.degField(2), 0, stopRadius(2)],mySceneGeom(eccen));
+    sg.eye.stop.thetas = [pi/2, pi/2];
+    mySceneGeom = @(eccen) setfield(sg,place{:},['@(x) ' num2str(eccen)]);
+    myPupilEllipse = @(eccen) pupilProjection_fwd([-sg.eye.landmarks.fovea.degField(1), -sg.eye.landmarks.fovea.degField(2), 0, stopRadius(2)],mySceneGeom(eccen),'nStopPerimPoints',16);
     myEccen = @(ellipseParams) ellipseParams(4);
     myObj = @(eccen) 1e4*(myEccen(myPupilEllipse(eccen))-abs(entranceEccen(2))).^2;
     stopEccen(2) = fminsearch(myObj, 0.2);
@@ -104,7 +104,7 @@ stop.center = [eye.iris.center(1) 0 0];
 %}
 % Specify the params and equation that defines the stop ellipse.
 % This can be invoked as a function using str2func.
-stop.eccenParams = [-1.743 4.784 0.149 0.103];
+stop.eccenParams = [-1.752 4.763 0.250 0.106];
 stop.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',stop.eccenParams(1),stop.eccenParams(2),stop.eccenParams(3),stop.eccenParams(4));
 
 % The theta values of the stop ellipse for eccentricities less
