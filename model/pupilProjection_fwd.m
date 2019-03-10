@@ -355,49 +355,68 @@ end
 % Define a variable to hold the calculated ray tracing errors
 cameraIntersectError = nan(length(pointLabels),1);
 
-% If we have a refraction field, proceed
+% Identify the eyePoints subject to refraction by the cornea
+refractPointsIdx = find(...
+    strcmp(pointLabels,'stopPerimeter')+...
+    strcmp(pointLabels,'stopPerimeterFront')+...
+    strcmp(pointLabels,'stopPerimeterBack')+...
+    strcmp(pointLabels,'stopCenter')+...
+    strcmp(pointLabels,'irisActualPerimeter')+...
+    strcmp(pointLabels,'irisActualCenter'));
+
+% Check if we have a refraction field and it is not empty
+refractFlag = false;
 if isfield(sceneGeometry,'refraction')
-
-    % If this field is not set to empty, proceed    
     if ~isempty(sceneGeometry.refraction)
-
-        % Assemble the static args for the virtualImageFunc
-        args = {sceneGeometry.cameraPosition.translation, ...
-                sceneGeometry.eye.rotationCenters, ...
-                sceneGeometry.refraction.stopToCamera.opticalSystem};
-
-        % Identify the eyePoints subject to refraction by the cornea
-        refractPointsIdx = find(...
-            strcmp(pointLabels,'stopPerimeter')+...
-            strcmp(pointLabels,'stopPerimeterFront')+...
-            strcmp(pointLabels,'stopPerimeterBack')+...
-            strcmp(pointLabels,'stopCenter')+...
-            strcmp(pointLabels,'irisActualPerimeter')+...
-            strcmp(pointLabels,'irisActualCenter'));
-
-        % Loop through the eyePoints that are to be refracted
-        for ii=1:length(refractPointsIdx)
-
-            % Get this eyeWorld point
-            eyePoint=eyePoints(refractPointsIdx(ii),:);
-
-            % Perform the computation using the passed function handle.
-            [virtualImageRay, ~, intersectError] = ...
-                p.Results.refractionHandle(eyePoint, eyePose, args{:});
-            eyePoint = virtualImageRay(1,:);
-            
-            % Add the refracted point to the set
-            eyePoints = [eyePoints; eyePoint];
-            cameraIntersectError = [cameraIntersectError; intersectError];
-
-            % Create a label for the virtual image point
-            newPointLabel = pointLabels{refractPointsIdx(ii)};
-            newPointLabel = strrep(newPointLabel,'stop','pupil');
-            newPointLabel = strrep(newPointLabel,'Actual','');
-            pointLabels = [pointLabels; {newPointLabel}];
-
-        end
+        refractFlag = true;
     end
+end
+if refractFlag    
+    % Assemble the static args for the virtualImageFunc
+    args = {sceneGeometry.cameraPosition.translation, ...
+        sceneGeometry.eye.rotationCenters, ...
+        sceneGeometry.refraction.stopToCamera.opticalSystem};    
+
+    % Loop through the eyePoints that are to be refracted
+    for ii=1:length(refractPointsIdx)
+        
+        % Get this eyeWorld point
+        eyePoint=eyePoints(refractPointsIdx(ii),:);
+        
+        % Perform the computation using the passed function handle.
+        [virtualImageRay, ~, intersectError] = ...
+            p.Results.refractionHandle(eyePoint, eyePose, args{:});
+        eyePoint = virtualImageRay(1,:);
+        
+        % Add the refracted point to the set
+        eyePoints = [eyePoints; eyePoint];
+        cameraIntersectError = [cameraIntersectError; intersectError];
+        
+        % Create a label for the virtual image point
+        newPointLabel = pointLabels{refractPointsIdx(ii)};
+        newPointLabel = strrep(newPointLabel,'stop','pupil');
+        newPointLabel = strrep(newPointLabel,'Actual','');
+        pointLabels = [pointLabels; {newPointLabel}];
+        
+    end
+else
+    % If there is no refraction, then the pupil is simply the stop. Copy
+    % these points over to their new names
+    for ii=1:length(refractPointsIdx)
+        
+        % Get this eyeWorld point
+        eyePoint=eyePoints(refractPointsIdx(ii),:);
+        
+        % Add the refracted point to the set
+        eyePoints = [eyePoints; eyePoint];
+        cameraIntersectError = [cameraIntersectError; 0];
+
+        % Create a label for the virtual image point
+        newPointLabel = pointLabels{refractPointsIdx(ii)};
+        newPointLabel = strrep(newPointLabel,'stop','pupil');
+        newPointLabel = strrep(newPointLabel,'Actual','');
+        pointLabels = [pointLabels; {newPointLabel}];        
+    end    
 end
 
 
@@ -560,10 +579,10 @@ imagePoints = (imagePointsNormalizedDistorted .* [sceneGeometry.cameraIntrinsic.
 
 
 %% Obtain the pupil ellipse
-% Proceed with fitting if we have a non-zero pupil radius
+% Proceed with fitting if we have a non-zero stop radius
 if eyePose(4) > 0
     if sceneGeometry.eye.iris.thickness==0
-        % The simple case of a zero-thickness pupil aperture
+        % The simple case of a zero-thickness aperture stop
         pupilPerimIdx = strcmp(pointLabels,'pupilPerimeter');
         if ~all(isnan(cameraIntersectError(pupilPerimIdx)))
             % Remove those pupil perimeter points that have had poor ray
@@ -572,7 +591,7 @@ if eyePose(4) > 0
         end
         [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
     else
-        % The more complicated case of a non-zero thickness pupil aperture.
+        % The more complicated case of a non-zero thickness aperture stop.
         % First obtain the ellipse fit to the front and back perimeters.
         pupilPerimIdxFront = strcmp(pointLabels,'pupilPerimeterFront');
         frontEllipse = pupilEllipseFit(imagePoints(pupilPerimIdxFront,:));
@@ -584,9 +603,9 @@ if eyePose(4) > 0
             pupilFitError = nan;
             pupilEllipseOnImagePlane=nan(1,5);
         else
-            % For each position on the perimeter of the pupil, determine which
-            % point (front or back) is farther from the center of the ellipse
-            % and then mark this point as hidden.
+            % For each position on the perimeter of the pupil, determine
+            % which point (front or back) is farther from the center of the
+            % ellipse and then mark this point as hidden.
             centerDistance = sqrt(sum(((imagePoints(logical(pupilPerimIdxFront+pupilPerimIdxBack),:)-mean([frontEllipse(1:2);backEllipse(1:2)])).^2),2));
             hideBack = (centerDistance(1:nStopPerimPoints)-centerDistance(nStopPerimPoints+1:nStopPerimPoints*2))<0;
             idx = pupilPerimIdxBack;
@@ -599,8 +618,8 @@ if eyePose(4) > 0
             pupilPerimIdx = logical(strcmp(pointLabels,{'pupilPerimeterFront'}) + ...
                 strcmp(pointLabels,{'pupilPerimeterBack'}));
             if ~all(isnan(cameraIntersectError(pupilPerimIdx)))
-                % Remove those pupil perimeter points that have had poor ray
-                % tracing
+                % Remove those pupil perimeter points that have had poor
+                % ray tracing
                 pupilPerimIdx = logical(pupilPerimIdx.*(cameraIntersectError<p.Results.rayTraceErrorThreshold));
             end
             [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
