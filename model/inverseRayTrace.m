@@ -58,8 +58,8 @@ function [outputRay, initialRay, targetIntersectError ] = inverseRayTrace( eyePo
     	sceneGeometry.refraction.stopToCamera.opticalSystem};
     outputRay = inverseRayTrace( sceneGeometry.eye.stop.center, [0 0 0 2], args{:} );
     % Test output against cached value
-    outputRayCached = [  0.000171560271042  -0.024001993330389  0; ...
-        0.999999980107432   0.000199462118458  0];
+    outputRayCached = [  0.000171619649776  -0.023999698646459  0; ...
+        0.999999979970365   0.000200148120875  0];
     assert(max(max(abs(outputRay - outputRayCached))) < 1e-6)
 %}
 %{
@@ -291,7 +291,7 @@ ET=ET+rotationCenters.azi;
 
 % Calculate the distance between the closest approach of the outputRay to
 % the target.
-distance = quadric.distancePointRay(ET,outputRayEyeWorld);
+distance = quadric.distancePointRay(ET',outputRayEyeWorld');
 
 end % calcTargetIntersectError
 
