@@ -45,7 +45,7 @@ function [outputRay,rayPath,distanceErrorEntrancePupil,distanceErrorFixationTarg
 % Examples:
 %{
     sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
-    [outputRay,rayPath]=calcLineOfSightRay(sceneGeometry);
+    [outputRay,rayPath]=calcLineOfSightRay(sceneGeometry,0.5);
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true,'rayPath',rayPath,'outputRay',outputRay);
     [angle_p1p2,angle_p1p3] = quadric.rayToAngles(outputRay);
 %}
@@ -77,7 +77,7 @@ options = optimoptions(@fmincon,...
     'Display','off');
 
 % Set the bounds on the eyePose search
-x0 = [0 0 0 stopRadius];
+x0 = [-sceneGeometry.eye.landmarks.fovea.degField stopRadius];
 lb = [-20 -10 0 stopRadius];
 ub = [20 10 0 stopRadius];
 
@@ -92,9 +92,7 @@ ub = [20 10 0 stopRadius];
 % Calculate and save the outputRay and the raypath
 X = sceneGeometry.eye.landmarks.fovea.coords';
 opticalSystem = sceneGeometry.refraction.retinaToCamera.opticalSystem;
-[outputRay,rayPath] = rayTraceQuadrics(quadric.anglesToRay(X,rad2deg(inputRayAngles(1)),rad2deg(inputRayAngles(2))), opticalSystem);
-
-
+[outputRay,rayPath] = rayTraceQuadrics(quadric.anglesToRay(X,inputRayAngles(1),inputRayAngles(2)), opticalSystem);
 
 end
 
@@ -104,12 +102,16 @@ end
 
 
 %% calcDistanceFromEyeWorldTarget
-% Performs the ray trace through the optical system of the
-% eye and then calculates the Euclidean distance between the intersection
-% point on the last surface a passed target in eyeWorld coordinates
+% Performs the ray trace through the optical system of the eye and finds
+% the minimum distance between an eyeWorld target and the ray path.
 function distanceError = calcDistanceFromEyeWorldTarget(opticalSystem,inputRay,eyeWorldTarget)
-exitRay = rayTraceQuadrics(inputRay, opticalSystem);
-distanceError = sqrt(sum((exitRay(:,1)-eyeWorldTarget).^2));
+[outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem);
+fullPath = [rayPath outputRay(:,1)+outputRay(:,2)*10];
+distanceError = Inf;
+for ii=2:size(fullPath,2)
+    R = fullPath(:,ii-1:ii);
+    distanceError = nanmin([distanceError quadric.distancePointRay(eyeWorldTarget,R)]);
+end
 end
 
 
@@ -128,20 +130,20 @@ entrancePupilCenter = mean(eyePoints(strcmp(pointLabels,'pupilPerimeter'),:));
 
 % Define some options for the fmincon call in the loop
 options = optimoptions(@fmincon,...
-    'Display','iter');
+    'Display','off');
 
 % We will now find the initial angles of a ray leaving the fovea such that
 % it intersects the center of the entrance pupil
 
 % Define an error function that reflects the distance of the ray after it
 % intersects the final surface from the center of the entrance pupil
-X = sceneGeometry.eye.landmarks.fovea.coords';
+X = sceneGeometry.eye.landmarks.fovea.coords;
 opticalSystem = sceneGeometry.refraction.retinaToCamera.opticalSystem;
-myError = @(p) calcDistanceFromEyeWorldTarget(opticalSystem,quadric.anglesToRay(X,p(1),p(2)),entrancePupilCenter');
+myError = @(p) calcDistanceFromEyeWorldTarget(opticalSystem,quadric.anglesToRay(X',p(1),p(2)),entrancePupilCenter');
 
 % Supply an x0 guess which is the ray that connects the fovea with
 % the center of the entrance pupil.
-[~, angle_p1p2, angle_p1p3] = quadric.angleRays( [0 0 0; 1 0 0]', quadric.normalizeRay([X'; entrancePupilCenter-X']') );
+[~, angle_p1p2, angle_p1p3] = quadric.angleRays( [0 0 0; 1 0 0]', quadric.normalizeRay([X; entrancePupilCenter-X]') );
 angle_p1p3 = -angle_p1p3;
 p0 = [angle_p1p2 angle_p1p3];
 
@@ -152,10 +154,11 @@ p0 = [angle_p1p2 angle_p1p3];
 % Now get the distance at which this ray intersects the fixation target in
 % world coordinates. The local function that is called is copied from the
 % virtualImageFunc routine.
-distanceErrorFixationTarget = calcTargetIntersectError(entrancePupilCenter, ...
+distanceErrorFixationTarget = calcTargetIntersectError(X, ...
     inputRayAngles(1), inputRayAngles(2), eyePose, fixTargetWorld, ...
     sceneGeometry.eye.rotationCenters, ...
-    sceneGeometry.refraction.stopToCamera.opticalSystem);
+    opticalSystem);
+
 end
 
 
@@ -182,7 +185,7 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 %
 % Inputs:
 %   eyePoint
-%   angle_p1p2, angle_p1p3 - Scalar in radians. The angle w.r.t. the 
+%   angle_p1p2, angle_p1p3 - Scalar in degrees. The angle w.r.t. the 
 %                           optical axis of the initial ray. 
 %   eyePose               - As defined in the main function.
 %   worldTarget
@@ -200,7 +203,7 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 % Assemble the input ray. Note that the rayTraceQuadrics routine handles
 % vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
 % Tranpose operations ahead.
-inputRay = quadric.anglesToRay(eyePoint',rad2deg(angle_p1p2),rad2deg(angle_p1p3));
+inputRay = quadric.anglesToRay(eyePoint',angle_p1p2,angle_p1p3);
 
 % Ray trace
 outputRayEyeWorld = rayTraceQuadrics(inputRay, opticalSystem);
@@ -240,11 +243,7 @@ ET=ET+rotationCenters.azi;
 
 % Calculate the distance between the closest approach of the outputRay to
 % the target.
-d = norm(cross(outputRayEyeWorld(2,:),ET - outputRayEyeWorld(1,:))) ...
-    / norm(outputRayEyeWorld(2,:));
-      
-% Obtain the Euclidean distance in the 3 dimensions.
-distance = sqrt(sum(d.^2));
+distance = quadric.distancePointRay(ET',outputRayEyeWorld');
 
 end % calcTargetIntersectError
 
