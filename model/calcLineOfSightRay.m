@@ -46,8 +46,10 @@ function [outputRay,rayPath,distanceErrorEntrancePupil,distanceErrorFixationTarg
 %{
     sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
     [outputRay,rayPath]=calcLineOfSightRay(sceneGeometry,0.5);
+    [angle_p1p2,angle_p1p3] = quadric.rayToAngles(outputRay)
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true,'rayPath',rayPath,'outputRay',outputRay);
-    [angle_p1p2,angle_p1p3] = quadric.rayToAngles(outputRay);
+    [outputRay,rayPath]=calcNodalRay(sceneGeometry.eye,sceneGeometry.eye.landmarks.fovea.geodetic);
+    plotOpticalSystem('newFigure',false,'rayPath',rayPath,'outputRay',outputRay,'rayColor','green');
 %}
 
 % Parse inputs
