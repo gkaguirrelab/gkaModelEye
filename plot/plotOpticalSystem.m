@@ -2,7 +2,7 @@ function figHandle = plotOpticalSystem(varargin)
 % Creates a cross-section schematic illustration of the model eye
 %
 % Syntax:
-%  plotModelEyeSchematic(eye)
+%  figHandle = plotOpticalSystem(varargin)
 %
 % Description:
 %   Create a schematic diagram of the model eye specified in the passed
