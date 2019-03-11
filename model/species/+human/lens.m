@@ -56,7 +56,7 @@ function lens = lens( eye )
 % D value that produces the largest best focus distance was ~3.44. Values
 % smaller than this cause errors in the model.
 %{
-    navarroD = [3.43925, 5, 7.5, 10, 15, 20, 30];
+    navarroD = [3.5, 5, 7.5, 10, 15, 20, 30];
     accomodationDiopters = nan(size(navarroD));
     sceneGeometry = createSceneGeometry('navarroD',navarroD(1),'calcLandmarkFovea',true);
     fovea = sceneGeometry.eye.landmarks.fovea;
@@ -68,7 +68,11 @@ function lens = lens( eye )
         pointOfBestFocus=quadric.distanceRays(outputRayLoS,outputRayVis);
         accomodationDiopters(ii) = 1000/pointOfBestFocus(1);
     end
-    pCoeff = polyfit(accomodationDiopters,navarroD,4)
+    figure
+    plot(accomodationDiopters,navarroD,'xk');
+    hold on
+    pCoeff = polyfit(accomodationDiopters,navarroD,2)
+    plot(1:0.1:10,polyval(pCoeff,1:0.1:10),'-r')
 %}
 
 % The model assumes an 18 year old eye for the Navarro calculations
@@ -86,10 +90,10 @@ else
     end
     % Convert the requested accommodationDiopeters to the corresponding
     % Navarro D param.
-    pCoeff = [-0.0060    0.1876   -0.9611    6.2639    0.0977];
+    pCoeff = [0.1542    3.9292   -0.0968];
     D = polyval(pCoeff,accommodationDiopeters);
     % Values of D below this produce weird results for the emmetropic eye
-    D = max([D 3.43925]);
+    D = max([D 3.5]);
 end
 
 
