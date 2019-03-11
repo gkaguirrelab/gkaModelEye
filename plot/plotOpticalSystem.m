@@ -44,7 +44,6 @@ function figHandle = plotOpticalSystem(varargin)
     end
 %}
 
-
 %% input parser
 p = inputParser; p.KeepUnmatched = true;
 
