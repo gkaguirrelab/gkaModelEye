@@ -2,7 +2,7 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 % Creates a cross-section schematic illustration of the model eye
 %
 % Syntax:
-%  plotModelEyeSchematic(eye)
+%  figHandle = plotModelEyeSchematic(eye)
 %
 % Description:
 %   Create a schematic diagram of the model eye specified in the passed
