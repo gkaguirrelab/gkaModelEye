@@ -81,7 +81,7 @@ opticalCenterCoord = zeros(3,1);
 outputRays={};
 rayPaths={};
 
-% Loop over a few locations in the retinal surface, specified in
+% Loop over a few locations on the retinal surface, specified in
 % ellipsoidal coordinates
 for beta = [-85,-75]
     for omega = -180:40:180

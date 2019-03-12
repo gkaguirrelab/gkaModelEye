@@ -37,8 +37,8 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %{
     % A plot with the fovea, visual axis, and line of sight
     sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
-    [outputRay,rayPath] = calcLineOfSightRay(sceneGeometry);
-    plotModelEyeSchematic(sceneGeometry.eye,'rayPath',rayPath,'outputRay',outputRay);
+    [outputRayLoS,rayPathLoS] = calcLineOfSightRay(sceneGeometry);
+    plotModelEyeSchematic(sceneGeometry.eye,'rayPath',rayPathLoS,'outputRay',outputRayLoS);
 %}
 %{
     % Two panel plot with horizontal and vertical views for eyes with 0 and -10

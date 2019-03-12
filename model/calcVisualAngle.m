@@ -83,7 +83,6 @@ function [visualAngleTotal, visualAngleByPlane, outputRay0, outputRay1, rayPath0
     % Add the retinal landmarks
     plot3(eye.landmarks.vertex.coords(1),eye.landmarks.vertex.coords(2),eye.landmarks.vertex.coords(3),'+k','MarkerSize',10);
     plot3(eye.landmarks.fovea.coords(1),eye.landmarks.fovea.coords(2),eye.landmarks.fovea.coords(3),'*k','MarkerSize',10);
-    plot3(eye.landmarks.opticDisc.coords(1),eye.landmarks.opticDisc.coords(2),eye.landmarks.opticDisc.coords(3),'ok','MarkerSize',10);
 %}
 %{
     % Calculate deg/mm at the fovea as a function of ametropia and axial

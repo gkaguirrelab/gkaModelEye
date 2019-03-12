@@ -120,6 +120,10 @@ lens.center = [-5.4 0 0];
 lensThick = 2.93 + 0.0236*age + (0.058 - 0.0005*age)*D;
 lensThickBack = 0.6 * lensThick;
 lensThickFront = 0.4 * lensThick;
+lens.back = lens.center;
+lens.back(1) = lens.back(1) - lensThickBack;
+lens.front = lens.center;
+lens.front(1) = lens.front(1) + lensThickFront;
 
 % The lens has a continuous, gradient refractive index, but is approximated
 % by a number of iso-indicial contours, or "shells". The current model is
@@ -171,7 +175,7 @@ radii(1) = abs(b); radii(2:3) = abs(a);
 % Build the quadric
 S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
 S = quadric.translate(S,[lens.center(1)-lensThickBack-radii(1) 0 0]);
-boundingBox = [lens.center(1)-lensThickBack lens.center(1) -5 5 -5 5];
+boundingBox = [lens.center(1)-lensThickBack lens.center(1) -6 6 -6 6];
 
 % Add to the optical system structure
 lens.S = [lens.S; quadric.matrixToVec(S)];
@@ -207,7 +211,7 @@ lens.index(end) = nCore;
 
 
 %% Front gradient shells
-boundingBox = [lens.center(1) lens.center(1)+lensThickFront -5 5 -5 5];
+boundingBox = [lens.center(1) lens.center(1)+lensThickFront -6 6 -6 6];
 nLensVals = linspace(nEdge,nCore,nShells*2+1);
 for ii = endShell:-1:startShell
     nFrontQuadric = [0.022665895061728 0 0 0; 0 0.002039930555556 0 0; 0 0 0.002039930555556 0; 0 0 0 1.371000000000000];

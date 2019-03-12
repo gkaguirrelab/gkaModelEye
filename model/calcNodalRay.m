@@ -99,10 +99,30 @@ opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','off');
 % initial ray and the output ray from the optical system
 myError = @(p) calcOffsetFromParallel(opticalSystem,quadric.anglesToRay(X,p(1),p(2)));
 
-% Supply an x0 guess which is the ray that connects the retinal point with
-% the center of the lens.
-[~, angle_p1p2, angle_p1p3] = quadric.angleRays( [0 0 0; 1 0 0]', quadric.normalizeRay([X'; eye.lens.center-X']') );
-x0 = [angle_p1p2 angle_p1p3];
+% Supply an x0 guess. Check a few targets to try and find one that produces a valid
+% trace through the optical system.
+targets = [...
+    eye.lens.back, ...                      % lens posterior
+    (eye.lens.back+eye.lens.center)./2,...  % mid-point of posterior lens
+    eye.lens.center];                       % lens center
+
+stillSearching = true;
+targetIdx = 1;
+while stillSearching
+    R = quadric.normalizeRay([X'; targets(targetIdx)-X']');
+    [outputRay,rayPath] = rayTraceQuadrics(R, opticalSystem);    
+    if any(isnan(outputRay))
+        targetIdx = targetIdx + 1;
+        if targetIdx > length(targets)
+            angleError = nan;
+            return
+        end
+    else
+        stillSearching = false;
+    end
+end
+[angle_p1p2, angle_p1p3] = quadric.rayToAngles( R );
+x0 = [angle_p1p2, angle_p1p3];
 
 % Perform the search
 [inputRayAngles, angleError] = fmincon(myError,x0,[],[],[],[],[-180,-180],[180,180],[],opts);
