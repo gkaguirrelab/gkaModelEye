@@ -77,9 +77,9 @@ function [outputRay, initialRay, targetIntersectError ] = inverseRayTrace( eyePo
     % Make sure the targetIntersectError is small and not systematically
     % related to eyePose
     figure
-    plot(sqrt(eyePoses(:,1).^2+eyePoses(:,2).^2),median(targetIntersectError),'.r')
+    plot(sqrt(eyePoses(:,1).^2+eyePoses(:,2).^2),nanmax(targetIntersectError),'.r')
     xlabel('Euclidean rotation distance [deg]');
-    ylabel('Ray trace camera intersection error [mm]');
+    ylabel('Max ray trace camera intersection error [mm]');
 %}
 
 
@@ -96,26 +96,29 @@ targetIntersectError = Inf;
 
 % Set some parameters for the search
 intersectErrorTolerance = 1e-4;
-searchIterTolerance = 6;
+searchIterTolerance = 50;
 searchIter = 0;
 searchingFlag = true;
-
-% Set the inital guess for the angles by finding (w.r.t. the optical axis)
-% the angle of the ray that connects the eye point to the worldTarget
-% (after re-arranging the dimensions of the worldTarget variable).
-eyeCoordTarget = worldTarget([3 1 2])';
-[~, angle_p1p2, angle_p1p3] = quadric.angleRays( [0 0 0; 1 0 0]', quadric.normalizeRay([eyePoint; eyeCoordTarget-eyePoint]') );
-
-% Computations are conducted in radians to save time converting back and
-% forth in the subsequent search
-angle_p1p2 = deg2rad(angle_p1p2);
-angle_p1p3 = -deg2rad(angle_p1p3);
 
 % Set fminsearch options to tolerate an error of 1e-2, and to make changes
 % in theta as small as 1e-6.
 TolFun = 1e-2; % intersection error to tolerate
 TolX = 1e-6; % precision with which theta is estimated
 options = optimset('TolFun',TolFun,'TolX',TolX);
+
+% Set the inital guess for the angles by finding (w.r.t. the optical axis)
+% the angle of the ray that connects the eye point to the worldTarget
+% (after re-arranging the dimensions of the worldTarget variable).
+eyeCoordTarget = relativeCameraPosition(eyePose, worldTarget, rotationCenters);
+[~, angle_p1p2, angle_p1p3] = quadric.angleRays( [0 0 0; 1 0 0]', quadric.normalizeRay([eyePoint; eyeCoordTarget-eyePoint]') );
+
+% To crudely accout for the effect of refraction, scale down the angles by
+% 75%. This yields x0 guesses that are closer to the final obtained value.
+% Also convert to radians. This is because the computations below are
+% conducted in radians. We will switch back to degrees before exiting the
+% routine.
+angle_p1p2 = deg2rad(angle_p1p2)*0.75;
+angle_p1p3 = -deg2rad(angle_p1p3)*0.75;
 
 % Set a scoped variable that detects if we encountered a bad ray trace.
 badTraceFlag = false;
@@ -128,11 +131,8 @@ while searchingFlag
     targetIntersectError_p1p2 = ...
         @(angleX) calcTargetIntersectError(eyePoint, angleX, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystem);
 
-    % Set the x0 value for the search to the current value of angle_p1p2
-    x0 = angle_p1p2;
-        
-    % Perform the search
-    [angle_p1p2,~]=fminsearch(@myObj_p1p2,x0,options);
+    % Perform the search starting from the current angle_p1p2 value
+    [angle_p1p2,~]=fminsearch(@myObj_p1p2,angle_p1p2,options);
 
     % Detect if we hit a bad ray trace.
     if badTraceFlag
@@ -142,17 +142,14 @@ while searchingFlag
     else
         badTraceFlag = false;
     end
-    
+        
     % The distance error function for searching across p1p3 theta values    
     targetIntersectError_p1p3 = ...
         @(angleX) calcTargetIntersectError(eyePoint, angle_p1p2, angleX, eyePose, worldTarget, rotationCenters, opticalSystem);
 
-    % Set the x0 value for the search to the current value of angle_p1p3
-    x0 = angle_p1p3;
-
-    % Perform the search
-    [angle_p1p3,targetIntersectError]=fminsearch(@myObj_p1p3,x0,options);
-
+    % Perform the search starting from the current value of angle_p1p3
+    [angle_p1p3,targetIntersectError]=fminsearch(@myObj_p1p3,angle_p1p3,options);
+    
     % Detect if we hit a bad ray trace.
     if badTraceFlag
         outputRay = nan(2,3);
@@ -264,9 +261,26 @@ if any(isnan(outputRayEyeWorld))
     return
 end
 
-% We assign the variable ET the coordinates of the target after conversion
-% to eye coordinates. Then, the point is counter-rotated by the eye pose,
-% so that the ET is in a position equivalent to if the eye had rotated.
+% We assign the variable eyeCoordTarget the coordinates of the target after
+% conversion to eye coordinates. Then, the point is counter-rotated by the
+% eye pose, so that the eyeCoordTarget is in a position equivalent to if
+% the eye had rotated.
+eyeCoordTarget = relativeCameraPosition(eyePose, worldTarget, rotationCenters);
+
+% Calculate the distance between the closest approach of the outputRay to
+% the target.
+distance = quadric.distancePointRay(eyeCoordTarget',outputRayEyeWorld');
+
+end % calcTargetIntersectError
+
+
+
+function eyeCoordTarget = relativeCameraPosition(eyePose, worldTarget, rotationCenters)
+
+% We assign the variable eyeCoordTarget the coordinates of the target after
+% conversion to eye coordinates. Then, the point is counter-rotated by the
+% eye pose, so that the eyeCoordTarget is in a position equivalent to if
+% the eye had rotated.
 cameraRot = -eyePose;
 RotAzi = [cosd(cameraRot(1)) -sind(cameraRot(1)) 0; sind(cameraRot(1)) cosd(cameraRot(1)) 0; 0 0 1];
 RotEle = [cosd(-cameraRot(2)) 0 sind(-cameraRot(2)); 0 1 0; -sind(-cameraRot(2)) 0 cosd(-cameraRot(2))];
@@ -274,26 +288,18 @@ RotTor = [1 0 0; 0 cosd(cameraRot(3)) -sind(cameraRot(3)); 0 sind(cameraRot(3)) 
 
 % Rearrange the worldTarget dimensions to switch from world to eye
 % coordinate space. This is now the eyeTarget or ET
-ET = worldTarget([3 1 2])';
+eyeCoordTarget = worldTarget([3 1 2])';
 
 % Torsion
-ET=ET-rotationCenters.tor;
-ET = (RotTor*ET')';
-ET=ET+rotationCenters.tor;
+eyeCoordTarget=eyeCoordTarget-rotationCenters.tor;
+eyeCoordTarget = (RotTor*eyeCoordTarget')';
+eyeCoordTarget=eyeCoordTarget+rotationCenters.tor;
 % Elevation
-ET=ET-rotationCenters.ele;
-ET = (RotEle*ET')';
-ET=ET+rotationCenters.ele;
+eyeCoordTarget=eyeCoordTarget-rotationCenters.ele;
+eyeCoordTarget = (RotEle*eyeCoordTarget')';
+eyeCoordTarget=eyeCoordTarget+rotationCenters.ele;
 % Azimuth
-ET=ET-rotationCenters.azi;
-ET = (RotAzi*ET')';
-ET=ET+rotationCenters.azi;
-
-% Calculate the distance between the closest approach of the outputRay to
-% the target.
-distance = quadric.distancePointRay(ET',outputRayEyeWorld');
-
-end % calcTargetIntersectError
-
-
-
+eyeCoordTarget=eyeCoordTarget-rotationCenters.azi;
+eyeCoordTarget = (RotAzi*eyeCoordTarget')';
+eyeCoordTarget=eyeCoordTarget+rotationCenters.azi;
+end
