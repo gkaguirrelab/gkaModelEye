@@ -39,7 +39,7 @@ function fovea = fovea( eye )
     % a range of spherical refractive errors
     SRvals = -10:1:2;
     for ii = 1:length(SRvals)
-        eye = modelEyeParameters('sphericalAmetropia',SRvals(ii));
+        eye = modelEyeParameters('sphericalAmetropia',SRvals(ii),'calcLandmarkFovea',true);
         odf(ii) = sqrt(sum((eye.landmarks.fovea.coords(2:3) - eye.landmarks.opticDisc.coords(2:3)).^2));
     end
     figure

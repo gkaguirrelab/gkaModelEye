@@ -144,8 +144,8 @@ end
 if D >= 3 && D < 7
     startShell = 4;
 end
-if D < 3
-    startShell = 5;
+if D < 4
+    startShell = 6;
 end
 
 
@@ -187,7 +187,7 @@ lens.label = [lens.label; {'lens.back'}];
 lens.plot.color = [lens.plot.color; {'red'}];
 
 %% Back gradient shells
-boundingBox = [lens.center(1)-lensThickBack lens.center(1) -5 5 -5 5];
+boundingBox = [lens.center(1)-lensThickBack lens.center(1) -6 6 -6 6];
 nLensVals = linspace(nEdge,nCore,nShells*2+1);
 for ii = startShell:endShell
     nBackQuadric = [-0.010073731138546 0 0 0.0; 0 -0.002039930555556 0 0; 0 0 -0.002039930555556 0; 0 0 0 1.418000000000000];
@@ -248,7 +248,7 @@ radii(2:3) = abs(a);
 S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
 S = quadric.translate(S,[eye.stop.center(1)+radii(1) 0 0]);
 c = quadric.center(S); r = quadric.radii(S);
-boundingBox = [lens.center(1) c(1)-r(1) -5 5 -5 5];
+boundingBox = [lens.center(1) c(1)-r(1) -6 6 -6 6];
 
 % Add to the optical system structure. No refractive index added with this
 % surface, as this is the last surface of this set.
