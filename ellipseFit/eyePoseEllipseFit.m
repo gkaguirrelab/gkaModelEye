@@ -1,8 +1,8 @@
-function [eyePose, RMSE, ellipseParamsTransparent, fitAtBound] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
+function [eyePose, RMSE, fittedEllipse, fitAtBound] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
 % Fit an image plane ellipse by perspective projection of a pupil circle
 %
 % Syntax:
-%  [eyePose, RMSE, ellipseParamsTransparent, fitAtBound] = eyePoseEllipseFit(Xp, Yp, sceneGeometry)
+%  [eyePose, RMSE, fittedEllipse, fitAtBound] = eyePoseEllipseFit(Xp, Yp, sceneGeometry)
 %
 % Description:
 %   The routine fits points on the image plane based upon the eye
@@ -19,25 +19,48 @@ function [eyePose, RMSE, ellipseParamsTransparent, fitAtBound] = eyePoseEllipseF
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
 %
 % Optional key/value pairs:
-%  'x0'                   - Initial guess for the eyePose.
-%  'eyePoseLB'            - Lower bound on the eyePose
-%  'eyePoseUB'            - Upper bound on the eyePose
+%  'x0'                   - Starting point of the search for the eyePose.
+%                           If not defined, the starting point will be
+%                           estimated from the coordinates of the ellipse
+%                           center. If set to Inf, a random x0 will be
+%                           selected within the eyePose bounds.
+%  'eyePoseLB/UB'         - A 1x4 vector that provides the lower (upper)
+%                           bounds on the eyePose [azimuth, elevation,
+%                           torsion, stop radius]. The default values here
+%                           represent the physical limits of the projection
+%                           model for azimuth, elevation, and stop radius.
+%                           Torsion is constrained to zero by default.
 %  'rmseThresh'           - Scalar that defines the stopping point for the
 %                           search. The default value allows reconstruction
 %                           of eyePose within 0.1% of the veridical,
 %                           simulated value.
+%  'repeatSearchThresh'   - Scalar. If the RMSE output value obtained is
+%                           greater than this threshold, then a repeat
+%                           search across eyePose values will be conducted
+%                           to account for the possibility that the
+%                           solution obtained was a local minimum.
+%  'nMaxSearches'         - Scalar. The maximum number of searches that the
+%                           routine will conduct as it attempts to avoid
+%                           local minima.
+%  'searchCount'          - Scalar. The number of searches that have been
+%                           conducted so far. This value is modified as
+%                           eyePoseEllipseFit calls itself recursively.
+%                           It should not be modified by the external
+%                           calling function.
 %
 % Outputs:
-%   eyePose               - A 1x4 matrix containing the best fitting eye
-%                           parameters (azimuth, elevation, torsion, pupil
-%                           radius)
+%   eyePose               - A 1x4 vector with values for [eyeAzimuth,
+%                           eyeElevation, eyeTorsion, stopRadius].
+%                           Azimuth, elevation, and torsion are in units of
+%                           head-centered (extrinsic) degrees, and pupil
+%                           radius is in mm.
 %   RMSE                  - Root mean squared error of the distance of
 %                           boundary point in the image to the fitted
 %                           ellipse
-%   ellipseParamsTransparent - Parameters of the best fitting ellipse
+%   fittedEllipse         - Parameters of the best fitting ellipse
 %                           expressed in transparent form [1x5 vector]
 %   fitAtBound            - Logical. Indicates if any of the returned
-%                           ellipse parameters are at the upper or lower
+%                           eyePose parameters are at the upper or lower
 %                           boundary.
 %
 % Examples:
@@ -74,7 +97,7 @@ function [eyePose, RMSE, ellipseParamsTransparent, fitAtBound] = eyePoseEllipseF
     tic
     for pp = 1:nPoses
         [ Xp, Yp ] = ellipsePerimeterPoints( ellipseParams(pp,:), 6 );
-        eyePoseEllipseFit(Xp, Yp, sceneGeometry);
+        [~, RMSE(pp), ~, ~] = eyePoseEllipseFit(Xp, Yp, sceneGeometry);
     end
     msecPerModel = toc / nPoses * 1000;
     fprintf('\tUsing pre-compiled ray tracing: %4.2f msecs.\n',msecPerModel);
@@ -93,10 +116,10 @@ p.addRequired('sceneGeometry',@isstruct);
 p.addParameter('x0',[],@(x)(isempty(x) | isnumeric(x)));
 p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
 p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
-p.addParameter('rmseThresh',1e-2,@isnumeric);
-p.addParameter('repeatSearchThresh',1.0,@isnumeric);
-p.addParameter('searchCount',1,@isnumeric);
-p.addParameter('nMaxSearches',3,@isnumeric);
+p.addParameter('rmseThresh',1e-2,@isscalar);
+p.addParameter('repeatSearchThresh',1.0,@isscalar);
+p.addParameter('nMaxSearches',3,@isscalar);
+p.addParameter('searchCount',1,@isscalar);
 
 % Parse and check the parameters
 p.parse(Xp, Yp, sceneGeometry, varargin{:});
@@ -105,7 +128,7 @@ p.parse(Xp, Yp, sceneGeometry, varargin{:});
 % Set the return variables in the event of an error
 eyePose = [nan nan nan nan];
 RMSE = nan;
-ellipseParamsTransparent = [nan nan nan nan nan];
+fittedEllipse = [nan nan nan nan nan];
 fitAtBound = false;
 
 % Issue a warning if the bounds do not fully constrain at least one eye
@@ -185,13 +208,14 @@ bestFVal = nan;
 xLast = [nan nan nan nan]; % Last place pupilProjection_fwd was called
 xBest = [nan nan nan nan]; % The x with the lowest objective function value
 rmseThresh = p.Results.rmseThresh;
-ellipseParamsTransparentLast = [nan nan nan nan nan];
-ellipseParamsTransparentBest = [nan nan nan nan nan];
+fittedEllipseLast = [nan nan nan nan nan];
+fittedEllipseBest = [nan nan nan nan nan];
+objScaler = 1e6;            % Inflate the fVal to help fmincon search
 
 % define some search options
 options = optimoptions(@fmincon,...
     'Display','off', ...
-    'Algorithm','interior-point',...
+    'Algorithm','active-set',...
     'OutputFcn',@outfun);
 
 % Turn off warnings that can arise during the search
@@ -211,7 +235,7 @@ try
 catch
     eyePose = xBest;
     RMSE = bestFVal;
-    ellipseParamsTransparent = ellipseParamsTransparentBest;
+    fittedEllipse = fittedEllipseBest;
     % Check if the fit is at a boundary
     fitAtBound = any([any(eyePose==eyePoseLB) any(eyePose==eyePoseUB)]);
     return
@@ -219,24 +243,24 @@ end
     function fVal = objfun(x)
         xLast = x;
         % Obtain the entrance pupil ellipse for this eyePose
-        ellipseParamsTransparentLast = pupilProjection_fwd(x, sceneGeometry);
+        fittedEllipseLast = pupilProjection_fwd(x, sceneGeometry);
         % Check for the case in which the transparentEllipse contains nan
         % values, which can arise if there were an insufficient number of
         % pupil border points remaining after refraction to define an
         % ellipse.
-        if any(isnan(ellipseParamsTransparentLast))
+        if any(isnan(fittedEllipseLast))
             fVal = nan;
         else
             % This is the RMSE of the distance values of the boundary
             % points to the ellipse fit.
-            explicitEllipse = ellipse_transparent2ex(ellipseParamsTransparentLast);
+            explicitEllipse = ellipse_transparent2ex(fittedEllipseLast);
             if isempty(explicitEllipse)
                 fVal = nan;
             else
                 if any(isnan(explicitEllipse))
                     fVal = nan;
                 else
-                    fVal = sqrt(nanmean(ellipsefit_distance(Xp,Yp,explicitEllipse).^2));
+                    fVal = sqrt(nanmean(ellipsefit_distance(Xp,Yp,explicitEllipse).^2))*objScaler;
                 end
             end
         end
@@ -256,10 +280,10 @@ end
                 if lastFVal < bestFVal || isnan(bestFVal)
                     bestFVal = lastFVal;
                     xBest = xLast;
-                    ellipseParamsTransparentBest = ellipseParamsTransparentLast;
+                    fittedEllipseBest = fittedEllipseLast;
                 end
                 % Test if we are done the search
-                if lastFVal < rmseThresh
+                if lastFVal/objScaler < rmseThresh
                     stop = true;
                 end
             case 'done'
@@ -270,8 +294,8 @@ end
 
 % Store the best performing values
 eyePose = xBest;
-RMSE = bestFVal;
-ellipseParamsTransparent = ellipseParamsTransparentBest;
+RMSE = bestFVal/objScaler;
+fittedEllipse = fittedEllipseBest;
 
 % Check if the fit is at a boundary for any parameter that is not locked
 notLocked = eyePoseLB ~= eyePoseUB;
@@ -301,7 +325,7 @@ if isnan(RMSE) || RMSE > p.Results.repeatSearchThresh
             x0 = eyePose;
         end
         x0(1:2) = x0(1:2)+[0.1 0.1]./p.Results.searchCount;
-        [eyePose_r, RMSE_r, ellipseParamsTransparent_r, fitAtBound_r] = ...
+        [eyePose_r, RMSE_r, fittedEllipse_r, fitAtBound_r] = ...
             eyePoseEllipseFit(Xp, Yp, sceneGeometry, ...
             'x0',x0,...
             'eyePoseLB',p.Results.eyePoseLB,...
@@ -312,7 +336,7 @@ if isnan(RMSE) || RMSE > p.Results.repeatSearchThresh
         if RMSE_r < RMSE
             eyePose = eyePose_r;
             RMSE = RMSE_r;
-            ellipseParamsTransparent = ellipseParamsTransparent_r;
+            fittedEllipse = fittedEllipse_r;
             fitAtBound = fitAtBound_r;
         end
     end
@@ -323,7 +347,7 @@ end
 if isempty(eyePose)
     eyePose = [nan nan nan nan];
     RMSE = nan;
-    ellipseParamsTransparent = [nan nan nan nan nan];
+    fittedEllipse = [nan nan nan nan nan];
     fitAtBound = false;
 end
 
