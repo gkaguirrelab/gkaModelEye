@@ -1,4 +1,4 @@
-function [eyePose, RMSE, fittedEllipse, fitAtBound] = pupilProjection_inv(targetEllipse, sceneGeometry, varargin)
+function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = pupilProjection_inv(targetEllipse, sceneGeometry, varargin)
 % Determine the eyePose corresponding to an observed entrance pupil ellipse
 %
 % Syntax:
@@ -44,7 +44,8 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound] = pupilProjection_inv(target
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
 %
 % Optional key/value pairs:
-%  'x0'                   - Starting point of the search for the eyePose.
+%  'x0'                   - A 1x4 vector or an nx4 matrix that provides
+%                           starting points for the search for the eyePose.
 %                           If not defined, the starting point will be
 %                           estimated from the coordinates of the ellipse
 %                           center. If set to Inf, a random x0 will be
@@ -99,20 +100,21 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound] = pupilProjection_inv(target
     assert(max(abs(eyePose - inverseEyePose)./eyePose) < 1e-2)
 %}
 %{
-    %% Calculate the time required for the inverse projection
+    %% Calculate the time required, and accuracy of, the inverse projection
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
+    sceneGeometry = calcEyePoseGrid(sceneGeometry);
     % Generate ellipses for some randomly selected eye poses
     nPoses = 100;
-    eyePoses=[(rand(nPoses,1)-0.5)*20, (rand(nPoses,1)-0.5)*10, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
+    eyePoses=[(rand(nPoses,1)-0.5)*40, (rand(nPoses,1)-0.5)*20, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
     for pp = 1:nPoses
     	ellipseParams(pp,:) = pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
     end
     fprintf('\nTime to compute inverse projection model (average over %d projections):\n',nPoses);
-    tic
     recoveredEyePoses = []; RMSEvals = [];
+    tic
     for pp = 1:nPoses
-    	[recoveredEyePoses(pp,:),RMSEvals(pp)] = pupilProjection_inv(ellipseParams(pp,:),sceneGeometry);
+    	[recoveredEyePoses(pp,:),RMSEvals(pp), ~, ~, nSearches(pp)] = pupilProjection_inv(ellipseParams(pp,:),sceneGeometry);
     end
     msecPerModel = toc / nPoses * 1000;
     fprintf('\tUsing pre-compiled ray tracing: %4.2f msecs.\n',msecPerModel);
@@ -161,7 +163,7 @@ end
 
 
 %% Perform the search
-[eyePose, RMSE, fittedEllipse, fitAtBound] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin{:});
+[eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin{:});
 
 
 end % function -- pupilProjection_inv

@@ -1,4 +1,4 @@
-function [eyePose, RMSE, fittedEllipse, fitAtBound] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
+function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
 % Fit an image plane ellipse by perspective projection of a pupil circle
 %
 % Syntax:
@@ -94,13 +94,18 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound] = eyePoseEllipseFit(Xp, Yp, 
     	ellipseParams(pp,:) = pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
     end
     fprintf('\nTime to compute inverse projection model from pupil perimeter (average over %d projections):\n',nPoses);
+    recoveredEyePoses = []; RMSEvals = [];
     tic
     for pp = 1:nPoses
         [ Xp, Yp ] = ellipsePerimeterPoints( ellipseParams(pp,:), 6 );
-        [~, RMSE(pp), ~, ~] = eyePoseEllipseFit(Xp, Yp, sceneGeometry);
+        [recoveredEyePoses(pp,:),RMSEvals(pp)] = eyePoseEllipseFit(Xp, Yp, sceneGeometry);
     end
     msecPerModel = toc / nPoses * 1000;
     fprintf('\tUsing pre-compiled ray tracing: %4.2f msecs.\n',msecPerModel);
+    fprintf('Max errors in azi, ele, torsion, and stop radius:\n');
+    max(eyePoses-recoveredEyePoses)
+    fprintf('median RMSE:\n');
+    median(RMSEvals)
 %}
 
 
@@ -130,6 +135,7 @@ eyePose = [nan nan nan nan];
 RMSE = nan;
 fittedEllipse = [nan nan nan nan nan];
 fitAtBound = false;
+nSearches = nan;
 
 % Issue a warning if the bounds do not fully constrain at least one eye
 % rotation parameter. This is because there are multiple combinations of
@@ -146,59 +152,101 @@ eyePoseLB = p.Results.eyePoseLB;
 eyePoseUB = p.Results.eyePoseUB;
 
 % Clear the case of nans in the input
-if any(isnan(eyePoseLB)) || any(isnan(eyePoseUB)) || any(isnan(p.Results.x0)) 
+if any(isnan(eyePoseLB)) || any(isnan(eyePoseUB)) || any(any(isnan(p.Results.x0)))
     return
 end
 
-% Identify the center of projection
-rotationCenterEllipse = pupilProjection_fwd([0 0 0 2], sceneGeometry);
-CoP = [rotationCenterEllipse(1),rotationCenterEllipse(2)];
 
-meanXp = mean(Xp);
-meanYp = mean(Yp);
-
-% If x0 is undefined, we make a guess based upon the location of the center
-% of the points to be fit
+% Define an x0 guess if this was not passed
 if isempty(p.Results.x0)
-    % Probe the forward model to determine how many pixels of change in the
-    % location of the pupil ellipse correspond to one degree of rotation.
-    probeEllipse=pupilProjection_fwd([1 0 0 2],sceneGeometry);
-    pixelsPerDeg = probeEllipse(1)-CoP(1);
     
-    % Estimate the eye azimuth and elevation by the X and Y displacement of
-    % the ellipse center from the center of projection. Torsion is set to
-    % zero
-    x0(1) = ((meanXp - CoP(1))/pixelsPerDeg);
-    x0(2) = ((CoP(2) - meanYp)/pixelsPerDeg);
-    x0(3) = 0;
-    
-    % Force the angles within bounds
-    x0=min([eyePoseUB(1:3); x0]);
-    x0=max([eyePoseLB(1:3); x0]);
-    
-    % Estimate the pupil radius in pixels
-    pupilRadiusPixels = max([abs(max(Xp)-min(Xp)) abs(max(Yp)-min(Yp))])/2;
-    
-    % Probe the forward model at the estimated pose angles to
-    % estimate the pupil radius.
-    probeEllipse=pupilProjection_fwd([x0(1) x0(2) x0(3) 2], sceneGeometry);
-    pixelsPerMM = sqrt(probeEllipse(3)/pi)/2;
-    
-    % Set the initial value for pupil radius in mm
-    x0(4) = pupilRadiusPixels/pixelsPerMM;
-    
-    % If the absolute value of an estimated angle is less than 2 degrees,
-    % set the value to close to zero. This is done as fmincon seems to
-    % avoid solutions exactly at zero, and this kludge fixes that behavior.
-    x0(abs(x0(1:3))<2) = 1e-6;
-    
-    % Ensure that x0 lies within the bounds with a bit of headroom so that
-    % the solver does not get stuck up against a bound.
-    boundHeadroom = (eyePoseUB - eyePoseLB)*0.001;
-    x0=min([eyePoseUB-boundHeadroom; x0]);
-    x0=max([eyePoseLB+boundHeadroom; x0]);
+    % Check if an eyePoseGrid has been calculated for this sceneGeometry.
+    % This is a set of pre-calculated pupil ellipses for a set of eyePoses.
+    % If so, we will use the best matches of these ellipses to the ellipse
+    % fit to the passed perimeter points.
+    if isfield(sceneGeometry,'eyePoseGrid')
+        
+        % Fit an ellipse to the perimeter points
+        pe = pupilEllipseFit([Xp Yp]);
+        
+        % Find the closest matches in the eyePoseGrid to pe
+        matchError = sum(...
+            abs(sceneGeometry.eyePoseGrid.pupilEllipses - pe) ./ ...
+            sceneGeometry.eyePoseGrid.maxEllipseVals,2);
+        
+        % Set up the weights to combine closest matches from the
+        % eyePoseGrid
+        [sortError,indexError]=sort(matchError);
+        weights = @(n) (1./sortError(1:n))./sum(1./sortError(1:n));
+        
+        % Assemble some x0 guesses using sets of the best matches
+        x0 = [];
+        for nn=[10,5,2]
+            x0(end+1,:) = sum(sceneGeometry.eyePoseGrid.eyePoses(indexError(1:nn),:).*weights(nn),1);
+        end
+        
+    else
+        % There is no eyePoseGrid. Construct an x0 guess by probing the
+        % forward model. First identify the center of projection
+        rotationCenterEllipse = pupilProjection_fwd([0 0 0 2], sceneGeometry);
+        CoP = [rotationCenterEllipse(1),rotationCenterEllipse(2)];
+        
+        meanXp = mean(Xp);
+        meanYp = mean(Yp);
+        
+        % Probe the forward model to determine how many pixels of change in
+        % the location of the pupil ellipse correspond to one degree of
+        % rotation.
+        probeEllipse=pupilProjection_fwd([1 0 0 2],sceneGeometry);
+        pixelsPerDeg = probeEllipse(1)-CoP(1);
+        
+        % Estimate the eye azimuth and elevation by the X and Y
+        % displacement of the ellipse center from the center of projection.
+        % Scale these by 75% to roughly account for refractive effects.
+        % Torsion is set to zero
+        x0(1) = ((meanXp - CoP(1))/pixelsPerDeg).*0.75;
+        x0(2) = ((CoP(2) - meanYp)/pixelsPerDeg).*0.75;
+        x0(3) = 0;
+        
+        % Force the angles within bounds
+        x0=min([eyePoseUB(1:3); x0]);
+        x0=max([eyePoseLB(1:3); x0]);
+        
+        % Estimate the pupil radius in pixels
+        pupilRadiusPixels = max([abs(max(Xp)-min(Xp)) abs(max(Yp)-min(Yp))])/2;
+        
+        % Probe the forward model at the estimated pose angles to estimate
+        % the pupil radius.
+        probeEllipse=pupilProjection_fwd([x0(1) x0(2) x0(3) 2], sceneGeometry);
+        pixelsPerMM = sqrt(probeEllipse(3)/pi)/2;
+        
+        % Set the initial value for pupil radius in mm
+        x0(4) = pupilRadiusPixels/pixelsPerMM;
+        
+        % If the absolute value of an estimated angle is less than 2
+        % degrees, set the value to close to zero. This is done as fmincon
+        % seems to avoid solutions exactly at zero, and this kludge fixes
+        % that behavior.
+        x0(abs(x0(1:3))<2) = 1e-6;
+        
+        % Ensure that x0 lies within the bounds with a bit of headroom so
+        % that the solver does not get stuck up against a bound.
+        boundHeadroom = (eyePoseUB - eyePoseLB)*0.001;
+        x0=min([eyePoseUB-boundHeadroom; x0]);
+        x0=max([eyePoseLB+boundHeadroom; x0]);
+    end
 else
     x0 = p.Results.x0;
+end
+
+% Handle the case of the x0 being a matrix of guesses
+nGuesses = size(x0,1);
+if nGuesses>1
+    if p.Results.searchCount>nGuesses
+        % We are out of guesses. Return.
+        return
+    end
+    x0 = x0(p.Results.searchCount,:);
 end
 
 
@@ -215,7 +263,7 @@ objScaler = 1e6;            % Inflate the fVal to help fmincon search
 % define some search options
 options = optimoptions(@fmincon,...
     'Display','off', ...
-    'Algorithm','active-set',...
+    'Algorithm','interior-point',...
     'OutputFcn',@outfun);
 
 % Turn off warnings that can arise during the search
@@ -296,6 +344,7 @@ end
 eyePose = xBest;
 RMSE = bestFVal/objScaler;
 fittedEllipse = fittedEllipseBest;
+nSearches = p.Results.searchCount;
 
 % Check if the fit is at a boundary for any parameter that is not locked
 notLocked = eyePoseLB ~= eyePoseUB;
@@ -315,19 +364,14 @@ end
 
 % If the solution has an RMSE that is larger than repeatSearchThresh, we
 % consider the possibility that the solution represents a local minimum. We
-% repeat the search, passing a value close to the eyePose solution as x0.
-% This process terminates when the search count exceeds nMaxSearches.
+% repeat the search. The next search will use the next available value in
+% the set of x0 guesses. This process terminates when the search count
+% exceeds nMaxSearches, or when we run out of guesses.
 if isnan(RMSE) || RMSE > p.Results.repeatSearchThresh
     if p.Results.searchCount < p.Results.nMaxSearches
-        % Make sure that the search yielded an actual solution for the eyePose.
-        % If not, simply re-use the x0 (with a small shift).
-        if ~isempty(eyePose)
-            x0 = eyePose;
-        end
-        x0(1:2) = x0(1:2)+[0.1 0.1]./p.Results.searchCount;
-        [eyePose_r, RMSE_r, fittedEllipse_r, fitAtBound_r] = ...
+        [eyePose_r, RMSE_r, fittedEllipse_r, fitAtBound_r, nSearches_r] = ...
             eyePoseEllipseFit(Xp, Yp, sceneGeometry, ...
-            'x0',x0,...
+            'x0',p.Results.x0,...
             'eyePoseLB',p.Results.eyePoseLB,...
             'eyePoseUB',p.Results.eyePoseUB,...
             'repeatSearchThresh',p.Results.repeatSearchThresh, ...
@@ -338,6 +382,7 @@ if isnan(RMSE) || RMSE > p.Results.repeatSearchThresh
             RMSE = RMSE_r;
             fittedEllipse = fittedEllipse_r;
             fitAtBound = fitAtBound_r;
+            nSearches = nSearches_r;
         end
     end
 end
