@@ -47,7 +47,7 @@ p.addRequired('sceneGeometry',@isstruct);
 % Optional params
 p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
 p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
-p.addParameter('gridDensity',25,@isscalar);
+p.addParameter('gridDensity',50,@isscalar);
 p.addParameter('estimateCompTime',false,@islogical);
 
 % Parse and check the parameters
