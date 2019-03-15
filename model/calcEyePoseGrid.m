@@ -36,7 +36,11 @@ function sceneGeometry = calcEyePoseGrid(sceneGeometry, varargin)
     sceneGeometry = createSceneGeometry();
     sceneGeometry = calcEyePoseGrid(sceneGeometry);
 %}
-
+%{
+    % Estimate computation time
+    sceneGeometry = createSceneGeometry();
+    calcEyePoseGrid(sceneGeometry,'gridDensity',85,'estimateCompTime',true);
+%}
 
 %% Parse input
 p = inputParser;
