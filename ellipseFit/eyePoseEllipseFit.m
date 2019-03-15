@@ -19,12 +19,11 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
 %
 % Optional key/value pairs:
-%  'x0'                   - A 1x4 vector or an nx4 matrix that provides
-%                           starting points for the search for the eyePose.
-%                           If not defined, the starting point will be
-%                           estimated either from the eyePoseGrid field of
-%                           the sceneGeometry or from the coordinates of
-%                           the ellipse center.
+%  'x0'                   - A 1x4 vector that provides starting points for 
+%                           the search for the eyePose. If not defined, the
+%                           starting point will be estimated either from
+%                           the polyModel field of the sceneGeometry or
+%                           from the coordinates of the ellipse center.
 %                           selected within the eyePose bounds.
 %  'eyePoseLB/UB'         - A 1x4 vector that provides the lower (upper)
 %                           bounds on the eyePose [azimuth, elevation,
@@ -83,7 +82,7 @@ p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
 p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
 p.addParameter('rmseThresh',1e-2,@isscalar);
 p.addParameter('repeatSearchThresh',1.0,@isscalar);
-p.addParameter('nMaxSearches',5,@isscalar);
+p.addParameter('nMaxSearches',3,@isscalar);
 p.addParameter('searchCount',1,@isscalar);
 
 % Parse and check the parameters
@@ -120,9 +119,9 @@ end
 % Define an x0 guess if this was not passed
 if isempty(p.Results.x0)
     
-    % Check if a polyModel has been calculated for this sceneGeometry.
-    % This is a high-order, 5D polynomial model that relates ellipse params
-    % to an eyePose
+    % Check if a polyModel has been calculated for this sceneGeometry. This
+    % is a 5D, high-order polynomial model that relates ellipse params to
+    % an eyePose
     if isfield(sceneGeometry,'polyModel')
         
         % Fit an ellipse to the perimeter points
@@ -184,7 +183,6 @@ if isempty(p.Results.x0)
         x0=min([eyePoseUB-boundHeadroom; x0]);
         x0=max([eyePoseLB+boundHeadroom; x0]);
         
-        x0 = x0;
     end
 else
     x0 = p.Results.x0;
@@ -303,10 +301,12 @@ if ~isempty(warnID)
 end
 
 % If the solution has an RMSE that is larger than repeatSearchThresh, we
-% consider the possibility that the solution represents a local minimum. We
-% repeat the search, adding a bit of noise to x0.
+% consider the possibility that the solution represents a local minimum and
+% repeat the search.
 if isnan(RMSE) || RMSE > p.Results.repeatSearchThresh
     if p.Results.searchCount < p.Results.nMaxSearches
+        % Add a bit of noise to x0
+        x0 = x0 + [0.2 0.2 0 0.1].*randn(1,4);
         [eyePose_r, RMSE_r, fittedEllipse_r, fitAtBound_r, nSearches_r] = ...
             eyePoseEllipseFit(Xp, Yp, sceneGeometry, ...
             'x0',x0,...

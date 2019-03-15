@@ -115,6 +115,10 @@ if p.Results.verbose
     fprintf('Finished grid construction. Now fitting polynomial model\n');
 end
 
+% save the current warning status and silence anticipated warnings
+warningState = warning;
+warning('off','MATLAB:singularMatrix');
+
 % Fit the polynomial model that relates pupilEllipse parameters to each of
 % the eye pose parameters
 sceneGeometry.polyModel.azimuth = ...
@@ -124,6 +128,8 @@ sceneGeometry.polyModel.elevation = ...
 sceneGeometry.polyModel.stopRadius = ...
     polyfitn( pupilEllipses, eyePoses(:,4),p.Results.polyModelOrder);
 
+% Restore the warning state
+warning(warningState);
 
 % Store the meta data
 sceneGeometry.polyModel.meta = p.Results;

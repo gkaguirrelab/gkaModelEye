@@ -90,7 +90,7 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = pupilProjection
     %% Calculate the time required, and accuracy of, the inverse projection
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
-    sceneGeometry = calcEyePoseGrid(sceneGeometry);
+    sceneGeometry = addEyePosePolyModel(sceneGeometry);
     % Generate ellipses for some randomly selected eye poses
     nPoses = 20;
     eyePoses=[(rand(nPoses,1)-0.5)*40, (rand(nPoses,1)-0.5)*20, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
