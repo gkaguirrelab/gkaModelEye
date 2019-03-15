@@ -34,12 +34,12 @@ function sceneGeometry = addEyePosePolyModel(sceneGeometry, varargin)
 % Examples:
 %{
     sceneGeometry = createSceneGeometry();
-    sceneGeometry = calcEyePoseGrid(sceneGeometry);
+    sceneGeometry = addEyePosePolyModel(sceneGeometry,'verbose',true);
 %}
 %{
     % Estimate computation time
     sceneGeometry = createSceneGeometry();
-    calcEyePoseGrid(sceneGeometry,'gridDensity',85,'estimateCompTime',true);
+    addEyePosePolyModel(sceneGeometry,'gridDensity',85,'estimateCompTime',true);
 %}
 
 %% Parse input
@@ -51,7 +51,7 @@ p.addRequired('sceneGeometry',@isstruct);
 % Optional params
 p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
 p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
-p.addParameter('gridDensity',25,@isscalar);
+p.addParameter('gridDensity',50,@isscalar);
 p.addParameter('polyModelOrder',6,@isscalar);
 p.addParameter('estimateCompTime',false,@islogical);
 p.addParameter('verbose', false, @islogical);
@@ -92,10 +92,6 @@ tic
 hold on
 idx=1;
 for xx=1:length(aziVals)
-    % Update the progress display
-    if p.Results.verbose && mod(idx,round(nComps/50))==0
-        fprintf('\b.\n');
-    end    
     for yy=1:length(eleVals)
         for zz=1:length(stopVals)
             eyePose = [aziVals(xx) eleVals(yy) 0 stopVals(zz)];
@@ -107,7 +103,10 @@ for xx=1:length(aziVals)
             end
         end
     end
-    toc
+    % Update the progress display
+    if p.Results.verbose
+        toc
+    end
 end
 compTimeMins = toc/60;
 
@@ -119,19 +118,16 @@ end
 % Fit the polynomial model that relates pupilEllipse parameters to each of
 % the eye pose parameters
 sceneGeometry.polyModel.azimuth = ...
-    polyfitn( sceneGeometry.eyePoseGrid.pupilEllipses, ...
-    sceneGeometry.eyePoseGrid.eyePoses(:,1),p.Results.polyModelOrder);
+    polyfitn( pupilEllipses, eyePoses(:,1),p.Results.polyModelOrder);
 sceneGeometry.polyModel.elevation = ...
-    polyfitn( sceneGeometry.eyePoseGrid.pupilEllipses, ...
-    sceneGeometry.eyePoseGrid.eyePoses(:,2),p.Results.polyModelOrder);
+    polyfitn( pupilEllipses, eyePoses(:,2),p.Results.polyModelOrder);
 sceneGeometry.polyModel.stopRadius = ...
-    polyfitn( sceneGeometry.eyePoseGrid.pupilEllipses, ...
-    sceneGeometry.eyePoseGrid.eyePoses(:,4),p.Results.polyModelOrder);
+    polyfitn( pupilEllipses, eyePoses(:,4),p.Results.polyModelOrder);
 
 
 % Store the meta data
-sceneGeometry.eyePoseGrid.meta = p.Results;
-sceneGeometry.eyePoseGrid.compTimeMins = compTimeMins;
+sceneGeometry.polyModel.meta = p.Results;
+sceneGeometry.polyModel.meta.compTimeMins = compTimeMins;
 
 end % function
 

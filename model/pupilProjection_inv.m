@@ -92,7 +92,7 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = pupilProjection
     sceneGeometry=createSceneGeometry();
     sceneGeometry = calcEyePoseGrid(sceneGeometry);
     % Generate ellipses for some randomly selected eye poses
-    nPoses = 100;
+    nPoses = 20;
     eyePoses=[(rand(nPoses,1)-0.5)*40, (rand(nPoses,1)-0.5)*20, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
     for pp = 1:nPoses
     	ellipseParams(pp,:) = pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);

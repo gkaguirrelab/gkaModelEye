@@ -118,33 +118,21 @@ end
 
 
 % Define an x0 guess if this was not passed
-x0set = p.Results.x0;
-if isempty(x0set)
+if isempty(p.Results.x0)
     
-    % Check if an eyePoseGrid has been calculated for this sceneGeometry.
-    % This is a set of pre-calculated pupil ellipses for a set of eyePoses.
-    % If so, we will use the best matches of these ellipses to the ellipse
-    % fit to the passed perimeter points.
-    if isfield(sceneGeometry,'eyePoseGrid')
+    % Check if a polyModel has been calculated for this sceneGeometry.
+    % This is a high-order, 5D polynomial model that relates ellipse params
+    % to an eyePose
+    if isfield(sceneGeometry,'polyModel')
         
         % Fit an ellipse to the perimeter points
         pe = pupilEllipseFit([Xp Yp]);
         
-        % Find the closest matches in the eyePoseGrid to pe
-        matchError = sum(...
-            abs(sceneGeometry.eyePoseGrid.pupilEllipses(:,[1 2 5]) - pe([1 2 5])) ./ ...
-            sceneGeometry.eyePoseGrid.maxEllipseVals([1 2 5]),2);
-        
-        % Set up the weights to combine closest matches from the
-        % eyePoseGrid
-        [sortError,indexError]=sort(matchError);
-        weights = @(n) (1./sortError(1:n))./sum(1./sortError(1:n));
-        
-        % Assemble some x0 guesses using sets of the best matches
-        x0set = [];
-        for nn=[10,7,5,2,1]
-            x0set(end+1,:) = sum(sceneGeometry.eyePoseGrid.eyePoses(indexError(1:nn),:).*weights(nn),1);
-        end
+        % Construct the x0
+        x0 = zeros(1,4);
+        x0(1) = polyvaln(sceneGeometry.polyModel.azimuth,pe);
+        x0(2) = polyvaln(sceneGeometry.polyModel.elevation,pe);
+        x0(4) = polyvaln(sceneGeometry.polyModel.stopRadius,pe);
         
     else
         % There is no eyePoseGrid. Construct an x0 guess by probing the
@@ -196,22 +184,10 @@ if isempty(x0set)
         x0=min([eyePoseUB-boundHeadroom; x0]);
         x0=max([eyePoseLB+boundHeadroom; x0]);
         
-        x0set = x0;
+        x0 = x0;
     end
 else
-    x0set = p.Results.x0;
-end
-
-% Handle the case of the x0 being a matrix of guesses
-nGuesses = size(x0set,1);
-if nGuesses>1
-    if p.Results.searchCount>nGuesses
-        % We are out of guesses. Return.
-        return
-    end
-    x0 = x0set(p.Results.searchCount,:);
-else
-    x0 = x0set;
+    x0 = p.Results.x0;
 end
 
 
@@ -328,14 +304,12 @@ end
 
 % If the solution has an RMSE that is larger than repeatSearchThresh, we
 % consider the possibility that the solution represents a local minimum. We
-% repeat the search. The next search will use the next available value in
-% the set of x0 guesses. This process terminates when the search count
-% exceeds nMaxSearches, or when we run out of guesses.
+% repeat the search, adding a bit of noise to x0.
 if isnan(RMSE) || RMSE > p.Results.repeatSearchThresh
     if p.Results.searchCount < p.Results.nMaxSearches
         [eyePose_r, RMSE_r, fittedEllipse_r, fitAtBound_r, nSearches_r] = ...
             eyePoseEllipseFit(Xp, Yp, sceneGeometry, ...
-            'x0',x0set,...
+            'x0',x0,...
             'eyePoseLB',p.Results.eyePoseLB,...
             'eyePoseUB',p.Results.eyePoseUB,...
             'repeatSearchThresh',p.Results.repeatSearchThresh, ...
