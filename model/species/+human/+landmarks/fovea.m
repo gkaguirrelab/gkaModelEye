@@ -17,7 +17,7 @@ function fovea = fovea( eye )
 % Examples:
 %{
     % Plot the retinal surface and the positions of the fovea
-    eye = modelEyeParameters('sphericalAmetropia',-1.5,'calcLandmarkFovea',true);
+    eye = modelEyeParameters('sphericalAmetropia',-1.5,'calcLandmarkFovea',true,'calcLandmarkOpticDisc',true);
     S = eye.retina.S;
     boundingBox = eye.retina.boundingBox;
     figure
@@ -29,6 +29,7 @@ function fovea = fovea( eye )
     % Add the retinal landmarks
     plot3(eye.landmarks.vertex.coords(1),eye.landmarks.vertex.coords(2),eye.landmarks.vertex.coords(3),'+m','MarkerSize',10);
     plot3(eye.landmarks.fovea.coords(1),eye.landmarks.fovea.coords(2),eye.landmarks.fovea.coords(3),'+r','MarkerSize',10);
+    plot3(eye.landmarks.opticDisc.coords(1),eye.landmarks.opticDisc.coords(2),eye.landmarks.opticDisc.coords(3),'+k','MarkerSize',10);
 
     % Add the geodetic path
     [geoDistance,~,~,geodeticPathCoords] = quadric.panouGeodesicDistance(S,eye.landmarks.fovea.geodetic,eye.landmarks.opticDisc.geodetic);
@@ -39,7 +40,7 @@ function fovea = fovea( eye )
     % a range of spherical refractive errors
     SRvals = -10:1:2;
     for ii = 1:length(SRvals)
-        eye = modelEyeParameters('sphericalAmetropia',SRvals(ii),'calcLandmarkFovea',true);
+        eye = modelEyeParameters('sphericalAmetropia',SRvals(ii),'calcLandmarkFovea',true,'calcLandmarkOpticDisc',true);
         odf(ii) = sqrt(sum((eye.landmarks.fovea.coords(2:3) - eye.landmarks.opticDisc.coords(2:3)).^2));
     end
     figure
