@@ -47,9 +47,9 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = pupilProjection
 %  'x0'                   - A 1x4 vector or an nx4 matrix that provides
 %                           starting points for the search for the eyePose.
 %                           If not defined, the starting point will be
-%                           estimated from the coordinates of the ellipse
-%                           center. If set to Inf, a random x0 will be
-%                           selected within the eyePose bounds.
+%                           estimated either from the eyePoseGrid field of
+%                           the sceneGeometry or from the coordinates of
+%                           the ellipse center.
 %  'eyePoseLB/UB'         - A 1x4 vector that provides the lower (upper)
 %                           bounds on the eyePose [azimuth, elevation,
 %                           torsion, stop radius]. The default values here
@@ -83,22 +83,9 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = pupilProjection
 %   fitAtBound            - Logical. Indicates if any of the returned
 %                           eyePose parameters are at the upper or lower
 %                           boundary.
+%   nSearches             - The number of searches conducted.
 %
 % Examples:
-%{
-    %% Test if we can find the eyePose for image ellipse
-    % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry();
-    % Define in eyePoses the azimuth, elevation, torsion, and pupil radius
-    eyePose = [10 10 0 2];
-    % Obtain the pupil ellipse parameters in transparent format
-    targetEllipse = pupilProjection_fwd(eyePose,sceneGeometry);
-    % Recover the eye pose from the ellipse
-    inverseEyePose = pupilProjection_inv(targetEllipse, sceneGeometry);
-    % Report the difference between the input and recovered eyePose
-    fprintf('Test if the absolute error in the eye pose recovered by pupilProjection_inv is less than 1 percent\n');
-    assert(max(abs(eyePose - inverseEyePose)./eyePose) < 1e-2)
-%}
 %{
     %% Calculate the time required, and accuracy of, the inverse projection
     % Obtain a default sceneGeometry structure
@@ -114,7 +101,7 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = pupilProjection
     recoveredEyePoses = []; RMSEvals = [];
     tic
     for pp = 1:nPoses
-    	[recoveredEyePoses(pp,:),RMSEvals(pp), ~, ~, nSearches(pp)] = pupilProjection_inv(ellipseParams(pp,:),sceneGeometry);
+    	[recoveredEyePoses(pp,:),RMSEvals(pp), ~, ~, nSearches(pp)] = pupilProjection_inv(ellipseParams(pp,:),sceneGeometry,'repeatSearchThresh',0.5);
     end
     msecPerModel = toc / nPoses * 1000;
     fprintf('\tUsing pre-compiled ray tracing: %4.2f msecs.\n',msecPerModel);
@@ -159,7 +146,7 @@ end
 
 
 %% Define perimeter points
-[ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 7, 0 );
+[ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 5, 0 );
 
 
 %% Perform the search

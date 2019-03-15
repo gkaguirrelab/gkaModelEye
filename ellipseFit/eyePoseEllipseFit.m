@@ -6,7 +6,7 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %
 % Description:
 %   The routine fits points on the image plane based upon the eye
-%   parameters (azimuth, elevation, torsion, pupil radius) that produce the
+%   parameters (azimuth, elevation, torsion, stop radius) that produce the
 %   best fitting ellipse projected according to sceneGeometry.
 %
 %   The search is constrained by the upper and lower bounds of the eyePose.
@@ -19,10 +19,12 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
 %
 % Optional key/value pairs:
-%  'x0'                   - Starting point of the search for the eyePose.
+%  'x0'                   - A 1x4 vector or an nx4 matrix that provides
+%                           starting points for the search for the eyePose.
 %                           If not defined, the starting point will be
-%                           estimated from the coordinates of the ellipse
-%                           center. If set to Inf, a random x0 will be
+%                           estimated either from the eyePoseGrid field of
+%                           the sceneGeometry or from the coordinates of
+%                           the ellipse center.
 %                           selected within the eyePose bounds.
 %  'eyePoseLB/UB'         - A 1x4 vector that provides the lower (upper)
 %                           bounds on the eyePose [azimuth, elevation,
@@ -52,7 +54,7 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %   eyePose               - A 1x4 vector with values for [eyeAzimuth,
 %                           eyeElevation, eyeTorsion, stopRadius].
 %                           Azimuth, elevation, and torsion are in units of
-%                           head-centered (extrinsic) degrees, and pupil
+%                           head-centered (extrinsic) degrees, and stop
 %                           radius is in mm.
 %   RMSE                  - Root mean squared error of the distance of
 %                           boundary point in the image to the fitted
@@ -62,51 +64,9 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %   fitAtBound            - Logical. Indicates if any of the returned
 %                           eyePose parameters are at the upper or lower
 %                           boundary.
+%   nSearches             - The number of searches conducted.
 %
-% Examples:
-%{
-    %% Test if we can find the eyePose for a pupil perimeter ellipse
-    % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry();
-    % Define in eyePoses the azimuth, elevation, torsion, and pupil radius
-    eyePose = [-25 25 0 2];
-    % Obtain the pupil ellipse parameters in transparent format
-    pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
-    % Obtain boundary points for this ellipse. We need more than 5 boundary
-    % points, as the pupil perimeter is not exactly elliptical
-    [ Xp, Yp ] = ellipsePerimeterPoints( pupilEllipseOnImagePlane, 6 );
-    % Recover the eye pose from the pupil boundary
-    inverseEyePose = eyePoseEllipseFit(Xp, Yp, sceneGeometry);
-    % Report the difference between the input and recovered eyePose
-    fprintf('Test if there is less than 0.1 percent absolute error in the recovered eye pose.\n');
-    fitError = abs((eyePose - inverseEyePose)./eyePose);
-    fitError = max(fitError(~isnan(fitError)));
-    assert(fitError < 1e-3);
-%}
-%{
-    %% Calculate the time required for the inverse projection
-    % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry();
-    % Generate ellipses for some randomly selected eye poses
-    nPoses = 20;
-    eyePoses=[(rand(nPoses,1)-0.5)*20, (rand(nPoses,1)-0.5)*10, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
-    for pp = 1:nPoses
-    	ellipseParams(pp,:) = pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
-    end
-    fprintf('\nTime to compute inverse projection model from pupil perimeter (average over %d projections):\n',nPoses);
-    recoveredEyePoses = []; RMSEvals = [];
-    tic
-    for pp = 1:nPoses
-        [ Xp, Yp ] = ellipsePerimeterPoints( ellipseParams(pp,:), 6 );
-        [recoveredEyePoses(pp,:),RMSEvals(pp)] = eyePoseEllipseFit(Xp, Yp, sceneGeometry);
-    end
-    msecPerModel = toc / nPoses * 1000;
-    fprintf('\tUsing pre-compiled ray tracing: %4.2f msecs.\n',msecPerModel);
-    fprintf('Max errors in azi, ele, torsion, and stop radius:\n');
-    max(eyePoses-recoveredEyePoses)
-    fprintf('median RMSE:\n');
-    median(RMSEvals)
-%}
+
 
 
 %% Parse input
@@ -123,7 +83,7 @@ p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
 p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
 p.addParameter('rmseThresh',1e-2,@isscalar);
 p.addParameter('repeatSearchThresh',1.0,@isscalar);
-p.addParameter('nMaxSearches',3,@isscalar);
+p.addParameter('nMaxSearches',5,@isscalar);
 p.addParameter('searchCount',1,@isscalar);
 
 % Parse and check the parameters
@@ -135,7 +95,7 @@ eyePose = [nan nan nan nan];
 RMSE = nan;
 fittedEllipse = [nan nan nan nan nan];
 fitAtBound = false;
-nSearches = nan;
+nSearches = p.Results.searchCount;
 
 % Issue a warning if the bounds do not fully constrain at least one eye
 % rotation parameter. This is because there are multiple combinations of
@@ -158,7 +118,8 @@ end
 
 
 % Define an x0 guess if this was not passed
-if isempty(p.Results.x0)
+x0set = p.Results.x0;
+if isempty(x0set)
     
     % Check if an eyePoseGrid has been calculated for this sceneGeometry.
     % This is a set of pre-calculated pupil ellipses for a set of eyePoses.
@@ -171,8 +132,8 @@ if isempty(p.Results.x0)
         
         % Find the closest matches in the eyePoseGrid to pe
         matchError = sum(...
-            abs(sceneGeometry.eyePoseGrid.pupilEllipses - pe) ./ ...
-            sceneGeometry.eyePoseGrid.maxEllipseVals,2);
+            abs(sceneGeometry.eyePoseGrid.pupilEllipses(:,[1 2 5]) - pe([1 2 5])) ./ ...
+            sceneGeometry.eyePoseGrid.maxEllipseVals([1 2 5]),2);
         
         % Set up the weights to combine closest matches from the
         % eyePoseGrid
@@ -180,9 +141,9 @@ if isempty(p.Results.x0)
         weights = @(n) (1./sortError(1:n))./sum(1./sortError(1:n));
         
         % Assemble some x0 guesses using sets of the best matches
-        x0 = [];
-        for nn=[10,5,2]
-            x0(end+1,:) = sum(sceneGeometry.eyePoseGrid.eyePoses(indexError(1:nn),:).*weights(nn),1);
+        x0set = [];
+        for nn=[10,7,5,2,1]
+            x0set(end+1,:) = sum(sceneGeometry.eyePoseGrid.eyePoses(indexError(1:nn),:).*weights(nn),1);
         end
         
     else
@@ -234,19 +195,23 @@ if isempty(p.Results.x0)
         boundHeadroom = (eyePoseUB - eyePoseLB)*0.001;
         x0=min([eyePoseUB-boundHeadroom; x0]);
         x0=max([eyePoseLB+boundHeadroom; x0]);
+        
+        x0set = x0;
     end
 else
-    x0 = p.Results.x0;
+    x0set = p.Results.x0;
 end
 
 % Handle the case of the x0 being a matrix of guesses
-nGuesses = size(x0,1);
+nGuesses = size(x0set,1);
 if nGuesses>1
     if p.Results.searchCount>nGuesses
         % We are out of guesses. Return.
         return
     end
-    x0 = x0(p.Results.searchCount,:);
+    x0 = x0set(p.Results.searchCount,:);
+else
+    x0 = x0set;
 end
 
 
@@ -344,7 +309,6 @@ end
 eyePose = xBest;
 RMSE = bestFVal/objScaler;
 fittedEllipse = fittedEllipseBest;
-nSearches = p.Results.searchCount;
 
 % Check if the fit is at a boundary for any parameter that is not locked
 notLocked = eyePoseLB ~= eyePoseUB;
@@ -371,18 +335,19 @@ if isnan(RMSE) || RMSE > p.Results.repeatSearchThresh
     if p.Results.searchCount < p.Results.nMaxSearches
         [eyePose_r, RMSE_r, fittedEllipse_r, fitAtBound_r, nSearches_r] = ...
             eyePoseEllipseFit(Xp, Yp, sceneGeometry, ...
-            'x0',p.Results.x0,...
+            'x0',x0set,...
             'eyePoseLB',p.Results.eyePoseLB,...
             'eyePoseUB',p.Results.eyePoseUB,...
             'repeatSearchThresh',p.Results.repeatSearchThresh, ...
             'searchCount', p.Results.searchCount+1);
+        % Iterate the search counter
+        nSearches = nSearches_r;
         % Keep this solution if it is better
         if RMSE_r < RMSE
             eyePose = eyePose_r;
             RMSE = RMSE_r;
             fittedEllipse = fittedEllipse_r;
             fitAtBound = fitAtBound_r;
-            nSearches = nSearches_r;
         end
     end
 end
