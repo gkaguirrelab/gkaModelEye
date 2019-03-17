@@ -44,8 +44,8 @@ function [outputRay,rayPath,fixationEyePose,foveaDistanceError] = calcLineOfSigh
 % Examples:
 %{
     sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
-    [outputRayLoS,rayPathLoS]=calcLineOfSightRay(sceneGeometry,0.5);
-    [outputRayVis,rayPathVis,~,fixationEyePose]=calcNodalRay(sceneGeometry.eye,sceneGeometry.eye.landmarks.fovea.geodetic);
+    [outputRayLoS,rayPathLoS,~,fixationEyePose]=calcLineOfSightRay(sceneGeometry,0.5);
+    [outputRayVis,rayPathVis]=calcNodalRay(sceneGeometry.eye,sceneGeometry.eye.landmarks.fovea.geodetic);
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true,'rayPath',rayPathVis,'outputRay',outputRayVis);
     plotOpticalSystem('newFigure',false,'rayPath',rayPathLoS,'outputRay',outputRayLoS,'rayColor','green');
     fprintf('Angle of the line-of-sight axis w.r.t. the optical axis:\n')
