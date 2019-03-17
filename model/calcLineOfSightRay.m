@@ -1,12 +1,13 @@
-function [outputRay,rayPath,foveaDistanceError] = calcLineOfSightRay(sceneGeometry,stopRadius,fixTargetDistance)
+function [outputRay,rayPath,fixationEyePose,foveaDistanceError] = calcLineOfSightRay(sceneGeometry,stopRadius,fixTargetDistance)
 % Returns the path of the line of sight for a model eye
 %
 % Syntax:
 %  [outputRay,rayPath] = calcLineOfSightRay(eye,G,X,cameraMedium)
 %
 % Description
-%   Given sceneGeometry, the routine identifies the ray that connects the
-%   fovea with the entrance pupil.
+%   Given sceneGeometry, the routine identifies the ray that originates at
+%   the fixation point, passes through the center of the entrance pupil,
+%   and arrives at the foeca.
 %
 %   The radius of the aperture stop is assumed to be 3 mm unless set. The
 %   fixation target is assumed to 1500 mm unless set.
@@ -33,23 +34,22 @@ function [outputRay,rayPath,foveaDistanceError] = calcLineOfSightRay(sceneGeomet
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
 %                           will be nan.
-%   fixationPose          - A 1x4 vector provides values for [eyeAzimuth,
+%   fixationEyePose       - A 1x4 vector provides values for [eyeAzimuth,
 %                           eyeElevation, eyeTorsion, stopRadius].
 %                           This is the pose of the eye for which the line
 %                           of sight axis intersects the fixationTarget.
-%   distanceErrorEntrancePupil,distanceErrorFixationTarget - Scalars. The
-%                           distance in mm that the ray passes by each of
-%                           these targets.
+%   foveaDistanceError    - Scalar. The Euclidean distance in mm fromt the
+%                           fovea to the point of the ray with the retina.
 %
 % Examples:
 %{
     sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
     [outputRayLoS,rayPathLoS]=calcLineOfSightRay(sceneGeometry,0.5);
-    [outputRayVis,rayPathVis]=calcNodalRay(sceneGeometry.eye,sceneGeometry.eye.landmarks.fovea.geodetic);
+    [outputRayVis,rayPathVis,~,fixationEyePose]=calcNodalRay(sceneGeometry.eye,sceneGeometry.eye.landmarks.fovea.geodetic);
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true,'rayPath',rayPathVis,'outputRay',outputRayVis);
     plotOpticalSystem('newFigure',false,'rayPath',rayPathLoS,'outputRay',outputRayLoS,'rayColor','green');
     fprintf('Angle of the line-of-sight axis w.r.t. the optical axis:\n')
-    [azimuth, elevation] = quadric.rayToAngles(outputRayLoS)
+    fixationEyePose(1:2)
 %}
 
 % Parse inputs
@@ -103,6 +103,11 @@ initialRay(:,2) = -incidentRay(:,2);
 % Calculate and save the line of sight outputRay and the raypath
 opticalSystem = sceneGeometry.refraction.retinaToCamera.opticalSystem;
 [outputRay,rayPath] = rayTraceQuadrics(initialRay, opticalSystem);
+
+% Calculate the fixationEyePose
+[azimuth, elevation] = quadric.rayToAngles(outputRay);
+fixationEyePose = [azimuth, elevation, 0, stopRadius];
+
 
 end
 
