@@ -13,9 +13,8 @@ function cornea = cornea( eye )
 %       219-232.
 %
 %   Their dimensions [a,b,c] correspond to [p2, p3, p1] in the current
-%   model. The Navarro model includes a rotation of the corneal axis such
-%   that the apex is displaced to the nasal visual field. This is modeled
-%   here as well.
+%   model. The cornea ellipsoid is modeled as being aligned with the
+%   optical axis.
 %
 %   The radius of curvature at the vertex of the cornea was found by
 %   Atchison to vary as a function of spherical ametropia (Table 1):
@@ -32,16 +31,53 @@ function cornea = cornea( eye )
 % Outputs:
 %   cornea                - Structure.
 %
+% Examples:
+%{
+    % Navarro 2006 examines the orientation of the corneal ellipsoid with
+    % respect to the keratometric axis, which is the line that connects the 
+    % fixation point of a keratometer instrument with the corneal center of
+    % curvature. Here I obtain the distance in mm between the modeled apex 
+    % of the cornea, and the "vertex normal" point, which is the point of
+    % intersection of the keratometric axis with the front surface of the
+    % cornea.
+    % The calculation is made for an emmetropic eye and assumes that the
+    % fixation point of the keratometric instrument is at 500 mm from the 
+    % corneal surface.
+
+    % Create a sceneGeometry. Put the fixation target at 500 mm, set the
+    % stop radius to 0.86 mm, which corresponds to a 2 mm diameter pupil.
+
+	fixTargetDistance = 500;
+	stopRadius = 0.8693;
+    sceneGeometry = createSceneGeometry(...
+        'sphericalAmetropia',0,...
+        'accommodationDiopeters',1000/500,...
+        'spectralDomain','vis',...
+        'calcLandmarkFovea',true);
+
+    % Obtain the fixation angles and fixation target location
+	[~,~,~, fixTargetWorldCoords] = calcLineOfSightRay(sceneGeometry,stopRadius,fixTargetDistance);
+
+	% Find the point of intersection of the keratometric ray with the
+	% cornea
+	fixTargetEyeCoords = fixTargetWorldCoords([3 1 2]);
+	cc = sceneGeometry.eye.cornea.front.center;
+	keratometricAxisRay = quadric.normalizeRay([fixTargetEyeCoords';cc-fixTargetEyeCoords']');
+    opticalSystem = sceneGeometry.refraction.cameraToRetina.opticalSystem;
+    [~,rayPath] = rayTraceQuadrics(keratometricAxisRay, opticalSystem)
+    horizontalDistance = rayPath(2,2);
+%}
 
 
 %% Corneal ellipsoid rotation
-% The rotation of the corneal ellipsoid is determined in the routine
-% 'calcDerivedParams'
-cornealRotation = eye.derivedParams.cornealRotation;
+% The corneal ellipsoid is modeled as aligned with the optical axis. The
+% code below retains the ability to model a rotation if desired. The
+% cornealRotation vector specifies the rotation (in degrees) about each of
+% the axes.
+cornealRotation = [0 0 0];
 
 
 %% Front corneal surface
-
 if isempty(eye.meta.measuredCornealCurvature)
     % Atchison provides parameters for a radially symmetric ellipsoid in
     % terms of the radius of curvature (R) at the vertex and its
@@ -114,8 +150,7 @@ S_front = S;
 
 
 
-
-% Rotate the quadric surface towards the nasal field
+% Rotate the quadric surface
 switch eye.meta.eyeLaterality
     case 'Right'
         S = quadric.rotate(S,cornealRotation);
@@ -137,12 +172,14 @@ cornea.front.center=[-radii(1) 0 0];
 
 
 %% Tear film
+% The tear film is the front corneal surface, translated forward. The
+% thickness is taken from:
 %   Werkmeister, René M., et al. "Measurement of tear film thickness using
 %   ultrahigh-resolution optical coherence tomography." Investigative
 %   ophthalmology & visual science 54.8 (2013): 5578-5583.
-% The tear film is the front corneal surface, translated forward
 tearFilmThickness = 0.005;
-% Rotate the quadric surface towards the nasal field
+
+% Rotate the quadric surface
 S = S_front;
 switch eye.meta.eyeLaterality
     case 'Right'
@@ -152,6 +189,8 @@ switch eye.meta.eyeLaterality
     otherwise
         error('eye laterality not defined')
 end
+
+% Translate and store
 S = quadric.translate(S,[-radii(1)+tearFilmThickness 0 0]);
 cornea.tears.S = quadric.matrixToVec(S);
 cornea.tears.side = 1;
@@ -190,7 +229,7 @@ cornea.tears.boundingBox=[-4+tearFilmThickness tearFilmThickness -8 8 -8 8];
 radii = [ 13.7716    9.3027    9.3027];
 S = quadric.scale(quadric.unitSphere,radii);
 
-% Rotate the quadric surface towards the nasal field
+% Rotate the quadric surface
 switch eye.meta.eyeLaterality
     case 'Right'
         S = quadric.rotate(S,cornealRotation+[ 180 180 180 ]);

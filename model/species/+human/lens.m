@@ -87,8 +87,10 @@ nEdge = returnRefractiveIndex( 'lens.edge', eye.meta.spectralDomain, 'age',  age
 nCore = returnRefractiveIndex( 'lens.core', eye.meta.spectralDomain, 'age',  age);
 
 % The position of the point in the lens with the maximal refractive index.
-% Taken from Atchison 2006.
-lens.center = [-5.4 0 0];
+% Positioned so that when the eye is accommodated to focus on a point 200
+% mm away (i.e., 5 diopters) the front surface of the lens is at the level
+% of the aperture stop of the iris.
+lens.center = [-5.6 0 0];
 
 % The thickness of the back and front of the lens, taken from Navarro 2014,
 % table 2.
@@ -150,7 +152,7 @@ radii(1) = abs(b); radii(2:3) = abs(a);
 % Build the quadric
 S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
 S = quadric.translate(S,[lens.center(1)-lensThickBack-radii(1) 0 0]);
-boundingBox = [lens.center(1)-lensThickBack lens.center(1) -6 6 -6 6];
+boundingBox = [lens.center(1)-lensThickBack lens.center(1) -5 5 -5 5];
 
 % Add to the optical system structure
 lens.S = [lens.S; quadric.matrixToVec(S)];
@@ -162,7 +164,7 @@ lens.label = [lens.label; {'lens.back'}];
 lens.plot.color = [lens.plot.color; {'red'}];
 
 %% Back gradient shells
-boundingBox = [lens.center(1)-lensThickBack lens.center(1) -6 6 -6 6];
+boundingBox = [lens.center(1)-lensThickBack lens.center(1) -5 5 -5 5];
 nLensVals = linspace(nEdge,nCore,nShells*2+1);
 for ii = startShell:endShell
     nBackQuadric = [-0.010073731138546 0 0 0.0; 0 -0.002039930555556 0 0; 0 0 -0.002039930555556 0; 0 0 0 1.418000000000000];
@@ -186,7 +188,7 @@ lens.index(end) = nCore;
 
 
 %% Front gradient shells
-boundingBox = [lens.center(1) lens.center(1)+lensThickFront -6 6 -6 6];
+boundingBox = [lens.center(1) lens.center(1)+lensThickFront -5 5 -5 5];
 nLensVals = linspace(nEdge,nCore,nShells*2+1);
 for ii = endShell:-1:startShell
     nFrontQuadric = [0.022665895061728 0 0 0; 0 0.002039930555556 0 0; 0 0 0.002039930555556 0; 0 0 0 1.371000000000000];
@@ -223,7 +225,7 @@ radii(2:3) = abs(a);
 S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
 S = quadric.translate(S,[eye.stop.center(1)+radii(1) 0 0]);
 c = quadric.center(S); r = quadric.radii(S);
-boundingBox = [lens.center(1) c(1)-r(1) -6 6 -6 6];
+boundingBox = [lens.center(1) c(1)-r(1) -5 5 -5 5];
 
 % Add to the optical system structure. No refractive index added with this
 % surface, as this is the last surface of this set.

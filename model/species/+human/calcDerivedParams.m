@@ -46,7 +46,7 @@ p.addParameter('derivedParamsPath', ...
     replace(mfilename('fullpath'),mfilename(),'derivedParams.mat'), ...
     @(x)(ischar(x) || isempty(x)));
 p.addParameter('verbose',true,@islogical);
-p.addParameter('showPlots',true,@islogical);
+p.addParameter('showPlots',false,@islogical);
 
 % parse
 p.parse(varargin{:})
@@ -60,70 +60,11 @@ p.parse(varargin{:})
 % parameter sets to converge.
 if isempty(p.Results.derivedParams)
     derivedParams = struct();
-    derivedParams.cornealRotation = [0    2.1347    3.6019];
-    derivedParams.accommodationPolyCoef = [0.1448    4.0022   -0.1750];
-    derivedParams.stopEccenParams = [-1.752 4.758 0.221 0.102];
+    derivedParams.cornealRotation = [0 0 0];
+    derivedParams.accommodationPolyCoef = [0.0065 4.8436 -0.5770];
+    derivedParams.stopEccenParams = [-1.7522 4.7619 0.1649 0.1029];
 else
     derivedParams = p.Results.derivedParams;
-end
-
-
-%% Corneal ellipsoid rotation
-% Used in human.cornea
-% Navarro 2006 reports the rotation of the corneal ellipsoid with respect
-% to the keratometric axis, which is the line that connects the fixation
-% point of the keratometer (aligned with the instrument optical axis) with
-% the center of curvature of the cornea. Here I calculate the rotation of
-% the cornea with respect to the optical axis of the eye. The calculation
-% is made for an emmetropic eye and assumes that the fixation point of the
-% keratometric instrument is at 500 mm from the corneal surface.
-% Figure 3 in the Navarro paper reports the sign of the horizontal rotation
-% (beta) as being opposite the values that are shown in Table 1 and in the
-% text under the results section "optical axis". I adopt the values as
-% presented in the figure, as the direction of rotation would otherwise not
-% be sensible.
-
-% Alert the user
-if p.Results.verbose
-    fprintf('Calculating corneal ellipsoid rotation\n');
-    tic
-end
-
-% Put the fixation target at 500 mm, set the stop radius to a 2mm
-% diameter pupil
-fixTargetDistance = 500;
-stopRadius = 0.8693;
-% Obtain the sceneGeometry for an emmetropic eye
-sceneGeometry = createSceneGeometry(...
-    'derivedParams',derivedParams,...
-    'sphericalAmetropia',0,...
-    'accommodationDiopeters',1000/500,...
-    'spectralDomain','vis',...
-    'calcLandmarkFovea',true);
-% Obtain the fixation angles and fixation target location
-[~,~,~, fixTargetWorldCoords] = calcLineOfSightRay(sceneGeometry,stopRadius,fixTargetDistance);
-% Find the angles of the ray that connects the center of corneal curvature
-% with the fixation target
-fixTargetEyeCoords = fixTargetWorldCoords([3 1 2]);
-cc = sceneGeometry.eye.cornea.front.center;
-keratometricAxisRay = quadric.normalizeRay([cc; fixTargetEyeCoords'-cc]');
-keratometricAxisAngles = zeros(1,3);
-[keratometricAxisAngles(1), keratometricAxisAngles(2)] = quadric.rayToAngles(keratometricAxisRay);
-cornealAxisWRTKeratometric = [-2.35 -0.35 0];
-% These are the valus OD
-cornealAxisWRTOpticalAxis = keratometricAxisAngles + cornealAxisWRTKeratometric;
-% Re-arrange to be in terms of the quadric rotations. A rotation that
-% directs the corneal apex towards the nasal object space is made about
-% the vertical axis.
-derivedParams.cornealRotation = fliplr(cornealAxisWRTOpticalAxis);
-
-% Alert the user
-if p.Results.verbose
-    toc
-    fprintf('derivedParams.cornealRotation = [%4.3f %4.3f %4.3f];\n\n', ...
-        derivedParams.cornealRotation(1), ...
-        derivedParams.cornealRotation(2), ...
-        derivedParams.cornealRotation(3));
 end
 
 
@@ -217,10 +158,10 @@ entranceRadius = [3.09/2 4.93/2];
 
 % Wyatt reported an eccentricity of the pupil of 0.21 under dark
 % conditions. I find that using that value produces model results that
-% disagree with Malthur 2013. We have adopted an upper value of 0.18
+% disagree with Malthur 2013. We have adopted an upper value of 0.17
 % instead. I also use the convention of a negative eccentricity for a
 % horizontal major axis and a positive eccentricity for vertical.
-entranceEccen = [-0.12 0.175];
+entranceEccen = [-0.12 0.17];
 
 % Prepare scene geometry including the fovea
 sceneGeometry = createSceneGeometry('derivedParams',derivedParams,'calcLandmarkFovea',true);
