@@ -94,6 +94,7 @@ p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
 p.addParameter('ageYears',18,@isscalar);
+p.addParameter('derivedParams',[],@(x)(isstruct(x) || isempty(x)));
 p.addParameter('navarroD',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('accommodationDiopeters',0,@isscalar);
 p.addParameter('measuredCornealCurvature',[],@(x)(isempty(x) || isnumeric(x)));
@@ -166,7 +167,16 @@ switch eye.meta.species
 
     %% Human
     case {'human','Human','HUMAN'}
-                
+
+        % Obtain the derived params
+        if isempty(p.Results.derivedParams)
+            filename = fullfile(replace(mfilename('fullpath'),mfilename(),''),'species','+human','derivedParams.mat');
+            load(filename,'derivedParams');
+            eye.derivedParams = derivedParams;
+        else
+            eye.derivedParams = p.Results.derivedParams;
+        end
+        
         % Eye anatomy
         eye.cornea = human.cornea(eye);
         eye.iris = human.iris(eye);

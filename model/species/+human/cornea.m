@@ -34,6 +34,12 @@ function cornea = cornea( eye )
 %
 
 
+%% Corneal ellipsoid rotation
+% The rotation of the corneal ellipsoid is determined in the routine
+% 'calcDerivedParams'
+cornealRotation = eye.derivedParams.cornealRotation;
+
+
 %% Front corneal surface
 
 if isempty(eye.meta.measuredCornealCurvature)
@@ -107,55 +113,14 @@ end
 S_front = S;
 
 
-%% Front corneal surface rotation
-% Navarro 2006 reports the rotation of the corneal ellipsoid with respect
-% to the keratometric axis, which is the line that connects the fixation
-% point of the keratometer (aligned with the instrument optical axis) with
-% the center of curvature of the cornea. Here I calculate the rotation of
-% the cornea with respect to the optical axis of the eye. The calculation
-% is made for an emmetropic eye and assumes that the fixation point of the
-% keratometric instrument is at 500 mm from the corneal surface.
-% Figure 3 in the Navarro paper reports the sign of the horizontal rotation
-% (beta) as being opposite the values that are shown in Table 1 and in the
-% text under the results section "optical axis". I adopt the values as
-% presented in the figure, as the direction of rotation would otherwise not
-% be sensible.
-%{
-    % Put the fixation target at 500 mm, set the stop radius to a 2mm 
-    % diameter pupil
-    fixTargetDistance = 500;
-    stopRadius = 0.8693;
-    % Obtain the sceneGeometry for an emmetropic eye
-    sceneGeometry = createSceneGeometry(...
-        'sphericalAmetropia',0,...
-        'accommodationDiopeters',1000/500,...
-        'spectralDomain','vis',...
-        'calcLandmarkFovea',true);
-    % Obtain the fixation angles and fixation target location
-    [~,~,fixEyePose, fixTargetWorldCoords] = calcLineOfSightRay(sceneGeometry,stopRadius,fixTargetDistance);
-    % Find the angles of the ray that connects the center of corneal curvature
-    % with the fixation target
-    fixTargetEyeCoords = fixTargetWorldCoords([3 1 2]);
-    cc = sceneGeometry.eye.cornea.front.center;
-    keratometricAxisRay = quadric.normalizeRay([cc; fixTargetEyeCoords'-cc]');
-    keratometricAxisAngles = zeros(1,3);
-    [keratometricAxisAngles(1), keratometricAxisAngles(2)] = quadric.rayToAngles(keratometricAxisRay);
-    cornealAxisWRTKeratometric = [-2.35 -0.35 0];
-    % These are the valus OD
-    cornealAxisWRTOpticalAxis = keratometricAxisAngles + cornealAxisWRTKeratometric;
-    % Re-arrange to be in terms of the quadric rotations. A rotation that
-    % directs the corneal apex towards the nasal object space is made about
-    % the vertical axis.
-    R_cornea = fliplr(cornealAxisWRTOpticalAxis)
-%}
-R_cornea = [0    2.1347    3.6019];
+
 
 % Rotate the quadric surface towards the nasal field
 switch eye.meta.eyeLaterality
     case 'Right'
-        S = quadric.rotate(S,R_cornea);
+        S = quadric.rotate(S,cornealRotation);
     case 'Left'
-        S = quadric.rotate(S,R_cornea.*[1 1 -1]);
+        S = quadric.rotate(S,cornealRotation.*[1 1 -1]);
     otherwise
         error('eye laterality not defined')
 end
@@ -181,9 +146,9 @@ tearFilmThickness = 0.005;
 S = S_front;
 switch eye.meta.eyeLaterality
     case 'Right'
-        S = quadric.rotate(S,R_cornea);
+        S = quadric.rotate(S,cornealRotation);
     case 'Left'
-        S = quadric.rotate(S,R_cornea.*[1 1 -1]);
+        S = quadric.rotate(S,cornealRotation.*[1 1 -1]);
     otherwise
         error('eye laterality not defined')
 end
@@ -228,9 +193,9 @@ S = quadric.scale(quadric.unitSphere,radii);
 % Rotate the quadric surface towards the nasal field
 switch eye.meta.eyeLaterality
     case 'Right'
-        S = quadric.rotate(S,R_cornea+[ 180 180 180 ]);
+        S = quadric.rotate(S,cornealRotation+[ 180 180 180 ]);
     case 'Left'
-        S = quadric.rotate(S,R_cornea.*[1 1 -1]-[ 180 180 180 ]);
+        S = quadric.rotate(S,cornealRotation.*[1 1 -1]-[ 180 180 180 ]);
     otherwise
         error('eye laterality not defined')
 end

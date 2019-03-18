@@ -45,35 +45,13 @@ function lens = lens( eye )
 %   lens                  - Structure.
 %
 
+
 % Because of various imperfections in the model and differences from the
 % Navarro paper, it was necessary to "tune" the assigned accomodation
 % values so that a requested accomodation state of the emmetropic eye
-% results in the expected point of best focus. For example, a non-zero
-% setting of the D parameter of the Navarro equations is needed to make the
-% emmetropic eye have a point of best focus that approaches infinity.
-% I examined the relationship between values of the D parameter and best
-% focal distances. After some adjustment by hand, I found that the smallest
-% D value that produces the largest best focus distance was ~3.44. Values
-% smaller than this cause errors in the model.
-%{
-    navarroD = [3.5, 5, 7.5, 10, 15, 20, 30];
-    accomodationDiopters = nan(size(navarroD));
-    sceneGeometry = createSceneGeometry('navarroD',navarroD(1),'calcLandmarkFovea',true);
-    fovea = sceneGeometry.eye.landmarks.fovea;
-    for ii = 1:length(navarroD)
-        sceneGeometry = createSceneGeometry('navarroD',navarroD(ii));
-        sceneGeometry.eye.landmarks.fovea = fovea;
-        [outputRayLoS,rayPathLoS] = calcLineOfSightRay(sceneGeometry);
-        outputRayVis = calcNodalRay(sceneGeometry.eye,sceneGeometry.eye.landmarks.fovea.geodetic);
-        pointOfBestFocus=quadric.distanceRays(outputRayLoS,outputRayVis);
-        accomodationDiopters(ii) = 1000/pointOfBestFocus(1);
-    end
-    figure
-    plot(accomodationDiopters,navarroD,'xk');
-    hold on
-    pCoeff = polyfit(accomodationDiopters,navarroD,2)
-    plot(1:0.1:10,polyval(pCoeff,1:0.1:10),'-r')
-%}
+% results in the expected point of best focus. This is determined in the
+% routine 'calcDerivedParams'
+accommodationPolyCoef = eye.derivedParams.accommodationPolyCoef;
 
 % The model assumes an 18 year old eye for the Navarro calculations
 age = 18;
@@ -90,10 +68,7 @@ else
     end
     % Convert the requested accommodationDiopeters to the corresponding
     % Navarro D param.
-    pCoeff = [0.1448    4.0022   -0.1750];
-    D = polyval(pCoeff,accommodationDiopeters);
-    % Values of D below this produce weird results for the emmetropic eye
-    D = max([D 3.5]);
+    D = polyval(accommodationPolyCoef,accommodationDiopeters);
 end
 
 
