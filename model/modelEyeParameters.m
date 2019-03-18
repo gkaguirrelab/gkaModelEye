@@ -45,6 +45,10 @@ function eye = modelEyeParameters( varargin )
 %                           distance from the corneal apex to the point of
 %                           best focus, where diopters = 1000 /
 %                           distance(mm).
+%  'derivedParams'        - Struct that contains fields with parameters
+%                           used by various eye model components. If left 
+%                           empty, the parameters will be obtained from a
+%                           stored set of values.
 %  'navarroD'             - The parameter D of the Navarro 2014 lens model.
 %                           This value is used only during model
 %                           development and can normally be left undefined.

@@ -2,20 +2,30 @@ function derivedParams = calcDerivedParams(varargin)
 % Derive and save inter-dependent parameters of the eyeModel
 %
 % Syntax:
-%  human.calcDerivedParameters()
+%  derivedParams = human.calcDerivedParams()
 %
 % Description:
-%   
+%   Many of the model eye parameters are fully set by reference to the
+%   literature. Some of these parameter are derived by performing
+%   measurements using the model itself. These parameters have a complex,
+%   inter-dependent relationship with other derived parameters. This
+%   routine gathers in one place the computation of all derived parameters,
+%   and saves the resulting values to a file. This way, if there are
+%   adjustments to the overall model, this routine can be run to update the
+%   derived parameters. Absent a change in the code that computers the eye
+%   model, however, execution of this routine will not be needed in general
+%   use.
 %
 % Inputs:
 %   none
 %
 % Outputs:
-%   derivedParams         - Structure.
+%   derivedParams         - Structure, with the fields cornealRotation,
+%                           accommodationPolyCoef, and stopEccenParams.0
 %
 % Examples:
 %{
-    % ETTPSkip -- This takes about an hour to run
+    % ETTPSkip -- This takes about 15 minutes to run.
     % Iteratively run the routine to find the stable set of params
     derivedParams = [];
     % Iteratively call the routine, but do not yet save the params to disk
@@ -45,8 +55,8 @@ p.parse(varargin{:})
 %% Initialize derivedParams
 % There is a boot-strapping problem as the set of parameters are inter-
 % dependent. The params are either passed or set to initial values to
-% permit the subsequent calculations to proceed. The ability to pass the
-% initial values in supports iterative calls to the routine to allow the
+% permit the subsequent calculations to proceed. The ability to pass in the
+% initial values supports iterative calls to the routine to allow the
 % parameter sets to converge.
 if isempty(p.Results.derivedParams)
     derivedParams = struct();
@@ -59,6 +69,7 @@ end
 
 
 %% Corneal ellipsoid rotation
+% Used in human.cornea
 % Navarro 2006 reports the rotation of the corneal ellipsoid with respect
 % to the keratometric axis, which is the line that connects the fixation
 % point of the keratometer (aligned with the instrument optical axis) with
@@ -117,8 +128,9 @@ end
 
 
 %% Accomodation values
+% Used in human.lens
 % Because of various imperfections in the model and differences from the
-% Navarro paper, it was necessary to "tune" the assigned accomodation
+% Navarro 2006 paper, it was necessary to "tune" the assigned accomodation
 % values so that a requested accomodation state of the emmetropic eye
 % results in the expected point of best focus. For example, a non-zero
 % setting of the D parameter of the Navarro equations is needed to make the
@@ -171,6 +183,7 @@ end
 
 
 %% Aperture stop ellipticity
+% Used in human.stop
 % The aperture stop of the eye is elliptical. Further, the eccentricity
 % and theta of the stop ellipse changes with dilation. The properties of
 % the stop are derived from these measurements of the entrance pupil:
@@ -239,7 +252,8 @@ myObj = @(radius) (myArea(myPupilEllipse(radius))-stopArea(2)).^2;
 stopRadius(2) = fminunc(myObj, entranceRadius(2));
 
 % Set some options for the upcoming fminsearch
-opts = optimset('fminsearch','Display','off');
+opts = optimset('fminsearch');
+opts.Display = 'off';
 
 % Now find the stop eccentricity that produces the observed entrance
 % pupil eccentricity
@@ -297,7 +311,7 @@ if p.Results.showPlots
 end
 
 
-%% Save the derivedParams to disk0
+%% Save the derivedParams to disk
 if ~isempty(p.Results.derivedParamsPath)
     save(p.Results.derivedParamsPath,'derivedParams')
 end
