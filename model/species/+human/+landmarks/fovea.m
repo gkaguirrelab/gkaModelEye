@@ -86,7 +86,7 @@ function fovea = fovea( eye )
 % the value given by Mathur 2013. For the vertical alpha, I assume an
 % elevation of 3 degrees in the emmetropic eye.
 %
-a0 = [5.8 3.0 0];
+a0 = [6.0 2.5 0];
 L = @(SR) 16.5 / (16.5 - 0.299*SR );
 alpha = @(SR) atand(L(SR).*tand(a0));
 fovea.degField = alpha(eye.meta.sphericalAmetropia);
