@@ -46,11 +46,11 @@ stop.center = [eye.iris.center(1) 0 0];
     entranceRadius = [3.09/2 4.93/2];
     % Wyatt reported an eccentricity of the pupil of 0.21 under dark
     % conditions. I find that using that value produces model results that
-    % disagree with Malthur 2013. We have adopted an upper value of 0.17
+    % disagree with Malthur 2013. We have adopted an upper value of 0.18
     % instead. I also use the convention of a negative eccentricity for a
     % horizontal major axis and a positive eccentricity for vertical.
-    entranceEccen = [-0.12 0.18];
-    % Prepare scene geometry and eye pose aligned with line of sight
+    entranceEccen = [-0.12 0.175];
+    % Prepare scene geometry including the fovea
     sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
     % Fix the stop eccentricity at 0 and remove refraction
     sg = sceneGeometry;
@@ -104,7 +104,7 @@ stop.center = [eye.iris.center(1) 0 0];
 %}
 % Specify the params and equation that defines the stop ellipse.
 % This can be invoked as a function using str2func.
-stop.eccenParams = [-1.752 4.763 0.250 0.106];
+stop.eccenParams = [-1.752 4.758 0.221 0.102];
 stop.eccenFcnString = sprintf('@(x) (tanh((x+%f).*%f)+%f)*%f',stop.eccenParams(1),stop.eccenParams(2),stop.eccenParams(3),stop.eccenParams(4));
 
 % The theta values of the stop ellipse for eccentricities less
