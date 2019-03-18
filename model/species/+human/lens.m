@@ -90,7 +90,7 @@ else
     end
     % Convert the requested accommodationDiopeters to the corresponding
     % Navarro D param.
-    pCoeff = [0.1542    3.9292   -0.0968];
+    pCoeff = [0.1448    4.0022   -0.1750];
     D = polyval(pCoeff,accommodationDiopeters);
     % Values of D below this produce weird results for the emmetropic eye
     D = max([D 3.5]);
