@@ -110,15 +110,7 @@ options = optimset('TolFun',TolFun,'TolX',TolX);
 % the angle of the ray that connects the eye point to the worldTarget
 % (after re-arranging the dimensions of the worldTarget variable).
 eyeCoordTarget = relativeCameraPosition(eyePose, worldTarget, rotationCenters);
-[~, angle_p1p2, angle_p1p3] = quadric.angleRays( [0 0 0; 1 0 0]', quadric.normalizeRay([eyePoint; eyeCoordTarget-eyePoint]') );
-
-% To crudely accout for the effect of refraction, scale down the angles by
-% 75%. This yields x0 guesses that are closer to the final obtained value.
-% Also convert to radians. This is because the computations below are
-% conducted in radians. We will switch back to degrees before exiting the
-% routine.
-angle_p1p2 = deg2rad(angle_p1p2)*0.75;
-angle_p1p3 = -deg2rad(angle_p1p3)*0.75;
+[angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; eyeCoordTarget-eyePoint]'));
 
 % Set a scoped variable that detects if we encountered a bad ray trace.
 badTraceFlag = false;
@@ -183,9 +175,6 @@ end
 
 
 %% Obtain the initial and output rays
-% Convert the angles back to degrees
-angle_p1p2 = rad2deg(angle_p1p2);
-angle_p1p3 = rad2deg(angle_p1p3);
 
 % Assemble the input ray. Note that the rayTraceQuadrics routine handles
 % vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
@@ -245,10 +234,7 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 % Assemble the input ray. Note that the rayTraceQuadrics routine handles
 % vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
 % Tranpose operations ahead.
-p = eyePoint';
-d = [1; tan(angle_p1p2); tan(angle_p1p3)];
-u = d./sqrt(sum(d.^2));
-inputRay = [p, u];
+inputRay = quadric.anglesToRay(eyePoint',angle_p1p2,angle_p1p3);
 
 % Ray trace
 outputRayEyeWorld = rayTraceQuadrics(inputRay, opticalSystem);

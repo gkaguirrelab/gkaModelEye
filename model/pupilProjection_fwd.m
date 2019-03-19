@@ -61,7 +61,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 %                           render the retina ellipsoid. About 24 makes a
 %                           nice image.
 %  'refractionHandle'     - Function handle. By default, this is set to the
-%                           'virtualImageFuncMex'. This option is provided
+%                           'inverseRayTraceMex'. This option is provided
 %                           so that the pupilProjection can be conducted
 %                           with the native MATLAB code for testing
 %                           purposes.
@@ -93,11 +93,11 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 %                           'eleRotationCenter', 'retina',
 %                           'irisPerimeter', 'pupilPerimeter',
 %                           'cornea','cornealApex'}.
-%   targetIntersectError -  A nx1 vector that contains the distance (in
-%                           mm) between the pinhole aperture of the camera
-%                           and the intersection of a ray on the camera
-%                           plane. The value is nan for points not subject
-%                           to refraction by the cornea. All values will be
+%   targetIntersectError -  A nx1 vector that contains the distance (in mm)
+%                           between the pinhole aperture of the camera and
+%                           the intersection of a ray on the camera plane.
+%                           The value is nan for points not subject to
+%                           refraction by the cornea. All values will be
 %                           nan if sceneGeometry.refraction is empty.
 %   pupilFitError         - The RMSE distance (in pixels) of the pupil
 %                           perimeter points to the pupil ellipse.
@@ -113,7 +113,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     % default sceneGeometry
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
     % Test against cached result
-    pupilEllipseOnImagePlaneCached = [ 0.027810786761174   0.022395355020034   1.554155514700360   0.000023298832892   0.000191528275531 ].*1e4;
+    pupilEllipseOnImagePlaneCached = [ 0.027831990128497   0.022396193956340   1.552637272471651   0.000022688206264   0.000192483483068 ].*1e4;
     assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-4)
 %}
 %{
@@ -372,7 +372,7 @@ if isfield(sceneGeometry,'refraction')
     end
 end
 if refractFlag    
-    % Assemble the static args for the virtualImageFunc
+    % Assemble the static args for the inverseRayTrace
     args = {sceneGeometry.cameraPosition.translation, ...
         sceneGeometry.eye.rotationCenters, ...
         sceneGeometry.refraction.stopToCamera.opticalSystem};    

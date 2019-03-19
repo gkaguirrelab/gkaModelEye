@@ -22,14 +22,24 @@ function R = anglesToRay(p, angle_xy, angle_xz )
 %
 % Examples:
 %{
-    angle_xy = -15;
-    angle_xz = 45.5;    
-    p = [-3.7;1;-0.2];
-    R = quadric.anglesToRay( p, angle_xy, angle_xz );
-    [Rangle_xy, Rangle_xz, Rp] = quadric.rayToAngles( R )
+    % Confirm invertibility
+    for angle_xy = [5,-5,-95,95];
+        for angle_xz = [5,-5,-95,95];
+            p = [-3.7;1;-0.2];
+            R = quadric.anglesToRay( p, angle_xy, angle_xz );
+            [Rangle_xy, Rangle_xz, Rp] = quadric.rayToAngles( R );
+            assert(abs(Rangle_xy-angle_xy)<1e6)
+            assert(abs(Rangle_xz-angle_xz)<1e6)
+        end
+    end
 %}
 
-d = [1; tan(deg2rad(angle_xy)); tan(deg2rad(angle_xz))];
+m = 1;
+if abs(angle_xy)>90 || abs(angle_xz)>90
+    m = -1;
+end
+
+d = [m; m*tan(deg2rad(angle_xy)); m*tan(deg2rad(angle_xz))];
 R = quadric.normalizeRay([p, d]);
 
 end
