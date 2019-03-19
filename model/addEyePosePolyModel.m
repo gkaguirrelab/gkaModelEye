@@ -41,6 +41,30 @@ function sceneGeometry = addEyePosePolyModel(sceneGeometry, varargin)
     sceneGeometry = createSceneGeometry();
     addEyePosePolyModel(sceneGeometry,'gridDensity',85,'estimateCompTime',true);
 %}
+%{
+    %% Demonstrate acceleration of the inverse projection
+    % Obtain a default sceneGeometry structure
+    sceneGeometry=createSceneGeometry();
+    sceneGeometry = addEyePosePolyModel(sceneGeometry,'verbose',true);
+    % Generate ellipses for some randomly selected eye poses
+    nPoses = 20;
+    eyePoses=[(rand(nPoses,1)-0.5)*40, (rand(nPoses,1)-0.5)*20, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
+    for pp = 1:nPoses
+    	ellipseParams(pp,:) = pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
+    end
+    fprintf('\nTime to compute inverse projection model with pre-computed polymodel (average over %d projections):\n',nPoses);
+    recoveredEyePoses = []; RMSEvals = [];
+    tic
+    for pp = 1:nPoses
+    	[recoveredEyePoses(pp,:),RMSEvals(pp), ~, ~, nSearches(pp)] = pupilProjection_inv(ellipseParams(pp,:),sceneGeometry,'repeatSearchThresh',0.5);
+    end
+    msecPerModel = toc / nPoses * 1000;
+    fprintf('\tUsing pre-compiled ray tracing: %4.2f msecs.\n',msecPerModel);
+    fprintf('Max errors in azi, ele, torsion, and stop radius:\n');
+    max(eyePoses-recoveredEyePoses)
+    fprintf('median RMSE:\n');
+    median(RMSEvals)
+%}
 
 %% Parse input
 p = inputParser;
