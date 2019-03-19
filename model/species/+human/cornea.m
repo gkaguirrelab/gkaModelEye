@@ -47,11 +47,11 @@ function cornea = cornea( eye )
     % Create a sceneGeometry. Put the fixation target at 500 mm, set the
     % stop radius to 0.86 mm, which corresponds to a 2 mm diameter pupil.
 
-	fixTargetDistance = 500;
+	fixTargetDistance = 200;
 	stopRadius = 0.8693;
     sceneGeometry = createSceneGeometry(...
         'sphericalAmetropia',0,...
-        'accommodationDiopeters',1000/500,...
+        'accommodationDiopeters',1000/fixTargetDistance,...
         'spectralDomain','vis',...
         'calcLandmarkFovea',true);
 
@@ -64,8 +64,8 @@ function cornea = cornea( eye )
 	cc = sceneGeometry.eye.cornea.front.center;
 	keratometricAxisRay = quadric.normalizeRay([fixTargetEyeCoords';cc-fixTargetEyeCoords']');
     opticalSystem = sceneGeometry.refraction.cameraToRetina.opticalSystem;
-    [~,rayPath] = rayTraceQuadrics(keratometricAxisRay, opticalSystem)
-    horizontalDistance = rayPath(2,2);
+    [~,rayPath] = rayTraceQuadrics(keratometricAxisRay, opticalSystem);
+    horizontalDistance = rayPath(2,2)
 %}
 
 
@@ -75,7 +75,6 @@ function cornea = cornea( eye )
 % cornealRotation vector specifies the rotation (in degrees) about each of
 % the axes.
 cornealRotation = [0 0 0];
-
 
 %% Front corneal surface
 if isempty(eye.meta.measuredCornealCurvature)
@@ -141,13 +140,12 @@ else
     S = quadric.scale(quadric.unitSphere,radii);
     % Apply a torsional rotation to the ellipse if requested
     if length(eye.meta.measuredCornealCurvature)==3
-        S = quadric.rotate(S,[eye.meta.measuredCornealCurvature(3) 0 0]);
+        cornealRotation = [eye.meta.measuredCornealCurvature(3) 0 0];
     end
 end
 
 % Saving this for use in constructing the tear film below
 S_front = S;
-
 
 
 % Rotate the quadric surface
