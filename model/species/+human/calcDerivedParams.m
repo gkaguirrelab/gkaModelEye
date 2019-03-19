@@ -164,7 +164,7 @@ entranceRadius = [3.09/2 4.93/2];
 % disagree with Malthur 2013. We have adopted an upper value of 0.175
 % instead. I also use the convention of a negative eccentricity for a
 % horizontal major axis and a positive eccentricity for vertical.
-entranceEccen = [-0.12 0.1725];
+entranceEccen = [-0.12 0.175];
 
 % Prepare scene geometry including the fovea
 sceneGeometry = createSceneGeometry('derivedParams',derivedParams,'calcLandmarkFovea',true);
