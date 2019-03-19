@@ -145,15 +145,16 @@ if isempty(p.Results.x0)
         % Probe the forward model to determine how many pixels of change in
         % the location of the pupil ellipse correspond to one degree of
         % rotation.
-        probeEllipse=pupilProjection_fwd([1 0 0 2],sceneGeometry);
-        pixelsPerDeg = probeEllipse(1)-CoP(1);
+        probeEllipse=pupilProjection_fwd([1 1 0 2],sceneGeometry);
+        pixelsPerDegHorz = probeEllipse(1)-CoP(1);
+        pixelsPerDegVert = probeEllipse(2)-CoP(2);
         
         % Estimate the eye azimuth and elevation by the X and Y
         % displacement of the ellipse center from the center of projection.
         % Scale these by 75% to roughly account for refractive effects.
         % Torsion is set to zero
-        x0(1) = ((meanXp - CoP(1))/pixelsPerDeg).*0.75;
-        x0(2) = ((CoP(2) - meanYp)/pixelsPerDeg).*0.75;
+        x0(1) = ((meanXp - CoP(1))/pixelsPerDegHorz);
+        x0(2) = ((meanYp - CoP(2))/pixelsPerDegVert);
         x0(3) = 0;
         
         % Force the angles within bounds
