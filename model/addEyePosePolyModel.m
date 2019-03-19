@@ -129,10 +129,6 @@ for xx=1:length(aziVals)
             end
         end
     end
-    % Update the progress display
-    if p.Results.verbose
-        toc
-    end
 end
 compTimeMins = toc/60;
 
@@ -160,6 +156,11 @@ warning(warningState);
 % Store the meta data
 sceneGeometry.polyModel.meta = p.Results;
 sceneGeometry.polyModel.meta.compTimeMins = compTimeMins;
+
+% report completion
+if p.Results.verbose
+    fprintf('Done\n\n');
+end
 
 end % function
 
