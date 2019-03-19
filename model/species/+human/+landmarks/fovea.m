@@ -82,11 +82,11 @@ function fovea = fovea( eye )
 %}
 %
 % where SR is spherical refractive error in diopters and alpha0 is the
-% alpha value for an emmetropic eye. The alpha0 value is 5.8, which is both
+% alpha value for an emmetropic eye. The alpha0 value is 5.6, which is both
 % the value given by Mathur 2013. For the vertical alpha, I assume an
-% elevation of 3 degrees in the emmetropic eye.
+% elevation of 2.5 degrees in the emmetropic eye.
 %
-a0 = [5.8 3.0 0];
+a0 = [5.7 2.5 0];
 L = @(SR) 16.5 / (16.5 - 0.299*SR );
 alpha = @(SR) atand(L(SR).*tand(a0));
 fovea.degField = alpha(eye.meta.sphericalAmetropia);
@@ -101,15 +101,19 @@ end
 
 % The calculation of the position of the retinal landmarks is based upon
 % empirical measurements of visual field position. These measurements are
-% done in the un-accommodated state, in the visible spectrum, with the eye
-% and targets in air. It is also assumed that the position of the retinal
-% landmarks were fixed at the point of maturity of the visual system.
-% Therefore, the meta values of the passed eye structure are changed here
-% to reflect these circumstances for this calculation.
+% done with the eye at resting accommodation (1.5 Diopeters), in the
+% visible spectrum, with the eye and targets in air. It is also assumed
+% that the position of the retinal landmarks were fixed at the point of
+% maturity of the visual system. Therefore, the meta values of the passed
+% eye structure are changed here to reflect these circumstances for this
+% calculation.
 eye.meta.spectralDomain = 'vis';
 eye.meta.ageYears = 18;
 eye.meta.accommodationDiopeters = 0;
 cameraMedium = 'air';
+
+% Update the lens field for these values
+eye.lens = human.lens(eye);
 
 % Now calculate the location on the retina corresponding to this visual
 % angle wrt the optical axis.

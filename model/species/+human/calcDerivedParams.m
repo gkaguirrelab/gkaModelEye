@@ -46,7 +46,7 @@ p.addParameter('derivedParamsPath', ...
     replace(mfilename('fullpath'),mfilename(),'derivedParams.mat'), ...
     @(x)(ischar(x) || isempty(x)));
 p.addParameter('verbose',true,@islogical);
-p.addParameter('showPlots',false,@islogical);
+p.addParameter('showPlots',true,@islogical);
 
 % parse
 p.parse(varargin{:})
@@ -60,9 +60,8 @@ p.parse(varargin{:})
 % parameter sets to converge.
 if isempty(p.Results.derivedParams)
     derivedParams = struct();
-    derivedParams.cornealRotation = [0 0 0];
-    derivedParams.accommodationPolyCoef = [0.0065 4.8436 -0.5770];
-    derivedParams.stopEccenParams = [-1.7522 4.7619 0.1649 0.1029];
+    derivedParams.accommodationPolyCoef = [0.2804 3.2930 1.1188];
+    derivedParams.stopEccenParams = [-1.7523 4.7609 0.1800 0.0973];
 else
     derivedParams = p.Results.derivedParams;
 end
@@ -77,9 +76,7 @@ end
 % setting of the D parameter of the Navarro equations is needed to make the
 % emmetropic eye have a point of best focus that approaches infinity.
 % I examined the relationship between values of the D parameter and best
-% focal distances. After some adjustment by hand, I found that the smallest
-% D value that produces the largest best focus distance was ~3.44. Values
-% smaller than this cause errors in the model.
+% focal distances.
 
 % Alert the user
 if p.Results.verbose
@@ -87,11 +84,17 @@ if p.Results.verbose
     tic
 end
 
-navarroD = [3.5, 5, 7.5, 10, 15, 20, 30];
+% Set a range of Navarro D values and define a variable to hold the
+% accomodation values.
+navarroD = [5, 7.5, 10, 15, 20, 30];
 accomodationDiopters = nan(size(navarroD));
-sceneGeometry = createSceneGeometry('derivedParams',derivedParams,'navarroD',navarroD(1),'calcLandmarkFovea',true);
+
+% Create a sceneGeometry and save the fovea location. This will be
+% invariant across accommodation so does not need to be re-calculated.
+sceneGeometry = createSceneGeometry('derivedParams',derivedParams,'calcLandmarkFovea',true);
 fovea = sceneGeometry.eye.landmarks.fovea;
 
+% Loop over Navarro D values
 for ii = 1:length(navarroD)
     sceneGeometry = createSceneGeometry('derivedParams',derivedParams,'navarroD',navarroD(ii));
     sceneGeometry.eye.landmarks.fovea = fovea;
@@ -158,10 +161,10 @@ entranceRadius = [3.09/2 4.93/2];
 
 % Wyatt reported an eccentricity of the pupil of 0.21 under dark
 % conditions. I find that using that value produces model results that
-% disagree with Malthur 2013. We have adopted an upper value of 0.17
+% disagree with Malthur 2013. We have adopted an upper value of 0.175
 % instead. I also use the convention of a negative eccentricity for a
 % horizontal major axis and a positive eccentricity for vertical.
-entranceEccen = [-0.12 0.17];
+entranceEccen = [-0.12 0.1725];
 
 % Prepare scene geometry including the fovea
 sceneGeometry = createSceneGeometry('derivedParams',derivedParams,'calcLandmarkFovea',true);
@@ -194,7 +197,7 @@ stopRadius(2) = fminunc(myObj, entranceRadius(2));
 
 % Set some options for the upcoming fminsearch
 opts = optimset('fminsearch');
-opts.Display = 'off';
+opts = optimset(opts,'Display','off');
 
 % Now find the stop eccentricity that produces the observed entrance
 % pupil eccentricity
