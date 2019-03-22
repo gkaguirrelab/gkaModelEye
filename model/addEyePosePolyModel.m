@@ -33,7 +33,7 @@ function sceneGeometry = addEyePosePolyModel(sceneGeometry, varargin)
 %
 % Examples:
 %{
-    % ETTPSkip -- This takes about 5 minutes to run
+    % ETTBSkip -- This takes about 5 minutes to run
     sceneGeometry = createSceneGeometry();
     sceneGeometry = addEyePosePolyModel(sceneGeometry,'verbose',true);
 %}
@@ -43,7 +43,7 @@ function sceneGeometry = addEyePosePolyModel(sceneGeometry, varargin)
     addEyePosePolyModel(sceneGeometry,'gridDensity',85,'estimateCompTime',true);
 %}
 %{
-    % ETTPSkip -- This takes about 5 minutes to run
+    % ETTBSkip -- This takes about 5 minutes to run
     %% Demonstrate acceleration of the inverse projection
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
