@@ -36,6 +36,7 @@ function fovea = fovea( eye )
     plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'-y','MarkerSize',10);
 %}
 %{
+    % ETTBSkip -- This takes about 15 minutes to run.
     % Calculate the projective distance between the optic disc and fovea for
     % a range of spherical refractive errors
     SRvals = -10:1:2;
