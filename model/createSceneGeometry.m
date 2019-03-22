@@ -93,8 +93,8 @@ function sceneGeometry = createSceneGeometry(varargin)
 %       passed to createSceneGeometry are passed to modelEyeParameters.
 %
 %  'refraction' - A structure with sub-fields for ray-tracing through sets
-%       of optical surfaces. Standard fields are 'retinaToPupil',
-%       'pupilToCamera', and 'retinaToCamera'. Each subset has the fields:
+%       of optical surfaces. Standard fields are 'retinaToStop',
+%       'stopToCamera', and 'retinaToCamera'. Each subset has the fields:
 %
 %         'opticalSystem' - An mx19 matrix, where m is the number of
 %                           surfaces in the model, including the initial
@@ -194,7 +194,7 @@ p.addParameter('screenDistance',1065,@isnumeric);
 p.addParameter('screenDimensions',[697.347,392.257],@isnumeric);
 p.addParameter('screenResolutions',[1920,1080],@isnumeric);
 p.addParameter('constraintTolerance',0.05,@isscalar);
-p.addParameter('surfaceSetName',{'retinaToPupil','pupilToCamera','retinaToCamera'},@ischar);
+p.addParameter('surfaceSetName',{'retinaToStop','stopToCamera','retinaToCamera','cameraToRetina'},@ischar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('cameraMedium','air',@ischar);

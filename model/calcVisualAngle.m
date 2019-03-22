@@ -1,14 +1,14 @@
-function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G0,G1,X0,X1,cameraMedium)
+function [visualAngleTotal, visualAngleByPlane, outputRay0, outputRay1, rayPath0, rayPath1 ] = calcVisualAngle(eye,G0,G1,X0,X1,cameraMedium)
 % The visual angles between two retinal points
 %
 % Syntax:
-%  visualAngles = calcVisualAngle(sceneGeometry,G0,G1,X0,X1)
+%  visualAngleTotal = calcVisualAngle(sceneGeometry,G0,G1,X0,X1)
 %
 % Description
 %   Given a sceneGeometry and two coordinates on the retinal surface, the
-%   routine returns a vector that contains the visual angle (in degrees)
-%   between the two points, projected on the p1p2 and p1p3 planes (i.e.,
-%   horizontal and vertical visual angle).
+%   routine returns the total visual angle (in degrees) between the two
+%   points, as well as a a vector that contains the angles projected on the
+%   p1p2 and p1p3 planes (i.e., horizontal and vertical visual angle).
 %
 %   The routine can accept points on the ellipsoidal surface specified in
 %   either Cartesian or ellipsoidal geodetic coordinates.
@@ -27,19 +27,31 @@ function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G
 %                           Defaults to 'air'.
 %
 % Outputs:
-%   visualAngles          - 1x2 vector with the visual angles, in degrees
+%   visualAngleTotal      - Scalar. The angle in degrees of visual field
+%                           between two points on the retina.
+%   visualAngleByPlane    - 1x2 vector with the visual angles, in degrees
 %                           between the two points within the p1p2 and p1p3
 %                           planes.
-%   rayPath0, rayPath1    - 3xm matrix that provides the ray coordinates
-%                           at each surface. The value for rayPath(1,:)
-%                           is equal to initial position. If a surface is
-%                           missed, then the coordinates for that surface
-%                           will be nan.
+%   outputRay0, outputRay1 - 3x2 matricies that specify the ray as a unit 
+%                           vector of the form [p; d], corresponding to
+%                               R = p + t*u
+%                           where p is vector origin, d is the direction
+%                           expressed as a unit step, and t is unity.
+%   rayPath0, rayPath1    - 3xm matricies that provide the ray coordinates
+%                           at each surface. The value for (e.g.)
+%                           rayPath0(:,1) is equal to initial position. If
+%                           a surface is missed, then the coordinates for
+%                           that surface will be nan.
 %
 % Examples:
 %{
+    % Demonstrate the basic calculation using Cartesian coordiantes
+    eye = modelEyeParameters('calcLandmarkFovea',true);
+    visualAngleTotal = calcVisualAngle(eye, [], [], eye.landmarks.vertex.coords, eye.landmarks.fovea.coords);
+%}
+%{
     % Display a map of visual angle on the retinal surface
-    eye = modelEyeParameters('eyeLaterality','os','skipNodalPoint',true);
+    eye = modelEyeParameters('eyeLaterality','os','calcLandmarkFovea',true);
     S = eye.retina.S;
     boundingBox = eye.retina.boundingBox;
     figure
@@ -54,14 +66,13 @@ function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G
     plotRezGeodeticDeg = [15, 20];
     for beta = -90:plotRezGeodeticDeg(1):0
         for omega = -180:plotRezGeodeticDeg(2):180
-            visualAngles = calcVisualAngle(eye,eye.axes.visual.geodetic,[beta omega 0]);
-            eccen = sqrt(sum(visualAngles.^2));
-            if ~isnan(eccen)
-                if eccen > 90
+            visualAngleTotal = calcVisualAngle(eye,eye.landmarks.fovea.geodetic,[beta omega 0]);
+            if ~isnan(visualAngleTotal)
+                if visualAngleTotal > 90
                     colorTriple = [1 1 1];
                     markerSize = 25;
                 else
-                    colorTriple = c(round((eccen./90)*(nColors-1)+1),:);
+                    colorTriple = c(round((visualAngleTotal./90)*(nColors-1)+1),:);
                     markerSize = 50;
                 end
                 coord = quadric.ellipsoidalGeoToCart( [beta omega 0], S );
@@ -70,9 +81,8 @@ function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G
         end
     end
     % Add the retinal landmarks
-    plot3(eye.axes.optical.coords(1),eye.axes.optical.coords(2),eye.axes.optical.coords(3),'+k','MarkerSize',10);
-    plot3(eye.axes.visual.coords(1),eye.axes.visual.coords(2),eye.axes.visual.coords(3),'*k','MarkerSize',10);
-    plot3(eye.axes.opticDisc.coords(1),eye.axes.opticDisc.coords(2),eye.axes.opticDisc.coords(3),'ok','MarkerSize',10);
+    plot3(eye.landmarks.vertex.coords(1),eye.landmarks.vertex.coords(2),eye.landmarks.vertex.coords(3),'+k','MarkerSize',10);
+    plot3(eye.landmarks.fovea.coords(1),eye.landmarks.fovea.coords(2),eye.landmarks.fovea.coords(3),'*k','MarkerSize',10);
 %}
 %{
     % Calculate deg/mm at the fovea as a function of ametropia and axial
@@ -80,15 +90,15 @@ function [visualAngles, rayPath0, rayPath1, totalAngle ] = calcVisualAngle(eye,G
     mmPerDeg = [];
     axialLengths = [];
     for SR = -5:1:2
-        eye = modelEyeParameters('sphericalAmetropia',SR,'skipNodalPoint',true);
+        eye = modelEyeParameters('sphericalAmetropia',SR,'calcLandmarkFovea',true);
         S = eye.retina.S;
-        G0 = eye.axes.visual.geodetic;
+        G0 = eye.landmarks.fovea.geodetic;
         G1 = G0 + [0.1 0.1 0];
-        [~, ~, ~, totalAngle ] = calcVisualAngle(eye,G0,G1);
+        visualAngleTotal = calcVisualAngle(eye,G0,G1);
         X0 = quadric.ellipsoidalGeoToCart(G0,S);
         X1 = quadric.ellipsoidalGeoToCart(G1,S);
         d = sqrt(sum((X0-X1).^2));
-        mmPerDeg(end+1) = d/totalAngle;
+        mmPerDeg(end+1) = d/visualAngleTotal;
         radii = quadric.radii(eye.retina.S);
         center = quadric.center(eye.retina.S);
         axialLengths(end+1) = radii(1)-center(1);
@@ -145,11 +155,11 @@ end
 
 % Obtain the output ray segments corresponding to the nodal ray for each
 % retinal coordinate
-[R0, rayPath0] = calcNodalRay(eye,[],X0,cameraMedium);
-[R1, rayPath1] = calcNodalRay(eye,[],X1,cameraMedium);
+[outputRay0, rayPath0] = calcNodalRay(eye,[],X0,cameraMedium);
+[outputRay1, rayPath1] = calcNodalRay(eye,[],X1,cameraMedium);
 
 % Calculate and return the signed angles between the two rays
-[totalAngle, angle_p1p2, angle_p1p3] = quadric.angleRays( R0, R1 );
-visualAngles = [angle_p1p2, angle_p1p3];
+[visualAngleTotal, angle_p1p2, angle_p1p3] = quadric.angleRays( outputRay0, outputRay1 );
+visualAngleByPlane = [angle_p1p2, angle_p1p3];
 
 end

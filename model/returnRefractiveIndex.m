@@ -1,8 +1,8 @@
-function n = returnRefractiveIndex( material, spectralDomain )
-% Returns the refractice index for a specified material and spectral domain
+function n = returnRefractiveIndex( material, wavelength, varargin )
+% Refractice index for a specified material at a specified wavelength
 %
 % Syntax:
-%  n = returnRefractiveIndex( material, spectralDomain )
+%  n = returnRefractiveIndex( material, wavelength )
 %
 % Description:
 %   The ray tracing model requires the refractive index of several
@@ -10,14 +10,29 @@ function n = returnRefractiveIndex( material, spectralDomain )
 %   wavelength of light. This routine returns the index for a specified
 %   material for a specified imaging domain (visual or near infrared).
 %
-%   Unless otherwise specified, refractive index in the visible (VIS)
-%   domain is at 589.29 nm (the sodium spectral line), while the index in
-%   the near-infrared (NIR) domain is at 950 nm, which is the center
-%   frequency of light emitted by the LED of many active IR cameras.
+%   The refractive index for a material as a function of wavelength is
+%   given by the Cauchy equation, with the values for biological materials
+%   taken (except as noted) from:
+%
+%       Navarro, Rafael. "Adaptive model of the aging emmetropic eye and
+%       its changes with accommodation." Journal of vision 14.13 (2014):
+%       21-21.
+%   
+%   and the values for inorganic materials taken from:
+%
+%       https://refractiveindex.info
 %
 % Inputs:
 %   material              - Char vector.
-%   spectralDomain        - Char vector. Valid values are {'VIS','NIR'}.
+%   wavelength            - Scalar or char vector. Identifies the 
+%                           wavelength (in nm) for which the refractive
+%                           index should be calculated. If char, valid
+%                           values are {'VIS','NIR'}.
+%
+% Optional key/value pairs:
+%  'age'                  - Scalar, age in years. Defaults to 18. Used in
+%                           the calculation of the parameters of the lens
+%                           core.
 %
 % Outputs:
 %   n                     - The requested index of refraction.
@@ -30,94 +45,86 @@ function n = returnRefractiveIndex( material, spectralDomain )
 %% input parser
 p = inputParser;
 
-% Optional
+% Required
 p.addRequired('material',@ischar);
-p.addRequired('spectralDomain',@ischar);
+p.addRequired('wavelength',@(x)(ischar(x) || isscalar(x)));
+
+% Optional
+p.addParameter('age',18,@isscalar);
 
 % parse
-p.parse(material,spectralDomain)
+p.parse(material,wavelength, varargin{:});
 
-% Look up the indices of refraction ns = [VIS, NIR] for the specified
-% material
+
+
+% Check or assign wavelength
+if ischar(p.Results.wavelength)
+    switch p.Results.wavelength
+        case {'VIS','vis','Vis','visible'}
+            % Set wavelength to 555 nm, the peak of the photopic luminosity
+            % function
+            wavelength = 555;
+        case {'NIR','nir','Nir','near infrared','near infra-red'}
+            % Set wavelength to 775 nm, which is the peak spectral
+            % sensitivity of the IR camera used for eye tracking in the
+            % GKAguirre lab
+            wavelength = 775;
+        otherwise
+            error(['I do not have values for the spectral domain of ' spectralDomain]);
+    end
+end
+
+% Assign the coefficients of the Cauchy equation
 switch material
     case 'vacuum'
-        ns = [1.000 1.000];
+        c = [1 0 0 0];
     case 'air'
-        ns = [1.000 1.000];
+        c = [1 0 0 0];
     case 'water'
-        % https://en.wikipedia.org/wiki/Optical_properties_of_water_and_ice
-        ns = [1.333 1.347];
+        % Bashkatov, Alexey N., and Elina A. Genina. "Water refractive
+        % index in dependence on temperature and wavelength: a simple
+        % approximation." Saratov Fall Meeting 2002: Optical Technologies
+        % in Biophysics and Medicine IV. Vol. 5068. International Society
+        % for Optics and Photonics, 2003.
+        c = [1.3176, 5.51547658e3, -2.5756e8 9.47474];
     case 'tears'
-        % Patel, Sudi, Karen E. Boyd, and Janet Burns. "Age, stability of
-        % the precorneal tear film and the refractive index of tears."
-        % Contact Lens and Anterior Eye 23.2 (2000): 44-47.
-        ns = [1.33769 1.347];
+        % Campbell, Charles E. "Relative importance of sources of chromatic
+        % refractive error in the human eye." JOSA A 27.4 (2010): 730-738.
+        c = [1.321631, 6.070796e3, -7.062305e8, 6.147861e13];
     case 'vitreous'
-        % Sardar, Dhiraj K., et al. "Optical properties of ocular tissues
-        % in the near infrared region." Lasers in medical science 22.1
-        % (2007): 46-52.
-        ns = [1.357 1.345];
+        c = [1.323757, 5.560240e3, -5.817391e8, 5.036810e13];
     case 'lens.core'
-        % Jones, Catherine E., et al. "Refractive index distribution and
-        % optical properties of the isolated human lens measured using
-        % magnetic resonance imaging (MRI)." Vision research 45.18 (2005):
-        % 2352-2366.        
-        %
-        % NEED THE VALUE FOR NIR
-        ns = [1.418 1.418];
+        A = 1.40965 + (3.55e-4 * p.Results.age) - (7.5e-6 * p.Results.age);
+        c = [A, 6.521218e3, -6.11066e8, 5.908191e13];      
     case 'lens.edge'
-        % Jones, Catherine E., et al. "Refractive index distribution and
-        % optical properties of the isolated human lens measured using
-        % magnetic resonance imaging (MRI)." Vision research 45.18 (2005):
-        % 2352-2366.        
-        %
-        % NEED THE VALUE FOR NIR
-        ns = [1.371 1.371];
+        c = [1.356086, 6.428455e3, -6.023738e8, 5.824149e13];
     case 'aqueous'
-        % Sardar, Dhiraj K., et al. "Optical properties of ocular tissues
-        % in the near infrared region." Lasers in medical science 22.1
-        % (2007): 46-52.
-        ns = [1.3335 1.337];
+        c = [1.323031, 6.070796e3, -7.062305e8, 6.147861e13];
     case 'cornea'
-        % Escudero-Sanz, Isabel, and Rafael Navarro. "Off-axis aberrations
-        % of a wide-angle schematic eye model." JOSA A 16.8 (1999):
-        % 1881-1891. Using the 589nm and 632 nm values.
-        ns = [1.376 1.3747];
+        c = [1.362994, 6.009687e3, -6.760760e8, 5.908450e13];
     case 'hydrogel'
-        % Childs, Andre, et al. "Fabricating customized hydrogel contact
-        % lens." Scientific reports 6 (2016): 34905.
-        ns = [1.430 1.420];
-    case 'optorez'
-        % Nikolov, Ivan D., and Christo D. Ivanov. "Optical plastic
-        % refractive measurements in the visible and the near-infrared
-        % regions." Applied Optics 39.13 (2000): 2067-2070.
-        % Measured at 594 and 890 nm
-        ns = [1.5089 1.5004];
+        % (C6H11NO)n (Poly(N-isopropylacrylamide), PNIPAM)
+        c = [1.5030, 0, 0, 0]
     case 'cr-39'
         % Traynor, Nathan BJ, et al. "CR-39 (PADC) Reflection and
         % Transmission of Light in the Ultraviolet-Near-Infrared (UV-NIR)
         % Range." Applied spectroscopy (2017): 0003702817745071.
         % NIR value estimated from Figure 5b.
-        ns = [1.51 1.50];
+        c = [1.4980, 0, 0, 0];
     case 'polycarbonate'
         % Nikolov, Ivan D., and Christo D. Ivanov. "Optical plastic
         % refractive index measurements for NIR region." 18th Congress of
         % the International Commission for Optics. Vol. 3749. International
         % Society for Optics and Photonics, 1999.
-        ns = [1.5852 1.5614];
+        c = [1.5846, 0, 0, 0];
     otherwise
         error(['I do not know the index of refraction for ' material]);
 end
 
-% Now, select which index to return based upon the spectral domain.
-switch spectralDomain
-    case {'VIS','vis','Vis','visible'}
-        n = ns(1);
-    case {'NIR','nir','Nir','near infrared','near infra-red'}
-        n = ns(2);
-    otherwise
-        error(['I do not have values for the spectral domain of ' spectralDomain]);
-end
+% Cauchy?s (1836) equation (cited in Atchison & Smith 2005)
+n = c(1) + c(2)/wavelength^2 + c(3)/wavelength^4 + c(4)/wavelength^6;
+
+
 
 end
 

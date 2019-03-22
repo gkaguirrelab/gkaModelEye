@@ -16,7 +16,7 @@ function [opticalSystem, surfaceLabels, surfaceColors] = assembleOpticalSystem( 
 %
 % Optional key/values pairs:
 %  'surfaceSetName'       - A string or char vector that from the set
-%                           {'retinaToPupil','pupilToCamera',
+%                           {'retinaToStop','stopToCamera',
 %                           'retinaToCamera'}
 %  'cameraMedium'         - String, options include:
 %                           {'air','water','vacuum'}. This sets the index
@@ -83,7 +83,7 @@ p = inputParser; p.KeepUnmatched = true;
 p.addRequired('eye',@isstruct);
 
 % Optional analysis params
-p.addParameter('surfaceSetName','pupilToCamera',@ischar);
+p.addParameter('surfaceSetName','stopToCamera',@ischar);
 p.addParameter('cameraMedium','air',@ischar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
@@ -151,7 +151,7 @@ switch p.Results.surfaceSetName
             surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[.5 .5 .5]}];
         end
         
-    case 'retinaToPupil'
+    case 'retinaToStop'
         
         % Start in the retina
         opticalSystem = [opticalSystem; ...
@@ -167,7 +167,7 @@ switch p.Results.surfaceSetName
         % Assemble the surface plot colors
         surfaceColors = [eye.retina.plot.color; eye.lens.plot.color];
         
-    case 'pupilToCamera'
+    case 'stopToCamera'
         
         % Start in the aqueous
         opticalSystem = [opticalSystem; ...
@@ -215,7 +215,7 @@ switch p.Results.surfaceSetName
             surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[.5 .5 .5]}];
         end
         
-    case 'cameraToPupil'
+    case 'cameraToStop'
         
         % Start in the camera medium
         opticalSystem = [opticalSystem; ...
@@ -231,7 +231,7 @@ switch p.Results.surfaceSetName
         % Assemble the surface plot colors
         surfaceColors = [{[nan nan nan]}; flipud(eye.cornea.plot.color)];
         
-    case 'pupilToRetina'
+    case 'stopToRetina'
         
         % Start in the aqueous
         opticalSystem = [opticalSystem; ...
@@ -252,6 +252,32 @@ switch p.Results.surfaceSetName
         
         % Assemble the surface plot colors
         surfaceColors = [{[nan nan nan]}; flipud(eye.lens.plot.color); flipud(eye.retina.plot.color)];
+
+    case 'cameraToRetina'
+        
+        % Start in the camera medium
+        opticalSystem = [opticalSystem; ...
+            [nan(1,10) nan nan(1,6) nan mediumRefractiveIndex]];
+        
+        % Add the cornea, ending in the aqueous refractive index
+        opticalSystem = [opticalSystem; ...
+            [flipud(eye.cornea.S) flipud(eye.cornea.side)*(-1) flipud(eye.cornea.boundingBox) flipud(eye.cornea.mustIntersect) [flipud(eye.cornea.index); returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain )]]];
+
+        % Add the lens, ending in the vitreous medium
+       opticalSystem = [opticalSystem; ...
+          [flipud(eye.lens.S) flipud(eye.lens.side)*(-1) flipud(eye.lens.boundingBox) flipud(eye.lens.mustIntersect) [flipud(eye.lens.index); returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]]];
+
+        % Add the retina. We assign the vitreous refractive index so that
+        % the final unit vector direction of the ray is unchanged. The ray
+        % stops here.
+       opticalSystem = [opticalSystem; ...
+          [flipud(eye.retina.S) flipud(eye.retina.side)*(-1) flipud(eye.retina.boundingBox) flipud(eye.retina.mustIntersect) returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
+
+        % Assemble the labels
+        surfaceLabels = [{'camera'}; flipud(eye.cornea.label); flipud(eye.lens.label); flipud(eye.retina.label)];
+        
+        % Assemble the surface plot colors
+        surfaceColors = [{[nan nan nan]}; flipud(eye.cornea.plot.color); flipud(eye.lens.plot.color); flipud(eye.retina.plot.color)];        
         
     otherwise
         error('Unrecognized surfaceSetName');

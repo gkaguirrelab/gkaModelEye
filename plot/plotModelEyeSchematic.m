@@ -2,7 +2,7 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 % Creates a cross-section schematic illustration of the model eye
 %
 % Syntax:
-%  plotModelEyeSchematic(eye)
+%  figHandle = plotModelEyeSchematic(eye)
 %
 % Description:
 %   Create a schematic diagram of the model eye specified in the passed
@@ -25,14 +25,20 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %
 % Examples:
 %{
-    % Basic call for an horizontal view plot
-    eye = modelEyeParameters;
+    % Basic call for a horizontal view plot
+    eye = modelEyeParameters();
     plotModelEyeSchematic(eye);
 %}
 %{
-    % Basic call for an vertical view plot
-    eye = modelEyeParameters;
-    plotModelEyeSchematic(eye,'view','vert');
+    % A plot with the fovea, visual axis, and optical center
+    eye = modelEyeParameters('calcLandmarkFovea',true,'calcLandmarkOpticalCenter',true);
+    plotModelEyeSchematic(eye);
+%}
+%{
+    % A plot with the fovea, visual axis, and line of sight
+    sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
+    [outputRayLoS,rayPathLoS] = calcLineOfSightRay(sceneGeometry);
+    plotModelEyeSchematic(sceneGeometry.eye,'rayPath',rayPathLoS,'outputRay',outputRayLoS);
 %}
 %{
     % Two panel plot with horizontal and vertical views for eyes with 0 and -10
@@ -60,6 +66,8 @@ p.addRequired('eye',@isstruct);
 p.addParameter('view','horizontal',@ischar);
 p.addParameter('newFigure',true,@islogical);
 p.addParameter('plotColor','k',@ischar);
+p.addParameter('rayPath',[],@(x)(isempty(x) || ismatrix(x)));
+p.addParameter('outputRay',[],@(x)(isempty(x) || ismatrix(x)));
 
 % parse
 p.parse(eye, varargin{:})
@@ -75,18 +83,12 @@ switch p.Results.view
     case {'axial','Axial','Ax','ax','Horizontal','horizontal','horiz'}
         PdimA = 1;
         PdimB = 2;
-        SdimA = 3;
-        SdimB = 1;
-        rotationField = 'azi';
         titleString = 'Horizontal';
         yLabelString = 'temporal <----> nasal';
         xLabelString = 'posterior <----> anterior';
     case {'sagittal','Sagittal','Sag','sag','Vertical','vertical','vert'}
         PdimA = 1;
         PdimB = 3;
-        SdimA = 3;
-        SdimB = 2;
-        rotationField = 'ele';
         titleString = 'Vertical';
         yLabelString = 'inferior <----> superior';
         xLabelString = 'posterior <----> anterior';
@@ -103,40 +105,62 @@ plotConicSection(eye.lens.S(end,:), titleString, p.Results.plotColor, eye.lens.b
 
 
 %% Add a 2mm radius pupil, center of rotation, iris boundary, fovea, and optic disc
-plot([eye.pupil.center(PdimA) eye.pupil.center(PdimA)],[-2 2],['-' p.Results.plotColor]);
+plot([eye.stop.center(PdimA) eye.stop.center(PdimA)],[-2 2],['-' p.Results.plotColor]);
 plot(eye.rotationCenters.azi(PdimA),eye.rotationCenters.azi(PdimB),['>' p.Results.plotColor])
 plot(eye.rotationCenters.ele(PdimA),eye.rotationCenters.ele(PdimB),['^' p.Results.plotColor])
 plot(eye.iris.center(PdimA),eye.iris.center(PdimB)+eye.iris.radius,['x' p.Results.plotColor])
 plot(eye.iris.center(PdimA),eye.iris.center(PdimB)-eye.iris.radius,['x' p.Results.plotColor])
-plot(eye.axes.visual.coords(PdimA),eye.axes.visual.coords(PdimB),['*' p.Results.plotColor])
-plot(eye.axes.opticDisc.coords(PdimA),eye.axes.opticDisc.coords(PdimB),['x' p.Results.plotColor])
 
 %% Plot the cornealApex
 sg.eye = eye;
-[~, ~, ~, eyeWorldPoints, pointLabels] = pupilProjection_fwd([0 0 0 1], sg, 'fullEyeModelFlag',true);
+[~, ~, ~, ~, eyeWorldPoints, pointLabels] = pupilProjection_fwd([0 0 0 1], sg, 'fullEyeModelFlag',true);
 idx = find(strcmp(pointLabels,'cornealApex'));
 plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColor]);
 
-%% Plot the visual axis
+%% Plot the fovea, the visual axis, and the line of sight
 % Obtain the rayPath through the optical system from the fovea to cornea
-[outputRay, rayPath] = rayTraceQuadrics(eye.axes.visual.initialRay, assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera','cameraMedium','air' ));
-plot(rayPath(PdimA,:),rayPath(PdimB,:),[':' p.Results.plotColor]);
-p1=outputRay(:,1);
-p2=p1+outputRay(:,2).*3;
-r = [p1 p2];
-plot(r(PdimA,:),r(PdimB,:),[':' p.Results.plotColor]);
+if isfield(eye,'landmarks')
+    if isfield(eye.landmarks,'fovea')
+        plot(eye.landmarks.fovea.coords(PdimA),eye.landmarks.fovea.coords(PdimB),['*' p.Results.plotColor])
+        
+        % Obtain the nodal ray from the fovea
+        [outputRay,rayPath] = calcNodalRay(eye,[],eye.landmarks.fovea.coords);
+        plot(rayPath(PdimA,:),rayPath(PdimB,:),[':' p.Results.plotColor]);
+        p1=outputRay(:,1);
+        p2=p1+outputRay(:,2).*3;
+        r = [p1 p2];
+        plot(r(PdimA,:),r(PdimB,:),[':' p.Results.plotColor]);
+    end
+end
 
-%% Plot the blind spot axis
+%% Plot the optic disc and blind spot axis
 % Obtain the rayPath through the optical system from the opticDisc to cornea
-[outputRay, rayPath] = rayTraceQuadrics(eye.axes.opticDisc.initialRay, assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera','cameraMedium','air' ));
-plot(rayPath(PdimA,:),rayPath(PdimB,:),[':' p.Results.plotColor]);
-p1=outputRay(:,1);
-p2=p1+outputRay(:,2).*3;
-r = [p1 p2];
-plot(r(PdimA,:),r(PdimB,:),[':' p.Results.plotColor]);
+if isfield(eye,'landmarks')
+    if isfield(eye.landmarks,'opticDisc')
+        plot(eye.landmarks.opticDisc.coords(PdimA),eye.landmarks.opticDisc.coords(PdimB),['x' p.Results.plotColor])
+    end
+end
 
-%% Plot the effective nodal point
-plot(eye.meta.nodalPoint(PdimA),eye.meta.nodalPoint(PdimB),['o' p.Results.plotColor]);
+%% Plot the optical center
+if isfield(eye,'landmarks')
+    if isfield(eye.landmarks,'opticalCenter')
+        plot(eye.landmarks.opticalCenter(PdimA),eye.landmarks.opticalCenter(PdimB),['o' p.Results.plotColor]);
+    end
+end
+
+%% Plot a passed rayPath
+if ~isempty(p.Results.rayPath)
+        plot(p.Results.rayPath(PdimA,:),p.Results.rayPath(PdimB,:),['--' p.Results.plotColor]);
+end
+
+%% Plot a passed outputRay
+if ~isempty(p.Results.outputRay)
+        p1=p.Results.outputRay(:,1);
+        p2=p1+p.Results.outputRay(:,2).*3;
+        r = [p1 p2];
+        plot(r(PdimA,:),r(PdimB,:),['--' p.Results.plotColor]);
+end
+
 
 %% Reference axis
 xRange = xlim;
@@ -150,17 +174,17 @@ xlabel(xLabelString);
 end
 
 function plotConicSection(S,plane,colorCode,boundingBox)
-    F = quadric.vecToFunc(S);
-    switch plane
-        case 'Horizontal'
-            fh = @(x,y) F(x,y,0);
-            rangeVec = boundingBox([1 2 3 4]);
-        case 'Vertical'
-            fh = @(x,y) F(x,0,y);
-            rangeVec = boundingBox([1 2 5 6]);
-        case 'Coronal'
-            fh = @(x,y) F(0,x,y);
-            rangeVec = boundingBox([3 4 5 6]);
-    end
-    fimplicit(fh,rangeVec,'Color', colorCode,'LineWidth',1);
+F = quadric.vecToFunc(S);
+switch plane
+    case 'Horizontal'
+        fh = @(x,y) F(x,y,0);
+        rangeVec = boundingBox([1 2 3 4]);
+    case 'Vertical'
+        fh = @(x,y) F(x,0,y);
+        rangeVec = boundingBox([1 2 5 6]);
+    case 'Coronal'
+        fh = @(x,y) F(0,x,y);
+        rangeVec = boundingBox([3 4 5 6]);
+end
+fimplicit(fh,rangeVec,'Color', colorCode,'LineWidth',1);
 end

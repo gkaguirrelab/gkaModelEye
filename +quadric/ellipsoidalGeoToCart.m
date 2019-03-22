@@ -19,8 +19,8 @@ function X = ellipsoidalGeoToCart( geodetic, S )
 %   quadric (and associated point X) is translated to place the center at
 %   the origin, and rotated to be axis-aligned.
 %
-%   The distinction between parametric and orthogonal geodetic coordinates
-%   on the ellipsoidal surface is discussed here:
+%   The distinction between parametric and orthogonal (ellipsoidal)
+%   geodetic coordinates on the ellipsoidal surface is discussed here:
 %
 %       https://geographiclib.sourceforge.io/html/triaxial.html
 %

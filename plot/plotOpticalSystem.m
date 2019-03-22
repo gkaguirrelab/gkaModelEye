@@ -2,7 +2,7 @@ function figHandle = plotOpticalSystem(varargin)
 % Creates a cross-section schematic illustration of the model eye
 %
 % Syntax:
-%  plotModelEyeSchematic(eye)
+%  figHandle = plotOpticalSystem(varargin)
 %
 % Description:
 %   Create a schematic diagram of the model eye specified in the passed
@@ -26,24 +26,24 @@ function figHandle = plotOpticalSystem(varargin)
 % Examples:
 %{
     %% Rays from the retina through the eye and a spectacle lens
-    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2,'skipNodalPoint',true);
+    sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2,'calcLandmarkFovea',true);
     % Plot the optical system
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
     % Define an initial ray arising at the fovea
-    p = sceneGeometry.eye.axes.visual.coords';
+    p = sceneGeometry.eye.landmarks.fovea.coords';
     % Loop over horizontal angles relative to the visual axis
     for ii = -2:1:2
         % Assemble the ray
-        u = [1;tand(sceneGeometry.eye.axes.visual.degField(1)+ii);tand(sceneGeometry.eye.axes.visual.degField(2))];
-        u = u./sqrt(sum(u.^2));
-        R = [p, u];
+        R = quadric.normalizeRay( ...
+            quadric.anglesToRay(p, ...
+                sceneGeometry.eye.landmarks.fovea.degField(1)+ii, ...
+                sceneGeometry.eye.landmarks.fovea.degField(2)));
         % Perform the ray trace
         [outputRay, rayPath] = rayTraceQuadrics(R, sceneGeometry.refraction.retinaToCamera.opticalSystem);
         % Add this ray to the optical system plot
         plotOpticalSystem('newFigure',false,'outputRay',outputRay,'rayPath',rayPath);
     end
 %}
-
 
 %% input parser
 p = inputParser; p.KeepUnmatched = true;

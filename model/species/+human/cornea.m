@@ -13,9 +13,8 @@ function cornea = cornea( eye )
 %       219-232.
 %
 %   Their dimensions [a,b,c] correspond to [p2, p3, p1] in the current
-%   model. The Navarro model includes a rotation of the corneal axis such
-%   that the apex is displaced to the nasal visual field. This is modeled
-%   here as well.
+%   model. The cornea ellipsoid is modeled as being aligned with the
+%   optical axis.
 %
 %   The radius of curvature at the vertex of the cornea was found by
 %   Atchison to vary as a function of spherical ametropia (Table 1):
@@ -32,65 +31,108 @@ function cornea = cornea( eye )
 % Outputs:
 %   cornea                - Structure.
 %
+% Examples:
+%{
+    % Navarro 2006 examines the orientation of the corneal ellipsoid with
+    % respect to the keratometric axis, which is the line that connects the 
+    % fixation point of a keratometer instrument with the corneal center of
+    % curvature. Here I obtain the distance in mm between the modeled apex 
+    % of the cornea, and the "vertex normal" point, which is the point of
+    % intersection of the keratometric axis with the front surface of the
+    % cornea.
+    % The calculation is made for an emmetropic eye and assumes that the
+    % fixation point of the keratometric instrument is at 500 mm from the 
+    % corneal surface.
 
+    % Create a sceneGeometry. Put the fixation target at 500 mm, set the
+    % stop radius to 0.86 mm, which corresponds to a 2 mm diameter pupil.
+
+	fixTargetDistance = 200;
+	stopRadius = 0.8693;
+    sceneGeometry = createSceneGeometry(...
+        'sphericalAmetropia',0,...
+        'accommodationDiopeters',1000/fixTargetDistance,...
+        'spectralDomain','vis',...
+        'calcLandmarkFovea',true);
+
+    % Obtain the fixation angles and fixation target location
+	[~,~,~, fixTargetWorldCoords] = calcLineOfSightRay(sceneGeometry,stopRadius,fixTargetDistance);
+
+	% Find the point of intersection of the keratometric ray with the
+	% cornea
+	fixTargetEyeCoords = fixTargetWorldCoords([3 1 2]);
+	cc = sceneGeometry.eye.cornea.front.center;
+	keratometricAxisRay = quadric.normalizeRay([fixTargetEyeCoords';cc-fixTargetEyeCoords']');
+    opticalSystem = sceneGeometry.refraction.cameraToRetina.opticalSystem;
+    [~,rayPath] = rayTraceQuadrics(keratometricAxisRay, opticalSystem);
+    horizontalDistance = rayPath(2,2)
+%}
+
+
+%% Corneal ellipsoid rotation
+% The corneal ellipsoid is modeled as aligned with the optical axis. The
+% code below retains the ability to model a rotation if desired. The
+% cornealRotation vector specifies the rotation (in degrees) about each of
+% the axes.
+cornealRotation = [0 0 0];
 
 %% Front corneal surface
-
 if isempty(eye.meta.measuredCornealCurvature)
-    % Atchison provides parameters for a radially symmetric ellipsoid in terms
-    % of the radius of curvature (R) at the vertex and its asphericity (Q). R
-    % varies with spherical ametropia (D):
+    % Atchison provides parameters for a radially symmetric ellipsoid in
+    % terms of the radius of curvature (R) at the vertex and its
+    % asphericity (Q). R varies with spherical ametropia (D):
     %
     %   R = 7.77 + 0.022 * D
     %   Q = -0.15
     %
     % Because the asphericity of the cornea did not change, the change in R
-    % corresponds to an overall scaling of the ellipsoid in all dimensions. We
-    % adjust the Navarro values to account for this effect. R and Q are related
-    % to the radii of an ellipse along the primary and secondy axes (a, b) by:
+    % corresponds to an overall scaling of the ellipsoid in all dimensions.
+    % We adjust the Navarro values to account for this effect. R and Q are
+    % related to the radii of an ellipse along the primary and secondy axes
+    % (a, b) by:
     %
     %   R = b^2/a
     %	Q = (b^2 / a^2) - 1
     %
     % when Q < 0. Therefore, given R and Q, we can obtain a and b, which
-    % correspond to the radii of the ellipsoid model, with a corresponding to
-    % the axial dimension, and b to the horizontal and vertical dimensions.
-    % Checking my algebra here:
+    % correspond to the radii of the ellipsoid model, with a corresponding
+    % to the axial dimension, and b to the horizontal and vertical
+    % dimensions. Checking my algebra here:
     %{
-    syms a b R Q
-    eqn1 = R == b^2/a;
-    eqn2 = Q == (b^2 / a^2) - 1;
-    solution = solve([eqn1, eqn2]);
-    solution.a
-    solution.b
+        syms a b R Q
+        eqn1 = R == b^2/a;
+        eqn2 = Q == (b^2 / a^2) - 1;
+        solution = solve([eqn1, eqn2]);
+        solution.a
+        solution.b
     %}
-    % We calculate the change in parameters of the Navarro model that would be
-    % expected given the Atchison effect for ametropia.
+    % We calculate the change in parameters of the Navarro model that would
+    % be expected given the Atchison effect for ametropia.
     %{
-    R = @(D) 7.77 + 0.022 .* D;
-    Q = -0.15;
-    a = @(D) R(D) ./ (Q+1);
-    b = @(D) R(D) .* sqrt(1./(Q+1));
-    radiiAtchFront = @(D) [a(D) b(D) b(D)];
-    % Show that the ametropia correction scales all radii equally
-    radiiAtchFront(0)./radiiAtchFront(1)
-    % Calculate the proportion change in radius
-    radiusScalerPerD = 1-a(1)/a(0);
-    radiiNavFront = [14.26   10.43   10.27];
-    radiiNavFrontCorrected = @(D) radiiNavFront.* (D.*radiusScalerPerD+1);
-    % Report the ratio of the Atchison and Navarro axial radii
-    % for the front surface of the cornea; we use this below.
-    atchNavScaler = a(0) ./ radiiNavFront(1)
+        R = @(D) 7.77 + 0.022 .* D;
+        Q = -0.15;
+        a = @(D) R(D) ./ (Q+1);
+        b = @(D) R(D) .* sqrt(1./(Q+1));
+        radiiAtchFront = @(D) [a(D) b(D) b(D)];
+        % Show that the ametropia correction scales all radii equally
+        radiiAtchFront(0)./radiiAtchFront(1)
+        % Calculate the proportion change in radius
+        radiusScalerPerD = 1-a(1)/a(0);
+        radiiNavFront = [14.26   10.43   10.27];
+        radiiNavFrontCorrected = @(D) radiiNavFront.* (D.*radiusScalerPerD+1);
+        % Report the ratio of the Atchison and Navarro axial radii for the
+        % front surface of the cornea; we use this below.
+        atchNavScaler = a(0) ./ radiiNavFront(1)
     %}
     radii = [14.26   10.43   10.27] .* ...
         ((eye.meta.sphericalAmetropia .* -0.0028)+1);
     S = quadric.scale(quadric.unitSphere,radii);    
 else
-    % If a measured value is provided, use it here to calculate the parameters
-    % of the ellipsoidal surface. We set the axial length of the corneal
-    % ellipsoid equal to the value provided by Navarro 2006.
+    % If a measured value is provided, use it here to calculate the
+    % parameters of the ellipsoidal surface. We set the axial length of the
+    % corneal ellipsoid equal to the value provided by Navarro 2006.
     radii(1) = 14.26;
-    % Formula to convert Diopters to radius of curvature in mm
+    % Formula to convert diopters to radius of curvature in mm
     RoC = @(D) 1000.*(1.3375-1)./D;
     % The horizontal and vertical radii are derived from the passed values
     radii(2:3) = sqrt(radii(1).*RoC(eye.meta.measuredCornealCurvature(1:2)));
@@ -98,16 +140,20 @@ else
     S = quadric.scale(quadric.unitSphere,radii);
     % Apply a torsional rotation to the ellipse if requested
     if length(eye.meta.measuredCornealCurvature)==3
-        S = quadric.rotate(S,[eye.meta.measuredCornealCurvature(3) 0 0]);
+        cornealRotation = [eye.meta.measuredCornealCurvature(3) 0 0];
     end
 end
 
-% Rotate the quadric surface towards the nasal field
+% Saving this for use in constructing the tear film below
+S_front = S;
+
+
+% Rotate the quadric surface
 switch eye.meta.eyeLaterality
     case 'Right'
-        S = quadric.rotate(S,[ 0 0 1.5 ]);
+        S = quadric.rotate(S,cornealRotation);
     case 'Left'
-        S = quadric.rotate(S,[ 0 0 -1.5 ]);
+        S = quadric.rotate(S,cornealRotation.*[1 1 -1]);
     otherwise
         error('eye laterality not defined')
 end
@@ -120,6 +166,34 @@ S = quadric.translate(S,[-radii(1) 0 0]);
 cornea.front.S = quadric.matrixToVec(S);
 cornea.front.side = 1;
 cornea.front.boundingBox=[-4 0 -8 8 -8 8];
+cornea.front.center=[-radii(1) 0 0];
+
+
+%% Tear film
+% The tear film is the front corneal surface, translated forward. The
+% thickness is taken from:
+%   Werkmeister, René M., et al. "Measurement of tear film thickness using
+%   ultrahigh-resolution optical coherence tomography." Investigative
+%   ophthalmology & visual science 54.8 (2013): 5578-5583.
+tearFilmThickness = 0.005;
+
+% Rotate the quadric surface
+S = S_front;
+switch eye.meta.eyeLaterality
+    case 'Right'
+        S = quadric.rotate(S,cornealRotation);
+    case 'Left'
+        S = quadric.rotate(S,cornealRotation.*[1 1 -1]);
+    otherwise
+        error('eye laterality not defined')
+end
+
+% Translate and store
+S = quadric.translate(S,[-radii(1)+tearFilmThickness 0 0]);
+cornea.tears.S = quadric.matrixToVec(S);
+cornea.tears.side = 1;
+cornea.tears.boundingBox=[-4+tearFilmThickness tearFilmThickness -8 8 -8 8];
+
 
 
 %% Back corneal surface
@@ -153,20 +227,21 @@ cornea.front.boundingBox=[-4 0 -8 8 -8 8];
 radii = [ 13.7716    9.3027    9.3027];
 S = quadric.scale(quadric.unitSphere,radii);
 
-% Rotate the quadric surface towards the nasal field
+% Rotate the quadric surface
 switch eye.meta.eyeLaterality
     case 'Right'
-        S = quadric.rotate(S,[ 0 0 181.5 ]);
+        S = quadric.rotate(S,cornealRotation+[ 180 180 180 ]);
     case 'Left'
-        S = quadric.rotate(S,[ 0 0 -181.5 ]);
+        S = quadric.rotate(S,cornealRotation.*[1 1 -1]-[ 180 180 180 ]);
     otherwise
         error('eye laterality not defined')
 end
 
-% The center of the back cornea ellipsoid is positioned so that
-% there is 0.55 mm of corneal thickness between the front and back
-% surface of the cornea at the apex, following Atchison 2006.
-S = quadric.translate(S,[-0.55-radii(1) 0 0]);
+% The center of the back cornea ellipsoid is positioned so that there is
+% 0.55 mm of corneal thickness between the front and back surface of the
+% cornea at the apex, following Atchison 2006.
+cornealThickness = 0.55;
+S = quadric.translate(S,[-cornealThickness-radii(1) 0 0]);
 
 % Store these values
 cornea.back.S = quadric.matrixToVec(S);
@@ -174,13 +249,14 @@ cornea.back.side = 1;
 cornea.back.boundingBox=[-4 0 -8 8 -8 8];
 
 % Assemble the combined corneal surfaces
-cornea.S = [cornea.back.S; cornea.front.S];
-cornea.boundingBox = [cornea.back.boundingBox; cornea.front.boundingBox];
-cornea.side = [1; 1];
-cornea.mustIntersect = [1; 1];
-cornea.index = returnRefractiveIndex( 'cornea', eye.meta.spectralDomain );
-cornea.label = {'cornea.back'; 'cornea.front'};
-cornea.plot.color = {'blue'; 'blue'};
+cornea.S = [cornea.back.S; cornea.front.S; cornea.tears.S];
+cornea.boundingBox = [cornea.back.boundingBox; cornea.front.boundingBox; cornea.tears.boundingBox];
+cornea.side = [1; 1; 1];
+cornea.mustIntersect = [1; 1;1 ];
+cornea.index = [returnRefractiveIndex( 'cornea', eye.meta.spectralDomain); ...
+    returnRefractiveIndex( 'tears', eye.meta.spectralDomain)];
+cornea.label = {'cornea.back'; 'cornea.front'; 'cornea.tears'};
+cornea.plot.color = {'blue'; 'blue'; 'blue'};
 
 % Code here to calculate the Navarro 1985 corneal parameters that
 % were used by Fedtke 2010 in her simulation. These may be used for

@@ -18,7 +18,7 @@ function R = normalizeRay( R )
 %                           a unit vector of the form [p; u]:
 %                               R = p + t*u,
 %                           where p is vector origin, u is the direction
-%                           expressed as a unit steo, and t has an
+%                           expressed as a unit step, and t has an
 %                           obligatory value of unity.
 %
 % Examples:

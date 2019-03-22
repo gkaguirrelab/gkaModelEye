@@ -1,11 +1,11 @@
-function [outputRay,rayPath] = calcNodalRay(eye,G,X,cameraMedium)
+function [outputRay,rayPath, angleError] = calcNodalRay(eye,G,X,cameraMedium)
 % Returns the path of the nodal ray from a retinal point
 %
 % Syntax:
-%  rayPath = calcNodalRay(eye,G0,X0,cameraMedium)
+%  [outputRay,rayPath, angleError] = calcNodalRay(eye,G,X,cameraMedium)
 %
 % Description
-%   Given a sceneGeometry and a coordinate on the retinal surface, the
+%   Given an eye structure and a coordinate on the retinal surface, the
 %   routine returns a matrix that contains the path of a ray that satisfies
 %   the property that the angle (wrt the optical axis) of the ray as it
 %   departs the retina is equal to the angle with which it departs the
@@ -20,13 +20,13 @@ function [outputRay,rayPath] = calcNodalRay(eye,G,X,cameraMedium)
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
-%   G0                    - 3x1 vector that provides the geodetic
+%   G                     - 3x1 vector that provides the geodetic
 %                           coordinates beta, omega, and elevation in units
 %                           of degrees. Beta is defined over the range
 %                           -90:90, and omega over the range -180:180.
 %                           Elevation has an obligatory value of zero as
 %                           this solution is only defined on the surface.
-%   X0                    - 3x1 vector that specifies the Cartesian
+%   X                     - 3x1 vector that specifies the Cartesian
 %                           location of a point on the quadric surface.
 %   cameraMedium          - The medium in which the eye is located.
 %                           Defaults to 'air'.
@@ -42,11 +42,14 @@ function [outputRay,rayPath] = calcNodalRay(eye,G,X,cameraMedium)
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
 %                           will be nan.
+%   angleError            - Scalar. The angle between the initial and
+%                           output rays for the nominal nodal ray. Ideally,
+%                           this value should be zero.
 %
 % Examples:
 %{
-    eye = modelEyeParameters('eyeLaterality','os');
-    calcNodalRay(eye,[],eye.axes.visual.coords)
+    eye = modelEyeParameters();    
+    [outputRay,rayPath, angleError] = calcNodalRay(eye,[],eye.landmarks.vertex.coords)
 %}
 
 
@@ -90,40 +93,48 @@ end
 opticalSystem = assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera', 'cameraMedium', cameraMedium );
 
 % Define some options for the fmincon call in the loop
-options = optimoptions(@fmincon,...
-    'Display','off');
+opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','off');
 
 % Define an error function that reflects the difference in angles from the
 % initial ray and the output ray from the optical system
-myError = @(p) calcOffsetFromParallel(opticalSystem,assembleInputRay(X,p(1),p(2)));
+myError = @(p) calcOffsetFromParallel(opticalSystem,quadric.anglesToRay(X,p(1),p(2)));
 
-% Supply an x0 guess which is the ray that connects the retinal point with
-% the posterior apex of the lens.
-S = eye.lens.S(1,:);
-centerS = quadric.center(S);
-radiiS = quadric.radii(S);
-lensPosteriorApex=(centerS + [radiiS(1);0;0])';
+% Supply an x0 guess. Check a few targets to try and find one that produces a valid
+% trace through the optical system.
+targets = [...
+    eye.lens.back, ...                      % lens posterior
+    (eye.lens.back+eye.lens.center)./2,...  % mid-point of posterior lens
+    eye.lens.center];                       % lens center
 
-[~, angle_p1p2, angle_p1p3] = quadric.angleRays( [0 0 0; 1 0 0]', quadric.normalizeRay([X'; lensPosteriorApex-X']') );
-angle_p1p2 = deg2rad(angle_p1p2);
-angle_p1p3 = -deg2rad(angle_p1p3);
+stillSearching = true;
+targetIdx = 1;
+while stillSearching
+    R = quadric.normalizeRay([X'; targets(targetIdx)-X']');
+    [outputRay,rayPath] = rayTraceQuadrics(R, opticalSystem);    
+    if any(isnan(outputRay))
+        targetIdx = targetIdx + 1;
+        if targetIdx > length(targets)
+            angleError = nan;
+            return
+        end
+    else
+        stillSearching = false;
+    end
+end
+[angle_p1p2, angle_p1p3] = quadric.rayToAngles( R );
+x0 = [angle_p1p2, angle_p1p3];
 
 % Perform the search
-inputRayAngles = fmincon(myError,[angle_p1p2 angle_p1p3],[],[],[],[],[-pi/2,-pi/2],[pi/2,pi/2],[],options);
+[inputRayAngles, angleError] = fmincon(myError,x0,[],[],[],[],[-180,-180],[180,180],[],opts);
 
 % Calculate and save the outputRay and the raypath
-[outputRay,rayPath] = rayTraceQuadrics(assembleInputRay(X,inputRayAngles(1),inputRayAngles(2)), opticalSystem);
+[outputRay,rayPath] = rayTraceQuadrics(quadric.anglesToRay(X,inputRayAngles(1),inputRayAngles(2)), opticalSystem);
 
 end
 
 
-% Local function. Converts angles relative to the optical axis to a unit
-% vector ray.
-function inputRay = assembleInputRay(p,angle_p1p2,angle_p1p3)
-u = [1; tan(angle_p1p2); tan(angle_p1p3)];
-u = u./sqrt(sum(u.^2));
-inputRay = [p, u];
-end
+%% Local functions
+
 
 % Local function. Performs the ray trace through the optical system of the
 % eye and then calculates the angle between the initial ray and the output
