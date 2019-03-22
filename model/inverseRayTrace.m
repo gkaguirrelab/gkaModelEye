@@ -58,8 +58,8 @@ function [outputRay, initialRay, targetIntersectError ] = inverseRayTrace( eyePo
     	sceneGeometry.refraction.stopToCamera.opticalSystem};
     outputRay = inverseRayTrace( sceneGeometry.eye.stop.center, [0 0 0 2], args{:} );
     % Test output against cached value
-    outputRayCached = [  0.000171619649776  -0.023999698646459  0; ...
-        0.999999979970365   0.000200148120875  0];
+    outputRayCached = [  0.004999999999999   0.000000000000000   0.000000000000000; ...
+        1.000000000000000   0.000000000000000   0.000000000000000];
     assert(max(max(abs(outputRay - outputRayCached))) < 1e-6)
 %}
 %{
