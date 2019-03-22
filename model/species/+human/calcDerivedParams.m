@@ -25,7 +25,7 @@ function derivedParams = calcDerivedParams(varargin)
 %
 % Examples:
 %{
-    % ETTPSkip -- This takes about 15 minutes to run.
+    % ETTBSkip -- This takes about 15 minutes to run.
     % Iteratively run the routine to find the stable set of params
     derivedParams = [];
     % Iteratively call the routine, but do not yet save the params to disk
