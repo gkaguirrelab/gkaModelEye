@@ -12,7 +12,7 @@ These routines implement a ray-traced model eye in MATLAB. One application of th
 
 The model is described in:
 
- * GK Aguirre (2018) [A Model of the Entrance Pupil of the Human Eye](http://biorxiv.org/cgi/content/short/325548v2). bioRxiv.
+ * GK Aguirre (2019) [A Model of the Entrance Pupil of the Human Eye](http://biorxiv.org/cgi/content/short/325548v2). bioRxiv.
 
 The anatomical properties of the eye are described in a set of routines that account for variation in biometric properties as a function of variation in spherical refractive error (ametropia). Ray tracing through the optical components of the eye (and any artificial lenses) is implemented as skew rays through generalized quadric surfaces. The routine `inverseRayTrace.m` calculates the effect of refraction, making use of calls to `rayTraceQuadrics.m`. An improvement in execution time can be achieved by compiling the ray tracing routines. To do so, issue the command `compileInverseRayTrace` at the MATLAB console. A compiled MEX file version of `inverseRayTrace` will be placed in the `bin` directory of this repository if it is not already present.
 
@@ -29,7 +29,7 @@ The function `pupilProjection_inv` implements a search over eyePose parameters a
 
 To install and configure the repository, first install [toolboxToolbox (tBtB)](https://github.com/ToolboxHub/ToolboxToolbox), which provides for declarative dependency management for Matlab. Once tBtB is installed, the code (and all its dependencies) will be installed and readied for use with the command `tbUse('gkaModelEye');`. If you do not wish to use tBtB, add the [quadfit toolbox](https://www.mathworks.com/matlabcentral/fileexchange/45356-fitting-quadratic-curves-and-surfaces) to your path.
 
-A good place to start is to render the model eye for different poses and examine the parameters of the pupil ellipse. This example renders an emmetropic right eye, observed in the near infra-red range, that is rotated to -30 degrees azimuth, -5 degrees elevation, and has a pupil aperture 2 mm in radius.
+A good place to start is to render the model eye for different poses and examine the parameters of the pupil ellipse. This example renders an emmetropic right eye, observed in the near infra-red range, that is rotated to -30 degrees azimuth, -5 degrees elevation, and has a stop aperture 2 mm in radius.
 ```
     sceneGeometry=createSceneGeometry();
     eyePose = [-30 -5 0 2];
@@ -57,8 +57,8 @@ A hierarchy of the functions is as follows:
             V
     pupilProjection_fwd  <--  createSceneGeometry
             |                   ├── modelEyeParameters
-            V                   |    ├─ human.pupil
-    virtualImageFunc            |    ├─ human.cornea
+            V                   |    ├─ human.stop
+     inverseRayTrace            |    ├─ human.cornea
             |                   |    └─ human.retina, etc.
             V                   |    
     rayTraceQuadrics            └─ assembleOpticalSystem
