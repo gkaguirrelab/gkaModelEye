@@ -11,6 +11,7 @@ function sceneGeometry = addEyePosePolyModel(sceneGeometry, varargin)
 %	is then used to provide an initial x0 value for searches performed in
 %	eyePoseEllipse fit and pupilProjection_inv.
 %
+%
 % Inputs:
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
 %
@@ -34,8 +35,20 @@ function sceneGeometry = addEyePosePolyModel(sceneGeometry, varargin)
 % Examples:
 %{
     % ETTBSkip -- This takes about 5 minutes to run
+    % Generate the sceneGeometry and the polymodel
     sceneGeometry = createSceneGeometry();
     sceneGeometry = addEyePosePolyModel(sceneGeometry,'verbose',true);
+    % Assume an eyePose and create a forward projection ellipse
+    eyePose = [-10 5 0 2];
+    pupilEllipse = pupilProjection_fwd(eyePose,sceneGeometry);
+    % Given the pupilEllipse, reconstruct the eyePose using the polymodel
+    x = zeros(1,4);
+    x(1) = polyvaln(sceneGeometry.polyModel.azimuth,pupilEllipse);
+    x(2) = polyvaln(sceneGeometry.polyModel.elevation,pupilEllipse);
+    x(4) = polyvaln(sceneGeometry.polyModel.stopRadius,pupilEllipse);
+    % Report the difference between the veridican and estimated eyePose
+    eyePose - x
+
 %}
 %{
     % Estimate computation time
@@ -152,6 +165,9 @@ sceneGeometry.polyModel.stopRadius = ...
 
 % Restore the warning state
 warning(warningState);
+
+% Create an adjustment field and set the values to zero
+sceneGeometry.polyModel.adjust = zeros(1,5);
 
 % Store the meta data
 sceneGeometry.polyModel.meta = p.Results;

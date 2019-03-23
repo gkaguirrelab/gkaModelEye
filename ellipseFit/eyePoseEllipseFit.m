@@ -129,9 +129,9 @@ if isempty(p.Results.x0)
         
         % Construct the x0
         x0 = zeros(1,4);
-        x0(1) = polyvaln(sceneGeometry.polyModel.azimuth,pe);
-        x0(2) = polyvaln(sceneGeometry.polyModel.elevation,pe);
-        x0(4) = polyvaln(sceneGeometry.polyModel.stopRadius,pe);
+        x0(1) = polyvaln(sceneGeometry.polyModel.azimuth,pe+sceneGeometry.polyModel.adjust);
+        x0(2) = polyvaln(sceneGeometry.polyModel.elevation,pe+sceneGeometry.polyModel.adjust);
+        x0(4) = polyvaln(sceneGeometry.polyModel.stopRadius,pe+sceneGeometry.polyModel.adjust);
         
     else
         % There is no eyePoseGrid. Construct an x0 guess by probing the
