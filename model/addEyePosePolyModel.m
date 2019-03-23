@@ -46,7 +46,7 @@ function sceneGeometry = addEyePosePolyModel(sceneGeometry, varargin)
     x(1) = polyvaln(sceneGeometry.polyModel.azimuth,pupilEllipse);
     x(2) = polyvaln(sceneGeometry.polyModel.elevation,pupilEllipse);
     x(4) = polyvaln(sceneGeometry.polyModel.stopRadius,pupilEllipse);
-    % Report the difference between the veridican and estimated eyePose
+    % Report the difference between the veridical and estimated eyePose
     eyePose - x
 
 %}
@@ -90,7 +90,7 @@ p.addRequired('sceneGeometry',@isstruct);
 % Optional params
 p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
 p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
-p.addParameter('gridDensity',50,@isscalar);
+p.addParameter('gridDensity',50,@(x)(isscalar(x) && x>=15));
 p.addParameter('polyModelOrder',6,@isscalar);
 p.addParameter('estimateCompTime',false,@islogical);
 p.addParameter('verbose', false, @islogical);
@@ -112,11 +112,11 @@ nComps = length(aziVals)*length(eleVals)*length(stopVals);
 % Check if we are just to estimate the computation time
 if p.Results.estimateCompTime || p.Results.verbose
     tic
-    for ii=1:5
+    for ii=1:10
         pupilProjection_fwd([0 0 0 1], sceneGeometry, 'nStopPerimPoints', 5);
     end
-    compTimeMins = toc*nComps/5/60;
-    fprintf('Grid computation time for these parameters is %2.2f mins\n',compTimeMins);
+    compTimeMins = toc*nComps/ii/60;
+    fprintf('Estimated computation time for these parameters is %2.1f mins\n',compTimeMins);
 end
 
 if p.Results.estimateCompTime
@@ -128,7 +128,6 @@ end
 eyePoses = [];
 pupilEllipses = [];
 tic
-hold on
 idx=1;
 for xx=1:length(aziVals)
     for yy=1:length(eleVals)
@@ -147,7 +146,7 @@ compTimeMins = toc/60;
 
 % report completion of prediction grid
 if p.Results.verbose
-    fprintf('Finished grid construction. Now fitting polynomial model\n');
+    fprintf('Finished grid construction (%2.1f mins). Now fitting polynomial model\n',compTimeMins);
 end
 
 % save the current warning status and silence anticipated warnings
