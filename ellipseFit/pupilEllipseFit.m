@@ -1,11 +1,34 @@
-
 function [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints)
+% Fit an ellipse to a set of image points
+%
+% Syntax:
+%  [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints)
+%
+% Description:
+%   This is a wrapper for the function ellipsefit_direct. The primary
+%   application of this function is to fit an ellipse to a set of points in
+%   an image that are on the boundary of the pupil. The purpose of this
+%   function is to sanity check input, handle errors and warnings that can
+%   arise during fitting, and provide a measure of fit error.
+%
+% Inputs:
+%   imagePoints           - An nx2 matrix which contains the x and y
+%                           positions of the n pupil perimeter points. At
+%                           least five points are required.
+%
+% Outputs:
+%   pupilEllipseOnImagePlane - A 1x5 vector that contains the parameters of
+%                           pupil ellipse on the image plane cast in
+%                           transparent form
+%   pupilFitError         - The RMSE distance (in pixels) of the pupil
+%                           perimeter points to the pupil ellipse.
+%
 
 % Set up a variable to hold the pupil fit error
 pupilFitError = nan;
 
-% Before we try to fit the ellipse, make sure that the radius is not zero,
-% and that there are at least 5 perimeter points that are non nan.
+% Before we try to fit the ellipse, make sure that the there are at least 5
+% perimeter points that are non nan.
 validPerimIdx = find(~any(isnan(imagePoints)')');
 
 if ~isreal(imagePoints) || length(validPerimIdx)<5
