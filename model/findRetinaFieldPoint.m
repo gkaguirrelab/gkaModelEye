@@ -2,7 +2,7 @@ function [G,X,angleError] = findRetinaFieldPoint( eye, degField, cameraMedium )
 % Retinal point at a specified visual field location w.r.t. optical axis
 %
 % Syntax
-%  fovea = human.landmarks.fovea( eye )
+%  [G,X,angleError] = findRetinaFieldPoint( eye, degField, cameraMedium )
 %
 % Description:
 %   Calculates the position on the retina of a point that has the specified
@@ -14,6 +14,13 @@ function [G,X,angleError] = findRetinaFieldPoint( eye, degField, cameraMedium )
 %
 % Inputs
 %   eye                   - Structure.
+%   degField              - 2x1 vector that specifies the visual field
+%                           position of a point in degree angles along the
+%                           horizontal and vertical meridian with respect
+%                           to the optical axis of the eye.
+%   cameraMedium          - Char vector. Used to determine the refractive
+%                           index of the medium of the visual field.
+%                           Defaults to "air" if not passed.
 %
 % Outputs
 %   G                     - 3x1 vector that provides the geodetic
@@ -30,11 +37,15 @@ function [G,X,angleError] = findRetinaFieldPoint( eye, degField, cameraMedium )
 % Examples:
 %{
     sceneGeometry = createSceneGeometry();
-    degField = [5.8 3.0 0];
+    degField = [5.8 3.0];
     [G,X,angleError] = findRetinaFieldPoint( sceneGeometry.eye, degField);
     [outputRay,rayPath] = calcNodalRay(sceneGeometry.eye,G);
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true,'rayPath',rayPath,'outputRay',outputRay);
 %}
+
+if nargin<2
+    error('Need to specify an eye structure and the visual field angles');
+end
 
 if nargin==2
     cameraMedium = 'air';
