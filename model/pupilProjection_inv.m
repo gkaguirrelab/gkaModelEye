@@ -100,7 +100,7 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = pupilProjection
     recoveredEyePoses = []; RMSEvals = [];
     tic
     for pp = 1:nPoses
-    	[recoveredEyePoses(pp,:),RMSEvals(pp), ~, ~, nSearches(pp)] = pupilProjection_inv(ellipseParams(pp,:),sceneGeometry,'repeatSearchThresh',0.5);
+    	[recoveredEyePoses(pp,:),RMSEvals(pp), ~, ~, nSearches(pp)] = pupilProjection_inv(ellipseParams(pp,:),sceneGeometry);
     end
     msecPerModel = toc / nPoses * 1000;
     fprintf('\tUsing pre-compiled ray tracing: %4.2f msecs.\n',msecPerModel);
