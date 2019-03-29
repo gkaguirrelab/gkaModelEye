@@ -214,6 +214,7 @@ lastwarn('');
 nSearches = 0;
 searchingFlag = true;
 eyePose = x0;
+RMSE = realmax;
 
 % Anonymous function to update one element of the eyePose at a time
 subP = @(ii,p,x) [x(1:ii-1) p x(ii+1:end)];
@@ -223,12 +224,18 @@ subP = @(ii,p,x) [x(1:ii-1) p x(ii+1:end)];
 while searchingFlag
     % Iterate the search count
     nSearches = nSearches+1;
+    % Copy over the RMSE
+    lastRMSE = RMSE;
     % Loop over the elements of the eyePose and search
     for ii = 1:length(eyePose)
         localObj = @(p) objfun(subP(ii,p,eyePose));
         [eyePose(ii), RMSE] = fminbnd(localObj, eyePoseLB(ii), eyePoseUB(ii), options);
     end
-    if RMSE < p.Results.rmseThresh || nSearches == p.Results.nMaxSearches
+    % Check for termination conditions, which are any of:
+    %   objective value is less than rmseThresh
+    %   the change in objective val from last loop is less than rmseThresh
+    %   we have used up all of our searches
+    if RMSE < p.Results.rmseThresh || (lastRMSE-RMSE) < p.Results.rmseThresh || nSearches == p.Results.nMaxSearches
         searchingFlag = false;
     end
 end % while
