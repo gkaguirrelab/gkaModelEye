@@ -5,8 +5,11 @@ function [d,ddp] = ellipsefit_distance(x,y,p)
 %   + a^2*((x-cx)*sin(theta)+(y-cy)*cos(theta))
 %   - a^2*b^2 = 0
 
-pcl = num2cell(p);
-[cx,cy,ap,bp,theta] = pcl{:};
+cx = p(1);
+cy = p(2);
+ap = p(3);
+bp = p(4);
+theta = p(5);
 
 % get foot points
 if ap > bp

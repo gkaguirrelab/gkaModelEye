@@ -45,6 +45,7 @@ end % function
 function p = ellipse_transparent(c1,c2,a,b,theta)
 % Cast ellipse defined in explict form to transparent parameter vector form.
 
+p = nan(1,5);
 p(1)=c1;
 p(2)=c2;
 p(3)=pi*a*b;
