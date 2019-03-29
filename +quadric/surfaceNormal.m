@@ -45,8 +45,6 @@ function N = surfaceNormal(S,X,side,surfaceTolerance)
     N = quadric.surfaceNormal(S,X);
 %}
 
-% Keep the compiler happy by excluding prohibited calls
-coder.extrinsic('warning')
 
 % Handle incomplete input arguments
 if nargin==2
@@ -71,10 +69,8 @@ if ~isempty(surfaceTolerance)
     funcS = quadric.vecToFunc(quadric.matrixToVec(S));
     % Decompose the coordinate
     x = X(1); y = X(2); z = X(3);
-    if abs(funcS(x,y,z)) > surfaceTolerance
-        warning('Passed coordinate is not on the quadric surface within tolerance (%f)',surfaceTolerance);
-        return
-    end
+    % Assert test for the coordinate being on the surface within tolerance
+    assert(abs(funcS(x,y,z)) < surfaceTolerance)
 end
 
 % Obtain the surface normal by taking the partial derivatives of Q with
