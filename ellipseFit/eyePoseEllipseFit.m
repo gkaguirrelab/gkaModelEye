@@ -1,4 +1,4 @@
-function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
+function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin) %#codegen
 % Fit an image plane ellipse by perspective projection of a pupil circle
 %
 % Syntax:
@@ -35,19 +35,9 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %                           search. The default value allows reconstruction
 %                           of eyePose within 0.1% of the veridical,
 %                           simulated value.
-%  'repeatSearchThresh'   - Scalar. If the RMSE output value obtained is
-%                           greater than this threshold, then a repeat
-%                           search across eyePose values will be conducted
-%                           to account for the possibility that the
-%                           solution obtained was a local minimum.
 %  'nMaxSearches'         - Scalar. The maximum number of searches that the
 %                           routine will conduct as it attempts to avoid
 %                           local minima.
-%  'searchCount'          - Scalar. The number of searches that have been
-%                           conducted so far. This value is modified as
-%                           eyePoseEllipseFit calls itself recursively.
-%                           It should not be modified by the external
-%                           calling function.
 %
 % Outputs:
 %   eyePose               - A 1x4 vector with values for [eyeAzimuth,
@@ -71,30 +61,61 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
     eyePose = [-15 10 0 2.5];
     targetEllipse = pupilProjection_fwd(eyePose,sceneGeometry);
     [ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 5, 0 );
-    [recoveredEyePose,RMSE, recoveredEllipse] = eyePoseEllipseFit(Xp, Yp, sceneGeometry);
+    [recoveredEyePose,RMSE,recoveredEllipse,fitAtBound,nSearches] = eyePoseEllipseFit(Xp, Yp, sceneGeometry);
 %}
 
 
+%% Codegen setup
+% Let codegen know about functions to not compile
+coder.extrinsic('warning')
+coder.extrinsic('lastwarn')
+% Flag to be used to run the routine simulating the codegen path
+coderTestFlag = false;
+
 %% Parse input
-p = inputParser;
+% Use the input parser if we are not generating code.
+if isempty(coder.target) && ~coderTestFlag
+    p = inputParser;
+    
+    % Required
+    p.addRequired('Xp',@isnumeric);
+    p.addRequired('Yp',@isnumeric);
+    p.addRequired('sceneGeometry',@isstruct);
+    
+    % Optional
+    p.addParameter('x0',[],@(x)(isempty(x) | isnumeric(x)));
+    p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
+    p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
+    p.addParameter('rmseThresh',1e-2,@isscalar);
+    p.addParameter('nMaxSearches',5,@isscalar);
+    
+    % Parse and check the parameters
+    p.parse(Xp, Yp, sceneGeometry, varargin{:});
+else
+    p = struct();
+    p.Results.x0 = [];
+    p.Results.eyePoseLB = [-89,-89,0,0.1];
+    p.Results.eyePoseUB = [89,89,0,4];
+    p.Results.rmseThresh = 1e-2;
+    p.Results.nMaxSearches = 5;
+    for ii = 1:fix(length(varargin)/2)
+        switch cell2mat(varargin(ii*2-1))
+            case 'x0'
+                p.Results.x0 = varargin(ii*2);
+            case 'eyePoseLB'
+                p.Results.eyePoseLB = varargin(ii*2);
+            case 'eyePoseUB'
+                p.Results.eyePoseUB = varargin(ii*2);
+            case 'rmseThresh'
+                p.Results.rmseThresh = varargin(ii*2);
+            case 'nMaxSearches'
+                p.Results.nMaxSearches = varargin(ii*2);
+        end
+    end
+end
 
-% Required
-p.addRequired('Xp',@isnumeric);
-p.addRequired('Yp',@isnumeric);
-p.addRequired('sceneGeometry',@isstruct);
 
-% Optional
-p.addParameter('x0',[],@(x)(isempty(x) | isnumeric(x)));
-p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
-p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
-p.addParameter('rmseThresh',1e-2,@isscalar);
-p.addParameter('nMaxSearches',5,@isscalar);
-
-% Parse and check the parameters
-p.parse(Xp, Yp, sceneGeometry, varargin{:});
-
-
-% Set the return variables in the event of an error
+% Initialize the return variables
 eyePose = [nan nan nan nan];
 RMSE = nan;
 fittedEllipse = [nan nan nan nan nan];
@@ -124,6 +145,9 @@ end
 %% Define x0
 % Check if x0 was passed
 if isempty(p.Results.x0)
+    % Define x0
+    x0 = zeros(1,4);
+
     % Construct an x0 guess by probing the forward model. First identify
     % the center of projection
     rotationCenterEllipse = pupilProjection_fwd([0 0 0 2], sceneGeometry);
@@ -140,14 +164,13 @@ if isempty(p.Results.x0)
     pixelsPerDegVert = probeEllipse(2)-CoP(2);
     
     % Estimate the eye azimuth and elevation by the X and Y displacement of
-    % the ellipse center from the center of projection. Torsion is zero.
+    % the ellipse center from the center of projection.
     x0(1) = ((meanXp - CoP(1))/pixelsPerDegHorz);
     x0(2) = ((meanYp - CoP(2))/pixelsPerDegVert);
-    x0(3) = 0;
     
     % Force the angles within bounds
-    x0=min([eyePoseUB(1:3); x0]);
-    x0=max([eyePoseLB(1:3); x0]);
+    x0=[min([eyePoseUB(1:3); x0(1:3)]) 0];
+    x0=[max([eyePoseLB(1:3); x0(1:3)]) 0];
     
     % Estimate the pupil radius in pixels
     pupilRadiusPixels = max([abs(max(Xp)-min(Xp)) abs(max(Yp)-min(Yp))])/2;
@@ -198,6 +221,8 @@ subP = @(ii,p,x) [x(1:ii-1) p x(ii+1:end)];
 % Enter a while loop that iteratively refines the eyePose until criteria
 % are met. The objfun is nested.
 while searchingFlag
+    % Iterate the search count
+    nSearches = nSearches+1;
     % Loop over the elements of the eyePose and search
     for ii = 1:length(eyePose)
         localObj = @(p) objfun(subP(ii,p,eyePose));
@@ -205,13 +230,11 @@ while searchingFlag
     end
     if RMSE < p.Results.rmseThresh || nSearches == p.Results.nMaxSearches
         searchingFlag = false;
-    else
-        nSearches = nSearches+1;
     end
 end % while
     function fVal = objfun(x)
         % Obtain the entrance pupil ellipse for this eyePose
-        fittedEllipse = pupilProjection_fwdMex(x, sceneGeometry);
+        fittedEllipse = pupilProjection_fwd(x, sceneGeometry);
         % Check for the case in which the transparentEllipse contains nan
         % values, which can arise if there were an insufficient number of
         % pupil border points remaining after refraction to define an
@@ -241,7 +264,6 @@ fitAtBound = any([any(abs(eyePose(notLocked)-eyePoseLB(notLocked))<1e-4) any(abs
 
 % Restore the warning state
 warning(warningState);
-
 
 end % eyePoseEllipseFit
 
