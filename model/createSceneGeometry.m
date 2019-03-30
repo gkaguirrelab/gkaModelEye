@@ -116,24 +116,6 @@ function sceneGeometry = createSceneGeometry(varargin)
 %                           that were used to add a refractive lens to the
 %                           optical path.
 %
-%  'constraintTolerance' - A scalar. This value is used by the function
-%       pupilProjection_inv. The inverse projection from an ellipse on the
-%       image plane to eye params (azimuth, elevation) imposes a constraint
-%       on how well the solution must match the shape and area of the
-%       ellipse. This constraint is expressed as a proportion of error,
-%       relative to either the largest possible area in ellipse shape or an
-%       error in area equal to the area of the ellipse itself (i.e.,
-%       unity). If the constraint is made too stringent, then in an effort
-%       to perfectly match the shape of the ellipse, error will increase in
-%       matching the position of the ellipse center. It should be noted
-%       that even in a noise-free simulation, it is not possible to
-%       perfectly match ellipse shape and area while matching ellipse
-%       center position, as the shape of the projection of the pupil upon
-%       the image plane deviates from perfectly elliptical. Further, in
-%       empirical data, the entrance pupil of the eye can be irregular and
-%       depart from ellipitical. We find that a value of ~0.05 provides an
-%       acceptable compromise in empirical data.
-%
 %  'meta' - A structure that contains information regarding the creation
 %       and modification of the sceneGeometry.
 %
@@ -193,7 +175,6 @@ p.addParameter('cameraTorsion',0,@isnumeric);
 p.addParameter('screenDistance',1065,@isnumeric);
 p.addParameter('screenDimensions',[697.347,392.257],@isnumeric);
 p.addParameter('screenResolutions',[1920,1080],@isnumeric);
-p.addParameter('constraintTolerance',0.05,@isscalar);
 p.addParameter('surfaceSetName',{'retinaToStop','stopToCamera','retinaToCamera','cameraToRetina'},@ischar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
@@ -238,11 +219,6 @@ for ii = 1:length(p.Results.surfaceSetName)
     sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceLabels = surfaceLabels;
     sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceColors = surfaceColors;
 end
-
-
-%% constraintTolerance
-sceneGeometry.constraintTolerance = p.Results.constraintTolerance;
-
 
 %% meta
 sceneGeometry.meta.createSceneGeometry = p.Results;
