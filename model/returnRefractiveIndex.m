@@ -104,7 +104,7 @@ switch material
         c = [1.362994, 6.009687e3, -6.760760e8, 5.908450e13];
     case 'hydrogel'
         % (C6H11NO)n (Poly(N-isopropylacrylamide), PNIPAM)
-        c = [1.5030, 0, 0, 0]
+        c = [1.5030, 0, 0, 0];
     case 'cr-39'
         % Traynor, Nathan BJ, et al. "CR-39 (PADC) Reflection and
         % Transmission of Light in the Ultraviolet-Near-Infrared (UV-NIR)
