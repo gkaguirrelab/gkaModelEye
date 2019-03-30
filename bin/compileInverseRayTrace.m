@@ -128,12 +128,8 @@ end
 %% Define argument variables
 % This is so the compiler can deduce variable types
 
-% Create a sceneGeometry. I silence the warning that there is not a
-% compiled inverseRayTrace available, as we know this is the case.
-warnState = warning();
-warning('Off','createSceneGeometry:noCompiledInverseRayTrace');
+% Create a sceneGeometry.
 sceneGeometry = createSceneGeometry();
-warning(warnState);
 % Define the form of the dynamicArgs (the eyePoint and the eyePose)
 dynamicArgs = {[0,0,0], [0,0,0,0]};
 % Define the form of the staticArgs (which are sceneGeometry components)

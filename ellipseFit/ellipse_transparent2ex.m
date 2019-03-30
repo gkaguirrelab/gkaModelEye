@@ -45,7 +45,7 @@ end % function
 
 function p = ellipse_explicit(c1,c2,area,e,theta)
 % Cast ellipse defined in transparent form to explicit parameter vector form.
-
+p=zeros(5,1);
 p(1)=c1;
 p(2)=c2;
 p(3)= sqrt(area / (pi * sqrt(1-e^2)));

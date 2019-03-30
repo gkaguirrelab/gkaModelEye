@@ -1,4 +1,4 @@
-function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
+function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin) %#codegen
 % Obtain the parameters of the entrance pupil ellipse on the image plane
 %
 % Syntax:
@@ -41,7 +41,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 % Optional key/value pairs:
 %  'fullEyeModelFlag'     - Logical. Determines if the full eye model will
 %                           be created.
-%  'nStopPerimPoints'     - Scalar. The number of points that are 
+%  'nStopPerimPoints'     - Scalar. The number of points that are
 %                           distributed around the stop elliopse. A minimum
 %                           of 5 is required to uniquely specify the image
 %                           ellipse, and 6 to obtain a meaningful
@@ -52,12 +52,12 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 %                           a ray trace error above this threshold will not
 %                           be used in the calculation of the pupil
 %                           ellipse.
-%  'nIrisPerimPoints'     - Scalar. The number of points that are 
+%  'nIrisPerimPoints'     - Scalar. The number of points that are
 %                           distributed around the iris circle.
-%  'corneaMeshDensity'    - Scalar. The number of geodetic lines used to 
+%  'corneaMeshDensity'    - Scalar. The number of geodetic lines used to
 %                           render the corneal ellipsoid. About 20 makes a
 %                           nice image.
-%  'retinaMeshDensity'    - Scalar. The number of geodetic lines used to 
+%  'retinaMeshDensity'    - Scalar. The number of geodetic lines used to
 %                           render the retina ellipsoid. About 24 makes a
 %                           nice image.
 %  'refractionHandle'     - Function handle. By default, this is set to the
@@ -123,7 +123,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     pupilFitError = [];
     for aa = 1:length(aziVals)
         eyePose = [aziVals(aa) -3 0 3];
-        [pupilEllipseOnImagePlane, ~, ~, ~, ~, ~, ~, pupilFitError(aa)] = pupilProjection_fwd(eyePose, sceneGeometry,'nStopPerimPoints',6);
+        [pupilEllipseOnImagePlane, ~, ~, ~, ~, ~, ~, pupilFitError(aa)] = pupilProjection_fwd(eyePose, sceneGeometry,'nStopPerimPoints',16);
     end
     figure
     plot(aziVals,pupilFitError,'.r');
@@ -150,28 +150,45 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     fprintf('\tUsing MATLAB ray tracing: %4.2f msecs.\n',msecPerModel);
 %}
 
-
+coderTestFlag = false;
 
 %% input parser
-p = inputParser; p.KeepUnmatched = true;
-
-% Required
-p.addRequired('eyePose',@(x)(isnumeric(x) && all(size(x)==[1 4])));
-p.addRequired('sceneGeometry',@isstruct);
-
-% Optional
-p.addParameter('fullEyeModelFlag',false,@islogical);
-p.addParameter('nStopPerimPoints',6,@(x)(isscalar(x) && x>4));
-p.addParameter('stopPerimPhase',0,@isscalar);
-p.addParameter('rayTraceErrorThreshold',0.01,@isscalar);
-p.addParameter('nIrisPerimPoints',5,@isscalar);
-p.addParameter('corneaMeshDensity',23,@isscalar);
-p.addParameter('retinaMeshDensity',30,@isscalar);
-p.addParameter('refractionHandle',@inverseRayTraceMex,@(x)(isa(x,'function_handle')));
-
-% parse
-p.parse(eyePose, sceneGeometry, varargin{:})
-
+% Use the input parser if we are not generating code.
+if isempty(coder.target) && ~coderTestFlag
+    p = inputParser; p.KeepUnmatched = true;
+    
+    % Required
+    p.addRequired('eyePose',@(x)(isnumeric(x) && all(size(x)==[1 4])));
+    p.addRequired('sceneGeometry',@isstruct);
+    
+    % Optional
+    p.addParameter('fullEyeModelFlag',false,@islogical);
+    p.addParameter('nStopPerimPoints',6,@(x)(isscalar(x) && x>4));
+    p.addParameter('stopPerimPhase',0,@isscalar);
+    p.addParameter('rayTraceErrorThreshold',0.01,@isscalar);
+    p.addParameter('nIrisPerimPoints',5,@isscalar);
+    p.addParameter('corneaMeshDensity',23,@isscalar);
+    p.addParameter('retinaMeshDensity',30,@isscalar);
+    p.addParameter('refractionHandle',@inverseRayTraceMex,@(x)(isa(x,'function_handle')));
+    
+    % parse
+    p.parse(eyePose, sceneGeometry, varargin{:})
+else
+    % We are generating code. Skip the unsupported inputParser, and set the
+    % parameters to defaults.
+    p = struct();
+    p.Results.fullEyeModelFlag=false;
+    p.Results.nStopPerimPoints=6;
+    p.Results.stopPerimPhase=0;
+    p.Results.rayTraceErrorThreshold=0.01;
+    p.Results.nIrisPerimPoints=5;
+    p.Results.corneaMeshDensity=23;
+    p.Results.retinaMeshDensity=30;
+    p.Results.refractionHandle=@inverseRayTrace;
+    
+    % The compiled code does not return pointLabels. Set this to empty.
+    pointLabels = {};
+end
 
 %% Prepare variables
 % Separate the eyePoses into individual variables
@@ -211,6 +228,8 @@ nStopPerimPoints = p.Results.nStopPerimPoints;
 %% Define points around the elliptical aperture stop
 
 % The eccentricity of the pupil aperture is given by a stored function
+coder.extrinsic('str2func');
+coder.extrinsic('stopEccenFunc');
 stopEccenFunc = str2func(sceneGeometry.eye.stop.eccenFcnString);
 
 % Determine the parameters of the ellipse that defines the aperture stop in
@@ -218,11 +237,13 @@ stopEccenFunc = str2func(sceneGeometry.eye.stop.eccenFcnString);
 % eccentricity. The theta of the stop switches from horizontal to vertical
 % when the stop passes from a negative to positive eccentricity, passing
 % through circular at an eccentricity of 0.
+stopEccen = 0;
+stopEccen = stopEccenFunc(stopRadius);
 stopEllipse = [sceneGeometry.eye.stop.center(2) , ...
     sceneGeometry.eye.stop.center(3), ...
     pi*stopRadius^2, ...
-    abs(stopEccenFunc(stopRadius)),...
-    sceneGeometry.eye.stop.thetas(1+(stopEccenFunc(stopRadius)>0))];
+    abs(stopEccen),...
+    sceneGeometry.eye.stop.thetas(1+(stopEccen>0))];
 
 % Obtain the points on the perimeter of the ellipse
 [p2p, p3p] = ellipsePerimeterPoints( stopEllipse, nStopPerimPoints, p.Results.stopPerimPhase );
@@ -230,138 +251,149 @@ stopEllipse = [sceneGeometry.eye.stop.center(2) , ...
 % Place these points into the eyeWorld coordinates. Optionally create
 % separate front and back stop perimeters to model iris thickness.
 if sceneGeometry.eye.iris.thickness~=0
+    stopPoints = zeros(nStopPerimPoints*2,3);
     stopPoints(1:nStopPerimPoints*2,3) = [p3p; p3p];
     stopPoints(1:nStopPerimPoints*2,2) = [p2p; p2p];
     stopPoints(1:nStopPerimPoints,1) = sceneGeometry.eye.stop.center(1)+sceneGeometry.eye.iris.thickness/2;
     stopPoints(nStopPerimPoints+1:nStopPerimPoints*2,1) = sceneGeometry.eye.stop.center(1)-sceneGeometry.eye.iris.thickness/2;
-
+    
     % Create labels for the stopPerimeter points
-    tmpLabelsFront = cell(nStopPerimPoints, 1);
-    tmpLabelsFront(:) = {'stopPerimeterFront'};
-    tmpLabelsBack = cell(nStopPerimPoints, 1);
-    tmpLabelsBack(:) = {'stopPerimeterBack'};
-    pointLabels = [tmpLabelsFront; tmpLabelsBack];
+    if isempty(coder.target) && ~coderTestFlag
+        tmpLabelsFront = repmat({'stopPerimeterFront'},nStopPerimPoints, 1);
+        tmpLabelsBack = repmat({'stopPerimeterBack'},nStopPerimPoints, 1);
+        pointLabels = [tmpLabelsFront; tmpLabelsBack];
+    end
 else
+    stopPoints = zeros(nStopPerimPoints,3);
     stopPoints(1:nStopPerimPoints,3) = p3p;
     stopPoints(1:nStopPerimPoints,2) = p2p;
     stopPoints(1:nStopPerimPoints,1) = sceneGeometry.eye.stop.center(1);
-
+    
     % Create labels for the stopPerimeter points
-    tmpLabels = cell(nStopPerimPoints, 1);
-    tmpLabels(:) = {'stopPerimeter'};
-    pointLabels = tmpLabels;
-end    
+    if isempty(coder.target) && ~coderTestFlag
+        tmpLabels = repmat({'stopPerimeter'},nStopPerimPoints, 1);
+        pointLabels = tmpLabels;
+    end
+end
 eyePoints = stopPoints;
 
+% Let codegen know that eyePoints will grow
+coder.varsize('eyePoints');
 
 %% Define full eye model
 % If the fullEyeModel flag is set, then we will create a model of the
 % posterior and anterior segments of the eye.
-if p.Results.fullEyeModelFlag
-    
-    % Add points for the stop center, iris center, rotation centers,
-    % origin of the optical axis, rear nodal point, and the fovea
-    eyePoints = [eyePoints; sceneGeometry.eye.stop.center];
-    pointLabels = [pointLabels; 'stopCenter'];
-    eyePoints = [eyePoints; sceneGeometry.eye.iris.center];
-    pointLabels = [pointLabels; 'irisActualCenter'];
-    eyePoints = [eyePoints; sceneGeometry.eye.rotationCenters.azi];
-    pointLabels = [pointLabels; 'aziRotationCenter'];
-    eyePoints = [eyePoints; sceneGeometry.eye.rotationCenters.ele];
-    pointLabels = [pointLabels; 'eleRotationCenter'];
-    eyePoints = [eyePoints; 0 0 0];
-    pointLabels = [pointLabels; 'vertex'];
-    if isfield(sceneGeometry.eye,'landmarks')
-        if isfield(sceneGeometry.eye.landmarks,'fovea')
-            eyePoints = [eyePoints; sceneGeometry.eye.landmarks.fovea.coords];
-            pointLabels = [pointLabels; 'fovea'];
-        end
-        if isfield(sceneGeometry.eye.landmarks,'opticDisc')
-            eyePoints = [eyePoints; sceneGeometry.eye.landmarks.opticDisc.coords];
-            pointLabels = [pointLabels; 'opticDisc'];
-        end
-    end
-    
-    % Define points around the perimeter of the iris
-    nIrisPerimPoints = p.Results.nIrisPerimPoints;
-    perimeterPointAngles = 0:2*pi/nIrisPerimPoints:2*pi-(2*pi/nIrisPerimPoints);
-    irisPoints(1:nIrisPerimPoints,3) = ...
-        sin(perimeterPointAngles)*sceneGeometry.eye.iris.radius + sceneGeometry.eye.iris.center(3);
-    irisPoints(1:nIrisPerimPoints,2) = ...
-        cos(perimeterPointAngles)*sceneGeometry.eye.iris.radius + sceneGeometry.eye.iris.center(2);
-    irisPoints(1:nIrisPerimPoints,1) = ...
-        0 + sceneGeometry.eye.iris.center(1);
-    
-    % Add the points and labels
-    eyePoints = [eyePoints; irisPoints];
-    tmpLabels = cell(size(irisPoints,1), 1);
-    tmpLabels(:) = {'irisActualPerimeter'};
-    pointLabels = [pointLabels; tmpLabels];
-    
-    % Create the anterior chamber vertices
-    corneaPoints = quadric.surfaceGrid(...
-        sceneGeometry.eye.cornea.front.S,...
-        sceneGeometry.eye.cornea.front.boundingBox,...
-        p.Results.corneaMeshDensity, ...
-        'parametricPolar');
-
-    % Identify the index of the corneal apex
-    [~,apexIdx]=max(corneaPoints(:,1));
-    
-    % Save the corneal apex coordinates
-    cornealApex = corneaPoints(apexIdx,:);
+if isempty(coder.target) && ~coderTestFlag
+    if p.Results.fullEyeModelFlag
         
-    % Add the points and labels
-    eyePoints = [eyePoints; corneaPoints];
-    tmpLabels = cell(size(corneaPoints,1), 1);
-    tmpLabels(:) = {'cornea'};
-    pointLabels = [pointLabels; tmpLabels];
-    
-    % Add an entry for the corneal apex
-    eyePoints = [eyePoints; cornealApex];
-    pointLabels = [pointLabels; 'cornealApex'];
-    
-    % Create the retina vertices
-    retinaPoints = quadric.surfaceGrid(...
-        sceneGeometry.eye.retina.S,...
-        sceneGeometry.eye.retina.boundingBox,...
-        p.Results.retinaMeshDensity, ...
-        'ellipsoidalPolar');
-    
-    % Retain those points that are posterior to the iris plane, and have a
-    % distance from the optical axis in the p2xp3 plane of greater than the
-    % iris radius
-    retainIdx = logical(...
-        (retinaPoints(:,1) < sceneGeometry.eye.iris.center(1)) .* ...
-        sqrt(retinaPoints(:,2).^2+retinaPoints(:,3).^2) > sceneGeometry.eye.iris.radius );
-    if all(~retainIdx)
-        error('pupilProjection_fwd:irisCenterPosition','The iris center is behind the center of the retina');
+        % Add points for the stop center, iris center, rotation centers,
+        % origin of the optical axis, rear nodal point, and the fovea
+        eyePoints = [eyePoints; sceneGeometry.eye.stop.center];
+        pointLabels = [pointLabels; 'stopCenter'];
+        eyePoints = [eyePoints; sceneGeometry.eye.iris.center];
+        pointLabels = [pointLabels; 'irisActualCenter'];
+        eyePoints = [eyePoints; sceneGeometry.eye.rotationCenters.azi];
+        pointLabels = [pointLabels; 'aziRotationCenter'];
+        eyePoints = [eyePoints; sceneGeometry.eye.rotationCenters.ele];
+        pointLabels = [pointLabels; 'eleRotationCenter'];
+        eyePoints = [eyePoints; 0 0 0];
+        pointLabels = [pointLabels; 'vertex'];
+        if isfield(sceneGeometry.eye,'landmarks')
+            if isfield(sceneGeometry.eye.landmarks,'fovea')
+                eyePoints = [eyePoints; sceneGeometry.eye.landmarks.fovea.coords];
+                pointLabels = [pointLabels; 'fovea'];
+            end
+            if isfield(sceneGeometry.eye.landmarks,'opticDisc')
+                eyePoints = [eyePoints; sceneGeometry.eye.landmarks.opticDisc.coords];
+                pointLabels = [pointLabels; 'opticDisc'];
+            end
+        end
+        
+        % Define points around the perimeter of the iris
+        nIrisPerimPoints = p.Results.nIrisPerimPoints;
+        perimeterPointAngles = 0:2*pi/nIrisPerimPoints:2*pi-(2*pi/nIrisPerimPoints);
+        irisPoints = zeros(nIrisPerimPoints,3);
+        irisPoints(1:nIrisPerimPoints,3) = ...
+            sin(perimeterPointAngles)*sceneGeometry.eye.iris.radius + sceneGeometry.eye.iris.center(3);
+        irisPoints(1:nIrisPerimPoints,2) = ...
+            cos(perimeterPointAngles)*sceneGeometry.eye.iris.radius + sceneGeometry.eye.iris.center(2);
+        irisPoints(1:nIrisPerimPoints,1) = ...
+            0 + sceneGeometry.eye.iris.center(1);
+        
+        % Add the points and labels
+        eyePoints = [eyePoints; irisPoints];
+        tmpLabels = cell(size(irisPoints,1), 1);
+        tmpLabels(:) = {'irisActualPerimeter'};
+        pointLabels = [pointLabels; tmpLabels];
+        
+        % Create the anterior chamber vertices
+        corneaPoints = quadric.surfaceGrid(...
+            sceneGeometry.eye.cornea.front.S,...
+            sceneGeometry.eye.cornea.front.boundingBox,...
+            p.Results.corneaMeshDensity, ...
+            'parametricPolar');
+        
+        % Identify the index of the corneal apex
+        [~,apexIdx]=max(corneaPoints(:,1));
+        
+        % Save the corneal apex coordinates
+        cornealApex = corneaPoints(apexIdx,:);
+        
+        % Add the points and labels
+        eyePoints = [eyePoints; corneaPoints];
+        tmpLabels = cell(size(corneaPoints,1), 1);
+        tmpLabels(:) = {'cornea'};
+        pointLabels = [pointLabels; tmpLabels];
+        
+        % Add an entry for the corneal apex
+        eyePoints = [eyePoints; cornealApex];
+        pointLabels = [pointLabels; 'cornealApex'];
+        
+        % Create the retina vertices
+        retinaPoints = quadric.surfaceGrid(...
+            sceneGeometry.eye.retina.S,...
+            sceneGeometry.eye.retina.boundingBox,...
+            p.Results.retinaMeshDensity, ...
+            'ellipsoidalPolar');
+        
+        % Retain those points that are posterior to the iris plane, and have a
+        % distance from the optical axis in the p2xp3 plane of greater than the
+        % iris radius
+        retainIdx = logical(...
+            (retinaPoints(:,1) < sceneGeometry.eye.iris.center(1)) .* ...
+            sqrt(retinaPoints(:,2).^2+retinaPoints(:,3).^2) > sceneGeometry.eye.iris.radius );
+        if all(~retainIdx)
+            error('pupilProjection_fwd:irisCenterPosition','The iris center is behind the center of the retina');
+        end
+        retinaPoints = retinaPoints(retainIdx,:);
+        
+        % Add the points and labels
+        eyePoints = [eyePoints; retinaPoints];
+        tmpLabels = cell(size(retinaPoints,1), 1);
+        tmpLabels(:) = {'retina'};
+        pointLabels = [pointLabels; tmpLabels];
+        
     end
-    retinaPoints = retinaPoints(retainIdx,:);
-    
-    % Add the points and labels
-    eyePoints = [eyePoints; retinaPoints];
-    tmpLabels = cell(size(retinaPoints,1), 1);
-    tmpLabels(:) = {'retina'};
-    pointLabels = [pointLabels; tmpLabels];
-    
 end
-
 
 %% Refract the eyeWorld points
 % This steps accounts for the effect of corneal and corrective lens
 % refraction upon the appearance of points from the eye.
 
 % Define a variable to hold the calculated ray tracing errors
-targetIntersectError = nan(length(pointLabels),1);
+targetIntersectError = nan(size(eyePoints,1),1);
 
 % Identify the eyePoints subject to refraction by the cornea
-refractPointsIdx = find(...
-    strcmp(pointLabels,'stopPerimeter')+...
-    strcmp(pointLabels,'stopPerimeterFront')+...
-    strcmp(pointLabels,'stopPerimeterBack')+...
-    strcmp(pointLabels,'irisActualPerimeter')+...
-    strcmp(pointLabels,'irisActualCenter'));
+if isempty(coder.target) && ~coderTestFlag
+    refractPointsIdx = find(...
+        strcmp(pointLabels,'stopPerimeter')+...
+        strcmp(pointLabels,'stopPerimeterFront')+...
+        strcmp(pointLabels,'stopPerimeterBack')+...
+        strcmp(pointLabels,'irisActualPerimeter')+...
+        strcmp(pointLabels,'irisActualCenter'));
+else
+    refractPointsIdx = 1:size(eyePoints,1);
+end
 
 % Check if we have a refraction field and it is not empty
 refractFlag = false;
@@ -370,12 +402,23 @@ if isfield(sceneGeometry,'refraction')
         refractFlag = true;
     end
 end
-if refractFlag    
+if refractFlag
     % Assemble the static args for the inverseRayTrace
     args = {sceneGeometry.cameraPosition.translation, ...
         sceneGeometry.eye.rotationCenters, ...
-        sceneGeometry.refraction.stopToCamera.opticalSystem};    
-
+        sceneGeometry.refraction.stopToCamera.opticalSystem};
+    
+    % Get the number of points in eyePoints prior to refraction
+    nPointsPrior = size(eyePoints,1);
+    
+    % Pre-allocate the variables to hold the results
+    tmp = eyePoints;
+    eyePoints = nan(nPointsPrior+length(refractPointsIdx),3);
+    eyePoints(1:nPointsPrior,:) = tmp;
+    tmp = targetIntersectError;
+    targetIntersectError = nan(nPointsPrior+length(refractPointsIdx),1);
+    targetIntersectError(1:nPointsPrior,:) = tmp;
+    
     % Loop through the eyePoints that are to be refracted
     for ii=1:length(refractPointsIdx)
         
@@ -388,15 +431,16 @@ if refractFlag
         eyePoint = virtualImageRay(1,:);
         
         % Add the refracted point to the set
-        eyePoints = [eyePoints; eyePoint];
-        targetIntersectError = [targetIntersectError; intersectError];
+        eyePoints(nPointsPrior+ii,:) = eyePoint;
+        targetIntersectError(nPointsPrior+ii) = intersectError;
         
         % Create a label for the virtual image point
-        newPointLabel = pointLabels{refractPointsIdx(ii)};
-        newPointLabel = strrep(newPointLabel,'stop','pupil');
-        newPointLabel = strrep(newPointLabel,'Actual','');
-        pointLabels = [pointLabels; {newPointLabel}];
-        
+        if isempty(coder.target) && ~coderTestFlag
+            newPointLabel = pointLabels{refractPointsIdx(ii)};
+            newPointLabel = strrep(newPointLabel,'stop','pupil');
+            newPointLabel = strrep(newPointLabel,'Actual','');
+            pointLabels = [pointLabels; {newPointLabel}];
+        end
     end
 else
     % If there is no refraction, then the pupil is simply the stop. Copy
@@ -409,13 +453,15 @@ else
         % Add the refracted point to the set
         eyePoints = [eyePoints; eyePoint];
         targetIntersectError = [targetIntersectError; 0];
-
+        
         % Create a label for the virtual image point
-        newPointLabel = pointLabels{refractPointsIdx(ii)};
-        newPointLabel = strrep(newPointLabel,'stop','pupil');
-        newPointLabel = strrep(newPointLabel,'Actual','');
-        pointLabels = [pointLabels; {newPointLabel}];        
-    end    
+        if isempty(coder.target) && ~coderTestFlag
+            newPointLabel = pointLabels{refractPointsIdx(ii)};
+            newPointLabel = strrep(newPointLabel,'stop','pupil');
+            newPointLabel = strrep(newPointLabel,'Actual','');
+            pointLabels = [pointLabels; {newPointLabel}];
+        end
+    end
 end
 
 
@@ -441,21 +487,30 @@ headPoints = eyePoints;
 % repeat. Omit the eye rotation centers from this process. We must perform
 % the rotation independently for each Euler angle to accomodate having
 % rotation centers that differ by Euler angle.
-rotatePointsIdx = ~contains(pointLabels,{'Rotation'});
+if isempty(coder.target) && ~coderTestFlag
+    rotatePointsIdx = ~contains(pointLabels,{'Rotation'});
+else
+    rotatePointsIdx = true(size(headPoints,1),1);
+end
 for rr=1:3
-    headPoints(rotatePointsIdx,:) = ...
-        (R.(rotOrder{rr})*(headPoints(rotatePointsIdx,:)-sceneGeometry.eye.rotationCenters.(rotOrder{rr}))')'+sceneGeometry.eye.rotationCenters.(rotOrder{rr});
+    % bsxfun used to avoid implicit expansion, which angers codegen
+    headPoints(rotatePointsIdx,:) = bsxfun(@plus,...
+        (R.(rotOrder{rr})*bsxfun(@minus,...
+        headPoints(rotatePointsIdx,:),...
+        sceneGeometry.eye.rotationCenters.(rotOrder{rr}))')',...
+        sceneGeometry.eye.rotationCenters.(rotOrder{rr}));
 end
 
 % If we are projecting a full eye model, label as hidden those posterior
 % segment points that are posterior to the most posterior of the centers of
 % rotation of the eye, and thus would not be visible to the camera.
-if p.Results.fullEyeModelFlag
-    seenIdx = strcmp(pointLabels,'retina') .* (headPoints(:,1) >= min([sceneGeometry.eye.rotationCenters.azi(1) sceneGeometry.eye.rotationCenters.ele(1)]));
-    seenIdx = logical(seenIdx + ~strcmp(pointLabels,'retina'));
-    pointLabels(~seenIdx) = strcat(pointLabels(~seenIdx),'_hidden');
+if isempty(coder.target) && ~coderTestFlag
+    if p.Results.fullEyeModelFlag
+        seenIdx = strcmp(pointLabels,'retina') .* (headPoints(:,1) >= min([sceneGeometry.eye.rotationCenters.azi(1) sceneGeometry.eye.rotationCenters.ele(1)]));
+        seenIdx = logical(seenIdx + ~strcmp(pointLabels,'retina'));
+        pointLabels(~seenIdx) = strcat(pointLabels(~seenIdx),'_hidden');
+    end
 end
-
 
 %% Switch axes to world coordinates.
 % This coordinate frame is in mm units and has the dimensions (X,Y,Z).
@@ -467,10 +522,10 @@ end
 %    |    .-.
 % -Z |   |   | <- Head
 %    +   `^u^'
-% +Z |      
-%    |      
+% +Z |
+%    |
 %    |      W <- Camera    (As seen from above)
-%    V     
+%    V
 %
 %     <-----+----->
 %        -X   +X
@@ -514,7 +569,7 @@ end
 % for the position of the camera with respect to the world coordinate
 % system. Only camera torsion is supported.
 cameraRotationMatrix = ...
-     [cosd(sceneGeometry.cameraPosition.torsion)	-sind(sceneGeometry.cameraPosition.torsion)	0; ...
+    [cosd(sceneGeometry.cameraPosition.torsion)	-sind(sceneGeometry.cameraPosition.torsion)	0; ...
     sind(sceneGeometry.cameraPosition.torsion)     cosd(sceneGeometry.cameraPosition.torsion)     0; ...
     0                                   0                                       1];
 
@@ -558,8 +613,12 @@ imagePointsPreDistortion(:,2) = ...
 % principal point), and the coordinates are in world units. To apply this
 % distortion to our image coordinate points, we subtract the optical
 % center, and then divide by fx and fy from the intrinsic matrix.
-imagePointsNormalized = (imagePointsPreDistortion - [sceneGeometry.cameraIntrinsic.matrix(1,3) sceneGeometry.cameraIntrinsic.matrix(2,3)]) ./ ...
-    [sceneGeometry.cameraIntrinsic.matrix(1,1) sceneGeometry.cameraIntrinsic.matrix(2,2)];
+
+% Implement as bsxfun as codegen cannpot handle implicit expansion
+
+imagePointsNormalized = bsxfun(@rdivide, ...
+    bsxfun(@minus,imagePointsPreDistortion,[sceneGeometry.cameraIntrinsic.matrix(1,3) sceneGeometry.cameraIntrinsic.matrix(2,3)]) , ...
+    [sceneGeometry.cameraIntrinsic.matrix(1,1) sceneGeometry.cameraIntrinsic.matrix(2,2)]);
 
 % Distortion is proportional to distance from the center of projection on
 % the camera sensor
@@ -569,33 +628,47 @@ distortionVector =   1 + ...
     sceneGeometry.cameraIntrinsic.radialDistortion(1).*radialPosition.^2 + ...
     sceneGeometry.cameraIntrinsic.radialDistortion(2).*radialPosition.^4;
 
+imagePointsNormalizedDistorted = imagePointsNormalized.*0;
 imagePointsNormalizedDistorted(:,1) = imagePointsNormalized(:,1).*distortionVector;
 imagePointsNormalizedDistorted(:,2) = imagePointsNormalized(:,2).*distortionVector;
 
 % Place the distorted points back into the imagePoints vector
-imagePoints = (imagePointsNormalizedDistorted .* [sceneGeometry.cameraIntrinsic.matrix(1,1) sceneGeometry.cameraIntrinsic.matrix(2,2)]) +...
-    [sceneGeometry.cameraIntrinsic.matrix(1,3) sceneGeometry.cameraIntrinsic.matrix(2,3)];
+imagePoints = bsxfun(@plus, ...
+    bsxfun(@times,imagePointsNormalizedDistorted , [sceneGeometry.cameraIntrinsic.matrix(1,1) sceneGeometry.cameraIntrinsic.matrix(2,2)]) ,...
+    [sceneGeometry.cameraIntrinsic.matrix(1,3) sceneGeometry.cameraIntrinsic.matrix(2,3)]);
 
 
 %% Obtain the pupil ellipse
 % Proceed with fitting if we have a non-zero stop radius
 if eyePose(4) > 0
     if sceneGeometry.eye.iris.thickness==0
-        % The simple case of a zero-thickness aperture stop
-        pupilPerimIdx = strcmp(pointLabels,'pupilPerimeter');
-        if ~all(isnan(targetIntersectError(pupilPerimIdx)))
-            % Remove those pupil perimeter points that have had poor ray
-            % tracing
-            pupilPerimIdx = logical(pupilPerimIdx.*(targetIntersectError<p.Results.rayTraceErrorThreshold));
+        % The simple case of a zero-thickness aperture stop. Identify the
+        % perimeter points.
+        if isempty(coder.target) && ~coderTestFlag
+            pupilPerimIdx = logical(strcmp(pointLabels,'pupilPerimeter'));
+        else
+            pupilPerimIdx = [false(nStopPerimPoints,1); true(nStopPerimPoints,1)];
         end
+        % Remove those pupil perimeter points that have had poor ray
+        % tracing
+        pupilPerimIdx = and(pupilPerimIdx,targetIntersectError<p.Results.rayTraceErrorThreshold);
+        % Fit the ellipse
         [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
     else
         % The more complicated case of a non-zero thickness aperture stop.
-        % First obtain the ellipse fit to the front and back perimeters.
-        pupilPerimIdxFront = strcmp(pointLabels,'pupilPerimeterFront');
+        % Identify the perimeter points for the front and back virtual
+        % image of the aperture stop.
+        if isempty(coder.target) && ~coderTestFlag
+            pupilPerimIdxFront = logical(strcmp(pointLabels,'pupilPerimeterFront'));
+            pupilPerimIdxBack = logical(strcmp(pointLabels,'pupilPerimeterBack'));
+        else
+            pupilPerimIdxFront = [false(nStopPerimPoints*2,1); true(nStopPerimPoints,1); false(nStopPerimPoints,1)];
+            pupilPerimIdxBack = [false(nStopPerimPoints*3,1); true(nStopPerimPoints,1)];
+        end
+        % Obtain the ellipse fit to the front and back
         frontEllipse = pupilEllipseFit(imagePoints(pupilPerimIdxFront,:));
-        pupilPerimIdxBack = strcmp(pointLabels,'pupilPerimeterBack');
         backEllipse = pupilEllipseFit(imagePoints(pupilPerimIdxBack,:));
+        % If either ellipse fit yielded nans, then the final ellipse is nan
         if any(isnan(frontEllipse)) || any(isnan(backEllipse))
             % If we are unable to fit an ellipse to the front or back pupil
             % perimeter, then exit with nans
@@ -604,24 +677,29 @@ if eyePose(4) > 0
         else
             % For each position on the perimeter of the pupil, determine
             % which point (front or back) is farther from the center of the
-            % ellipse and then mark this point as hidden.
-            centerDistance = sqrt(sum(((imagePoints(logical(pupilPerimIdxFront+pupilPerimIdxBack),:)-mean([frontEllipse(1:2);backEllipse(1:2)])).^2),2));
+            % ellipse. These will be the hidden points
+            centerDistance = sqrt(sum(((...
+                bsxfun(@minus,...
+                mean([frontEllipse(1:2);backEllipse(1:2)]),...
+                imagePoints(logical(pupilPerimIdxFront+pupilPerimIdxBack),:))...
+                ).^2),2));
             hideBack = (centerDistance(1:nStopPerimPoints)-centerDistance(nStopPerimPoints+1:nStopPerimPoints*2))<0;
-            idx = pupilPerimIdxBack;
-            idx(pupilPerimIdxBack)=hideBack;
-            pointLabels(idx) = strcat(pointLabels(idx),'_hidden');
-            idx = pupilPerimIdxFront;
-            idx(pupilPerimIdxFront)=~hideBack;
-            pointLabels(idx) = strcat(pointLabels(idx),'_hidden');
-            % Fit an ellipse to the non-hidden pupil perimeter points
-            pupilPerimIdx = logical(strcmp(pointLabels,{'pupilPerimeterFront'}) + ...
-                strcmp(pointLabels,{'pupilPerimeterBack'}));
-            if ~all(isnan(targetIntersectError(pupilPerimIdx)))
-                % Remove those pupil perimeter points that have had poor
-                % ray tracing
-                pupilPerimIdx = logical(pupilPerimIdx.*(targetIntersectError<p.Results.rayTraceErrorThreshold));
-            end
+            % Identify the set of non-hidden pupil perimeter points
+            backStopVisibleIdx = pupilPerimIdxBack;
+            backStopVisibleIdx(pupilPerimIdxBack)=~hideBack;
+            frontStopVisibleIdx = pupilPerimIdxFront;
+            frontStopVisibleIdx(pupilPerimIdxFront)=hideBack;
+            pupilPerimIdx = or(backStopVisibleIdx,frontStopVisibleIdx);
+            % Remove those pupil perimeter points that have had poor ray
+            % tracing
+            pupilPerimIdx = and(pupilPerimIdx,targetIntersectError<p.Results.rayTraceErrorThreshold);
+            % Fit the ellipse
             [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
+            % Update the pointLabels to indicate the hidden points
+            if isempty(coder.target) && ~coderTestFlag
+                pointLabels(and(pupilPerimIdxBack,~backStopVisibleIdx)) = strcat(pointLabels(and(pupilPerimIdxBack,~backStopVisibleIdx)),'_hidden');
+                pointLabels(and(pupilPerimIdxFront,~frontStopVisibleIdx)) = strcat(pointLabels(and(pupilPerimIdxFront,~frontStopVisibleIdx)),'_hidden');
+            end
         end
     end
 else
