@@ -24,6 +24,7 @@ function [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints
 %                           perimeter points to the pupil ellipse.
 %
 
+
 % Make the codegen happy
 coder.extrinsic('warning');
 
