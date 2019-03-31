@@ -48,10 +48,9 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 %                           pupilFitError.
 %  'stopPerimPhase'       - Scalar. The phase (in radians) of the position
 %                           of the stop perimeter points.
-%  'rayTraceErrorThreshold' - Scalar. Stop perimeter points that have
-%                           a ray trace error above this threshold will not
-%                           be used in the calculation of the pupil
-%                           ellipse.
+%  'rayTraceErrorThreshold' - Scalar. Virtual image points that have
+%                           a ray trace error above this threshold will be
+%                           discarded.
 %  'nIrisPerimPoints'     - Scalar. The number of points that are
 %                           distributed around the iris circle.
 %  'corneaMeshDensity'    - Scalar. The number of geodetic lines used to
@@ -113,7 +112,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     % default sceneGeometry
     pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
     % Test against cached result
-    pupilEllipseOnImagePlaneCached = [ 0.027832035547353   0.022396191166119   1.552633193516362   0.000023070590353   0.000192063491334 ].*1e4;
+    pupilEllipseOnImagePlaneCached = [ 0.027832035539061   0.022396191155864   1.552633202566208   0.000023070588443   0.000192063486465 ].*1e4;
     assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-4)
 %}
 %{
@@ -442,6 +441,15 @@ if refractFlag
             pointLabels = [pointLabels; {newPointLabel}];
         end
     end
+
+    % Remove those points with above-threshold ray-trace error
+    idxToRetain = or(targetIntersectError < p.Results.rayTraceErrorThreshold,isnan(targetIntersectError));
+    eyePoints = eyePoints(idxToRetain,:);
+    targetIntersectError = targetIntersectError(idxToRetain);
+    if isempty(coder.target) && ~coderTestFlag
+        pointLabels = pointLabels(idxToRetain);
+    end
+
 else
     % If there is no refraction, then the pupil is simply the stop. Copy
     % these points over to their new names
@@ -649,9 +657,6 @@ if eyePose(4) > 0
         else
             pupilPerimIdx = [false(nStopPerimPoints,1); true(nStopPerimPoints,1)];
         end
-        % Remove those pupil perimeter points that have had poor ray
-        % tracing
-        pupilPerimIdx = and(pupilPerimIdx,targetIntersectError<p.Results.rayTraceErrorThreshold);
         % Fit the ellipse
         [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
     else

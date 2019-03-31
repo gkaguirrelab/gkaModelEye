@@ -56,10 +56,10 @@ function [outputRay, initialRay, targetIntersectError ] = inverseRayTrace( eyePo
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.stopToCamera.opticalSystem};
-    outputRay = inverseRayTrace( sceneGeometry.eye.stop.center, [0 0 0 2], args{:} );
+    outputRay = inverseRayTrace( sceneGeometry.eye.stop.center, [-5 10 0 2], args{:} );
     % Test output against cached value
-    outputRayCached = [  0.004999999999999   0.000000000000000   0.000000000000000; ...
-        1.000000000000000   0.000000000000000   0.000000000000000];
+    outputRayCached = [  -0.028495571122445   0.316608706150184  -0.630653044287995
+   0.978179527611291   0.093602908796159  -0.185481285382246];
     assert(max(max(abs(outputRay - outputRayCached))) < 1e-6)
 %}
 %{
@@ -104,7 +104,7 @@ searchingFlag = true;
 % in theta as small as 1e-6.
 TolFun = 1e-2; % intersection error to tolerate
 TolX = 1e-6; % precision with which theta is estimated
-options = optimset('TolFun',TolFun,'TolX',TolX);
+options = optimset('TolFun',TolFun,'TolX',TolX,'Display','off');
 
 % Set the inital guess for the angles by finding (w.r.t. the optical axis)
 % the angle of the ray that connects the eye point to the worldTarget
@@ -112,66 +112,60 @@ options = optimset('TolFun',TolFun,'TolX',TolX);
 eyeCoordTarget = relativeCameraPosition(eyePose, worldTarget, rotationCenters);
 [angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; eyeCoordTarget-eyePoint]'));
 
-% Set a scoped variable that detects if we encountered a bad ray trace.
-badTraceFlag = false;
+% Set bounds on the search
+boundMargin = 20;
+ub_p1p2 = angle_p1p2+boundMargin; lb_p1p2 = angle_p1p2-boundMargin;
+ub_p1p3 = angle_p1p3+boundMargin; lb_p1p3 = angle_p1p3-boundMargin;
 
-% Enter a while loop that iteratively refines the theta values until
-% criteria are met.
-while searchingFlag
+% Create an anonymous function for ray tracing
+intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyePoint, p1p2, p1p3, eyePose, worldTarget, rotationCenters, opticalSystem);
 
-    % The distance error function for searching across p1p2 theta values
-    targetIntersectError_p1p2 = ...
-        @(angleX) calcTargetIntersectError(eyePoint, angleX, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystem);
+% Get the intial target error
+targetIntersectError = intersectErrorFunc(angle_p1p2, angle_p1p3);
 
-    % Perform the search starting from the current angle_p1p2 value
-    [angle_p1p2,~]=fminsearch(@myObj_p1p2,angle_p1p2,options);
-
-    % Detect if we hit a bad ray trace.
-    if badTraceFlag
-        outputRay = nan(2,3);
-        targetIntersectError = Inf;
-        return
-    else
-        badTraceFlag = false;
-    end
-        
-    % The distance error function for searching across p1p3 theta values    
-    targetIntersectError_p1p3 = ...
-        @(angleX) calcTargetIntersectError(eyePoint, angle_p1p2, angleX, eyePose, worldTarget, rotationCenters, opticalSystem);
-
-    % Perform the search starting from the current value of angle_p1p3
-    [angle_p1p3,targetIntersectError]=fminsearch(@myObj_p1p3,angle_p1p3,options);
-    
-    % Detect if we hit a bad ray trace.
-    if badTraceFlag
-        outputRay = nan(2,3);
-        targetIntersectError = Inf;
-        return
-    else
-        badTraceFlag = false;
-    end
-    
-    % Iterate the search count
-    searchIter = searchIter+1;
-
-    % Determine if we have met a stopping criterion
-    if targetIntersectError<intersectErrorTolerance || searchIter>searchIterTolerance
-        searchingFlag = false;
-    end
+% If the initial target error is Inf, adjust the x0 guess in an attempt to
+% find a finite value
+if isinf(targetIntersectError)
+    angle_p1p2 = angle_p1p2/2;
+    angle_p1p3 = angle_p1p3/2;
+    boundMargin = boundMargin*2;
+    ub_p1p2 = angle_p1p2+boundMargin; lb_p1p2 = angle_p1p2-boundMargin;
+    ub_p1p3 = angle_p1p3+boundMargin; lb_p1p3 = angle_p1p3-boundMargin;
+    targetIntersectError = intersectErrorFunc(angle_p1p2, angle_p1p3);
 end
-    % Nested objective functions. Needed to handle the badTrace behavior.
-    function fval = myObj_p1p2(x)
-        fval = targetIntersectError_p1p2(x);
-        if isinf(fval)
-            badTraceFlag = true;
+
+% If the x0 guess isn't good enough, proceed with the search
+if targetIntersectError > intersectErrorTolerance
+    
+    % Enter a while loop that iteratively refines the theta values until
+    % criteria are met.
+    while searchingFlag
+
+        % Update the last error
+        lastError = targetIntersectError;
+
+        % The distance error function for searching across p1p2 theta values
+        myObj_p1p2 = @(angleX) intersectErrorFunc(angleX, angle_p1p3);
+        
+        % Perform the search across angle_p1p2
+        [angle_p1p2,~]=fminbnd(myObj_p1p2,lb_p1p2,ub_p1p2,options);
+        
+        % The distance error function for searching across p1p3 theta values
+        myObj_p1p3 = @(angleX) intersectErrorFunc(angle_p1p2, angleX);
+        
+        % Perform the search across angle_p1p3
+        [angle_p1p3,targetIntersectError]=fminbnd(myObj_p1p3,lb_p1p3,ub_p1p3,options);
+        
+        % Iterate the search count
+        searchIter = searchIter+1;
+        
+        % Determine if we have met a stopping criterion
+        if targetIntersectError<intersectErrorTolerance || (lastError-targetIntersectError)<intersectErrorTolerance || searchIter>searchIterTolerance
+            searchingFlag = false;
         end
-    end
-    function fval = myObj_p1p3(x)
-        fval = targetIntersectError_p1p3(x);
-        if isinf(fval)
-            badTraceFlag = true;
-        end
-    end
+    end % While searching
+
+end % Test x0 guess
 
 
 %% Obtain the initial and output rays

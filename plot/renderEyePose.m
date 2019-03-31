@@ -128,7 +128,6 @@ p.addParameter('showPupilTextLabels',false,@islogical);
 p.addParameter('showAzimuthPlane',false,@islogical);
 p.addParameter('nStopPerimPoints',8,@isscalar);
 p.addParameter('nIrisPerimPoints',20,@isscalar);
-p.addParameter('modelIrisThickness',false,@islogical);
 p.addParameter('modelEyeLabelNames', {'aziRotationCenter' 'eleRotationCenter', 'retina' 'irisPerimeter' 'stopCenter' 'pupilPerimeter' 'pupilEllipse' 'cornea' 'cornealApex'}, @iscell);
 p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '+r' '*g' '-g' '.y' '*y'}, @iscell);
 p.addParameter('modelEyeAlpha',1,@isnumeric);
@@ -190,7 +189,7 @@ xlim([0 imageSizeX]);
 ylim([0 imageSizeY]);
 
 % Obtain the pupilProjection of the model eye to the image plane
-[pupilEllipseParams, imagePoints, ~, ~, ~, pointLabels] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nStopPerimPoints',p.Results.nStopPerimPoints, 'nIrisPerimPoints',p.Results.nIrisPerimPoints);
+[pupilEllipseParams, imagePoints, ~, ~, ~, pointLabels, targetIntersectError] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nStopPerimPoints',p.Results.nStopPerimPoints, 'nIrisPerimPoints',p.Results.nIrisPerimPoints);
 
 % Set up an empty variable to hold plot object handles
 plotObjectHandles = gobjects(0);

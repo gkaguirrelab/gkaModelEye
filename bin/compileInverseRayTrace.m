@@ -36,8 +36,8 @@ function compileInverseRayTrace( varargin )
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.stopToCamera.opticalSystem};
-    inverseRayNative = inverseRayTrace( [sceneGeometry.eye.stop.center(1) 2 0], [0 0 0 2], args{:} );
-    inverseRayCompiled = inverseRayTraceMex( [sceneGeometry.eye.stop.center(1) 2 0], [0 0 0 2], args{:} );
+    inverseRayNative = inverseRayTrace( [sceneGeometry.eye.stop.center(1) 2 0], [-5 10 0 2], args{:} );
+    inverseRayCompiled = inverseRayTraceMex( [sceneGeometry.eye.stop.center(1) 2 0], [-5 10 0 2], args{:} );
     % Test if the outputs agree
     assert(max(max(abs(inverseRayNative - inverseRayCompiled))) < 1e-6)
 %}
