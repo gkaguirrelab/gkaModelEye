@@ -69,10 +69,14 @@ function [outputRay, initialRay, targetIntersectError ] = inverseRayTrace( eyePo
     % Perform 100 forward projections with randomly selected eye poses
     nPoses = 100;
     eyePoses=[(rand(nPoses,1)-0.5)*60, (rand(nPoses,1)-0.5)*60, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
+    nStopPerimPoints = 6;
+    rayTraceErrorThreshold = 1;
     clear targetIntersectError
+    targetIntersectError = nan(nStopPerimPoints,nPoses);
     for pp = 1:nPoses
-    	[~,~,~,~,~,pointLabels,errors]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,'refractionHandle',@inverseRayTrace);
-        targetIntersectError(:,pp) = errors(strcmp(pointLabels,'pupilPerimeter'));
+    	[~,~,~,~,~,pointLabels,errors]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,'nStopPerimPoints',nStopPerimPoints,'rayTraceErrorThreshold',rayTraceErrorThreshold);
+        idx = strcmp(pointLabels,'pupilPerimeter');
+        targetIntersectError(1:sum(idx),pp) = errors(idx);
     end
     % Make sure the targetIntersectError is small and not systematically
     % related to eyePose
