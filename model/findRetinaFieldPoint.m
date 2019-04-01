@@ -54,9 +54,6 @@ end
 % Obtain the quadric form of the retinal surface
 S = eye.retina.S;
 
-% Set some fmincon options we will be using below
-opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','off');
-
 % To set an x0 guess, identify the retinal point that is at the specified
 % angle w.r.t. to the optical axis and the center of the aperture stop.
 R = quadric.anglesToRay(eye.stop.center',degField(1),degField(2));
@@ -78,12 +75,8 @@ opticalAxis = [0 1; 0 0; 0 0];
 % corresponds to deflection of the visual axis upwards in the visual field.
 myObj = @(G) sqrt(sum((-degField(1:2).*[1 -1]-wrapAngleRays(calcNodalRay(eye,G,[],cameraMedium),opticalAxis)).^2));
 
-% Set the bounds
-lb = [-90 -180 0]';
-ub = [90 180 0]';
-
 % Perform the search
-[G,angleError] = fmincon(myObj, g0, [], [], [], [], lb, ub, [], opts);
+[G,angleError] = fminsearch(myObj, g0);
 
 % Obtain the Cartesian coordinates of the fovea
 X = quadric.ellipsoidalGeoToCart(G,S);

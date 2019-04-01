@@ -99,7 +99,7 @@ end
 % un-rotated corneal apex).
 % -180 <= theta <= 180 (azimuth)
 % -90 <= phi <= 90 (elevation)
-fixEyeWorkldTargetFunc = @(theta,phi) [cosd(phi)*cosd(theta);cosd(phi)*sind(theta);sind(phi)].*fixTargetDistance;
+fixEyeWorldTargetFunc = @(theta,phi) [cosd(phi)*cosd(theta);cosd(phi)*sind(theta);sind(phi)].*fixTargetDistance;
 
 % Anonymous function to return the Euclidean distance between the fovea and
 % the point of intersection on the retina of the candidate line of sight
@@ -108,22 +108,17 @@ foveaDistance = @(coord) sqrt(sum((coord - sceneGeometry.eye.landmarks.fovea.coo
 
 % Anonymous function to return the distance error of the line of sight
 % intersecting the fixation target
-myObj = @(p) foveaDistance(evalCandidateLineOfSight(sceneGeometry,stopRadius,fixEyeWorkldTargetFunc(p(1),p(2))));
-
-% Define some options for the fmincon call
-opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','off');
+myObj = @(p) foveaDistance(evalCandidateLineOfSight(sceneGeometry,stopRadius,fixEyeWorldTargetFunc(p(1),p(2))));
 
 % Define x0 and landmarks
 x0 = sceneGeometry.eye.landmarks.fovea.degField(1:2);
-lb = [-20 -20];
-ub = [20 20];
 
 % Search for the eyePose that results in the line of sight intersecting the
 % fixation target
-[p, foveaDistanceError] = fmincon(myObj,x0,[],[],[],[],lb,ub,[],opts);
+[p, foveaDistanceError] = fminsearch(myObj,x0);
 
 % Obtain and save the fixation target coords
-fixTargetEyeWorldCoords = fixEyeWorkldTargetFunc(p(1),p(2));
+fixTargetEyeWorldCoords = fixEyeWorldTargetFunc(p(1),p(2));
 
 % Get the angles with which the line of sight ray departs the fovea
 [~,incidentRay] = evalCandidateLineOfSight(sceneGeometry,stopRadius,fixTargetEyeWorldCoords);

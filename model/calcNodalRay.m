@@ -92,9 +92,6 @@ end
 % Assemble the optical system
 opticalSystem = assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera', 'cameraMedium', cameraMedium );
 
-% Define some options for the fmincon call in the loop
-opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','off');
-
 % Define an error function that reflects the difference in angles from the
 % initial ray and the output ray from the optical system
 myError = @(p) calcOffsetFromParallel(opticalSystem,quadric.anglesToRay(X,p(1),p(2)));
@@ -125,7 +122,7 @@ end
 x0 = [angle_p1p2, angle_p1p3];
 
 % Perform the search
-[inputRayAngles, angleError] = fmincon(myError,x0,[],[],[],[],[-180,-180],[180,180],[],opts);
+[inputRayAngles, angleError] = fminsearch(myError,x0);
 
 % Calculate and save the outputRay and the raypath
 [outputRay,rayPath] = rayTraceQuadrics(quadric.anglesToRay(X,inputRayAngles(1),inputRayAngles(2)), opticalSystem);
