@@ -35,26 +35,19 @@ retinaRadii = ...
     retinaRadiiEmmetrope + retinaRadiiAmetropiaSlope.* eye.meta.sphericalAmetropia;
 
 % The current model holds the depth of the anterior chamber constant across
-% ametropia, consistent with Atchison, although see:
+% ametropia, consistent with Atchison.
 %
-%   Hosny, Mohamed, et al. "Relationship between anterior chamber
-%   depth, refractive state, corneal diameter, and axial length."
-%   Journal of Refractive Surgery 16.3 (2000): 336-340.
+% To position the retina, we need to know the axial length of the eye. If
+% this value is not provided, it is derived from the Atchison equation.
 %
-% To position the retina, we need to know the distance between the apex of
-% the anterior chamber and the apex of the retina. Atchison 2006 provided
-% an axial length of 23.58 mm for the emmetropic eye.
-axialLengthEmmetrope = 23.58;
-retinaCenter = ...
-    [(-(axialLengthEmmetrope - retinaRadiiEmmetrope(1)*2) - retinaRadii(1)) 0 0];
-
-% If a measured axial length was provided, scale the vitreous chamber so
-% that the total axial length of the eye matches the provided value.
-if ~isempty(eye.meta.axialLength)
-    p1RadiiTarget = eye.meta.axialLength+retinaCenter(1);
-    s = p1RadiiTarget / retinaRadii(1);
-    retinaRadii = retinaRadii.*s;    
+if isempty(eye.meta.axialLength)
+    axialLength = 23.58 - 0.299*eye.meta.sphericalAmetropia;
+else
+    axialLength = eye.meta.axialLength;
 end
+retinaCenter = ...
+    [-(axialLength - retinaRadii(1)) 0 0];
+
 
 % Assemble the components
 S = quadric.scale(quadric.unitSphere,retinaRadii);
