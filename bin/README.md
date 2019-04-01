@@ -7,3 +7,8 @@ The compiled function is placed by default in the directory that contains `compi
 ```
 gkaModelEye/bin
 ```
+
+Pre-compiled mex files are provided for some systems:
+
+inverseRayTraceMex.mexmaci64	--	Mac OSX, MATLAB2017a and later
+inverseRayTraceMex.mexa64	--	Ubuntu, MATLAB2018b and later
