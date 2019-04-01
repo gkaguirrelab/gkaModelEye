@@ -75,8 +75,11 @@ opticalAxis = [0 1; 0 0; 0 0];
 % corresponds to deflection of the visual axis upwards in the visual field.
 myObj = @(G) sqrt(sum((-degField(1:2).*[1 -1]-wrapAngleRays(calcNodalRay(eye,G,[],cameraMedium),opticalAxis)).^2));
 
+% define some search options
+options = optimset('Display','off');
+
 % Perform the search
-[G,angleError] = fminsearch(myObj, g0);
+[G,angleError] = fminsearch(myObj, g0, options);
 
 % Obtain the Cartesian coordinates of the fovea
 X = quadric.ellipsoidalGeoToCart(G,S);

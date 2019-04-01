@@ -121,8 +121,11 @@ end
 [angle_p1p2, angle_p1p3] = quadric.rayToAngles( R );
 x0 = [angle_p1p2, angle_p1p3];
 
+% define some search options
+options = optimset('Display','off');
+
 % Perform the search
-[inputRayAngles, angleError] = fminsearch(myError,x0);
+[inputRayAngles, angleError] = fminsearch(myError,x0, options);
 
 % Calculate and save the outputRay and the raypath
 [outputRay,rayPath] = rayTraceQuadrics(quadric.anglesToRay(X,inputRayAngles(1),inputRayAngles(2)), opticalSystem);

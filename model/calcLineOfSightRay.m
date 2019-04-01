@@ -113,9 +113,12 @@ myObj = @(p) foveaDistance(evalCandidateLineOfSight(sceneGeometry,stopRadius,fix
 % Define x0 and landmarks
 x0 = sceneGeometry.eye.landmarks.fovea.degField(1:2);
 
+% define some search options
+options = optimset('Display','off');
+
 % Search for the eyePose that results in the line of sight intersecting the
 % fixation target
-[p, foveaDistanceError] = fminsearch(myObj,x0);
+[p, foveaDistanceError] = fminsearch(myObj,x0,options);
 
 % Obtain and save the fixation target coords
 fixTargetEyeWorldCoords = fixEyeWorldTargetFunc(p(1),p(2));
