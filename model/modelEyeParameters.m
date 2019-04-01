@@ -136,7 +136,7 @@ if isempty(p.Results.sphericalAmetropia) && isempty(p.Results.axialLength)
     sphericalAmetropia = 0;
     notes = 'Spherical refractive error not set; assuming emmetropia';
 end
-if isempty(p.Results.sphericalAmetropia) && ~isempty(p.Results.axialLength)    
+if isempty(p.Results.sphericalAmetropia) && ~isempty(p.Results.axialLength)
     ametropiaFromLength = @(x) (23.58 - x)./0.299; % Atchison 2006 Eq 9.
     sphericalAmetropia = ametropiaFromLength(p.Results.axialLength);
     notes = 'Spherical refractive error derived from axial length';
@@ -147,7 +147,7 @@ if ~isempty(p.Results.sphericalAmetropia) && isempty(p.Results.axialLength)
 end
 if ~isempty(p.Results.sphericalAmetropia) && ~isempty(p.Results.axialLength)
     sphericalAmetropia = p.Results.sphericalAmetropia;
-    notes = 'Spherical refractive error and axial length provided. Retinal curvature set by SR, absolute size by axial length';
+    notes = 'Spherical refractive error and axial length provided. Relative retinal curvature set by SR, absolute size by axial length';
 end
 
 % Meta data regarding properties of the model
