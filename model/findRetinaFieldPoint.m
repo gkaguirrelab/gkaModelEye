@@ -42,6 +42,25 @@ function [G,X,angleError] = findRetinaFieldPoint( eye, degField, cameraMedium )
     [outputRay,rayPath] = calcNodalRay(sceneGeometry.eye,G);
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true,'rayPath',rayPath,'outputRay',outputRay);
 %}
+%{
+    % Relation between axial length and mm per deg at the retinal apex
+    deltaAngles=[sqrt(1/2)/2 sqrt(1/2)/2 0];
+    length = [];
+    mmPerDeg = [];
+    for SR = -7:1:3
+        eye = modelEyeParameters('sphericalAmetropia',SR);
+        [~,X0] = findRetinaFieldPoint( eye, -deltaAngles);
+        [~,X1] = findRetinaFieldPoint( eye, deltaAngles);
+        length(end+1) = eye.meta.axialLength;
+        mmPerDeg(end+1) = sqrt(sum((X0-X1).^2)) ./ sqrt(sum((deltaAngles.*2).^2));
+    end
+    figure
+    plot(length,mmPerDeg,'xr');
+    xlabel('axial length [mm]');
+    ylabel('mm retina per deg visual angle');
+    vals = polyfit(length,mmPerDeg,1);
+    fprintf('Retinal mm per deg visual field at the viterous chamber apex = (%2.3f * axialLength) %2.3f \n',vals(1),vals(2));
+%}
 
 if nargin<2
     error('Need to specify an eye structure and the visual field angles');
