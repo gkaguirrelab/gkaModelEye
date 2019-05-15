@@ -82,9 +82,6 @@ x0 = quadric.intersectRay(S,R,eye.retina.side,eye.retina.boundingBox);
 % (latitude), omega (longitude), and elevation.
 g0 = quadric.cartToEllipsoidalGeo( x0, S );
 
-% Force elevation to be zero
-g0(3) = 0;
-
 % Define the optical axis ray
 opticalAxis = [0 1; 0 0; 0 0];
 
@@ -92,13 +89,16 @@ opticalAxis = [0 1; 0 0; 0 0];
 % optical axis to the specified degField angles.  Note that the elevational
 % angle is inverted. This is because a negative value in this context
 % corresponds to deflection of the visual axis upwards in the visual field.
-myObj = @(G) sqrt(sum((-degField(1:2).*[1 -1]-wrapAngleRays(calcNodalRay(eye,G,[],cameraMedium),opticalAxis)).^2));
+% We force the third component of the geodetic coordinate (elevation) to be
+% zero.
+myObj = @(G) sqrt(sum((-degField(1:2).*[1 -1]-wrapAngleRays(calcNodalRay(eye,[G; 0],[],cameraMedium),opticalAxis)).^2));
 
 % define some search options
-options = optimset('Display','off');
+options = optimset;
 
 % Perform the search
-[G,angleError] = fminsearch(myObj, g0, options);
+G = [0; 0; 0];
+[G(1:2),angleError] = fminsearch(myObj, g0(1:2), options);
 
 % Obtain the Cartesian coordinates of the fovea
 X = quadric.ellipsoidalGeoToCart(G,S);
