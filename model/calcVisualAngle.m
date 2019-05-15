@@ -85,6 +85,19 @@ function [visualAngleTotal, visualAngleByPlane, outputRay0, outputRay1, rayPath0
     plot3(eye.landmarks.fovea.coords(1),eye.landmarks.fovea.coords(2),eye.landmarks.fovea.coords(3),'*k','MarkerSize',10);
 %}
 %{
+    % Calculate deg/mm at the fovea for an emmetropic eye
+    % length
+    eye = modelEyeParameters('calcLandmarkFovea',true);
+    S = eye.retina.S;
+    G0 = eye.landmarks.fovea.geodetic;
+    G1 = G0 + [0.1 0.1 0];
+    visualAngleTotal = calcVisualAngle(eye,G0,G1);
+    X0 = quadric.ellipsoidalGeoToCart(G0,S);
+    X1 = quadric.ellipsoidalGeoToCart(G1,S);
+    d = sqrt(sum((X0-X1).^2));
+    mmPerDeg = d/visualAngleTotal;
+%}
+%{
     % Calculate deg/mm at the fovea as a function of ametropia and axial
     % length
     mmPerDeg = [];
