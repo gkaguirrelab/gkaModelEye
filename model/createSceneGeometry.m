@@ -175,7 +175,7 @@ p.addParameter('cameraTorsion',0,@isnumeric);
 p.addParameter('screenDistance',1065,@isnumeric);
 p.addParameter('screenDimensions',[697.347,392.257],@isnumeric);
 p.addParameter('screenResolutions',[1920,1080],@isnumeric);
-p.addParameter('surfaceSetName',{'retinaToStop','stopToCamera','retinaToCamera','cameraToRetina'},@ischar);
+p.addParameter('surfaceSetName',{'retinaToStop','stopToCamera','retinaToCamera','cameraToRetina','retinaToLens'},@ischar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('cameraMedium','air',@ischar);

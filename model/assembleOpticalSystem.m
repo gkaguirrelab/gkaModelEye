@@ -150,7 +150,19 @@ switch p.Results.surfaceSetName
             surfaceLabels = [surfaceLabels; {'spectacleLensBack'}; {'spectacleLensFront'}];
             surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[.5 .5 .5]}];
         end
+
+     case 'retinaToLens'
         
+        % Start in the retina
+        opticalSystem = [opticalSystem; ...
+            [eye.retina.S eye.retina.side eye.retina.boundingBox eye.retina.mustIntersect returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
+                
+        % Assemble the labels
+        surfaceLabels = [eye.retina.label];
+        
+        % Assemble the surface plot colors
+        surfaceColors = [eye.retina.plot.color];
+
     case 'retinaToStop'
         
         % Start in the retina
