@@ -189,7 +189,11 @@ xlim([0 imageSizeX]);
 ylim([0 imageSizeY]);
 
 % Obtain the pupilProjection of the model eye to the image plane
-[pupilEllipseParams, imagePoints, ~, ~, ~, pointLabels, targetIntersectError] = pupilProjection_fwd(eyePose, sceneGeometry, 'fullEyeModelFlag', true, 'nStopPerimPoints',p.Results.nStopPerimPoints, 'nIrisPerimPoints',p.Results.nIrisPerimPoints);
+[pupilEllipseParams, imagePoints, ~, ~, ~, pointLabels] = ...
+    pupilProjection_fwd(eyePose, sceneGeometry, ...
+    'fullEyeModelFlag', true, 'replaceReflectedPoints', true, ...
+    'nStopPerimPoints',p.Results.nStopPerimPoints, ...
+    'nIrisPerimPoints',p.Results.nIrisPerimPoints);
 
 % Set up an empty variable to hold plot object handles
 plotObjectHandles = gobjects(0);
@@ -199,19 +203,9 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
     % Check if we should plot the pupilEllipse
     if strcmp(p.Results.modelEyeLabelNames{pp},'pupilEllipse')
         % Add the pupil fit ellipse
-        pFitImplicit = ellipse_ex2im(ellipse_transparent2ex(pupilEllipseParams));
-        fh=@(x,y) pFitImplicit(1).*x.^2 +pFitImplicit(2).*x.*y +pFitImplicit(3).*y.^2 +pFitImplicit(4).*x +pFitImplicit(5).*y +pFitImplicit(6);
-        % Superimpose the ellipse using fimplicit or ezplot (ezplot is the
-        % fallback option for older Matlab versions)
-        if fImplicitPresent
-            plotObjectHandles(end+1) = fimplicit(fh,[1, imageSizeX, 1, imageSizeY],'Color', p.Results.modelEyePlotColors{pp}(2),'LineWidth',1);
-            set(gca,'position',[0 0 1 1],'units','normalized')
-            axis off;
-        else
-            plotObjectHandles(end+1) = ezplot(fh,[1, imageSizeX, 1, imageSizeY]);
-            set(plotObjectHandles(end), 'Color', p.Results.modelEyePlotColors{pp}(2))
-            set(plotObjectHandles(end),'LineWidth',1);
-        end
+        plotObjectHandles(end+1) = addTransparentEllipseToFigure(...
+            pupilEllipseParams,imageSizeX,imageSizeY, ...
+            p.Results.modelEyePlotColors{pp}(2),1,fImplicitPresent);
     else
         % Plot this label
         idx = strcmp(pointLabels,p.Results.modelEyeLabelNames{pp});
