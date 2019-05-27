@@ -68,7 +68,7 @@ function [outputRay, initialRay, targetIntersectError ] = inverseRayTrace( eyePo
     sceneGeometry=createSceneGeometry();
     % Perform 100 forward projections with randomly selected eye poses
     nPoses = 100;
-    eyePoses=[(rand(nPoses,1)-0.5)*60, (rand(nPoses,1)-0.5)*60, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
+    eyePoses=[(rand(nPoses,1)-0.5)*70, (rand(nPoses,1)-0.5)*70, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
     nStopPerimPoints = 6;
     rayTraceErrorThreshold = 1;
     clear targetIntersectError
@@ -103,8 +103,10 @@ intersectErrorTolerance = 1e-4;
 searchIterTolerance = 50;
 searchIter = 0;
 searchingFlag = true;
+bestError = Inf;
+bestAngles = [nan nan];
 
-% Set fminsearch options to tolerate an error of 1e-2, and to make changes
+% Set fminbnd options to tolerate an error of 1e-2, and to make changes
 % in theta as small as 1e-6.
 TolFun = 1e-2; % intersection error to tolerate
 TolX = 1e-6; % precision with which theta is estimated
@@ -117,26 +119,22 @@ eyeCoordTarget = relativeCameraPosition(eyePose, worldTarget, rotationCenters);
 [angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; eyeCoordTarget-eyePoint]'));
 
 % Set bounds on the search
-boundMargin = 20;
-ub_p1p2 = angle_p1p2+boundMargin; lb_p1p2 = angle_p1p2-boundMargin;
-ub_p1p3 = angle_p1p3+boundMargin; lb_p1p3 = angle_p1p3-boundMargin;
+ub_p1p2 = 90;
+ub_p1p3 = 90;
+lb_p1p2 = -90;
+lb_p1p3 = -90;
+
+% Ensure that the initial guess is in bounds
+angle_p1p2 = max([angle_p1p2 lb_p1p2]);
+angle_p1p2 = min([angle_p1p2 ub_p1p2]);
+angle_p1p3 = max([angle_p1p3 lb_p1p3]);
+angle_p1p3 = min([angle_p1p3 ub_p1p3]);
 
 % Create an anonymous function for ray tracing
 intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyePoint, p1p2, p1p3, eyePose, worldTarget, rotationCenters, opticalSystem);
 
 % Get the intial target error
 targetIntersectError = intersectErrorFunc(angle_p1p2, angle_p1p3);
-
-% If the initial target error is Inf, adjust the x0 guess in an attempt to
-% find a finite value
-if isinf(targetIntersectError)
-    angle_p1p2 = angle_p1p2/2;
-    angle_p1p3 = angle_p1p3/2;
-    boundMargin = boundMargin*2;
-    ub_p1p2 = angle_p1p2+boundMargin; lb_p1p2 = angle_p1p2-boundMargin;
-    ub_p1p3 = angle_p1p3+boundMargin; lb_p1p3 = angle_p1p3-boundMargin;
-    targetIntersectError = intersectErrorFunc(angle_p1p2, angle_p1p3);
-end
 
 % If the x0 guess isn't good enough, proceed with the search
 if targetIntersectError > intersectErrorTolerance
@@ -147,28 +145,59 @@ if targetIntersectError > intersectErrorTolerance
 
         % Update the last error
         lastError = targetIntersectError;
-
-        % The distance error function for searching across p1p2 theta values
+        
+        % The distance error function for searching across p1p2 values
         myObj_p1p2 = @(angleX) intersectErrorFunc(angleX, angle_p1p3);
         
         % Perform the search across angle_p1p2
         [angle_p1p2,~]=fminbnd(myObj_p1p2,lb_p1p2,ub_p1p2,options);
+                
+        % We hit a bound on the first iteration. Switch to a grid search
+        % for x0 and then fminsearch.
+        if searchIter == 0 && any([...
+                abs(angle_p1p2 - lb_p1p2)<1e-3,...
+                abs(angle_p1p2 - ub_p1p2)<1e-3])
+            [xxVals,yyVals]=meshgrid(-75:5:75,-75:5:75);
+            gridError = inf(length(xxVals),length(xxVals));
+            for xx=1:length(xxVals)
+                for yy=1:length(yyVals)
+                    gridError(xx,yy)=intersectErrorFunc(xxVals(xx,yy),yyVals(xx,yy));
+                end
+            end
+            [~,idx]=min(gridError(:));
+            angle_p1p2 = xxVals(idx);
+            angle_p1p3 = yyVals(idx);
+            myObj = @(p) intersectErrorFunc(p(1),p(2));
+            [p,targetIntersectError]=fminsearch(myObj,[angle_p1p2 angle_p1p3]);
+            angle_p1p2 = p(1); angle_p1p3 = p(2);
+            searchingFlag = false;
+            continue
+        end
         
-        % The distance error function for searching across p1p3 theta values
+        % The distance error function for searching across p1p3 values
         myObj_p1p3 = @(angleX) intersectErrorFunc(angle_p1p2, angleX);
         
         % Perform the search across angle_p1p3
         [angle_p1p3,targetIntersectError]=fminbnd(myObj_p1p3,lb_p1p3,ub_p1p3,options);
+
+        % Update the best result
+        if targetIntersectError < bestError
+            bestError = targetIntersectError;
+            bestAngles = [angle_p1p2 angle_p1p3];
+        end
         
         % Iterate the search count
         searchIter = searchIter+1;
-        
+                
         % Determine if we have met a stopping criterion
         if targetIntersectError<intersectErrorTolerance || (lastError-targetIntersectError)<intersectErrorTolerance || searchIter>searchIterTolerance
-            searchingFlag = false;
+            angle_p1p2 = bestAngles(1); angle_p1p3 = bestAngles(2);
+            targetIntersectError = bestError;
+            searchingFlag = false;            
         end
-    end % While searching
-
+        
+    end % while searching
+    
 end % Test x0 guess
 
 
@@ -228,6 +257,12 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 %                           Set to Inf if an error is returned by
 %                           rayTraceQuadrics.
 %
+
+% Test the input angles. If they are greater than +-90, return inf
+if abs(angle_p1p2)>=90 || abs(angle_p1p3)>=90
+    distance = Inf;
+    return
+end
 
 % Assemble the input ray. Note that the rayTraceQuadrics routine handles
 % vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
