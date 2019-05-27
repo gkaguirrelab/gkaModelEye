@@ -1,5 +1,5 @@
 function compileInverseRayTrace( varargin )
-% Compiles the inverseRayTrace function and saves it to disk
+% Compiles the inverseRayTrace function
 %
 % Syntax:
 %  compileInverseRayTrace
@@ -9,7 +9,7 @@ function compileInverseRayTrace( varargin )
 %   the file at the specified disk location, and places the function on the
 %   MATLAB path.
 %
-%   The default save location the directory that contains this function.
+%   The default save location is the directory that contains this function.
 %
 %   Calls to the compiled inverseRayTraceMex execute roughly ~30x faster
 %   than the native inverseRayTrace routine.
