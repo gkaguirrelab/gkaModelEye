@@ -1,5 +1,5 @@
 function Sm = scale( S, s)
-% Scales the radii of a quardic surface by the passed scaling parameters
+% Scales the radii of a quadric surface by the passed scaling parameters
 %
 % Syntax:
 %  Sm = quadric.scale( S, s)

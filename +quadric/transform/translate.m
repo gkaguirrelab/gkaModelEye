@@ -1,5 +1,5 @@
 function St = translate( S, Xt )
-% Translates a quadric surface
+% Translate a quadric surface
 %
 % Syntax:
 %  St = quadric.translate( S, Xt )
@@ -11,7 +11,7 @@ function St = translate( S, Xt )
 % Inputs:
 %   S                     - 1x10 vector or 4x4 matrix of the quadric
 %                           surface.
-%   Xt                    - 3x1 vector containing the [x, y, z] translation
+%   Xt                    - 3x1 vector containing the [x; y; z] translation
 %                           vector
 %
 % Outputs:

@@ -28,10 +28,12 @@ function [angle_xy, angle_xz, p] = rayToAngles( R )
     R2 = quadric.normalizeRay([p, u]);
     [angle, angle_xy, angle_xz] = quadric.angleRays( R1, R2 )
 %}
+
 R = quadric.normalizeRay(R);
 p = R(:,1);
 u = R(:,2);
 angle_xy = rad2deg(atan2(u(2),u(1)));
 angle_xz = rad2deg(atan2(u(3),u(1)));
+
 end
 

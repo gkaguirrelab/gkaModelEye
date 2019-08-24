@@ -1,5 +1,5 @@
 function S = unitTwoSheetHyperboloid
-% Returns a quadric surface matrix that is a unit two sheeted hyperboloid
+% Returns a quadric surface matrix that is a unit, two-sheeted hyperboloid
 %
 % Syntax:
 %  S = quadric.unitTwoSheetHyperboloid
