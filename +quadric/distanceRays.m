@@ -5,7 +5,7 @@ function [centerPoint, distance, R1p, R2p]=distanceRays(R1,R2)
 %  [centerPoint, distance, R1p, R2p] = quadric.distanceRays(R1,R2)
 %
 % Description:
-%   Given two rays in standard form finds the point that is mutually
+%   Given two rays in standard form, returns the point that is mutually
 %   closest to each of the rays. Adapted from code provided by Alexander
 %   Brodsky on MATLAB central.
 %
@@ -18,7 +18,7 @@ function [centerPoint, distance, R1p, R2p]=distanceRays(R1,R2)
 % Outputs:
 %   centerPoint           - Scalar. Point that is mutually closest to the
 %                           two rays
-%   distance              - Scalar distance between the two rays at their
+%   distance              - Scalar. Distance between the two rays at their
 %                           point of closest approach
 %   R1p, R2p              - 3x1 arrays that provide the point on each ray
 %                           that is closest to the other ray

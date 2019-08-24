@@ -2,7 +2,7 @@ function [A, B, C, D, E, F, G, H, I, K] = matrixToVars(S)
 % Decomposes a quadric matrix into a set of scalar variables
 %
 % Syntax:
-%  [A, B, C, D, E, F, G, H, I, K] = quadric.matrixToVars(s)
+%  [A, B, C, D, E, F, G, H, I, K] = quadric.matrixToVars(S)
 %
 % Description:
 %   Convert between two forms of expression of the quadric surface.

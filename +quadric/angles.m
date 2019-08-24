@@ -2,7 +2,7 @@ function angles = angles(S)
 % Returns the angles of a quadric surface with respect to the axes
 %
 % Syntax:
-%  angles = qaudric.angles(S)
+%  angles = quadric.angles(S)
 %
 % Description:
 %   Still figuring out the angles. This is an approach that yields angles

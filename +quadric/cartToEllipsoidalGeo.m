@@ -134,6 +134,7 @@ for ii=1:nIterations
     omegaLast = omega;
 end
 
+% Mandatory elevation of zero for a point on the surface
 elevation = 0;
 
 % Apply the stored sign of the y coordinate to omega

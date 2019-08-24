@@ -1,4 +1,20 @@
 function classString = classify(S)
+% Return a char vector that describes the form of the quadric surface
+%
+% Syntax:
+%  X = quadric.classString = classify(S)
+%
+% Description:
+%   Given a quadric surface (S) the routine returns a character vector that
+%   identifies the quadric type.
+%
+% Inputs:
+%   S                     - 1x10 vector or 4x4 matrix of the quadric
+%                           surface.
+%
+% Outputs:
+%   classString           - Character vector.
+%
 
 % If the quadric surface was passed in vector form, convert to matrix
 if isequal(size(S),[1 10])

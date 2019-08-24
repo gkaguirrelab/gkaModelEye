@@ -2,7 +2,7 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
 % Find the geodesic distance between two points on a tri-axial ellipsoid
 %
 % Syntax:
-%  [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistance(S,G0,G1,X0,X1,maxIterations)
+%  [distance,startAngle,endAngle,geodeticPathCoords] = quadric.panouGeodesicDistance(S,G0,G1,X0,X1,maxIterations)
 %
 % Description:
 %   Returns the geodesic distance between two points on the tri-axial
@@ -16,6 +16,10 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
 %
 %   The routine can accept points on the ellipsoidal surface specified in
 %   either Cartesian or ellipsoidal geodetic coordinates.
+%
+%   This routine is quite slow, and it fails when the specified locations
+%   are the umbilical points of the ellipsoid, or if the path passes
+%   through an umbilical point.
 %
 % Inputs:
 %   S                     - 1x10 vector or 4x4 matrix of the quadric

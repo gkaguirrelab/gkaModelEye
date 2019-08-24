@@ -8,7 +8,7 @@ function [angle, angle_xy, angle_xz] = angleRays( R1, R2 )
 %   Just what it says on the tin.
 %
 % Inputs:
-%   R1, R2                - 3x2 matricies that specify a vector of the form
+%   R1, R2                - 3x2 matrices that specify a vector of the form
 %                           [p; d]:
 %                               R = p + d,
 %                           where p is vector origin, d is the direction.
@@ -39,7 +39,6 @@ angle_xy = rad2deg(atan2(norm(cross(u1_xy,u2_xy)), dot(u1_xy,u2_xy)));
 
 % Make the angle signed with respect to the R1 vector
 angle_xy = angle_xy*sign(dot([0;0;1],cross(u1_xy,u2_xy)));
-
 
 u1_xz = [R1(1,2);0;R1(3,2)];
 u2_xz = [R2(1,2);0;R2(3,2)];

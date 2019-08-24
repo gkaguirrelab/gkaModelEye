@@ -19,10 +19,14 @@ function X = center( S )
 %                           surface.
 %
 % Outputs:
-%   X                     - 3x1 vector containing the [x, y, z] coordinates
+%   X                     - 3x1 vector containing the [x; y; z] coordinates
 %                           of the point.
 %
-
+% Examples:
+%{
+    S = quadric.scale(quadric.unitSphere,[5 3 4]);
+    quadric.center(S)
+%}
 
 % If the quadric surface was passed in vector form, convert to matrix
 if isequal(size(S),[1 10])
