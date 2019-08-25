@@ -40,6 +40,15 @@ function p = plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLi
 % Outputs:
 %   p                     - Handle to the surface plot object
 %
+% Examples:
+%{
+    % Show an ellipsoidal surface with lines of constant beta and omega
+    S = quadric.scale(quadric.unitSphere,[4 5 3]);
+    boundingBox = [-50 50 -30 30 -20 20];
+    figure
+    quadric.plotSurface(S, boundingBox, 'k', 0.25, 'red');
+    camlight
+%}
 
 % Handle incomplete input arguments
 if nargin==2
@@ -65,6 +74,7 @@ end
 
 if nargin==5
     omegaLineColor = [];
+    lineAlpha = 1;
     bbTol = 1e-2;
 end
 
