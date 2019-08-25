@@ -39,7 +39,6 @@ retinaRadii = ...
 %
 % To position the retina, we need to know the axial length of the eye. If
 % this value is not provided, it is derived from the Atchison equation.
-%
 if isempty(eye.meta.axialLength)
     axialLength = 23.58 - 0.299*eye.meta.sphericalAmetropia;
 else
@@ -47,7 +46,6 @@ else
 end
 retinaCenter = ...
     [-(axialLength - retinaRadii(1)) 0 0];
-
 
 % Assemble the components
 S = quadric.scale(quadric.unitSphere,retinaRadii);

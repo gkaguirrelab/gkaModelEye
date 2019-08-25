@@ -39,15 +39,14 @@ function cornea = cornea( eye )
     % curvature. Here I obtain the distance in mm between the modeled apex 
     % of the cornea, and the "vertex normal" point, which is the point of
     % intersection of the keratometric axis with the front surface of the
-    % cornea.
-    % The calculation is made for an emmetropic eye and assumes that the
-    % fixation point of the keratometric instrument is at 500 mm from the 
-    % corneal surface.
+    % cornea. The calculation is made for an emmetropic eye and assumes 
+    % that the fixation point of the keratometric instrument is at 500 mm  
+    % from the corneal surface.
 
     % Create a sceneGeometry. Put the fixation target at 500 mm, set the
     % stop radius to 0.86 mm, which corresponds to a 2 mm diameter pupil.
 
-	fixTargetDistance = 200;
+	fixTargetDistance = 500;
 	stopRadius = 0.8693;
     sceneGeometry = createSceneGeometry(...
         'sphericalAmetropia',0,...
@@ -65,7 +64,7 @@ function cornea = cornea( eye )
 	keratometricAxisRay = quadric.normalizeRay([fixTargetEyeCoords';cc-fixTargetEyeCoords']');
     opticalSystem = sceneGeometry.refraction.cameraToRetina.opticalSystem;
     [~,rayPath] = rayTraceQuadrics(keratometricAxisRay, opticalSystem);
-    horizontalDistance = rayPath(2,2)
+    horizontalDistance = rayPath(2,2);
 %}
 
 
@@ -147,7 +146,6 @@ end
 % Saving this for use in constructing the tear film below
 S_front = S;
 
-
 % Rotate the quadric surface
 switch eye.meta.eyeLaterality
     case 'Right'
@@ -170,8 +168,8 @@ cornea.front.center=[-radii(1) 0 0];
 
 
 %% Tear film
-% The tear film is the front corneal surface, translated forward. The
-% thickness is taken from:
+% The tear film is the front corneal surface, translated forward, and with
+% a different refractive index. The thickness is taken from:
 %   Werkmeister, René M., et al. "Measurement of tear film thickness using
 %   ultrahigh-resolution optical coherence tomography." Investigative
 %   ophthalmology & visual science 54.8 (2013): 5578-5583.
@@ -193,7 +191,6 @@ S = quadric.translate(S,[-radii(1)+tearFilmThickness 0 0]);
 cornea.tears.S = quadric.matrixToVec(S);
 cornea.tears.side = 1;
 cornea.tears.boundingBox=[-4+tearFilmThickness tearFilmThickness -8 8 -8 8];
-
 
 
 %% Back corneal surface

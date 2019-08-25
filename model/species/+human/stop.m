@@ -15,8 +15,6 @@ function stop = stop( eye )
 % Outputs:
 %   stop                  - Structure.
 %
-% 
-
 
 % Center the stop on the optical axis within the iris
 stop.center = [eye.iris.center(1) 0 0];

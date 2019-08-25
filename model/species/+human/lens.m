@@ -71,7 +71,6 @@ else
     D = polyval(accommodationPolyCoef,accommodationDiopeters);
 end
 
-
 % Initialize the components of the optical system
 lens.S = [];
 lens.boundingBox = [];
@@ -80,7 +79,6 @@ lens.mustIntersect = [];
 lens.index = [];
 lens.label = {};
 lens.plot.color = {};
-
 
 % Obtain the core and edge refractive indices
 nEdge = returnRefractiveIndex( 'lens.edge', eye.meta.spectralDomain, 'age',  age);
