@@ -1,4 +1,4 @@
-function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin) %#codegen
+function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
 % Fit an image plane ellipse by perspective projection of a pupil circle
 %
 % Syntax:
@@ -19,7 +19,7 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
 %
 % Optional key/value pairs:
-%  'x0'                   - A 1x4 vector that provides starting points for 
+%  'x0'                   - A 1x4 vector that provides starting points for
 %                           the search for the eyePose. If not defined, the
 %                           starting point will be estimated either from
 %                           the polyModel field of the sceneGeometry or
@@ -62,57 +62,28 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
     targetEllipse = pupilProjection_fwd(eyePose,sceneGeometry);
     [ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 5, 0 );
     [recoveredEyePose,RMSE,recoveredEllipse,fitAtBound,nSearches] = eyePoseEllipseFit(Xp, Yp, sceneGeometry);
+    % Test that the recovered eye pose has no more than 0.01% error
+    assert(max(abs((eyePose-recoveredEyePose)./eyePose)) < 1e-4)
 %}
 
 
-%% Codegen setup
-% Let codegen know about functions to not compile
-coder.extrinsic('warning')
-coder.extrinsic('lastwarn')
-% Flag to be used to run the routine simulating the codegen path
-coderTestFlag = false;
-
 %% Parse input
-% Use the input parser if we are not generating code.
-if isempty(coder.target) && ~coderTestFlag
-    p = inputParser;
-    
-    % Required
-    p.addRequired('Xp',@isnumeric);
-    p.addRequired('Yp',@isnumeric);
-    p.addRequired('sceneGeometry',@isstruct);
-    
-    % Optional
-    p.addParameter('x0',[],@(x)(isempty(x) | isnumeric(x)));
-    p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
-    p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
-    p.addParameter('rmseThresh',1e-2,@isscalar);
-    p.addParameter('nMaxSearches',5,@isscalar);
-    
-    % Parse and check the parameters
-    p.parse(Xp, Yp, sceneGeometry, varargin{:});
-else
-    p = struct();
-    p.Results.x0 = [];
-    p.Results.eyePoseLB = [-89,-89,0,0.1];
-    p.Results.eyePoseUB = [89,89,0,4];
-    p.Results.rmseThresh = 1e-2;
-    p.Results.nMaxSearches = 5;
-    for ii = 1:fix(length(varargin)/2)
-        switch cell2mat(varargin(ii*2-1))
-            case 'x0'
-                p.Results.x0 = varargin(ii*2);
-            case 'eyePoseLB'
-                p.Results.eyePoseLB = varargin(ii*2);
-            case 'eyePoseUB'
-                p.Results.eyePoseUB = varargin(ii*2);
-            case 'rmseThresh'
-                p.Results.rmseThresh = varargin(ii*2);
-            case 'nMaxSearches'
-                p.Results.nMaxSearches = varargin(ii*2);
-        end
-    end
-end
+p = inputParser;
+
+% Required
+p.addRequired('Xp',@isnumeric);
+p.addRequired('Yp',@isnumeric);
+p.addRequired('sceneGeometry',@isstruct);
+
+% Optional
+p.addParameter('x0',[],@(x)(isempty(x) | isnumeric(x)));
+p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
+p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
+p.addParameter('rmseThresh',1e-2,@isscalar);
+p.addParameter('nMaxSearches',5,@isscalar);
+
+% Parse and check the parameters
+p.parse(Xp, Yp, sceneGeometry, varargin{:});
 
 
 % Initialize the return variables
@@ -147,7 +118,7 @@ end
 if isempty(p.Results.x0)
     % Define x0
     x0 = zeros(1,4);
-
+    
     % Construct an x0 guess by probing the forward model. First identify
     % the center of projection
     rotationCenterEllipse = pupilProjection_fwd([0 0 0 2], sceneGeometry);
@@ -182,7 +153,7 @@ if isempty(p.Results.x0)
     
     % Set the initial value for pupil radius in mm
     x0(4) = pupilRadiusPixels/pixelsPerMM;
-        
+    
     % Ensure that x0 lies within the bounds with a bit of headroom so that
     % the solver does not get stuck up against a bound.
     boundHeadroom = (eyePoseUB - eyePoseLB)*0.001;
@@ -247,6 +218,7 @@ end % while
         % pupil border points remaining after refraction to define an
         % ellipse.
         if any(isnan(fittedEllipse))
+            % Set fVal to something arbitrarily large
             fVal = 1e6;
         else
             % This is the RMSE of the distance values of the boundary
