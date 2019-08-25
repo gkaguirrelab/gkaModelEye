@@ -1,4 +1,4 @@
-function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin) %#codegen
+function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
 % Obtain the parameters of the entrance pupil ellipse on the image plane
 %
 % Syntax:
