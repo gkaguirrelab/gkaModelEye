@@ -1,6 +1,6 @@
 Quadric package
 
-This is a set of functions that work with quadric surfaces, rays, points, and their relations.
+This is a set of functions that work with quadric surfaces, rays, points, and their relations. Each sub-directory contains functions within the +quadric package, so that calls to all routines begin with `quadric.`.
 
 A quadric surface may defined in several different ways. In these routines, I adopt the forms:
 
@@ -22,4 +22,4 @@ Vector:
 
 
 The directories are:
-convert		- Convert quadrics between these forms, and from angles to rays  geodetics	- Points and paths on ellipsoidal surfacesplot		- Plot quadric surfacesprimitives	- Return primitive quadric surfaces (sphere, paraboloid, hyperboloid)properties	- Obtain the properties of a given quadric surfacerelations	- Spatial relationships between rays, surfaces, and pointstransform	- Affine transforms of surfaces, and rays.
+convert		- Convert quadrics between these forms, and from angles to rays  geodetics	- Points and paths on ellipsoidal surfacesplot		- Plot quadric surfacesprimitives	- Return primitive quadric surfaces (sphere, paraboloid, hyperboloid)properties	- Obtain the properties of a given quadric surfacerelations	- Spatial relationships between rays, surfaces, and pointstransform	- Affine (and other) transforms of surfaces and rays.
