@@ -277,11 +277,9 @@ if sceneGeometry.eye.iris.thickness~=0
     stopPoints(nStopPerimPoints+1:nStopPerimPoints*2,1) = sceneGeometry.eye.stop.center(1)-sceneGeometry.eye.iris.thickness/2;
     
     % Create labels for the stopPerimeter points
-    if isempty(coder.target) && ~coderTestFlag
-        tmpLabelsFront = repmat({'stopPerimeterFront'},nStopPerimPoints, 1);
-        tmpLabelsBack = repmat({'stopPerimeterBack'},nStopPerimPoints, 1);
-        pointLabels = [tmpLabelsFront; tmpLabelsBack];
-    end
+    tmpLabelsFront = repmat({'stopPerimeterFront'},nStopPerimPoints, 1);
+    tmpLabelsBack = repmat({'stopPerimeterBack'},nStopPerimPoints, 1);
+    pointLabels = [tmpLabelsFront; tmpLabelsBack];
 else
     stopPoints = zeros(nStopPerimPoints,3);
     stopPoints(1:nStopPerimPoints,3) = p3p;
@@ -535,12 +533,10 @@ else
         targetIntersectError = [targetIntersectError; 0];
         
         % Create a label for the virtual image point
-        if isempty(coder.target) && ~coderTestFlag
-            newPointLabel = pointLabels{refractPointsIdx(ii)};
-            newPointLabel = strrep(newPointLabel,'stop','pupil');
-            newPointLabel = strrep(newPointLabel,'Actual','');
-            pointLabels = [pointLabels; {newPointLabel}];
-        end
+        newPointLabel = pointLabels{refractPointsIdx(ii)};
+        newPointLabel = strrep(newPointLabel,'stop','pupil');
+        newPointLabel = strrep(newPointLabel,'Actual','');
+        pointLabels = [pointLabels; {newPointLabel}];
     end
     
 end
