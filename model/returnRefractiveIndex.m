@@ -121,7 +121,7 @@ switch material
         error(['I do not know the index of refraction for ' material]);
 end
 
-% Cauchy?s (1836) equation (cited in Atchison & Smith 2005)
+% Cauchy's (1836) equation (cited in Atchison & Smith 2005)
 n = c(1) + c(2)/wavelength^2 + c(3)/wavelength^4 + c(4)/wavelength^6;
 
 

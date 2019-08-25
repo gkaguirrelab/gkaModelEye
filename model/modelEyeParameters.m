@@ -23,12 +23,12 @@ function eye = modelEyeParameters( varargin )
 %                           spherical refractive error of the eye. A
 %                           negative number is the correction that would be
 %                           used for a myopic person.
-%  'axialLength'          - Scalar. This is the axial length along the 
-%                           optical axis. This value is converted into an
-%                           equivalent spherical error and then used to set
-%                           the eye biometry. If both sphericalAmetropia
-%                           and axialLength are passed, then inly spherical
-%                           error will be used.
+%  'axialLength'          - Scalar. This is the axial length (in mm) along 
+%                           the optical axis. This value is converted into
+%                           an equivalent spherical error and then used to
+%                           set the eye biometry. If both
+%                           sphericalAmetropia and axialLength are passed,
+%                           then only spherical error will be used.
 %  'eyeLaterality'        - A text string that specifies which eye (left,
 %                           right) to model. Allowed values (in any case)
 %                           are {'left','right','L','R','OS','OD'}
@@ -36,9 +36,8 @@ function eye = modelEyeParameters( varargin )
 %                           modeled. Supported values (in any case) are
 %                           {'human','dog'}
 %  'ageYears'             - Scalar that supplies the age in years of the
-%                           eye to be modeled. Not currently used, but
-%                           could influence the lens parameters in the
-%                           future.
+%                           eye to be modeled. Influences the refractive
+%                           index values of the lens.
 %  'accommodationDiopeters' - Scalar that supplies the accommodation state
 %                           of the eye. Valid values range from zero
 %                           (unaccommodated) to +10. The value sets the
@@ -68,9 +67,10 @@ function eye = modelEyeParameters( varargin )
 %                           This is the wavelength domain within which
 %                           imaging is being performed. The refractive
 %                           indices vary based upon this choice.
-%  'calcLandmarkFovea', 'calcLandmarkOpticDisc', 'calcLandmarkOpticalCenter' -
-%                           Logical. If set to true, the computation of
-%                           each of these landmarks is performed. This
+%  'calcLandmarkFovea',
+%  'calcLandmarkOpticDisc',
+%  'calcLandmarkOpticalCenter' - Logical. If set to true, the computation
+%                           of each of these landmarks is performed. This
 %                           defaults to false given that these are time
 %                           consuming operations.
 %
@@ -218,8 +218,7 @@ switch eye.meta.species
     %% Canine
     case {'dog','Dog','canine','Canine'}
         error('Geoff needs to implement the canine model here');
-        
-        
+                
     otherwise
         error('Please specify a valid species for the eye model');
 end

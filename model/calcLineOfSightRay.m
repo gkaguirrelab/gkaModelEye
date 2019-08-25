@@ -7,7 +7,7 @@ function [outputRay,rayPath,fixEyePose,fixTargetCoords,foveaDistanceError] = cal
 % Description
 %   Given sceneGeometry, the routine identifies the ray that originates at
 %   the fixation point, passes through the center of the entrance pupil,
-%   and arrives at the foeca.
+%   and arrives at the fovea.
 %
 %   If not defined, the radius of the aperture stop is set to provide an
 %   entrance pupil diameter of ~2 mm, which empirically produces the
@@ -57,7 +57,7 @@ function [outputRay,rayPath,fixEyePose,fixTargetCoords,foveaDistanceError] = cal
 %}
 
 
-% Code to determine what stop radius corresponds to a pupil diameter of
+% Code to determine the stop radius that corresponds to a pupil diameter of
 % 2 mm. This value is used as it is found to provide peak acuity for normal
 % observers.
 %{

@@ -49,7 +49,7 @@ function [outputRay,rayPath, angleError] = calcNodalRay(eye,G,X,cameraMedium)
 % Examples:
 %{
     eye = modelEyeParameters();    
-    [outputRay,rayPath, angleError] = calcNodalRay(eye,[],eye.landmarks.vertex.coords)
+    [outputRay,rayPath, angleError] = calcNodalRay(eye,[],eye.landmarks.vertex.coords);
 %}
 
 

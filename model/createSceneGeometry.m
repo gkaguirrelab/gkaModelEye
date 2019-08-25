@@ -119,7 +119,6 @@ function sceneGeometry = createSceneGeometry(varargin)
 %  'meta' - A structure that contains information regarding the creation
 %       and modification of the sceneGeometry.
 %
-%
 % Inputs:
 %   none
 %
@@ -195,6 +194,7 @@ sceneGeometry.cameraIntrinsic.sensorResolution = p.Results.sensorResolution;
 sceneGeometry.cameraPosition.translation = p.Results.cameraTranslation;
 sceneGeometry.cameraPosition.torsion = p.Results.cameraTorsion;
 
+
 %% screenPosition
 sceneGeometry.screenPosition.distance = p.Results.screenDistance;
 sceneGeometry.screenPosition.dimensions = p.Results.screenDimensions;
@@ -202,6 +202,7 @@ sceneGeometry.screenPosition.resolutions = p.Results.screenResolutions;
 sceneGeometry.screenPosition.fixationAngles = [0 0 0];
 sceneGeometry.screenPosition.torsion = 0;
 sceneGeometry.screenPosition.R = [1 0; 0 1];
+
 
 %% eye
 sceneGeometry.eye = modelEyeParameters('spectralDomain',p.Results.spectralDomain,varargin{:});
@@ -219,6 +220,7 @@ for ii = 1:length(p.Results.surfaceSetName)
     sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceLabels = surfaceLabels;
     sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceColors = surfaceColors;
 end
+
 
 %% meta
 sceneGeometry.meta.createSceneGeometry = p.Results;

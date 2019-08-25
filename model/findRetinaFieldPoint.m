@@ -62,6 +62,7 @@ function [G,X,angleError] = findRetinaFieldPoint( eye, degField, cameraMedium )
     fprintf('Retinal mm per deg visual field at the viterous chamber apex = (%2.3f * axialLength) %2.3f \n',vals(1),vals(2));
 %}
 
+% Handle incomplete inputs
 if nargin<2
     error('Need to specify an eye structure and the visual field angles');
 end

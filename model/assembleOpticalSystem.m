@@ -15,9 +15,10 @@ function [opticalSystem, surfaceLabels, surfaceColors] = assembleOpticalSystem( 
 %   eye                   - A model eye structure.
 %
 % Optional key/values pairs:
-%  'surfaceSetName'       - A string or char vector that from the set
-%                           {'retinaToStop','stopToCamera',
-%                           'retinaToCamera'}
+%  'surfaceSetName'       - A string or char vector that from the set:
+%                           {'retinaToCamera','retinaToStop',
+%                            'stopToCamera','cameraToStop','stopToRetina',
+%                            'cameraToRetina'}
 %  'cameraMedium'         - String, options include:
 %                           {'air','water','vacuum'}. This sets the index
 %                           of refraction of the medium between the eye and

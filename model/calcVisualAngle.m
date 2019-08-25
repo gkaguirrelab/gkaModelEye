@@ -7,7 +7,7 @@ function [visualAngleTotal, visualAngleByPlane, outputRay0, outputRay1, rayPath0
 % Description
 %   Given a sceneGeometry and two coordinates on the retinal surface, the
 %   routine returns the total visual angle (in degrees) between the two
-%   points, as well as a a vector that contains the angles projected on the
+%   points, as well as a vector that contains the angles projected on the
 %   p1p2 and p1p3 planes (i.e., horizontal and vertical visual angle).
 %
 %   The routine can accept points on the ellipsoidal surface specified in
@@ -128,6 +128,7 @@ function [visualAngleTotal, visualAngleByPlane, outputRay0, outputRay1, rayPath0
 %}
 
 
+% Handle incomplete inputs
 if nargin<=2
     error('Invalid number of input arguments');
 end
