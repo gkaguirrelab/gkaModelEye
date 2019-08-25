@@ -149,6 +149,8 @@ end
 
 
 %% Perform the search
+% The varargin are passed on to eyePoseEllipseFit, which makes use of the
+% key values parsed above.
 [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin{:});
 
 
