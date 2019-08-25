@@ -61,18 +61,3 @@ for dd = 1:length(lensRefractionDiopters)
     drawnow
 end
 
-
-%% Present Figure 2 -- Ray trace through a spectacle lens
-
-sceneGeometry = createSceneGeometry('sphericalAmetropia',0,'spectacleLens',-4);
-sceneGeometry.cameraPosition.translation(3)=60;
-
-clear figureFlag
-figureFlag.p1Lim = [-20 20];
-figureFlag.p2Lim = [-15 15];
-figureFlag.axsag = false;
-opticalSystem = sceneGeometry.refraction.opticalSystem(:,[1 2 5]);
-rayTraceEllipsoids([sceneGeometry.eye.pupil.center(1) 2], deg2rad(-15), opticalSystem, figureFlag);
-
-fprintf(['Figure 2 shows a ray traced from a point on the pupil aperture through\n' ...
-    'The cornea and then through a -4 diopter spectacle lens.\n\n']);
