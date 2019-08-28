@@ -27,7 +27,7 @@ createSceneGeometry('eyeLaterality','left','sphericalAmetropia',-3,'spectacleLen
 
 The function `pupilProjection_inv` implements a search over eyePose parameters and executions of the forward model to find the eyePose values that best describe an observed entrance pupil ellipse. This is used to support model-based eye tracking with [transparentTrack](https://github.com/gkaguirrelab/transparentTrack)
 
-To install and configure the repository, first install [toolboxToolbox (tBtB)](https://github.com/ToolboxHub/ToolboxToolbox), which provides for declarative dependency management for Matlab. Once tBtB is installed, the code (and all its dependencies) will be installed and readied for use with the command `tbUse('gkaModelEye');`.
+To install and configure the repository, first install [toolboxToolbox (tBtB)](https://github.com/ToolboxHub/ToolboxToolbox), which provides for declarative dependency management for Matlab. Once tBtB is installed, the code will be installed and readied for use with the command `tbUse('gkaModelEye');`. The code requires the optimization, robotics, and statistics Matlab toolboxes. The code has no required dependencies external to Matlab, although the optional ExampleTest toolbox is installed by the tbUse command.
 
 A good place to start is to render the model eye for different poses and examine the parameters of the pupil ellipse. This example renders an emmetropic right eye, observed in the near infra-red range, that is rotated to -30 degrees azimuth, -5 degrees elevation, and has an aperture stop 2 mm in radius.
 ```
