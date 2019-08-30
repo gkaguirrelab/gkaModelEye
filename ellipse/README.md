@@ -1,4 +1,4 @@
-# ellipseFit
+# ellipse
 
 Routines for fitting ellipses. Several of these functions are taken from the "quadFit" MATLAB central toolbox created by Levente Hunyadi, "Estimation methods in the errors-in-variables context", PhD dissertation, submitted in 2013 to the Budapest University of Technology and Economics. The original routines can be found here:
 
