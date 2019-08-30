@@ -20,6 +20,12 @@ function objectHandle = addTransparentEllipseToFigure(pupilEllipseParams,imageSi
 % Outputs:
 %   objectHandle          - Handle. The handle to the plotted ellipse.
 %
+% Examples:
+%{
+    pupilEllipseParams = [200, 200, 1000, 0.75, pi/4];
+    figure
+    addTransparentEllipseToFigure(pupilEllipseParams);
+%}
 
 % Handle incomplete inputs
 switch nargin
