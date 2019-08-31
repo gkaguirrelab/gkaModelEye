@@ -38,13 +38,15 @@ function eye = modelEyeParameters( varargin )
 %  'ageYears'             - Scalar that supplies the age in years of the
 %                           eye to be modeled. Influences the refractive
 %                           index values of the lens.
-%  'accommodationDiopeters' - Scalar that supplies the accommodation state
+%  'accommodationDiopters' - Scalar that supplies the accommodation state
 %                           of the eye. Valid values range from zero
 %                           (unaccommodated) to +10. The value sets the
 %                           distance from the corneal apex to the point of
 %                           best focus, where diopters = 1000 /
 %                           distance(mm). The default value is the resting
-%                           accommodation value of 1.5.
+%                           accommodation value of 1.5. The model currently
+%                           can only model an accomodative state between
+%                           ~1.2 and ~8 diopters.
 %  'derivedParams'        - Struct that contains fields with parameters
 %                           used by various eye model components. If left 
 %                           empty, the parameters will be obtained from a
@@ -101,7 +103,7 @@ p.addParameter('species','Human',@ischar);
 p.addParameter('ageYears',18,@isscalar);
 p.addParameter('derivedParams',[],@(x)(isstruct(x) || isempty(x)));
 p.addParameter('navarroD',[],@(x)(isempty(x) || isscalar(x)));
-p.addParameter('accommodationDiopeters',1.5,@isscalar);
+p.addParameter('accommodationDiopters',1.5,@isscalar);
 p.addParameter('measuredCornealCurvature',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('spectralDomain','nir',@ischar);
 p.addParameter('calcLandmarkFovea',false,@islogical);
@@ -162,7 +164,7 @@ eye.meta.axialLength = p.Results.axialLength;
 eye.meta.species = p.Results.species;
 eye.meta.ageYears = p.Results.ageYears;
 eye.meta.navarroD = p.Results.navarroD;
-eye.meta.accommodationDiopeters = p.Results.accommodationDiopeters;
+eye.meta.accommodationDiopters = p.Results.accommodationDiopters;
 eye.meta.measuredCornealCurvature = p.Results.measuredCornealCurvature;
 eye.meta.spectralDomain = p.Results.spectralDomain;
 eye.meta.notes = notes;
