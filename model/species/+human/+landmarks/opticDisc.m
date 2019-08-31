@@ -38,7 +38,7 @@ end
 % to reflect these circumstances for this calculation.
 eye.meta.spectralDomain = 'vis';
 eye.meta.ageYears = 18;
-eye.meta.accommodationDiopeters = 0;
+eye.meta.accommodationDiopters = 0;
 cameraMedium = 'air';
 
 % Obtain the quadric form of the retinal surface

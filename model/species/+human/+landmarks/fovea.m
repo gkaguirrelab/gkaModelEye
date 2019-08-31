@@ -110,7 +110,7 @@ end
 % calculation.
 eye.meta.spectralDomain = 'vis';
 eye.meta.ageYears = 18;
-eye.meta.accommodationDiopeters = 1.5;
+eye.meta.accommodationDiopters = 1.5;
 cameraMedium = 'air';
 
 % Update the lens field for these values
