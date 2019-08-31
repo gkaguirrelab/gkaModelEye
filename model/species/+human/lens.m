@@ -122,14 +122,26 @@ lens.front(1) = lens.front(1) + lensThickFront;
 % to be slightly discontinuous close to the outer edges of the lens.
 nShells = 21;
 endShell = 21;
-if D >= 7
-    startShell = 3;
+if D < 2
+    startShell = 7;
 end
-if D >= 3 && D < 7
+if D >= 2 && D < 6
+    startShell = 6;
+end
+if D >=6 && D < 11
+    startShell = 5;
+end
+if D >= 11 && D < 15
     startShell = 4;
 end
-if D < 4
-    startShell = 6;
+if D >= 15 && D < 20
+    startShell = 3;
+end
+if D >= 20 && D < 25
+    startShell = 2;
+end
+if D >= 25
+    startShell = 1;
 end
 
 
