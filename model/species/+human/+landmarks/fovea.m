@@ -83,7 +83,7 @@ function fovea = fovea( eye )
 %}
 %
 % where SR is spherical refractive error in diopters and alpha0 is the
-% alpha value for an emmetropic eye. The alpha0 value is 5.4, which is both
+% alpha value for an emmetropic eye. The alpha0 value is 5.4, which is
 % the value given by Mathur 2013. For the vertical alpha, I assume an
 % elevation of 2.5 degrees in the emmetropic eye.
 %
@@ -110,7 +110,7 @@ end
 % calculation.
 eye.meta.spectralDomain = 'vis';
 eye.meta.ageYears = 18;
-eye.meta.accommodationDiopeters = 0;
+eye.meta.accommodationDiopeters = 1.5;
 cameraMedium = 'air';
 
 % Update the lens field for these values

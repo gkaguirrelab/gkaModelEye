@@ -43,7 +43,8 @@ function eye = modelEyeParameters( varargin )
 %                           (unaccommodated) to +10. The value sets the
 %                           distance from the corneal apex to the point of
 %                           best focus, where diopters = 1000 /
-%                           distance(mm).
+%                           distance(mm). The default value is the resting
+%                           accommodation value of 1.5.
 %  'derivedParams'        - Struct that contains fields with parameters
 %                           used by various eye model components. If left 
 %                           empty, the parameters will be obtained from a
@@ -100,7 +101,7 @@ p.addParameter('species','Human',@ischar);
 p.addParameter('ageYears',18,@isscalar);
 p.addParameter('derivedParams',[],@(x)(isstruct(x) || isempty(x)));
 p.addParameter('navarroD',[],@(x)(isempty(x) || isscalar(x)));
-p.addParameter('accommodationDiopeters',0,@isscalar);
+p.addParameter('accommodationDiopeters',1.5,@isscalar);
 p.addParameter('measuredCornealCurvature',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('spectralDomain','nir',@ischar);
 p.addParameter('calcLandmarkFovea',false,@islogical);

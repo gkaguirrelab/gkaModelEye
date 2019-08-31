@@ -64,7 +64,9 @@ else
     if isfield(eye.meta,'accommodationDiopeters')
         accommodationDiopeters = eye.meta.accommodationDiopeters;
     else
-        accommodationDiopeters = 0;
+        % If not set, assume the resting accommodation value of 1.5
+        % diopters
+        accommodationDiopeters = 1.5;
     end
     % Convert the requested accommodationDiopeters to the corresponding
     % Navarro D param.
