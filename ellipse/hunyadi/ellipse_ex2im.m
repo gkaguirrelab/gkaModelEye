@@ -4,8 +4,11 @@ function p = ellipse_ex2im(varargin)
 % and semi-minor axes (a and b) and its angle of tilt (theta).
 %
 % See also: ellipse_im2ex
-
+%
 % Copyright 2011 Levente Hunyadi
+%
+
+
 
 if nargin > 1
     narginchk(5,5);

@@ -2,8 +2,10 @@ function varargout = ellipse_im2ex(varargin)
 % Cast ellipse defined with implicit parameter vector to explicit form.
 %
 % See also: ellipse_ex2im
-
+%
 % Copyright 2011 Levente Hunyadi
+%
+
 
 if nargin > 1
     narginchk(6,6);

@@ -21,7 +21,12 @@ function p = ellipse_ex2transparent(varargin)
 %   p                     - The parameters of an ellipse in transparent 
 %                           form as a single, 5x1 vector
 %
-
+% Examples:
+%{
+    p1 = [100 100 400 0.9 pi/2];
+    p2 = ellipse_ex2transparent(ellipse_transparent2ex(p1));
+    assert(max(abs(p1-p2))<1e-6);
+%}
 
 if nargin > 1
     narginchk(5,5);
