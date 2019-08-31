@@ -1,0 +1,78 @@
+function pointBestFocus = calcPointBestFocus(sceneGeometry, stopRadius)
+% Returns the point of best focus for a model eye
+%
+% Syntax:
+%  pointBestFocus = calcPointBestFocus(eye, stopRadius)
+%
+% Description
+%   Given a model eye, the routine identifies the point in space at which
+%   the eye has its best focus. This point is defined as the location in
+%   space at which the line of sight and visual axis of the eye intersect,
+%   or pass with minimum distance.
+%
+%   If not defined, the radius of the aperture stop is set to provide an
+%   entrance pupil diameter of ~2 mm, which empirically produces the
+%   highest degree of acuity in normal observers. The fixation target is
+%   assumed to 1500 mm unless set.
+%
+%   The routine requires that the field sceneGeometry.eye.landmarks.fovea
+%   be defined.
+%
+% Inputs:
+%   sceneGeometry         - Structure. SEE: createSceneGeometry
+%   stopRadius            - Scalar. The radius of the aperture stop
+%
+% Outputs:
+%   pointBestFocus        - A 3x1 vector that gives the location of the
+%                           point of best focus in eyeWorld coordinates
+%                           (p1, p2, p3).
+%
+% Examples:
+%{
+%}
+
+
+% Code to determine the stop radius that corresponds to a pupil diameter of
+% 2 mm. This value is used as it is found to provide peak acuity for normal
+% observers.
+%{
+    entranceRadius = 2/2;
+    % Prepare scene geometry and eye pose aligned with visual axis
+    sceneGeometry = createSceneGeometry();
+    % Obtain the pupil area in the image for the entrance radius
+    % assuming no ray tracing
+    sceneGeometry.refraction = [];
+    pupilImage = pupilProjection_fwd([0, 0, 0, entranceRadius],sceneGeometry);
+    stopArea = pupilImage(3);
+    % Add the ray tracing function to the sceneGeometry
+    sceneGeometry = createSceneGeometry();
+    % Search across stop radii to find the value that matches the observed
+    % entrance area.
+    myPupilEllipse = @(radius) pupilProjection_fwd([0, 0, 0, radius],sceneGeometry);
+    myArea = @(ellipseParams) ellipseParams(3);
+    myObj = @(radius) (myArea(myPupilEllipse(radius))-stopArea(1)).^2;
+    stopRadius = fminunc(myObj, entranceRadius)
+%}
+    
+% Parse inputs
+if nargin==1
+    stopRadius = 0.8693;
+end
+
+% Check that the sceneGeometry eye has a foveal landmark
+if ~isfield(sceneGeometry.eye.landmarks,'fovea')
+    error('The sceneGeometry does not have a fovea defined. Set calcLandmarkFovea to true in the call to createSceneGeometry')
+end
+
+% Obtain the visual axis of the eye, which is the nodal ray that intersects
+% the fovea
+visualAxis = calcNodalRay(sceneGeometry.eye,sceneGeometry.eye.landmarks.fovea.geodetic);
+
+% Obtain the line of sight of the eye focused on effective infinity
+lineOfSight = calcLineOfSightRay(sceneGeometry,stopRadius,10000);
+
+% The point of best focus is where these two rays have their closest
+% approach
+pointBestFocus=quadric.distanceRays(visualAxis,lineOfSight);
+
+end
