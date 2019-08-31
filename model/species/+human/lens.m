@@ -57,21 +57,28 @@ accommodationPolyCoef = eye.derivedParams.accommodationPolyCoef;
 age = 18;
 
 % Set the D parameter of the model
+accommodationDiopters = [];
 if ~isempty(eye.meta.navarroD)
     % The D parameter has been hard-coded
     D = eye.meta.navarroD;
 else
-    if isfield(eye.meta,'accommodationDiopeters')
-        accommodationDiopeters = eye.meta.accommodationDiopeters;
+    if isfield(eye.meta,'accommodationDiopters')
+        accommodationDiopters = eye.meta.accommodationDiopters;
     else
         % If not set, assume the resting accommodation value of 1.5
         % diopters
-        accommodationDiopeters = 1.5;
+        accommodationDiopters = 1.5;
     end
-    % Convert the requested accommodationDiopeters to the corresponding
+    % For the accomodation value to be within the valid range of the model
+    accommodationDiopters = max([accommodationDiopters eye.derivedParams.accommodationRangeDiopters(1)]);
+    accommodationDiopters = min([accommodationDiopters eye.derivedParams.accommodationRangeDiopters(2)]);
+    
+    % Convert the requested accommodationDiopters to the corresponding
     % Navarro D param.
-    D = polyval(accommodationPolyCoef,accommodationDiopeters);
+    D = polyval(accommodationPolyCoef,accommodationDiopters);
 end
+
+
 
 % Initialize the components of the optical system
 lens.S = [];
@@ -235,7 +242,8 @@ lens.side = [lens.side; 1];
 lens.mustIntersect = [lens.mustIntersect; 1];
 lens.label = [lens.label; {'lens.front'}];
 lens.plot.color = [lens.plot.color; {'red'}];
-
+lens.meta.navarroD = D;
+lens.meta.accommodationDiopters = accommodationDiopters;
 
 end
 

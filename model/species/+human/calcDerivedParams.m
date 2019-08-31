@@ -5,16 +5,15 @@ function derivedParams = calcDerivedParams(varargin)
 %  derivedParams = human.calcDerivedParams()
 %
 % Description:
-%   Many of the model eye parameters are fully set by reference to the
-%   literature. Some of these parameter are derived by performing
-%   measurements using the model itself. These parameters have a complex,
-%   inter-dependent relationship with other derived parameters. This
-%   routine gathers in one place the computation of all derived parameters,
-%   and saves the resulting values to a file. This way, if there are
-%   adjustments to the overall model, this routine can be run to update the
-%   derived parameters. Absent a change in the code that computers the eye
-%   model, however, execution of this routine will not be needed in general
-%   use.
+%   While many of the model eye parameters are fully set by reference to
+%   the literature, some are derived by performing measurements using the
+%   model itself. These parameters have a complex, inter-dependent
+%   relationship with other derived parameters. This routine gathers in one
+%   place the computation of all derived parameters, and saves the
+%   resulting values to a file. This way, if there are adjustments to the
+%   overall model, this routine can be run to update the derived
+%   parameters. Absent a change in the code that computers the eye model,
+%   however, execution of this routine will not be needed in general use.
 %
 % Inputs:
 %   none
@@ -61,7 +60,9 @@ p.parse(varargin{:})
 if isempty(p.Results.derivedParams)
     derivedParams = struct();
     derivedParams.accommodationPolyCoef = [0.2804 3.2930 1.1188];
+    derivedParams.accommodationRangeDiopters = [1 10];
     derivedParams.stopEccenParams = [-1.7523 4.7609 0.1800 0.0973];
+    
 else
     derivedParams = p.Results.derivedParams;
 end
@@ -86,8 +87,8 @@ end
 
 % Set a range of Navarro D values and define a variable to hold the
 % accomodation values.
-navarroD = [5, 7.5, 10, 15, 20, 30];
-accomodationDiopters = nan(size(navarroD));
+navarroD = logspace(log10(6),log10(60));
+accommodationDiopters = nan(size(navarroD));
 
 % Create a sceneGeometry and save the fovea location. This will be
 % invariant across accommodation so does not need to be re-calculated.
@@ -98,20 +99,21 @@ fovea = sceneGeometry.eye.landmarks.fovea;
 for ii = 1:length(navarroD)
     sceneGeometry = createSceneGeometry('derivedParams',derivedParams,'navarroD',navarroD(ii));
     sceneGeometry.eye.landmarks.fovea = fovea;
-    [outputRayLoS,~] = calcLineOfSightRay(sceneGeometry);
-    outputRayVis = calcNodalRay(sceneGeometry.eye,sceneGeometry.eye.landmarks.fovea.geodetic);
-    pointOfBestFocus=quadric.distanceRays(outputRayLoS,outputRayVis);
-    accomodationDiopters(ii) = 1000/pointOfBestFocus(1);
+    pointBestFocus = calcPointBestFocus(sceneGeometry);
+    accommodationDiopters(ii) = 1000/pointBestFocus(1);
 end
 
-derivedParams.accommodationPolyCoef = polyfit(accomodationDiopters,navarroD,2);
+% Save these derived params
+derivedParams.accommodationPolyCoef = polyfit(accommodationDiopters,navarroD,5);
+derivedParams.accommodationRangeDiopters = [min(accommodationDiopters) max(accommodationDiopters)];
 
+% Plot it
 if p.Results.showPlots
     figure
-    plot(accomodationDiopters,navarroD,'xk');
+    plot(accommodationDiopters,navarroD,'xk');
     hold on
     plot(0:0.1:10,polyval(derivedParams.accommodationPolyCoef,0:0.1:10),'-r')
-    xlabel('Desired accomodation state of eye [diopters]');
+    xlabel('Desired accommodation state of eye [diopters]');
     ylabel('Navarro equation parameter [D]');
     title('derivedParams.accommodationPolyCoef');
 end
