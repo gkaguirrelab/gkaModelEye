@@ -1,8 +1,8 @@
-function [G,X,angleError] = findRetinaFieldPoint( eye, degField, cameraMedium )
+function [G,X,angleError] = calcRetinaFieldPoint( eye, degField, cameraMedium )
 % Retinal point at a specified visual field location w.r.t. optical axis
 %
 % Syntax
-%  [G,X,angleError] = findRetinaFieldPoint( eye, degField, cameraMedium )
+%  [G,X,angleError] = calcRetinaFieldPoint( eye, degField, cameraMedium )
 %
 % Description:
 %   Calculates the position on the retina of a point that has the specified
@@ -38,7 +38,7 @@ function [G,X,angleError] = findRetinaFieldPoint( eye, degField, cameraMedium )
 %{
     sceneGeometry = createSceneGeometry();
     degField = [5.8 3.0];
-    [G,X,angleError] = findRetinaFieldPoint( sceneGeometry.eye, degField);
+    [G,X,angleError] = calcRetinaFieldPoint( sceneGeometry.eye, degField);
     [outputRay,rayPath] = calcNodalRay(sceneGeometry.eye,G);
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true,'rayPath',rayPath,'outputRay',outputRay);
 %}
@@ -49,8 +49,8 @@ function [G,X,angleError] = findRetinaFieldPoint( eye, degField, cameraMedium )
     mmPerDeg = [];
     for SR = -7:1:3
         eye = modelEyeParameters('sphericalAmetropia',SR);
-        [~,X0] = findRetinaFieldPoint( eye, -deltaAngles);
-        [~,X1] = findRetinaFieldPoint( eye, deltaAngles);
+        [~,X0] = calcRetinaFieldPoint( eye, -deltaAngles);
+        [~,X1] = calcRetinaFieldPoint( eye, deltaAngles);
         length(end+1) = eye.meta.axialLength;
         mmPerDeg(end+1) = sqrt(sum((X0-X1).^2)) ./ sqrt(sum((deltaAngles.*2).^2));
     end

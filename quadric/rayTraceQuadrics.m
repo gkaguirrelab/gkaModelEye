@@ -12,7 +12,7 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %   This approach to optical systems is described in:
 %
 %       Langenbucher, Achim, et al. "Ray tracing through a schematic eye
-%       containing second-order (quadric) surfaces using 4×4 matrix
+%       containing second-order (quadric) surfaces using 4x4 matrix
 %       notation." Ophthalmic and Physiological Optics 26.2 (2006):
 %       180-188.
 %

@@ -2,6 +2,8 @@ Quadric package
 
 This is a set of functions that work with quadric surfaces, rays, points, and their relations. Each sub-directory contains functions within the +quadric package, so that calls to all routines begin with `quadric.`.
 
+The top-level function `rayTraceQuadrics` does not take the `quadric.` prefix.
+
 A quadric surface may defined in several different ways. In these routines, I adopt the forms:
 
 Implicit:

@@ -118,7 +118,7 @@ eye.lens = human.lens(eye);
 
 % Now calculate the location on the retina corresponding to this visual
 % angle wrt the optical axis.
-[fovea.geodetic,fovea.coords] = findRetinaFieldPoint( eye, fovea.degField, cameraMedium );
+[fovea.geodetic,fovea.coords] = calcRetinaFieldPoint( eye, fovea.degField, cameraMedium );
 
 % Transposing to get the values in the right row-column orientation
 fovea.geodetic=fovea.geodetic';
