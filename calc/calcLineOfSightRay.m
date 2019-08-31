@@ -9,6 +9,8 @@ function [outputRay,rayPath,fixEyePose,fixTargetCoords,foveaDistanceError] = cal
 %   the fixation point, passes through the center of the entrance pupil,
 %   and arrives at the fovea.
 %
+%   This ray is defined as the "line of sight" for the eye.
+%
 %   If not defined, the radius of the aperture stop is set to provide an
 %   entrance pupil diameter of ~2 mm, which empirically produces the
 %   highest degree of acuity in normal observers. The fixation target is

@@ -18,6 +18,9 @@ function [outputRay,rayPath, angleError] = calcNodalRay(eye,G,X,cameraMedium)
 %   The routine can accept points on the ellipsoidal surface specified in
 %   either Cartesian or ellipsoidal geodetic coordinates.
 %
+%   Note that the nodal ray that originates from the fovea is termed the
+%   "visual axis" of the eye.
+%
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
 %   G                     - 3x1 vector that provides the geodetic
