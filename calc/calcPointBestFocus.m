@@ -1,5 +1,5 @@
 function pointBestFocus = calcPointBestFocus(sceneGeometry, stopRadius)
-% Returns the point of best focus for a model eye
+% Returns the point of best focus for a model eye defined in sceneGeometry
 %
 % Syntax:
 %  pointBestFocus = calcPointBestFocus(eye, stopRadius)
@@ -29,6 +29,13 @@ function pointBestFocus = calcPointBestFocus(sceneGeometry, stopRadius)
 %
 % Examples:
 %{
+    % Check that the distance from the eye of the point of best focus 
+    % corresponds to the assigned accommodative state of the eye
+    D1 = 2;
+    sceneGeometry = createSceneGeometry('accommodationDiopters',D1,'calcLandmarkFovea',true);
+    pointBestFocus = calcPointBestFocus(sceneGeometry);
+    D2 = 1000/pointBestFocus(1);
+    assert(abs(D1 - D2) < 0.1);
 %}
 
 
