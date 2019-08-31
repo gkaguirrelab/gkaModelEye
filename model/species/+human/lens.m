@@ -47,8 +47,8 @@ function lens = lens( eye )
 
 
 % Because of various imperfections in the model and differences from the
-% Navarro paper, it was necessary to "tune" the assigned accomodation
-% values so that a requested accomodation state of the emmetropic eye
+% Navarro paper, it was necessary to "tune" the assigned acommodation
+% values so that a requested acommodation state of the emmetropic eye
 % results in the expected point of best focus. This is determined in the
 % routine 'calcDerivedParams'
 accommodationPolyCoef = eye.derivedParams.accommodationPolyCoef;
@@ -69,7 +69,7 @@ else
         % diopters
         accommodationDiopters = 1.5;
     end
-    % For the accomodation value to be within the valid range of the model
+    % For the acommodation value to be within the valid range of the model
     accommodationDiopters = max([accommodationDiopters eye.derivedParams.accommodationRangeDiopters(1)]);
     accommodationDiopters = min([accommodationDiopters eye.derivedParams.accommodationRangeDiopters(2)]);
     

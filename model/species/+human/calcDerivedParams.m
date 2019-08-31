@@ -71,8 +71,8 @@ end
 %% Accomodation values
 % Used in human.lens
 % Because of various imperfections in the model and differences from the
-% Navarro 2006 paper, it was necessary to "tune" the assigned accomodation
-% values so that a requested accomodation state of the emmetropic eye
+% Navarro 2006 paper, it was necessary to "tune" the assigned acommodation
+% values so that a requested acommodation state of the emmetropic eye
 % results in the expected point of best focus. For example, a non-zero
 % setting of the D parameter of the Navarro equations is needed to make the
 % emmetropic eye have a point of best focus that approaches infinity.
@@ -86,7 +86,7 @@ if p.Results.verbose
 end
 
 % Set a range of Navarro D values and define a variable to hold the
-% accomodation values.
+% acommodation values.
 navarroD = logspace(log10(6),log10(60));
 accommodationDiopters = nan(size(navarroD));
 
