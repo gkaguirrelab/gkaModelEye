@@ -34,7 +34,8 @@ end
 requiredAddOns = {...
     'Optimization Toolbox',...                  % optimization_toolbox
     'Robotics System Toolbox',...               % robotics_system_toolbox
-    'Statistics and Machine Learning Toolbox'...   % statistics_toolbox
+    'Statistics and Machine Learning Toolbox',...   % statistics_toolbox
+    'Symbolic Math Toolbox'...                  % symbolic_toolbox
     };
 % Given this hard-coded list of add-on toolboxes, we then check for the
 % presence of each and issue a warning if absent.
