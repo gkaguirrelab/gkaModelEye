@@ -61,7 +61,7 @@ function [opticalSystemOut, p, spectacleMagnification] = addSpectacleLens(optica
     % Confirm that a spectacle lens has the specified optical power
     lensVertexDistance = 14;
     entrancePupilDepth = 3;
-    lensDiopters = -5;
+    lensDiopters = 5;
     opticalSystem = addSpectacleLens([],lensDiopters,'lensVertexDistance',lensVertexDistance,'entrancePupilDepth',entrancePupilDepth,'systemDirection','cameraToEye');
     % Plot this
     plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true);
@@ -90,8 +90,21 @@ function [opticalSystemOut, p, spectacleMagnification] = addSpectacleLens(optica
     assert(abs(spectacleMagnification-1.3)<0.1);
 %}
 %{
-    % Confirm that a minus lens is minifying
-    [~, ~, spectacleMagnification]=addSpectacleLens([],-5);
+    % Calculate magnification by ray-tracing
+    lensDiopters = -5;
+    opticalSystem=addSpectacleLens([],lensDiopters,'systemDirection','cameraToEye');
+    % Trace two rays from right (the world) to left (the eye) at different
+    % initial angles
+    height = 3;
+    distance = 500;
+    R1 = quadric.normalizeRay([distance,-1;height,0;0,0]);
+    R2 = quadric.normalizeRay([distance,-1;height,-0.01;0,0]);
+    [outputRay1,rayPath1] = rayTraceQuadrics(R1, opticalSystem);
+    [outputRay2,rayPath2] = rayTraceQuadrics(R2, opticalSystem);    
+    % Calculate the point of intersection of these two object rays
+    imagePoint=quadric.distanceRays(outputRay1,outputRay2);
+    imageHeight = imagePoint(2);
+    magnification = imageHeight / height;
 %}
 
 
