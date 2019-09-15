@@ -140,13 +140,13 @@ switch p.Results.surfaceSetName
             switch length(p.Results.spectacleLens)
                 case 1
                     lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex);
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex, 'systemDirection', 'eyeToCamera');
                 case 2
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2));
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2), 'systemDirection', 'eyeToCamera');
                 case 3
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3));
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'systemDirection', 'eyeToCamera');
                 case 4
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4));
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4), 'systemDirection', 'eyeToCamera');
                 otherwise
                     error('The key-value pair spectacleLens is limited to four elements: [refractionDiopters, refractionIndex, vertexDistance, baseCurve]');
             end
@@ -219,13 +219,13 @@ switch p.Results.surfaceSetName
             switch length(p.Results.spectacleLens)
                 case 1
                     lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex);
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex, 'systemDirection', 'eyeToCamera');
                 case 2
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2));
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2), 'systemDirection', 'eyeToCamera');
                 case 3
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3));
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'systemDirection', 'eyeToCamera');
                 case 4
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4));
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4), 'systemDirection', 'eyeToCamera');
                 otherwise
                     error('The key-value pair spectacleLens is limited to four elements: [refractionDiopters, refractionIndex, vertexDistance, baseCurve]');
             end
@@ -238,6 +238,25 @@ switch p.Results.surfaceSetName
         % Start in the camera medium
         opticalSystem = [opticalSystem; ...
             [nan(1,10) nan nan(1,6) nan mediumRefractiveIndex]];
+
+        % Add a spectacle lens if requested
+        if ~isempty(p.Results.spectacleLens)
+            switch length(p.Results.spectacleLens)
+                case 1
+                    lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex, 'systemDirection', 'cameraToEye');
+                case 2
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2), 'systemDirection', 'cameraToEye');
+                case 3
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'systemDirection', 'cameraToEye');
+                case 4
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4), 'systemDirection', 'cameraToEye');
+                otherwise
+                    error('The key-value pair spectacleLens is limited to four elements: [refractionDiopters, refractionIndex, vertexDistance, baseCurve]');
+            end
+            surfaceLabels = [surfaceLabels; {'spectacleLensFront'}; {'spectacleLensBack'}];
+            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[.5 .5 .5]}];
+        end
         
         % Add the cornea, ending in the aqueous refractive index
         opticalSystem = [opticalSystem; ...
@@ -276,6 +295,25 @@ switch p.Results.surfaceSetName
         % Start in the camera medium
         opticalSystem = [opticalSystem; ...
             [nan(1,10) nan nan(1,6) nan mediumRefractiveIndex]];
+
+        % Add a spectacle lens if requested
+        if ~isempty(p.Results.spectacleLens)
+            switch length(p.Results.spectacleLens)
+                case 1
+                    lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex, 'systemDirection', 'cameraToEye');
+                case 2
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2), 'systemDirection', 'cameraToEye');
+                case 3
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'systemDirection', 'cameraToEye');
+                case 4
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4), 'systemDirection', 'cameraToEye');
+                otherwise
+                    error('The key-value pair spectacleLens is limited to four elements: [refractionDiopters, refractionIndex, vertexDistance, baseCurve]');
+            end
+            surfaceLabels = [surfaceLabels; {'spectacleLensFront'}; {'spectacleLensBack'}];
+            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[.5 .5 .5]}];
+        end
         
         % Add the cornea, ending in the aqueous refractive index
         opticalSystem = [opticalSystem; ...
