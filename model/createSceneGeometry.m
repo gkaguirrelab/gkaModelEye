@@ -134,11 +134,12 @@ function sceneGeometry = createSceneGeometry(varargin)
 %                           index of refraction of the lens material. If
 %                           left empty, no contact lens is added to the
 %                           model.
-%  'spectacleLens'        - Scalar, 1x2, or 1x3 vector, with values for the
+%  'spectacleLens'        - Scalar, 1x2, 1x3, or 1x4 vector, with values for the
 %                           lens refraction in diopters, (optionally) the
-%                           index of refraction of the lens material, and
-%                           (optinally) the vertex distance in mm. If left
-%                           empty, no spectacle is added to the model.
+%                           index of refraction of the lens material,
+%                           (optinally) the vertex distance in mm, and
+%                           (optionally) the base curvature. If left empty,
+%                           no spectacle is added to the model.
 %  'cameraMedium'         - String, options include:
 %                           {'air','water','vacuum'}. This sets the index
 %                           of refraction of the medium between the eye and
