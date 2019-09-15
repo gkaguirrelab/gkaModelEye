@@ -5,12 +5,7 @@ function figHandle = plotOpticalSystem(varargin)
 %  figHandle = plotOpticalSystem(varargin)
 %
 % Description:
-%   Create a schematic diagram of the model eye specified in the passed
-%   eye variable.
-%
-% Inputs:
-%   eye                   - An eye struct returned from
-%                           modelEyeParameters()
+%   Create a 3D rendered plot of the specified optical system 
 %
 % Optional key/value pairs:
 %  'view'                 - String. The view to display. Valid choices
@@ -55,7 +50,7 @@ p = inputParser; p.KeepUnmatched = true;
 % Optional
 p.addParameter('newFigure',true,@islogical);
 p.addParameter('visible',true,@islogical);
-p.addParameter('surfaceSet',[], @isstruct);
+p.addParameter('surfaceSet',[], @(x)(isempty(x) | isstruct(x) | isnumeric(x)));
 p.addParameter('surfaceAlpha', 0.1,@isnumeric);
 p.addParameter('retinaGeodetics', false,@islogical);
 p.addParameter('rayPath',[], @(x)(isempty(x) | isnumeric(x)));
@@ -84,16 +79,39 @@ hold on
 % Plot the surfaceSet if provided
 if ~isempty(p.Results.surfaceSet)
 
-    % Create a local variable for the optical system and strip any nan rows
-    opticalSystem=p.Results.surfaceSet.opticalSystem;
-    opticalSystem=opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
+    % Assemble to surfaceSet components
+    if isstruct(p.Results.surfaceSet)
+        % If we have a whole surface set, extract the optical system and
+        % plot information
+        opticalSystem=p.Results.surfaceSet.opticalSystem;
+        
+        % Strip any nan rows from the optical system.
+        opticalSystem=opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
+        
+        % Determine the number of surfaces
+        nSurfaces = size(opticalSystem,1);
+        
+        % Obtain the surface Labels and colors
+        surfaceColors=p.Results.surfaceSet.surfaceColors;
+        surfaceLabels=p.Results.surfaceSet.surfaceLabels;
+        
+    else
+        % We just have an optical system matrix.
+        opticalSystem=p.Results.surfaceSet;
 
-    % Determine the number of surfaces
-    nSurfaces = size(opticalSystem,1);
+        % Strip any nan rows from the optical system.
+        opticalSystem=opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
 
-    % Obtain the surface Labels and colors
-    surfaceColors=p.Results.surfaceSet.surfaceColors;
-    surfaceLabels=p.Results.surfaceSet.surfaceLabels;
+        % Determine the number of surfaces
+        nSurfaces = size(opticalSystem,1);
+
+        % The surfaces are gray and the labels are unknown
+        surfaceColors=cell(nSurfaces,1);
+        surfaceColors(:) = {[0.5 0.5 0.5]};
+        surfaceLabels=cell(nSurfaces,1);
+        surfaceLabels(:) = {'unknown'};
+        
+    end
     
     % Loop over the surfaces
     for ii=1:nSurfaces
