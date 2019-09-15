@@ -238,6 +238,8 @@ switch p.Results.surfaceSetName
         % Start in the camera medium
         opticalSystem = [opticalSystem; ...
             [nan(1,10) nan nan(1,6) nan mediumRefractiveIndex]];
+        surfaceLabels = {'camera'};
+        surfaceColors = {[nan nan nan]};
 
         % Add a spectacle lens if requested
         if ~isempty(p.Results.spectacleLens)
@@ -263,10 +265,10 @@ switch p.Results.surfaceSetName
             [flipud(eye.cornea.S) flipud(eye.cornea.side)*(-1) flipud(eye.cornea.boundingBox) flipud(eye.cornea.mustIntersect) [flipud(eye.cornea.index); returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain )]]];
         
         % Assemble the labels
-        surfaceLabels = [{'camera'}; flipud(eye.cornea.label)];
+        surfaceLabels = [surfaceLabels; flipud(eye.cornea.label)];
         
         % Assemble the surface plot colors
-        surfaceColors = [{[nan nan nan]}; flipud(eye.cornea.plot.color)];
+        surfaceColors = [surfaceColors; flipud(eye.cornea.plot.color)];
         
     case 'stopToRetina'
         
@@ -295,7 +297,9 @@ switch p.Results.surfaceSetName
         % Start in the camera medium
         opticalSystem = [opticalSystem; ...
             [nan(1,10) nan nan(1,6) nan mediumRefractiveIndex]];
-
+        surfaceLabels = {'camera'};
+        surfaceColors = {[nan nan nan]};
+        
         % Add a spectacle lens if requested
         if ~isempty(p.Results.spectacleLens)
             switch length(p.Results.spectacleLens)
@@ -330,10 +334,10 @@ switch p.Results.surfaceSetName
           [flipud(eye.retina.S) flipud(eye.retina.side)*(-1) flipud(eye.retina.boundingBox) flipud(eye.retina.mustIntersect) returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
 
         % Assemble the labels
-        surfaceLabels = [{'camera'}; flipud(eye.cornea.label); flipud(eye.lens.label); flipud(eye.retina.label)];
+        surfaceLabels = [surfaceLabels; flipud(eye.cornea.label); flipud(eye.lens.label); flipud(eye.retina.label)];
         
         % Assemble the surface plot colors
-        surfaceColors = [{[nan nan nan]}; flipud(eye.cornea.plot.color); flipud(eye.lens.plot.color); flipud(eye.retina.plot.color)];        
+        surfaceColors = [surfaceColors; flipud(eye.cornea.plot.color); flipud(eye.lens.plot.color); flipud(eye.retina.plot.color)];        
         
     otherwise
         error('Unrecognized surfaceSetName');
