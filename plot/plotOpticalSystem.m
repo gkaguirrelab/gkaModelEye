@@ -133,7 +133,7 @@ end
 
 % Plot the rayPath if provided
 if ~isempty(p.Results.rayPath)
-    plot3(p.Results.rayPath(1,:),p.Results.rayPath(2,:),p.Results.rayPath(3,:),'-r');
+    plot3(p.Results.rayPath(1,:),p.Results.rayPath(2,:),p.Results.rayPath(3,:),'-','Color',p.Results.rayColor);
 end
 
 % Add the outputRay if provided
