@@ -1,15 +1,20 @@
-function [opticalSystemOut, p, spectacleMagnification] = addSpectacleLens(opticalSystemIn, lensRefractionDiopters, varargin)
+function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractionDiopters, varargin)
 % Add a spectacle lens to a passed optical system
 %
 % Syntax:
 %  [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractionDiopters)
 %
 % Description:
-%	This routine adds a meniscus (ophthalmologic) spectacle lens to an
-%	optical system with the refractive power specified in the passed
-%	variable. Note that a ray emerging from the eye encounters two concave
-%	surfaces for this lens, so both surfaces will have a negative radius of
-%	curvature for rayTraceEllipsoids().
+%	This routine adds an ophthalmologic spectacle lens to an optical system
+%	with the refractive power specified in the passed variable. Note that a
+%	ray emerging from the eye encounters two concave surfaces for this
+%	lens, so both surfaces will have a negative radius of curvature for
+%	rayTraceEllipsoids().
+%
+%   The routine makes lenses that have the desired optical properties
+%   between +-1 and +-6 diopters. For corrections smaller than 1 diopter or
+%   larger than 6, the modeled lens returned by the routine deviates from
+%   the desired optical correction.
 %
 % Inputs:
 %   opticalSystemIn       - An mx19 matrix, where m is set by the key value
@@ -61,7 +66,7 @@ function [opticalSystemOut, p, spectacleMagnification] = addSpectacleLens(optica
     % Confirm that a spectacle lens has the specified optical power
     lensVertexDistance = 14;
     entrancePupilDepth = 3;
-    lensDiopters = 5;
+    lensDiopters = -4;
     opticalSystem = addSpectacleLens([],lensDiopters,'lensVertexDistance',lensVertexDistance,'entrancePupilDepth',entrancePupilDepth,'systemDirection','cameraToEye');
     % Plot this
     plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true);
@@ -80,33 +85,18 @@ function [opticalSystemOut, p, spectacleMagnification] = addSpectacleLens(optica
     assert(abs((calcDiopters - lensDiopters)/lensDiopters) < 0.025);
 %}
 %{
-    % Confirm that the returned spectacle magnification matches the
-    % example given here:
-    % http://www.drdrbill.com/downloads/optics/ophth-optics/Spectacle_Magnification.pdf
-    % This is a +20 lens, with a +12 base curve, and a vertex distance from
-    % the entrance pupil of 25 mm (3 mm added within the function for the
-    % cornea to pupil distance). The given solution is x1.3 magnification.
-    [~, ~, spectacleMagnification]=addSpectacleLens([],20,'lensRefractiveIndex',1.5,'lensVertexDistance',22,'baseCurve',12);
-    assert(abs(spectacleMagnification-1.3)<0.1);
-%}
-%{
     % Calculate magnification by ray-tracing
     lensDiopters = -5;
-    opticalSystem=addSpectacleLens([],lensDiopters,'systemDirection','cameraToEye');
-    % Trace two rays from right (the world) to left (the eye) at different
-    % initial angles
-    height = 3;
-    distance = 500;
-    R1 = quadric.normalizeRay([distance,-1;height,0;0,0]);
-    R2 = quadric.normalizeRay([distance,-1;height,-0.01;0,0]);
-    [outputRay1,rayPath1] = rayTraceQuadrics(R1, opticalSystem);
-    [outputRay2,rayPath2] = rayTraceQuadrics(R2, opticalSystem);    
-    % Calculate the point of intersection of these two object rays
-    imagePoint=quadric.distanceRays(outputRay1,outputRay2);
-    imageHeight = imagePoint(2);
-    magnification = imageHeight / height;
+    opticalSystem=addSpectacleLens([],lensDiopters,'systemDirection','eyeToCamera');
+    % Trace a ray from the position of the center of the iris aperture
+    % through the lens.
+    angleInitial = 1;
+    R = quadric.normalizeRay(quadric.anglesToRay([-3.9;0;0], angleInitial, 0 ));
+    outputRay = rayTraceQuadrics(R, opticalSystem);
+    % Obtain the angle of the output ray w.r.t. the optical axis
+    angleFinal = quadric.rayToAngles(outputRay);
+    magnification = angleInitial / angleFinal
 %}
-
 
 
 %% input parser
@@ -127,6 +117,11 @@ p.addParameter('systemDirection','eyeToCamera',@ischar);
 % parse
 p.parse(opticalSystemIn, lensRefractionDiopters, varargin{:})
 
+% Check the lensRefractionDiopters and warn if out of routine bounds
+if abs(lensRefractionDiopters)<1 || abs(lensRefractionDiopters)>6
+    warning('addSpectacleLens:inaccurateModel','The model is accurate only for spectacle correction between +/- 1 and 6 diopters.');
+end
+
 % Distribute the parameters into variables
 lensVertexDistance = p.Results.lensVertexDistance;
 lensRefractiveIndex = p.Results.lensRefractiveIndex;
@@ -139,14 +134,6 @@ if isempty(opticalSystemIn)
     mediumRefractiveIndex = 1;
 else
     mediumRefractiveIndex = opticalSystemIn(end,end);
-end
-
-% The lens equations do not perform properly for corrections of less that
-% 0.25 diopters, and we don't bother trying to model so small a correction.
-% In such a case, return the opticalSystem unaltered.
-if abs(lensRefractionDiopters) < 0.25
-    spectacleMagnification = 1;
-    return
 end
 
 % Set the base curve (front surface refraction in diopters) using Vogel's
@@ -237,14 +224,6 @@ else
     intersectHeight = eval(solve(eqn));
     
 end % positive or negative lens
-
-
-%% Calculate the spectacle magnification
-% The magnification produced by a thick spectacle lens has two components,
-% the shape factor and the power factor
-sf = 1 / (1 - ( (thickness/1000)/lensRefractiveIndex)*frontDiopters);
-pf = 1 / (1 - (((p.Results.lensVertexDistance+p.Results.entrancePupilDepth)/1000)*backDiopters));
-spectacleMagnification = (sf * pf);
 
 
 %% Assemble the optical system
