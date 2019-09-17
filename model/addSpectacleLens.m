@@ -93,7 +93,7 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
     magnification = angleInitial / angleFinal
 %}
 %{
-    % Display a spectacle lens and the converging rays
+    % Display a spectacle lens and the focal point
     lensDiopters = 10;
     opticalSystem = addSpectacleLens([],lensDiopters,'systemDirection','cameraToEye');
     % Plot this
@@ -149,11 +149,13 @@ else
     mediumRefractiveIndex = opticalSystemIn(end,end);
 end
 
-% If no optical system was provided create an optical system that begins in
-% air.
+% Initialize the lens optical system
+lensSystem = nan(1,19);
+lensSystem(19) = mediumRefractiveIndex;
+
+% If the opticalSystemIn is empty, initialize it as well
 if isempty(opticalSystemIn)
-    opticalSystemIn = nan(1,19);
-    opticalSystemIn(19) = 1;
+    opticalSystemIn = lensSystem;
 end
 
 % Set the base curve (front surface refraction in diopters) using Vogel's
@@ -201,7 +203,7 @@ frontCenter = @(thickness) lensVertexDistance + frontCurvature + thickness;
 
 % Return the optical system for the candidate lens
 myLens = @(x) ...
-    assembleLensSystem(opticalSystemIn, 'cameraToEye', ...
+    assembleLensSystem(lensSystem, 'cameraToEye', ...
     p.Results.lensRefractiveIndex, mediumRefractiveIndex, ...
     x(1), backCenter(x(1)), ...
     frontCurvature, frontCenter(x(2)), ...
