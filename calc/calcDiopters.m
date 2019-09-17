@@ -43,14 +43,6 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem)
 %
 % Examples:
 %{
-    % Display a lens and it's principal point
-    opticalSystem = addSpectacleLens([],-5);
-    % Plot this
-    plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true);
-    % Find the principal points and plot these
-    [P, systemDirectionOut] = calcPrincipalPoints(opticalSystem);
-    plot3(P(1),P(2),P(3),'*r')
-    assert(strcmp(systemDirection,systemDirectionOut));
 %}
 
 % Obtain the principal point and systemDirection
