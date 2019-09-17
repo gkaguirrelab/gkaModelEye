@@ -312,7 +312,8 @@ thicknessAtEdge = Dfront - Dback;
 c = -thicknessAtEdge;
 ceq = c;
 
-
+% Return the position along the optical axis for the edge of each surface.
+% This will be used subsequently to assemble a bounding box.
 intersectHeights = [Xback(1) Xfront(1)];
 
 end
