@@ -133,6 +133,13 @@ p.addParameter('systemDirection','eyeToCamera',@ischar);
 % parse
 p.parse(opticalSystemIn, lensRefractionDiopters, varargin{:})
 
+% Detect the special case of lensRefractionDiopters == 0 and return the
+% unmodified optical system
+if lensRefractionDiopters==0
+    opticalSystemOut = opticalSystemIn;
+    return
+end
+
 
 %% Setup fixed lens paramters
 % Distribute the parameters into variables
