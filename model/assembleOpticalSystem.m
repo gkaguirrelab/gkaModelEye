@@ -38,7 +38,9 @@ function [opticalSystem, surfaceLabels, surfaceColors] = assembleOpticalSystem( 
 %                           compiled ray trace routines can expect input
 %                           parameters of fixed size. If there are m
 %                           surfaces defined in the surfaceSet, then the
-%                           optical system will have 100-m rows of nans.
+%                           optical system will have 100-m rows of nans. If
+%                           the key-value is set to empty, no nan rows will
+%                           be added.
 %
 % Outputs:
 %   opticalSystem         - An mx19 matrix, where m is set by the key value
@@ -350,8 +352,10 @@ end % switch statement
 % so that the compiled ray-tracing routines can expect a constant size for
 % the input variables. The nan rows are stripped out at the time of ray
 % tracing.
-osRowLength = size(opticalSystem,2);
-opticalSystem = [opticalSystem; ...
-    nan(p.Results.opticalSystemNumRows-size(opticalSystem,1),osRowLength)];
+if ~isempty(p.Results.opticalSystemNumRows)
+    osRowLength = size(opticalSystem,2);
+    opticalSystem = [opticalSystem; ...
+        nan(p.Results.opticalSystemNumRows-size(opticalSystem,1),osRowLength)];
+end
 
 end % assembleOpticalSystem
