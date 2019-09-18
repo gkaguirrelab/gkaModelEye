@@ -10,7 +10,7 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %
 % Inputs:
 %   opticalSystem         - An mx19 matrix, where m is set by the key value
-%                           opticalSystemNumRows. Each row contains the 
+%                           opticalSystemNumRows. Each row contains the
 %                           values:
 %                               [S side bb must n]
 %                           where:
@@ -36,13 +36,12 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %                           correct their vision.
 %
 % Optional key/value pairs:
-% Optional key/value pairs:
 %  'lensRefractiveIndex'  - Scalar. Refractive index of the lens material.
 %                           The routine returnRefractiveIndex() provides
 %                           the indices for several spectacle materials
 %                           under visible (vis) and near infra-red (nir)
 %                           imaging domains.
-%  'minimumLensThickness' - Scalar. The minimum lens in mm.
+%  'minimumLensThickness' - Scalar. The minimum lens thickness in mm.
 %
 %
 % Outputs:
@@ -54,26 +53,9 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %{
     lensDiopters = -3;
     eye = modelEyeParameters();
-    opticalSystem=assembleOpticalSystem(eye,'surfaceSetName','stopToCamera','opticalSystemNumRows',[]);
-    opticalSystem = addContactLens(opticalSystem,lensDiopters);
+    opticalSystemIn=assembleOpticalSystem(eye,'surfaceSetName','stopToCamera','opticalSystemNumRows',[]);
+    opticalSystemOut = addContactLens(opticalSystemIn,lensDiopters);
 %}
-%{
-    %% Replicate calculation of contact lens curvature
-    %% CURRENTLY NOT IMPLEMENTED
-    % WJ Benajamin provudes an example calculation for a contact lens
-    % that provides -10D power. We confirm here that our routine provides
-    % the same solution.
-    %   Bennett, Edward S., and Barry A. Weissman, eds. Clinical contact 
-    %   lens practice. Lippincott Williams & Wilkins, 2005. Chapter 7A, 
-    %   "Optical phenomena of contact lenses", WJ Benjamin. p130
-    % opticalSystemIn = [nan nan nan nan 1.3760; -7.8  -7.8  -7.8  -7.8  1.0];
-    % The curvature of the front surface of the contact lens should be
-    % -9.56. We obtain a slightly lower value (9.5468) as we do not model
-    % the effect of the pre-lens tear film.
-    % opticalSystemOut = addContactLens(opticalSystemIn, -10, 'lensRefractiveIndex', 1.43 );
-    % assert(abs(opticalSystemOut(end,2) - -9.56)<0.1);
-%}
-
 
 
 %% input parser
@@ -103,9 +85,7 @@ if ~strcmp(systemDirection,'eyeToCamera')
     error('Not set up yet')
 end
 
-%% Setup fixed lens paramters
-% Distribute the parameters into variables
-lensRefractiveIndex = p.Results.lensRefractiveIndex;
+%% Setup fixed lens paramtersex;
 
 % The passed optical system will have a ray that emerges into a medium with
 % a specified index of refraction. We store the index of refraction of
@@ -117,14 +97,16 @@ mediumRefractiveIndex = opticalSystemIn(end,end);
 % the last surface. The index of refraction of the tear film is stored with
 % the next-to-last surface
 tearFilm = opticalSystemIn(end,:);
-tearIndex = opticalSystemIn(end-1,19);
+tearRefractiveIndex = opticalSystemIn(end-1,19);
 tearS = tearFilm(1:10);
-backCenter = quadric.center(tearS);
-backCenter = backCenter(1);
 backCenter = quadric.center(tearS);
 backCenter = backCenter(1);
 backRadii = quadric.radii(tearS);
 tearThickness = backRadii(1)+backCenter(1);
+
+% The desired optical system will have its refractive power plus the called
+% for lens refraction
+targetDiopters = calcDiopters(opticalSystemIn) + lensRefractionDiopters;
 
 %% Search for parameters of an ophthalmic lens
 % This is "convex-concave" lens with two surfaces. The back surface is
@@ -148,33 +130,31 @@ tearThickness = backRadii(1)+backCenter(1);
 %% Define anonymous functions
 % Centers of the lenses, dependent upon lens thickness and back
 % curvature
-frontCenter = @(thickness) tearThickness + frontCurvature + thickness;
+frontCenter = @(x) tearThickness + x(1) + x(2);
 
 % Return the optical system for the candidate lens
-myLens = @(x) ...
-    assembleLensSystem(lensSystem, p.Results.systemDirection, ...
-    p.Results.lensRefractiveIndex, mediumRefractiveIndex, ...
-    x(1), backCenter(x(1)), ...
-    frontCurvature, frontCenter(x(2)), ...
-    [lensVertexDistance/2, lensVertexDistance/2], lensVertexDistance);
+mySystem = @(x) ...
+    assembleLensSystem(opticalSystemIn, ...
+    p.Results.lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, ...
+    x(1), frontCenter(x), ...
+    -2, tearThickness);
 
 % Calculate the power of the lens defined by the x parameters
-myDiopters = @(x) calcDiopters(myLens(x));
+myDiopters = @(x) calcDiopters(mySystem(x));
 
 % Define an objective which is the difference between the desired and
 % measured optical power of the lens
 myObj = @(x) ...
-    abs(lensRefractionDiopters - myDiopters(x));
+    abs(targetDiopters - myDiopters(x));
 
 % Specify a non-linear constraint that requires that the lens has a
 % positive radial thickness for a field of view that extends 63 degrees
 % on either side of fixation. This is relevant only for plus lenses
-myConstraint = @(x) checkLensShape(myLens(x));
+myConstraint = @(x) checkLensShape(mySystem(x));
 
-% Obtain an initial guess for the radius of curvature of the back
+% Obtain an initial guess for the radius of curvature of the front
 % surface using the thin lens approximation
-backCurvatureX0 = sign(lensRefractionDiopters) * ...
-    ((mediumRefractiveIndex-lensRefractiveIndex)/(lensRefractionDiopters - frontDiopters))*1000;
+frontCurvatureX0 = -backRadii(1);
 thicknessX0 = p.Results.minimumLensThickness;
 
 % define some search options
@@ -190,22 +170,24 @@ warning('off','MATLAB:nearlySingularMatrix');
 %% Perform the search
 if sign(lensRefractionDiopters)==1
     % This is a "plus" lens. Apply the shape constraint but do not place an
-    % upper bound on thickness.
-    x0 = [backCurvatureX0 thicknessX0*2];
-    lb = [-inf,p.Results.minimumLensThickness];
-    ub = [inf,inf];
+    % upper bound on thickness. We allow the lower bound on thickness to go
+    % below the "minimum", as otherwise we can't grind lenses that will
+    % handle small (<1) positive corrections.
+    x0 = [frontCurvatureX0*0.75 thicknessX0*2];
+    lb = [frontCurvatureX0,p.Results.minimumLensThickness/4];
+    ub = [frontCurvatureX0/4,thicknessX0*10];
     [x, fVal] = fmincon(myObj,x0,[],[],[],[],lb,ub,myConstraint,options);
 else
     % This is a "minus" lens. Remove the non-linear shape constraint. Pin
     % the thickness to the minimum specified value.
-    x0 = [backCurvatureX0 thicknessX0];
-    lb = [-inf,p.Results.minimumLensThickness];
-    ub = [inf,p.Results.minimumLensThickness];
-    [x, fVal] = fmincon(myObj,x0,[],[],[],[],lb,ub,[],options);    
+    x0 = [frontCurvatureX0 thicknessX0];
+    lb = [frontCurvatureX0*0.75,p.Results.minimumLensThickness];
+    ub = [frontCurvatureX0/4,p.Results.minimumLensThickness];
+    [x, fVal] = fmincon(myObj,x0,[],[],[],[],lb,ub,[],options);
 end
 
 if fVal > 0.01
-    warning('addSpectacleLens:badGrind','Lens does not match requested optical power within tolerance');
+    warning('addSpectacleLens:badGrind','Lens does not match requested optical power within tolerance. Perhaps hit a local minimum.');
 end
 
 % Restore the warning state
@@ -214,41 +196,49 @@ warning(warningState);
 
 %% Assemble lens values
 % In some cases overwrite the anonymous functions with the solution values
-backCurvature = x(1);
-backCenter = backCenter(backCurvature);
-thickness = x(2);
-frontCenter = frontCenter(thickness);
-[~,~,intersectHeights] = checkLensShape(myLens(x));
+frontCurvature = x(1);
+frontCenter = frontCenter(x);
+[~,~,intersectHeight] = checkLensShape(mySystem(x));
 
 
 %% Add the lens
-opticalSystemOut = assembleLensSystem(opticalSystemIn, p.Results.systemDirection, p.Results.lensRefractiveIndex, mediumRefractiveIndex, backCurvature, backCenter, frontCurvature, frontCenter, intersectHeights, lensVertexDistance);
+opticalSystemOut =  assembleLensSystem(opticalSystemIn, p.Results.lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, frontCurvature, frontCenter, intersectHeight, tearThickness);
 
-end % function - addSpectacleLens
 
+end % function - addContactLens
 
 %% LOCAL FUNCTIONS
 
 
-function [c,ceq, intersectHeights] = checkLensShape(opticalSystem)
+function [c,ceq, intersectHeight] = checkLensShape(opticalSystem)
 
 % Obtain the systemDirection
 systemDirection = calcSystemDirection(opticalSystem);
 
 % Use the systemDirection information to identify the "front" and "back"
-% lenses from the perspective of the eye
+% lenses from the perspective of the eye. This routine requires that the
+% optical system is oriented "eyeToCamera"
 switch systemDirection
     case 'eyeToCamera'
-        Sfront = opticalSystem(3,1:10);
-        Sback = opticalSystem(2,1:10);
+        % This is the front surface of the lens. The last surface is the
+        % tear film
+        Sfront = opticalSystem(end-1,1:10);
+        % This is the front surface of the cornea.
+        Sback = opticalSystem(end-3,1:10);
     case 'cameraToEye'
-        Sfront = opticalSystem(2,1:10);
-        Sback = opticalSystem(3,1:10);
+        error('addSpectacleLens:systemDirection','The routine only operates on optical systems oriented eyeToCamera');
+    otherwise
+        % We have an invalid optical system. This can occur if the
+        % curvature of the lens becomes extreme. Return high constraint
+        % vals to drive fmincon away from this part of the parameter space.
+        c = -realmax;
+        ceq = -realmax;
+        return
 end
 
 % Calculate the distance from the corneal vertex to the back and front
-% surface of the lens along a 63 degree viewing angle.
-R = quadric.normalizeRay(quadric.anglesToRay([0;0;0], 63, 0 ));
+% surface of the lens along a 63 degree viewing angle from the iris center.
+R = quadric.normalizeRay(quadric.anglesToRay([-3.9;0;0], 63, 0 ));
 side = 1; % Our lenses are all concave w.r.t. a ray arising from eye
 Xback = quadric.intersectRay(Sback,R,side);
 Xfront = quadric.intersectRay(Sfront,R,side);
@@ -265,79 +255,59 @@ thicknessAtEdge = Dfront - Dback;
 c = -thicknessAtEdge;
 ceq = c;
 
-% Return the position along the optical axis for the edge of each surface.
+% Return the position along the optical axis for the edge of the lens.
 % This will be used subsequently to assemble a bounding box.
-intersectHeights = [Xback(1) Xfront(1)];
+intersectHeight = Xfront(1);
 
 end
 
 
-function opticalSystemOut = assembleLensSystem(opticalSystemIn, systemDirection, lensRefractiveIndex, mediumRefractiveIndex, backCurvature, backCenter, frontCurvature, frontCenter, intersectHeights, lensVertexDistance)
+function opticalSystemOut = assembleLensSystem(opticalSystemIn, lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, frontCurvature, frontCenter, intersectHeight, tearThickness)
 % Assembles and returns an optical system matrix given input
 
-switch systemDirection
-    case 'eyeToCamera'
-        % Define a bounding box for the back surface
-        boundingBoxLens = [intersectHeights(1) frontCenter-frontCurvature -lensVertexDistance*2 lensVertexDistance*2 -lensVertexDistance*2 lensVertexDistance*2];
+% We are always operating in the 'eyeToCamera' system direction
 
-        % Add the back spectacle surface to the optical system.        
-        SlensBack = quadric.scale(quadric.unitSphere,[backCurvature backCurvature backCurvature]);
-        SlensBack = quadric.translate(SlensBack,[backCenter 0 0]);
-        lensLine = nan(1,19);
-        lensLine(1:10) = quadric.matrixToVec(SlensBack);
-        lensLine(11) = 1; % rays intersect concave lens surface
-        lensLine(12:17) = boundingBoxLens;
-        lensLine(18) = 1; % must intersect
-        lensLine(end) = lensRefractiveIndex;
-        opticalSystemOut = [opticalSystemIn; lensLine];
+% The opticalSystemIn ends with the outer surface of the tear film, from
+% which the ray emerges into the refractive index of the medium. When a
+% contact lens is added, the ray now emerges from the tear pool into the
+% refractive index of the contact lens. We make that change here.
+opticalSystemOut = opticalSystemIn;
+opticalSystemOut(end,end) = lensRefractiveIndex;
 
-        % Define a bounding box for the front surface
-        boundingBoxLens = [intersectHeights(2) frontCenter-frontCurvature -lensVertexDistance*2 lensVertexDistance*2 -lensVertexDistance*2 lensVertexDistance*2];
+% Define a bounding box for the front surface of the lens
+boundingBoxLens = [intersectHeight frontCenter-frontCurvature -10 10 -10 10];
 
-        % Add the front spectacle surface to the optical system.
-        SlensFront = quadric.scale(quadric.unitSphere,[frontCurvature frontCurvature frontCurvature]);
-        SlensFront = quadric.translate(SlensFront,[frontCenter 0 0]);
-        lensLine = nan(1,19);
-        lensLine(1:10) = quadric.matrixToVec(SlensFront);
-        lensLine(11) = 1; % rays intersect concave lens surface
-        lensLine(12:17) = boundingBoxLens;
-        lensLine(18) = 1; % must intersect
-        lensLine(end) = mediumRefractiveIndex;
-        opticalSystemOut = [opticalSystemOut; lensLine];
-        
-    case 'cameraToEye'        
-        % Define a bounding box for the front surface
-        boundingBoxLens = [intersectHeights(2) frontCenter-frontCurvature -lensVertexDistance*2 lensVertexDistance*2 -lensVertexDistance*2 lensVertexDistance*2];
+% Add the front contact lens surface to the optical system
+SlensFront = quadric.scale(quadric.unitSphere,[frontCurvature frontCurvature frontCurvature]);
+SlensFront = quadric.translate(SlensFront,[frontCenter 0 0]);
+lensLine = nan(1,19);
+lensLine(1:10) = quadric.matrixToVec(SlensFront);
+lensLine(11) = 1; % rays intersect concave lens surface
+lensLine(12:17) = boundingBoxLens;
+lensLine(18) = 1; % must intersect
 
-        % Add the front spectacle surface to the optical system.
-        SlensFront = quadric.scale(quadric.unitSphere,[frontCurvature frontCurvature frontCurvature]);
-        SlensFront = quadric.translate(SlensFront,[frontCenter 0 0]);
-        lensLine = nan(1,19);
-        lensLine(1:10) = quadric.matrixToVec(SlensFront);
-        lensLine(11) = -1; % rays intersect convex lens surface
-        lensLine(12:17) = boundingBoxLens;
-        lensLine(18) = 1; % must intersect
-        lensLine(end) = lensRefractiveIndex;
-        opticalSystemOut = [opticalSystemIn; lensLine];
-        
-        % Define a bounding box for the back surface
-        boundingBoxLens = [intersectHeights(1) frontCenter-frontCurvature -lensVertexDistance*2 lensVertexDistance*2 -lensVertexDistance*2 lensVertexDistance*2];
+% The ray emerges from the front contact lens surface into the
+% refractive index of the tear film
+lensLine(end) = tearRefractiveIndex;
+opticalSystemOut = [opticalSystemOut; lensLine];
 
-        % Add the back spectacle surface to the optical system.
-        SlensBack = quadric.scale(quadric.unitSphere,[backCurvature backCurvature backCurvature]);
-        SlensBack = quadric.translate(SlensBack,[backCenter 0 0]);
-        lensLine = nan(1,19);
-        lensLine(1:10) = quadric.matrixToVec(SlensBack);
-        lensLine(11) = -1; % rays intersect convex lens surface
-        lensLine(12:17) = boundingBoxLens;
-        lensLine(18) = 1; % must intersect
-        lensLine(end) = mediumRefractiveIndex;
-        opticalSystemOut = [opticalSystemOut; lensLine];
-        
-    otherwise
-        error('This is not a valid setting for systemDirection');
+% Define a bounding box for the front tear film
+boundingBoxTears = [intersectHeight+tearThickness frontCenter-frontCurvature+tearThickness -10 10 -10 10];
+
+% Add a tear film to the optical system
+SlensFront = quadric.scale(quadric.unitSphere,[frontCurvature frontCurvature frontCurvature]);
+SlensFront = quadric.translate(SlensFront,[frontCenter+tearThickness 0 0]);
+tearLine = nan(1,19);
+tearLine(1:10) = quadric.matrixToVec(SlensFront);
+tearLine(11) = 1; % rays intersect concave lens surface
+tearLine(12:17) = boundingBoxTears;
+tearLine(18) = 1; % must intersect
+
+% The ray emerges from the tear film into the refractice index of
+% the medium
+tearLine(end) = mediumRefractiveIndex;
+opticalSystemOut = [opticalSystemOut; tearLine];
+
 end
 
 
-    
-end % function - addContactLens
