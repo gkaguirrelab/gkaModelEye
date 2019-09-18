@@ -5,11 +5,8 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %  [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionDiopters)
 %
 % Description:
-%	This routine adds a meniscus (ophthalmologic) contact lens to an
-%	optical system with the refractive power specified in the passed
-%	variable. Note that a ray emerging from the eye encounters two concave
-%	surfaces for this lens, so both surfaces will have a negative radius of
-%	curvature for rayTraceEllipsoids().
+%	This routine adds a contact lens to an optical system with the
+%	refractive power specified in the passed variable.
 %
 % Inputs:
 %   opticalSystem         - An mx19 matrix, where m is set by the key value
@@ -39,11 +36,17 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %                           correct their vision.
 %
 % Optional key/value pairs:
+% Optional key/value pairs:
 %  'lensRefractiveIndex'  - Scalar. Refractive index of the lens material.
 %                           The routine returnRefractiveIndex() provides
 %                           the indices for several spectacle materials
 %                           under visible (vis) and near infra-red (nir)
 %                           imaging domains.
+%  'systemDirection'      - Char vector with valid values 'eyeToCamera' or
+%                           'cameraToEye'. Defines the direction of ray
+%                           tracing for this optical system.
+%  'minimumLensThickness' - Scalar. The minimum lens in mm.
+%
 %
 % Outputs:
 %   opticalSystemOut      - An (m+1)x19 matrix, corresponding to the
@@ -80,13 +83,45 @@ p.addRequired('lensRefractionDiopters',@isnumeric);
 % Optional
 p.addParameter('lensRefractiveIndex',returnRefractiveIndex( 'hydrogel', 'NIR' ),@isnumeric);
 p.addParameter('minimumLensThickness',0.05,@isnumeric);
+p.addParameter('systemDirection','eyeToCamera',@ischar);
 
 % parse
 p.parse(opticalSystemIn, lensRefractionDiopters, varargin{:})
 
-
 % Distribute the parameters into variables
 lensRefractiveIndex = p.Results.lensRefractiveIndex;
+
+% Detect the special case of lensRefractionDiopters == 0 and return the
+% unmodified optical system
+if lensRefractionDiopters==0
+    opticalSystemOut = opticalSystemIn;
+    return
+end
+
+
+%% Setup fixed lens paramters
+% Distribute the parameters into variables
+lensVertexDistance = p.Results.lensVertexDistance;
+lensRefractiveIndex = p.Results.lensRefractiveIndex;
+
+% The passed optical system will have a ray that emerges into a medium with
+% a specified index of refraction. We store the index of refraction of
+% the ambient medium (which will typically be air and thus 1.0) to apply to
+% the final exit ray.
+if isempty(opticalSystemIn)
+    mediumRefractiveIndex = 1;
+else
+    mediumRefractiveIndex = opticalSystemIn(end,end);
+end
+
+% Initialize the lens optical system
+lensSystem = nan(1,19);
+lensSystem(19) = mediumRefractiveIndex;
+
+% If the opticalSystemIn is empty, initialize it as well
+if isempty(opticalSystemIn)
+    opticalSystemIn = lensSystem;
+end
 
 % Copy the optical system from input to output
 opticalSystemOut = opticalSystemIn;
