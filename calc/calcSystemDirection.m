@@ -50,18 +50,18 @@ function systemDirection = calcSystemDirection(opticalSystem)
 %}
 
 % Trace an axial ray from the right (cameraToEye)
-R1 = quadric.normalizeRay(quadric.anglesToRay([100;0;0],0,0));
+R1 = quadric.normalizeRay(quadric.anglesToRay([100;0;0],180,0));
 M1 = rayTraceQuadrics(R1, opticalSystem);
 
 % Trace an axial ray from the left (eyeToCamera)
-R2 = quadric.normalizeRay(quadric.anglesToRay([-100;0;0],180,0));
+R2 = quadric.normalizeRay(quadric.anglesToRay([-100;0;0],0,0));
 M2 = rayTraceQuadrics(R2, opticalSystem);
 
 % Find the non-nan value
 if ~isnan(M1)
-    systemDirection = 'eyeToCamera';
-elseif ~isnan(M2)
     systemDirection = 'cameraToEye';
+elseif ~isnan(M2)
+    systemDirection = 'eyeToCamera';
 else
     systemDirection = '';
 end
