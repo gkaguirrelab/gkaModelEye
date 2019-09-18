@@ -1,13 +1,18 @@
 function [diopters, focalPoint] = calcDiopters(opticalSystem)
-% Calcuates the optical power of an opticalSystem
+% Calcuate the refractive power of an opticalSystem
 %
 % Syntax:
 %  [diopters, focalPoint] = calcDiopters(opticalSystem)
 %
 % Description
-%   Calculates the power refractive power of an optical system in units of
+%   Calculates the refractive power of an optical system in units of
 %	diopters. A negative value specifies a lens that would be worn by
 %	someone with myopia to correct their vision.
+%
+%   Some optical systems end in a medium with a refractive index other than
+%   one. In this case the diopter strength is given by:
+%
+%       diopters = refractiveIndex / focalPointMeters
 %
 %   The implementation of optical systems and ray tracing in this code
 %   results in only one of these ray tracing directions being available for
@@ -43,6 +48,10 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem)
 %
 % Examples:
 %{
+    % Determine the refractive power of the model eye
+    eye=modelEyeParameters('accommodationDiopters',2);
+    opticalSystem=assembleOpticalSystem(eye,'surfaceSetName','cameraToRetina','opticalSystemNumRows',[]);
+    [diopters, focalPoint] = calcDiopters(opticalSystem)
 %}
 
 % Obtain the principal point and systemDirection
@@ -70,8 +79,11 @@ M2 = rayTraceQuadrics(R2, opticalSystem);
 % Calculate the focal point from the output rays
 focalPoint = quadric.distanceRays(M1,M2);
 
+% Obtain the refractive index of the media in which the ray terminates
+refractiveIndex = opticalSystem(end,end);
+
 % Obtain the power of the optical system in diopters
-diopters = signD * 1000 / (P(1) - focalPoint(1));
+diopters = signD * refractiveIndex / ((P(1) - focalPoint(1))/1000);
 
 
 end
