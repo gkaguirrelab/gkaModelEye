@@ -72,6 +72,13 @@ p.addParameter('minimumLensThickness',0.05,@isnumeric);
 % parse
 p.parse(opticalSystemIn, lensRefractionDiopters, varargin{:})
 
+
+% Obtain the systemDirection for the passed optical system
+systemDirection = calcSystemDirection(opticalSystemIn);
+if ~strcmp(systemDirection,'eyeToCamera')
+    error('addContactLens:invalidSystemDirection','Lenses are only added to an optical system in the eyeToCamera direction')
+end
+
 % Detect the special case of lensRefractionDiopters == 0 and return the
 % unmodified optical system
 if lensRefractionDiopters==0
@@ -79,11 +86,6 @@ if lensRefractionDiopters==0
     return
 end
 
-% Obtain the systemDirection for the passed optical system
-systemDirection = calcSystemDirection(opticalSystemIn);
-if ~strcmp(systemDirection,'eyeToCamera')
-    error('Not set up yet')
-end
 
 %% Setup fixed lens paramtersex;
 
