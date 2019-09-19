@@ -49,6 +49,21 @@ function systemDirection = calcSystemDirection(opticalSystem)
     assert(strcmp(systemDirection,systemDirectionOut));
 %}
 
+% First check to make sure that the opticalSystem variable is well formed
+if size(opticalSystem,2)~=19
+    systemDirection = 'Not valid matrix dimensions';
+    return
+end
+if ~all(isnan(opticalSystem(1,1:18)))
+    systemDirection = 'Missing initial state row';
+    return
+end
+if any(any(isnan(opticalSystem(2:end,:))))
+    systemDirection = 'Invalid nan in matrix';
+    return
+end
+
+
 % Trace an axial ray from the right (cameraToEye)
 R1 = quadric.normalizeRay(quadric.anglesToRay([100;0;0],180,0));
 M1 = rayTraceQuadrics(R1, opticalSystem);
@@ -63,7 +78,7 @@ if ~isnan(M1)
 elseif ~isnan(M2)
     systemDirection = 'eyeToCamera';
 else
-    systemDirection = '';
+    systemDirection = 'No valid ray trace on optical axis';
 end
 
 
