@@ -98,14 +98,21 @@ end
 % removed to allow the fminsearch operation below to proceed.
 nanFreeRayPaths = cellfun(@(x) x(:,~isnan(x(1,:))),rayPaths,'UniformOutput',false);
 
+% In some cases the optical system will have a ray that begins at the first
+% surface in the system, in which case the first two positions in the ray
+% path will be identical. Remove these to avoid upsetting the interp
+% operation that follows.
+samePosTol = 1e-4;
+uniquePositionRayPaths = cellfun(@(x) x(:,logical([sum((diff(x')').^2)>samePosTol,1])),nanFreeRayPaths,'UniformOutput',false);
+
 % Find the waist of the ray bundle along the axial (p1) dimension
-bundleArea = @(p1) range(cellfun(@(x) interp1(x(1,:),x(3,:),p1,'linear'),nanFreeRayPaths)) * ...
-    range(cellfun(@(x) interp1(x(1,:),x(2,:),p1,'linear'),nanFreeRayPaths));
+bundleArea = @(p1) range(cellfun(@(x) interp1(x(1,:),x(3,:),p1,'linear'),uniquePositionRayPaths)) * ...
+    range(cellfun(@(x) interp1(x(1,:),x(2,:),p1,'linear'),uniquePositionRayPaths));
 opticalCenterCoord(1) = fminsearch(bundleArea,-6);
 
 % Find the geometric center of the waist in the p2 and p3 dimensions
-opticalCenterCoord(2) = mean(cellfun(@(x) interp1(x(1,:),x(2,:),opticalCenterCoord(1),'linear'),nanFreeRayPaths));
-opticalCenterCoord(3) = mean(cellfun(@(x) interp1(x(1,:),x(3,:),opticalCenterCoord(1),'linear'),nanFreeRayPaths));
+opticalCenterCoord(2) = mean(cellfun(@(x) interp1(x(1,:),x(2,:),opticalCenterCoord(1),'linear'),uniquePositionRayPaths));
+opticalCenterCoord(3) = mean(cellfun(@(x) interp1(x(1,:),x(3,:),opticalCenterCoord(1),'linear'),uniquePositionRayPaths));
 
 
 end
