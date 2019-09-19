@@ -252,7 +252,7 @@ cornea.side = [1; 1; 1];
 cornea.mustIntersect = [1; 1;1 ];
 cornea.index = [returnRefractiveIndex( 'cornea', eye.meta.spectralDomain); ...
     returnRefractiveIndex( 'tears', eye.meta.spectralDomain)];
-cornea.label = {'cornea.back'; 'cornea.front'; 'cornea.tears'};
+cornea.label = {'cornea.back'; 'cornea.front'; 'cornea.tearfilm'};
 cornea.plot.color = {'blue'; 'blue'; 'blue'};
 
 % Code here to calculate the Navarro 1985 corneal parameters that
