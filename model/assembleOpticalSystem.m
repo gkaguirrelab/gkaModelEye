@@ -98,13 +98,21 @@ p.parse(eye, varargin{:})
 % Get the refractive index of the medium in which the camera resides
 mediumRefractiveIndex = returnRefractiveIndex( p.Results.cameraMedium, eye.meta.spectralDomain );
 
-% Initialize an empty optical system matrix
-opticalSystem=[];
+% A valid optical system begins with a row of nans and the refractive index
+% of the medium in which the ray originates.
+opticalSystem = nan(1,19);
 
+% The optical system is always assembled in the eyeToCamera direction, but
+% the reversed version is returned if that is what was requested
 switch p.Results.surfaceSetName
-    case 'retinaToCamera'
-        
-        % Start on the retina with vitreous refractive index
+    case {'retinaToCamera','cameraToRetina'}
+
+        % We start in the vitreous chamber. Assign this refractive index
+        opticalSystem(1,19) = returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain );
+       
+        % Add the vitreous chamber surface. As this has the same refractive
+        % index as the first line of the optical system, this surface does
+        % not induce any refraction.
         opticalSystem = [opticalSystem; ...
             [eye.retina.S eye.retina.side eye.retina.boundingBox eye.retina.mustIntersect returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
         
@@ -117,10 +125,10 @@ switch p.Results.surfaceSetName
             [eye.cornea.S eye.cornea.side eye.cornea.boundingBox eye.cornea.mustIntersect [eye.cornea.index; mediumRefractiveIndex]]];
         
         % Assemble the labels
-        surfaceLabels = [eye.retina.label; eye.lens.label; eye.cornea.label];
+        surfaceLabels = [{'vitreous'}; eye.retina.label; eye.lens.label; eye.cornea.label];
         
         % Assemble the surface plot colors
-        surfaceColors = [eye.retina.plot.color; eye.lens.plot.color; eye.cornea.plot.color];
+        surfaceColors = [{[nan nan nan]}; eye.retina.plot.color; eye.lens.plot.color; eye.cornea.plot.color];
         
         % Add a contact lens if requested
         if ~isempty(p.Results.contactLens)
@@ -133,8 +141,8 @@ switch p.Results.surfaceSetName
                 otherwise
                     error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
             end
-            surfaceLabels = [surfaceLabels; {'contactLens'}];
-            surfaceColors = [surfaceColors; {[.5 .5 .5]}];
+            surfaceLabels = [surfaceLabels; {'contactLens'}; {'tearfilm'}];
+            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {'blue'}];
         end
         
         % Add a spectacle lens if requested
@@ -156,20 +164,22 @@ switch p.Results.surfaceSetName
             surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[.5 .5 .5]}];
         end
 
+        % Reverse the system if needed
+        if strcmp(p.Results.surfaceSetName,'cameraToRetina')
+            opticalSystem = reverseSystemDirection(opticalSystem);
+            surfaceColors = flipud([surfaceColors(2:end); {[nan nan nan]}]);
+            surfaceLabels = flipud([surfaceLabels(2:end); {'camera'}]);
+        end
 
-     case 'retinaToLens'
         
-        % Start in the retina
-        opticalSystem = [opticalSystem; ...
-            [eye.retina.S eye.retina.side eye.retina.boundingBox eye.retina.mustIntersect returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
-                
-        % Assemble the labels
-        surfaceLabels = [eye.retina.label];
+    case {'retinaToStop','stopToRetina'}
         
-        % Assemble the surface plot colors
-        surfaceColors = [eye.retina.plot.color];
+        % We start in the vitreous chamber. Assign this refractive index
+        opticalSystem(1,19) = returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain );
 
-    case 'retinaToStop'
+        % Add the vitreous chamber surface. As this has the same refractive
+        % index as the first line of the optical system, this surface does
+        % not induce any refraction.
         
         % Start in the retina
         opticalSystem = [opticalSystem; ...
@@ -180,23 +190,30 @@ switch p.Results.surfaceSetName
             [eye.lens.S eye.lens.side eye.lens.boundingBox eye.lens.mustIntersect [eye.lens.index; returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain )]]];
         
         % Assemble the labels
-        surfaceLabels = [eye.retina.label; eye.lens.label];
+        surfaceLabels = [{'vitreous'}; eye.retina.label; eye.lens.label];
         
         % Assemble the surface plot colors
-        surfaceColors = [eye.retina.plot.color; eye.lens.plot.color];
+        surfaceColors = [{[nan nan nan]}; eye.retina.plot.color; eye.lens.plot.color];
+
+        % Reverse the system if needed
+        if strcmp(p.Results.surfaceSetName,'stopToRetina')
+            opticalSystem = reverseSystemDirection(opticalSystem);
+            surfaceColors = flipud([surfaceColors(2:end); {[nan nan nan]}]);
+            surfaceLabels = flipud([surfaceLabels(2:end); {'aqueous'}]);
+        end
         
-    case 'stopToCamera'
         
-        % Start in the aqueous
-        opticalSystem = [opticalSystem; ...
-            [nan(1,10) nan nan(1,6) nan returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain )]];
+    case {'stopToCamera','cameraToStop'}
+        
+        % We start in the aqueous. Assign this refractive index
+        opticalSystem(1,19) = returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain );
         
         % Add the cornea
         opticalSystem = [opticalSystem; ...
             [eye.cornea.S eye.cornea.side eye.cornea.boundingBox eye.cornea.mustIntersect [eye.cornea.index; mediumRefractiveIndex]]];
         
         % Assemble the labels
-        surfaceLabels = [{'anteriorChamber'}; eye.cornea.label];
+        surfaceLabels = [{'aqueous'}; eye.cornea.label];
         
         % Assemble the surface plot colors
         surfaceColors = [{[nan nan nan]}; eye.cornea.plot.color];
@@ -212,8 +229,8 @@ switch p.Results.surfaceSetName
                 otherwise
                     error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
             end
-            surfaceLabels = [surfaceLabels; {'contactLens'}];
-            surfaceColors = [surfaceColors; {[.5 .5 .5]}];
+            surfaceLabels = [surfaceLabels; {'contactLens'}; {'tearfilm'}];
+            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {'blue'}];
         end
         
         % Add a spectacle lens if requested
@@ -234,113 +251,14 @@ switch p.Results.surfaceSetName
             surfaceLabels = [surfaceLabels; {'spectacleLensBack'}; {'spectacleLensFront'}];
             surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[.5 .5 .5]}];
         end
-        
-    case 'cameraToStop'
-        
-        % Start in the camera medium
-        opticalSystem = [opticalSystem; ...
-            [nan(1,10) nan nan(1,6) nan mediumRefractiveIndex]];
-        surfaceLabels = {'camera'};
-        surfaceColors = {[nan nan nan]};
 
-        % Add a spectacle lens if requested
-        if ~isempty(p.Results.spectacleLens)
-            switch length(p.Results.spectacleLens)
-                case 1
-                    lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex, 'systemDirection', 'cameraToEye');
-                case 2
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2), 'systemDirection', 'cameraToEye');
-                case 3
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'systemDirection', 'cameraToEye');
-                case 4
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4), 'systemDirection', 'cameraToEye');
-                otherwise
-                    error('The key-value pair spectacleLens is limited to four elements: [refractionDiopters, refractionIndex, vertexDistance, baseCurve]');
-            end
-            surfaceLabels = [surfaceLabels; {'spectacleLensFront'}; {'spectacleLensBack'}];
-            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[.5 .5 .5]}];
+        % Reverse the system if needed
+        if strcmp(p.Results.surfaceSetName,'cameraToStop')
+            opticalSystem = reverseSystemDirection(opticalSystem);
+            surfaceColors = flipud([surfaceColors(2:end); {[nan nan nan]}]);
+            surfaceLabels = flipud([surfaceLabels(2:end); {'camera'}]);
         end
-        
-        % Add the cornea, ending in the aqueous refractive index
-        opticalSystem = [opticalSystem; ...
-            [flipud(eye.cornea.S) flipud(eye.cornea.side)*(-1) flipud(eye.cornea.boundingBox) flipud(eye.cornea.mustIntersect) [flipud(eye.cornea.index); returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain )]]];
-        
-        % Assemble the labels
-        surfaceLabels = [surfaceLabels; flipud(eye.cornea.label)];
-        
-        % Assemble the surface plot colors
-        surfaceColors = [surfaceColors; flipud(eye.cornea.plot.color)];
-        
-    case 'stopToRetina'
-        
-        % Start in the aqueous
-        opticalSystem = [opticalSystem; ...
-            [nan(1,10) nan nan(1,6) nan returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain )]];
-
-        % Add the lens, ending in the vitreous medium
-       opticalSystem = [opticalSystem; ...
-          [flipud(eye.lens.S) flipud(eye.lens.side)*(-1) flipud(eye.lens.boundingBox) flipud(eye.lens.mustIntersect) [flipud(eye.lens.index); returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]]];
-
-        % Add the retina. We assign the vitreous refractive index so that
-        % the final unit vector direction of the ray is unchanged. The ray
-        % stops here.
-       opticalSystem = [opticalSystem; ...
-          [flipud(eye.retina.S) flipud(eye.retina.side)*(-1) flipud(eye.retina.boundingBox) flipud(eye.retina.mustIntersect) returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
-
-        % Assemble the labels
-        surfaceLabels = [{'anteriorChamber'}; flipud(eye.lens.label); flipud(eye.retina.label)];
-        
-        % Assemble the surface plot colors
-        surfaceColors = [{[nan nan nan]}; flipud(eye.lens.plot.color); flipud(eye.retina.plot.color)];
-
-    case 'cameraToRetina'
-        
-        % Start in the camera medium
-        opticalSystem = [opticalSystem; ...
-            [nan(1,10) nan nan(1,6) nan mediumRefractiveIndex]];
-        surfaceLabels = {'camera'};
-        surfaceColors = {[nan nan nan]};
-        
-        % Add a spectacle lens if requested
-        if ~isempty(p.Results.spectacleLens)
-            switch length(p.Results.spectacleLens)
-                case 1
-                    lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex, 'systemDirection', 'cameraToEye');
-                case 2
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2), 'systemDirection', 'cameraToEye');
-                case 3
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'systemDirection', 'cameraToEye');
-                case 4
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4), 'systemDirection', 'cameraToEye');
-                otherwise
-                    error('The key-value pair spectacleLens is limited to four elements: [refractionDiopters, refractionIndex, vertexDistance, baseCurve]');
-            end
-            surfaceLabels = [surfaceLabels; {'spectacleLensFront'}; {'spectacleLensBack'}];
-            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[.5 .5 .5]}];
-        end
-        
-        % Add the cornea, ending in the aqueous refractive index
-        opticalSystem = [opticalSystem; ...
-            [flipud(eye.cornea.S) flipud(eye.cornea.side)*(-1) flipud(eye.cornea.boundingBox) flipud(eye.cornea.mustIntersect) [flipud(eye.cornea.index); returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain )]]];
-
-        % Add the lens, ending in the vitreous medium
-       opticalSystem = [opticalSystem; ...
-          [flipud(eye.lens.S) flipud(eye.lens.side)*(-1) flipud(eye.lens.boundingBox) flipud(eye.lens.mustIntersect) [flipud(eye.lens.index); returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]]];
-
-        % Add the retina. We assign the vitreous refractive index so that
-        % the final unit vector direction of the ray is unchanged. The ray
-        % stops here.
-       opticalSystem = [opticalSystem; ...
-          [flipud(eye.retina.S) flipud(eye.retina.side)*(-1) flipud(eye.retina.boundingBox) flipud(eye.retina.mustIntersect) returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
-
-        % Assemble the labels
-        surfaceLabels = [surfaceLabels; flipud(eye.cornea.label); flipud(eye.lens.label); flipud(eye.retina.label)];
-        
-        % Assemble the surface plot colors
-        surfaceColors = [surfaceColors; flipud(eye.cornea.plot.color); flipud(eye.lens.plot.color); flipud(eye.retina.plot.color)];        
-        
+                
     otherwise
         error('Unrecognized surfaceSetName');
         
