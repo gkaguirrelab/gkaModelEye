@@ -122,13 +122,19 @@ p.addParameter('systemDirection','eyeToCamera',@ischar);
 % parse
 p.parse(opticalSystemIn, lensRefractionDiopters, varargin{:})
 
+
+% Test that we have a matrix with a valid system direction
+systemDirection = calcSystemDirection(opticalSystemIn);
+if ~isempty(opticalSystemIn) && ~strcmp(systemDirection,'eyeToCamera')
+    error('addSpectacleLens:invalidSystemDirection','Lenses are only added to an optical system in the eyeToCamera direction')
+end
+
 % Detect the special case of lensRefractionDiopters == 0 and return the
 % unmodified optical system
 if lensRefractionDiopters==0
     opticalSystemOut = opticalSystemIn;
     return
 end
-
 
 %% Setup fixed lens paramters
 % Distribute the parameters into variables
@@ -382,7 +388,7 @@ switch systemDirection
         opticalSystemOut = [opticalSystemOut; lensLine];
         
     otherwise
-        error('This is not a valid setting for systemDirection');
+        error('Invalid optical system');
 end
 
 end
