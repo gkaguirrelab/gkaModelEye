@@ -46,14 +46,17 @@ function lens = lens( eye )
 %
 
 
-% Because of various imperfections in the model and differences from the
-% Navarro paper, it was necessary to "tune" the assigned acommodation
-% values so that a requested acommodation state of the emmetropic eye
-% results in the expected point of best focus. This is determined in the
-% routine 'calcDerivedParams'
+% It is necessary to "tune" the assigned acommodation values so that a
+% requested acommodation state of the emmetropic eye results in the
+% expected point of best focus. This is determined in the routine
+% 'calcDerivedParams' and is implemented as a polynomial function that
+% converts between desired accmodative state of the eye and the value of
+% the "D" parameter of the Navarro equations.
 accommodationPolyCoef = eye.derivedParams.accommodationPolyCoef;
 
-% The model assumes an 18 year old eye for the Navarro calculations
+% We ignore the assigned age of the eye and use a standard age of 18, as
+% our goal is to have the accomodative state of the eye well modeled
+% regardless of the age of the eye.
 age = 18;
 
 % Set the D parameter of the model
@@ -69,16 +72,11 @@ else
         % diopters
         accommodationDiopters = 1.5;
     end
-    % For the acommodation value to be within the valid range of the model
-    accommodationDiopters = max([accommodationDiopters eye.derivedParams.accommodationRangeDiopters(1)]);
-    accommodationDiopters = min([accommodationDiopters eye.derivedParams.accommodationRangeDiopters(2)]);
     
     % Convert the requested accommodationDiopters to the corresponding
     % Navarro D param.
     D = polyval(accommodationPolyCoef,accommodationDiopters);
 end
-
-
 
 % Initialize the components of the optical system
 lens.S = [];
@@ -151,7 +149,7 @@ end
 %   R = b^2/a
 %	Q = (a^2 / b^2) + 1
 % Therefore, given R and Q, we can obtain a and b, which correspond
-% to the radii of the ellipsoid model, with a corresponding to the
+% to the radii of the hyperbola model, with a corresponding to the
 % axial dimension, and b to the horizontal and verical dimensions.
 % Checking my algebra here:
 %{
