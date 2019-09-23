@@ -54,8 +54,8 @@ p.addParameter('surfaceSet',[], @(x)(isempty(x) | isstruct(x) | isnumeric(x)));
 p.addParameter('surfaceAlpha', 0.1,@isnumeric);
 p.addParameter('retinaGeodetics', false,@islogical);
 p.addParameter('rayPath',[], @(x)(isempty(x) | isnumeric(x)));
-p.addParameter('outputRay',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('rayColor','red',@(x)(ischar(x) | isnumeric(x)));
+p.addParameter('outputRay',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('addLighting',false, @islogical);
 p.addParameter('viewAngle',[40 40],@isnumeric);
 
