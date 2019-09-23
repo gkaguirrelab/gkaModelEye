@@ -60,24 +60,13 @@ p.parse(varargin{:})
 if isempty(p.Results.derivedParams)
     derivedParams = struct();
     derivedParams.accommodationPolyCoef = [0.2804 3.2930 1.1188];
-    derivedParams.accommodationRangeDiopters = [1 10];
     derivedParams.stopEccenParams = [-1.7523 4.7609 0.1800 0.0973];
-    
 else
     derivedParams = p.Results.derivedParams;
 end
 
 
-%% Accomodation values
-% Used in human.lens
-% Because of various imperfections in the model and differences from the
-% Navarro 2006 paper, it was necessary to "tune" the assigned accommodation
-% values so that a requested accommodation state of the emmetropic eye
-% results in the expected point of best focus. For example, a non-zero
-% setting of the D parameter of the Navarro equations is needed to make the
-% emmetropic eye have a point of best focus that approaches infinity.
-% I examined the relationship between values of the D parameter and best
-% focal distances.
+%% Accommodation values
 
 % Alert the user
 if p.Results.verbose
@@ -85,34 +74,41 @@ if p.Results.verbose
     tic
 end
 
-% Set a range of Navarro D values and define a variable to hold the
-% accommodation values.
-navarroD = logspace(log10(5),log10(60));
-accommodationDiopters = nan(size(navarroD));
+% Create a variable that holds the accomodation values that we wish to have
+accommodationDiopters = 0:1:15;
 
-% Create a sceneGeometry and save the fovea location. This will be
-% invariant across accommodation so does not need to be re-calculated.
-sceneGeometry = createSceneGeometry('derivedParams',derivedParams,'calcLandmarkFovea',true);
-fovea = sceneGeometry.eye.landmarks.fovea;
+% First, find the Navarro D values in the emmetropic eye that results in
+% a focal length for the model eye that matches the depth of the vitreous
+% chamber vertex. Store this value
+myEye=@(x) modelEyeParameters('navarroD',x);
+myVertex=@(x) getfield(myEye(x),'landmarks','vertex','coords');
+mySystem=@(x) assembleOpticalSystem(myEye(x),'surfaceSetName','cameraToRetina','opticalSystemNumRows',[]);
+myPoint=@(x) calcDioptersWrapper(mySystem(x));
+myObj=@(x) sum((myVertex(x)'-myPoint(x)).^2);
+navarroDVals(1) = fminsearch(myObj,5);
 
-% Loop over Navarro D values
-for ii = 1:length(navarroD)
-    sceneGeometry = createSceneGeometry('derivedParams',derivedParams,'navarroD',navarroD(ii));
-    sceneGeometry.eye.landmarks.fovea = fovea;
-    pointBestFocus = calcPointBestFocus(sceneGeometry);
-    accommodationDiopters(ii) = 1000/pointBestFocus(1);
+% Obtain and store the optical power of the model eye when it is focused
+% at infinity
+myDiopters = @(x) calcDiopters(mySystem(x));
+eyeDioptersD0 = myDiopters(navarroDVals(1));
+
+% Now find the D vals that produce the called for increase in optical
+% power
+for dd = 2:length(accommodationDiopters)
+    targetPower = eyeDioptersD0+accommodationDiopters(dd);
+    myObj = @(x) (targetPower - myDiopters(x))^2;
+    navarroDVals(dd) = fminsearch(myObj,navarroDVals(dd-1));    
 end
 
 % Save these derived params
-derivedParams.accommodationPolyCoef = polyfit(accommodationDiopters,navarroD,5);
-derivedParams.accommodationRangeDiopters = [min(accommodationDiopters) max(accommodationDiopters)];
+derivedParams.accommodationPolyCoef = polyfit(accommodationDiopters,navarroDVals,4);
 
 % Plot it
 if p.Results.showPlots
     figure
-    plot(accommodationDiopters,navarroD,'xk');
+    plot(accommodationDiopters,navarroDVals,'xk');
     hold on
-    plot(0:0.1:10,polyval(derivedParams.accommodationPolyCoef,0:0.1:10),'-r')
+    plot(0:0.1:max(accommodationDiopters),polyval(derivedParams.accommodationPolyCoef,0:0.1:max(accommodationDiopters)),'-r')
     xlabel('Desired accommodation state of eye [diopters]');
     ylabel('Navarro equation parameter [D]');
     title('derivedParams.accommodationPolyCoef');
@@ -263,4 +259,11 @@ if ~isempty(p.Results.derivedParamsPath)
 end
 
 end
+
+%%%% LOCAL FUNCTION
+
+function focalPoint = calcDioptersWrapper(opticalSystem)
+[~, focalPoint] = calcDiopters(opticalSystem);
+end
+
 
