@@ -49,8 +49,14 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem)
 % Examples:
 %{
     % Determine the refractive power of the model eye
-    eye=modelEyeParameters('accommodationDiopters',2);
+    eye=modelEyeParameters('navarroD',0);
     opticalSystem=assembleOpticalSystem(eye,'surfaceSetName','cameraToRetina','opticalSystemNumRows',[]);
+    [diopters, focalPoint] = calcDiopters(opticalSystem)
+%}
+%{
+    % Determine the refractive power of the lens 
+    eye=modelEyeParameters('accommodationDiopters',0);
+    opticalSystem=assembleOpticalSystem(eye,'surfaceSetName','stopToRetina','opticalSystemNumRows',[]);
     [diopters, focalPoint] = calcDiopters(opticalSystem)
 %}
 
@@ -61,12 +67,12 @@ systemDirection = calcSystemDirection(opticalSystem);
 % Create parallel rays in the valid direction
 switch systemDirection
     case 'cameraToEye'
-        R1 = quadric.normalizeRay([100,-1;-3,0;0,0]);
-        R2 = quadric.normalizeRay([100,-1;3,0;0,0]);
+        R1 = quadric.normalizeRay([100,-1;-0.3,0;0,0]);
+        R2 = quadric.normalizeRay([100,-1;0.3,0;0,0]);
         signD = 1;
     case 'eyeToCamera'
-        R1 = quadric.normalizeRay([-100,1;-3,0;0,0]);
-        R2 = quadric.normalizeRay([-100,1;3,0;0,0]);
+        R1 = quadric.normalizeRay([-100,1;-0.3,0;0,0]);
+        R2 = quadric.normalizeRay([-100,1;0.3,0;0,0]);
         signD = -1;
     otherwise
         error('Not a valid system direction')

@@ -1,14 +1,15 @@
-function pointBestFocus = calcPointBestFocus(sceneGeometry, stopRadius)
+function [pointBestFocus, visualAxis, lineOfSight] = calcPointBestFocus(sceneGeometry, stopRadius)
 % Returns the point of best focus for a model eye defined in sceneGeometry
 %
 % Syntax:
-%  pointBestFocus = calcPointBestFocus(eye, stopRadius)
+%  [pointBestFocus, visualAxis, lineOfSight] = calcPointBestFocus(eye, stopRadius)
 %
 % Description
 %   Given a model eye, the routine identifies the point in space at which
 %   the eye has its best focus. This point is defined as the location in
 %   space at which the line of sight and visual axis of the eye intersect,
-%   or pass with minimum distance.
+%   or pass with minimum distance. This is also referred to as the "near
+%   point" of an eye.
 %
 %   If not defined, the radius of the aperture stop is set to provide an
 %   entrance pupil diameter of ~2 mm, which empirically produces the
@@ -31,11 +32,19 @@ function pointBestFocus = calcPointBestFocus(sceneGeometry, stopRadius)
 %{
     % Check that the distance from the eye of the point of best focus 
     % corresponds to the assigned accommodative state of the eye
-    D1 = 2;
+    D1 = 1.5;
     sceneGeometry = createSceneGeometry('accommodationDiopters',D1,'calcLandmarkFovea',true);
     pointBestFocus = calcPointBestFocus(sceneGeometry);
-    D2 = 1000/pointBestFocus(1);
+    D2 = 1000/sqrt(sum(pointBestFocus.^2));
     assert(abs(D1 - D2) < 0.1);
+%}
+%{
+    % Plot the eye and the visual and line of sight axes
+    sceneGeometry = createSceneGeometry('accommodationDiopters',1.5,'sphericalAmetropia',0,'spectacleLens',0,'calcLandmarkFovea',true);
+    [pointBestFocus, visualAxis, lineOfSight] = calcPointBestFocus(sceneGeometry);
+    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
+    plotOpticalSystem('newFigure',false,'outputRay',visualAxis);
+    plotOpticalSystem('newFigure',false,'outputRay',lineOfSight);
 %}
 
 

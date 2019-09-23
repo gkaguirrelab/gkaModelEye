@@ -50,14 +50,20 @@ function [outputRay,rayPath,fixEyePose,fixTargetCoords,foveaDistanceError] = cal
 % Examples:
 %{
     sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
-    [outputRayLoS,rayPathLoS,fixationEyePose]=calcLineOfSightRay(sceneGeometry,0.5);
+    [outputRayLoS,rayPathLoS,fixationEyePose]=calcLineOfSightRay(sceneGeometry);
     [outputRayVis,rayPathVis]=calcNodalRay(sceneGeometry.eye,sceneGeometry.eye.landmarks.fovea.geodetic);
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true,'rayPath',rayPathVis,'outputRay',outputRayVis);
     plotOpticalSystem('newFigure',false,'rayPath',rayPathLoS,'outputRay',outputRayLoS,'rayColor','green');
     fprintf('Angle of the line-of-sight axis w.r.t. the optical axis:\n')
     fixationEyePose(1:2)
 %}
-
+%{
+    % Derive the axial length of the eye along the line-of-sight axis, and
+    % compare this to the length along the optical axis
+    sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
+    [~,rayPathLoS]=calcLineOfSightRay(sceneGeometry);
+    sqrt(sum((rayPathLoS(:,1)-rayPathLoS(:,end)).^2))    
+%}
 
 % Code to determine the stop radius that corresponds to a pupil diameter of
 % 2 mm. This value is used as it is found to provide peak acuity for normal
