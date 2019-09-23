@@ -51,10 +51,14 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %
 % Examples:
 %{
+    % Confirm that lenses of appropriate power are being created
     lensDiopters = -3;
-    eye = modelEyeParameters();
-    opticalSystemIn=assembleOpticalSystem(eye,'surfaceSetName','stopToCamera','opticalSystemNumRows',[]);
+    eye = modelEyeParameters('sphericalAmetropia',-2);
+    opticalSystemIn = assembleOpticalSystem(eye,'surfaceSetName','retinaToCamera','opticalSystemNumRows',[]);
+    eyePower = calcDiopters(reverseSystemDirection(opticalSystemIn));
     opticalSystemOut = addContactLens(opticalSystemIn,lensDiopters);
+    eyePowerWithLens = calcDiopters(reverseSystemDirection(opticalSystemOut));
+    assert(abs(eyePowerWithLens - (eyePower + lensDiopters))<0.01);
 %}
 
 
@@ -107,8 +111,11 @@ backRadii = quadric.radii(tearS);
 tearThickness = backRadii(1)+backCenter(1);
 
 % The desired optical system will have its refractive power plus the called
-% for lens refraction
-targetDiopters = calcDiopters(opticalSystemIn) + lensRefractionDiopters;
+% for lens refraction. We perform this calculation going in the cameraToEye
+% direction, as this is the expression of optical power that is relevant
+% for lens design. So, we have to reverse the optical system.
+
+targetDiopters = calcDiopters(reverseSystemDirection(opticalSystemIn)) + lensRefractionDiopters;
 
 %% Search for parameters of an ophthalmic lens
 % This is "convex-concave" lens with two surfaces. The back surface is
@@ -141,8 +148,11 @@ mySystem = @(x) ...
     x(1), frontCenter(x), ...
     -2, tearThickness);
 
-% Calculate the power of the lens defined by the x parameters
-myDiopters = @(x) calcDiopters(mySystem(x));
+% Calculate the power of the lens defined by the x parameters. We perform
+% this calculation going in the cameraToEye direction, as this is the
+% expression of optical power that is relevant for lens design. So, we have
+% to reverse the optical system.
+myDiopters = @(x) calcDiopters(reverseSystemDirection(mySystem(x)));
 
 % Define an objective which is the difference between the desired and
 % measured optical power of the lens

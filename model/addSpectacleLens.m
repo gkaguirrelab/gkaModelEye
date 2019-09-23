@@ -64,9 +64,6 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %                           front surface of the spectacle lens. If left
 %                           undefined, the value is obtained using Vogel's
 %                           Rule.
-%  'systemDirection'      - Char vector with valid values 'eyeToCamera' or
-%                           'cameraToEye'. Defines the direction of ray
-%                           tracing for this optical system.
 %  'minimumLensThickness' - Scalar. The minimum lens in mm.
 %
 % Outputs:
@@ -78,14 +75,14 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %{
     % Confirm that a spectacle lens has the specified optical power
     lensDiopters = 5;
-    opticalSystem = addSpectacleLens([],lensDiopters,'systemDirection','cameraToEye');
+    opticalSystem = addSpectacleLens([],lensDiopters);
     measuredD = calcDiopters(opticalSystem);
     assert(abs((measuredD - lensDiopters)/lensDiopters) < 0.001);
 %}
 %{
     % Display a spectacle lens and the focal point
     lensDiopters = 5;
-    opticalSystem = addSpectacleLens([],lensDiopters,'systemDirection','cameraToEye');
+    opticalSystem = addSpectacleLens([],lensDiopters);
     % Plot this
     plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true);
     % Trace parallel rays from right (the world) to left (the eye)
@@ -117,7 +114,6 @@ p.addParameter('lensRefractiveIndex',returnRefractiveIndex( 'polycarbonate', 'NI
 p.addParameter('lensVertexDistance',12,@isnumeric);
 p.addParameter('baseCurve',[],@isnumeric);
 p.addParameter('minimumLensThickness',0.8,@isnumeric);
-p.addParameter('systemDirection','eyeToCamera',@ischar);
 
 % parse
 p.parse(opticalSystemIn, lensRefractionDiopters, varargin{:})
@@ -211,8 +207,11 @@ myLens = @(x) ...
     frontCurvature, frontCenter(x(2)), ...
     [lensVertexDistance/2, lensVertexDistance/2], lensVertexDistance);
 
-% Calculate the power of the lens defined by the x parameters
-myDiopters = @(x) calcDiopters(myLens(x));
+% Calculate the power of the lens defined by the x parameters. We perform
+% this calculation going in the cameraToEye direction, as this is the
+% expression of optical power that is relevant for lens design. So, we have
+% to reverse the optical system.
+myDiopters = @(x) calcDiopters(reverseSystemDirection(myLens(x)));
 
 % Define an objective which is the difference between the desired and
 % measured optical power of the lens
