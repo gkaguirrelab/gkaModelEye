@@ -49,6 +49,8 @@ function magnification = calcMagnification(opticalSystem)
     magnification = calcMagnification(opticalSystem)
 %}
 
+% Strip the optical system of any rows which are all nans
+opticalSystem = opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
 
 % Obtain the systemDirection
 systemDirection = calcSystemDirection(opticalSystem);
