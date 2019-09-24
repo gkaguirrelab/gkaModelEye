@@ -1,5 +1,5 @@
-function [diopters, focalPoint] = calcDiopters(opticalSystem)
-% Calcuate the refractive power of an opticalSystem
+function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera)
+% Calcuate the cameraToEye-direction refractive power of an opticalSystem
 %
 % Syntax:
 %  [diopters, focalPoint] = calcDiopters(opticalSystem)
@@ -12,12 +12,14 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem)
 %   Some optical systems end in a medium with a refractive index other than
 %   one. In this case the diopter strength is given by:
 %
-%       diopters = refractiveIndex / focalPointMeters
+%       diopters = refractiveIndex / effectiveFocalLength
 %
-%   The implementation of optical systems and ray tracing in this code
-%   results in only one of these ray tracing directions being available for
-%   a given opticalSystem variable. We try both directions here and report
-%   back the valid solution.
+%   where the effective focal length is the distance between the principal
+%   point of the optical system and the focal point.
+%
+%   This routine returns optical power in the cameraToEye direction for the
+%   passed optical system, unless the "forceEyeToCamera" argument is set to
+%   true.
 %
 % Inputs:
 %   opticalSystem         - An mx19 matrix, where m is set by the key value
@@ -41,16 +43,20 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem)
 %                                       routine exits with nans for the
 %                                       outputRay.
 %                               n     - Refractive index of the surface.
+%   forceEyeToCamera      - Logical. Optional. Defaults to false if not
+%                           set.
 %
 % Outputs:
 %   diopters              - Scalar. The optical power of the system.
+%                           Calculated in the cameraToEye direction unless
+%                           forceEyeToCamera is set to true.
 %   focalPoint            - 3x1 matrix. The location of the focal point.
 %
 % Examples:
 %{
     % Determine the refractive power of the model eye
     eye=modelEyeParameters('navarroD',0);
-    opticalSystem=assembleOpticalSystem(eye,'surfaceSetName','cameraToRetina','opticalSystemNumRows',[]);
+    opticalSystem=assembleOpticalSystem(eye,'surfaceSetName','retinaToCamera','opticalSystemNumRows',[]);
     [diopters, focalPoint] = calcDiopters(opticalSystem)
 %}
 %{
@@ -60,19 +66,41 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem)
     [diopters, focalPoint] = calcDiopters(opticalSystem)
 %}
 
-% Obtain the principal point and systemDirection
-P = calcPrincipalPoint(opticalSystem);
+% Handle nargin
+if nargin==1
+    forceEyeToCamera = false;
+end
+
+% Strip the optical system of any rows which are all nans
+opticalSystem = opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
+
+% Obtain the system direction
 systemDirection = calcSystemDirection(opticalSystem);
+
+% Unless the forceEyeToCamera flag is set, ensure that the optical system
+% is in the cameraToEye state.
+if strcmp(systemDirection,'eyeToCamera') && ~forceEyeToCamera
+    opticalSystem = reverseSystemDirection(opticalSystem);
+end
+if strcmp(systemDirection,'cameraToEye') && forceEyeToCamera
+    opticalSystem = reverseSystemDirection(opticalSystem);
+end
+
+% Obtain the system direction again after that potential reversing
+systemDirection = calcSystemDirection(opticalSystem);
+
+% Obtain the principal point
+P = calcPrincipalPoint(opticalSystem);
 
 % Create parallel rays in the valid direction
 switch systemDirection
     case 'cameraToEye'
-        R1 = quadric.normalizeRay([100,-1;-0.3,0;0,0]);
-        R2 = quadric.normalizeRay([100,-1;0.3,0;0,0]);
+        R1 = quadric.normalizeRay([100,-1;-1,0;0,0]);
+        R2 = quadric.normalizeRay([100,-1;1,0;0,0]);
         signD = 1;
     case 'eyeToCamera'
-        R1 = quadric.normalizeRay([-100,1;-0.3,0;0,0]);
-        R2 = quadric.normalizeRay([-100,1;0.3,0;0,0]);
+        R1 = quadric.normalizeRay([-100,1;-1,0;0,0]);
+        R2 = quadric.normalizeRay([-100,1;1,0;0,0]);
         signD = -1;
     otherwise
         error('Not a valid system direction')
