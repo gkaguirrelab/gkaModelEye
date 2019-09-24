@@ -49,6 +49,9 @@ function systemDirection = calcSystemDirection(opticalSystem)
     assert(strcmp(systemDirection,systemDirectionOut));
 %}
 
+% Strip the optical system of any rows which are all nans
+opticalSystem = opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
+
 % First check to make sure that the opticalSystem variable is well formed
 if size(opticalSystem,2)~=19
     systemDirection = 'Not valid matrix dimensions';
