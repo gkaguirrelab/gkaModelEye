@@ -74,7 +74,7 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 % Examples:
 %{
     % Confirm that a spectacle lens has the specified optical power
-    lensDiopters = 5;
+    lensDiopters = -15;
     opticalSystem = addSpectacleLens([],lensDiopters);
     measuredD = calcDiopters(opticalSystem);
     assert(abs((measuredD - lensDiopters)/lensDiopters) < 0.001);
@@ -201,7 +201,7 @@ frontCenter = @(thickness) lensVertexDistance + frontCurvature + thickness;
 
 % Return the optical system for the candidate lens
 myLens = @(x) ...
-    assembleLensSystem(lensSystem, p.Results.systemDirection, ...
+    assembleLensSystem(lensSystem, ...
     p.Results.lensRefractiveIndex, mediumRefractiveIndex, ...
     x(1), backCenter(x(1)), ...
     frontCurvature, frontCenter(x(2)), ...
@@ -211,7 +211,7 @@ myLens = @(x) ...
 % this calculation going in the cameraToEye direction, as this is the
 % expression of optical power that is relevant for lens design. So, we have
 % to reverse the optical system.
-myDiopters = @(x) calcDiopters(reverseSystemDirection(myLens(x)));
+myDiopters = @(x) calcDiopters(myLens(x));
 
 % Define an objective which is the difference between the desired and
 % measured optical power of the lens
@@ -227,7 +227,6 @@ myConstraint = @(x) checkLensShape(myLens(x));
 % surface using the thin lens approximation
 backCurvatureX0 = sign(lensRefractionDiopters) * ...
     ((mediumRefractiveIndex-lensRefractiveIndex)/(lensRefractionDiopters - frontDiopters))*1000;
-thicknessX0 = p.Results.minimumLensThickness;
 
 % define some search options
 options = optimoptions(@fmincon,...
@@ -243,17 +242,17 @@ warning('off','MATLAB:nearlySingularMatrix');
 if sign(lensRefractionDiopters)==1
     % This is a "plus" lens. Apply the shape constraint but do not place an
     % upper bound on thickness.
-    x0 = [backCurvatureX0 thicknessX0*2];
+    x0 = [backCurvatureX0 p.Results.minimumLensThickness*2];
     lb = [-inf,p.Results.minimumLensThickness];
     ub = [inf,inf];
     [x, fVal] = fmincon(myObj,x0,[],[],[],[],lb,ub,myConstraint,options);
 else
     % This is a "minus" lens. Remove the non-linear shape constraint. Pin
     % the thickness to the minimum specified value.
-    x0 = [backCurvatureX0 thicknessX0];
+    x0 = [backCurvatureX0 p.Results.minimumLensThickness];
     lb = [-inf,p.Results.minimumLensThickness];
     ub = [inf,p.Results.minimumLensThickness];
-    [x, fVal] = fmincon(myObj,x0,[],[],[],[],lb,ub,[],options);    
+    [x, fVal] = fmincon(myObj,x0,[],[],[],[],lb,ub,[],options);
 end
 
 if fVal > 0.01
@@ -274,7 +273,7 @@ frontCenter = frontCenter(thickness);
 
 
 %% Add the lens
-opticalSystemOut = assembleLensSystem(opticalSystemIn, p.Results.systemDirection, p.Results.lensRefractiveIndex, mediumRefractiveIndex, backCurvature, backCenter, frontCurvature, frontCenter, intersectHeights, lensVertexDistance);
+opticalSystemOut = assembleLensSystem(opticalSystemIn, p.Results.lensRefractiveIndex, mediumRefractiveIndex, backCurvature, backCenter, frontCurvature, frontCenter, intersectHeights, lensVertexDistance);
 
 end % function - addSpectacleLens
 
@@ -315,7 +314,7 @@ thicknessAtEdge = Dfront - Dback;
 % which c<=0 and c==0. That is, we would like the lens thickness at the
 % edge to be close to zero and not negative.
 c = -thicknessAtEdge;
-ceq = c;
+ceq = [];
 
 % Return the position along the optical axis for the edge of each surface.
 % This will be used subsequently to assemble a bounding box.
@@ -324,71 +323,37 @@ intersectHeights = [Xback(1) Xfront(1)];
 end
 
 
-function opticalSystemOut = assembleLensSystem(opticalSystemIn, systemDirection, lensRefractiveIndex, mediumRefractiveIndex, backCurvature, backCenter, frontCurvature, frontCenter, intersectHeights, lensVertexDistance)
-% Assembles and returns an optical system matrix given input
+function opticalSystemOut = assembleLensSystem(opticalSystemIn, lensRefractiveIndex, mediumRefractiveIndex, backCurvature, backCenter, frontCurvature, frontCenter, intersectHeights, lensVertexDistance)
+% Assembles and returns an optical system matrix given input in the
+% eyeToCamera direction
 
-switch systemDirection
-    case 'eyeToCamera'
-        % Define a bounding box for the back surface
-        boundingBoxLens = [intersectHeights(1) frontCenter-frontCurvature -lensVertexDistance*2 lensVertexDistance*2 -lensVertexDistance*2 lensVertexDistance*2];
+% Define a bounding box for the back surface
+boundingBoxLens = [intersectHeights(1) frontCenter-frontCurvature -lensVertexDistance*2 lensVertexDistance*2 -lensVertexDistance*2 lensVertexDistance*2];
 
-        % Add the back spectacle surface to the optical system.        
-        SlensBack = quadric.scale(quadric.unitSphere,[backCurvature backCurvature backCurvature]);
-        SlensBack = quadric.translate(SlensBack,[backCenter 0 0]);
-        lensLine = nan(1,19);
-        lensLine(1:10) = quadric.matrixToVec(SlensBack);
-        lensLine(11) = 1; % rays intersect concave lens surface
-        lensLine(12:17) = boundingBoxLens;
-        lensLine(18) = 1; % must intersect
-        lensLine(end) = lensRefractiveIndex;
-        opticalSystemOut = [opticalSystemIn; lensLine];
+% Add the back spectacle surface to the optical system.
+SlensBack = quadric.scale(quadric.unitSphere,[backCurvature backCurvature backCurvature]);
+SlensBack = quadric.translate(SlensBack,[backCenter 0 0]);
+lensLine = nan(1,19);
+lensLine(1:10) = quadric.matrixToVec(SlensBack);
+lensLine(11) = 1; % rays intersect concave lens surface
+lensLine(12:17) = boundingBoxLens;
+lensLine(18) = 1; % must intersect
+lensLine(end) = lensRefractiveIndex;
+opticalSystemOut = [opticalSystemIn; lensLine];
 
-        % Define a bounding box for the front surface
-        boundingBoxLens = [intersectHeights(2) frontCenter-frontCurvature -lensVertexDistance*2 lensVertexDistance*2 -lensVertexDistance*2 lensVertexDistance*2];
+% Define a bounding box for the front surface
+boundingBoxLens = [intersectHeights(2) frontCenter-frontCurvature -lensVertexDistance*2 lensVertexDistance*2 -lensVertexDistance*2 lensVertexDistance*2];
 
-        % Add the front spectacle surface to the optical system.
-        SlensFront = quadric.scale(quadric.unitSphere,[frontCurvature frontCurvature frontCurvature]);
-        SlensFront = quadric.translate(SlensFront,[frontCenter 0 0]);
-        lensLine = nan(1,19);
-        lensLine(1:10) = quadric.matrixToVec(SlensFront);
-        lensLine(11) = 1; % rays intersect concave lens surface
-        lensLine(12:17) = boundingBoxLens;
-        lensLine(18) = 1; % must intersect
-        lensLine(end) = mediumRefractiveIndex;
-        opticalSystemOut = [opticalSystemOut; lensLine];
-        
-    case 'cameraToEye'        
-        % Define a bounding box for the front surface
-        boundingBoxLens = [intersectHeights(2) frontCenter-frontCurvature -lensVertexDistance*2 lensVertexDistance*2 -lensVertexDistance*2 lensVertexDistance*2];
-
-        % Add the front spectacle surface to the optical system.
-        SlensFront = quadric.scale(quadric.unitSphere,[frontCurvature frontCurvature frontCurvature]);
-        SlensFront = quadric.translate(SlensFront,[frontCenter 0 0]);
-        lensLine = nan(1,19);
-        lensLine(1:10) = quadric.matrixToVec(SlensFront);
-        lensLine(11) = -1; % rays intersect convex lens surface
-        lensLine(12:17) = boundingBoxLens;
-        lensLine(18) = 1; % must intersect
-        lensLine(end) = lensRefractiveIndex;
-        opticalSystemOut = [opticalSystemIn; lensLine];
-        
-        % Define a bounding box for the back surface
-        boundingBoxLens = [intersectHeights(1) frontCenter-frontCurvature -lensVertexDistance*2 lensVertexDistance*2 -lensVertexDistance*2 lensVertexDistance*2];
-
-        % Add the back spectacle surface to the optical system.
-        SlensBack = quadric.scale(quadric.unitSphere,[backCurvature backCurvature backCurvature]);
-        SlensBack = quadric.translate(SlensBack,[backCenter 0 0]);
-        lensLine = nan(1,19);
-        lensLine(1:10) = quadric.matrixToVec(SlensBack);
-        lensLine(11) = -1; % rays intersect convex lens surface
-        lensLine(12:17) = boundingBoxLens;
-        lensLine(18) = 1; % must intersect
-        lensLine(end) = mediumRefractiveIndex;
-        opticalSystemOut = [opticalSystemOut; lensLine];
-        
-    otherwise
-        error('Invalid optical system');
-end
+% Add the front spectacle surface to the optical system.
+SlensFront = quadric.scale(quadric.unitSphere,[frontCurvature frontCurvature frontCurvature]);
+SlensFront = quadric.translate(SlensFront,[frontCenter 0 0]);
+lensLine = nan(1,19);
+lensLine(1:10) = quadric.matrixToVec(SlensFront);
+lensLine(11) = 1; % rays intersect concave lens surface
+lensLine(12:17) = boundingBoxLens;
+lensLine(18) = 1; % must intersect
+lensLine(end) = mediumRefractiveIndex;
+opticalSystemOut = [opticalSystemOut; lensLine];
 
 end
 
