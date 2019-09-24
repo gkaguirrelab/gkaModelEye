@@ -168,8 +168,8 @@ radii(1) = abs(b); radii(2:3) = abs(a);
 
 % Build the quadric
 S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
-S = quadric.translate(S,[lens.center(1)-lensThickBack-radii(1) 0 0]);
-boundingBox = [lens.center(1)-lensThickBack lens.center(1) -5 5 -5 5];
+S = quadric.translate(S,[lens.back(1)-radii(1) 0 0]);
+boundingBox = [lens.back(1) lens.center(1) -5 5 -5 5];
 
 % Add to the optical system structure
 lens.S = [lens.S; quadric.matrixToVec(S)];
@@ -240,9 +240,9 @@ radii(2:3) = abs(a);
 
 % Build the quadric
 S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
-S = quadric.translate(S,[eye.stop.center(1)+radii(1) 0 0]);
+S = quadric.translate(S,[lens.front(1)+radii(1) 0 0]);
 c = quadric.center(S); r = quadric.radii(S);
-boundingBox = [lens.center(1) c(1)-r(1) -5 5 -5 5];
+boundingBox = [lens.center(1) lens.front(1) -5 5 -5 5];
 
 % Add to the optical system structure. No refractive index added with this
 % surface, as this is the last surface of this set.
