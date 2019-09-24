@@ -2,37 +2,29 @@
 
 figure('NumberTitle', 'off', 'Name', 'Emmetropia')
 
+eyeVarargin = [{'sphericalAmetropia'},{0},{'spectacleLens'},{0}];
+
+% Obtain the rays and the D parameter
+[navarroD, ~, path1, path2] = calcAccommodation(0,eyeVarargin{:});
+
 % Create the eye and plot it
-sceneGeometry = createSceneGeometry('sphericalAmetropia',0,'accommodationDiopters',0);
-opticalSystem = sceneGeometry.refraction.cameraToRetina.opticalSystem;
+subplot(2,1,1)
+sceneGeometry = createSceneGeometry('navarroD',navarroD,eyeVarargin{:});
 plotOpticalSystem('newFigure',false,'surfaceSet',sceneGeometry.refraction.cameraToRetina,'addLighting',true);
-
-% Create parallel rays in the valid direction
-R1 = quadric.normalizeRay([66.6667,-1;-0.3,0;0,0]);
-R2 = quadric.normalizeRay([66.6667,-1;0.3,0;0,0]);
-
-% Trace the rays
-[~,path1] = rayTraceQuadrics(R1, opticalSystem);
-[~,path2] = rayTraceQuadrics(R2, opticalSystem);
 
 % Add the rays
 plotOpticalSystem('newFigure',false,'rayPath',path1,'rayColor','green');
 plotOpticalSystem('newFigure',false,'rayPath',path2,'rayColor','green','viewAngle',[0 90]);
+xlim([-30 30]);
 
-% Create the eye; no need to replot it as there is minimal visible change
-% in the lens with the 
-sceneGeometry = createSceneGeometry('sphericalAmetropia',0,'accommodationDiopters',15);
-opticalSystem = sceneGeometry.refraction.cameraToRetina.opticalSystem;
-%plotOpticalSystem('surfaceSet',sceneGeometry.refraction.cameraToRetina,'addLighting',true);
-
-% Create diverging rays from the focal point
-R1 = quadric.normalizeRay([66.6667,-1;0,-0.025;0,0]);
-R2 = quadric.normalizeRay([66.6667,-1;0,+0.025;0,0]);
-
-% Trace the rays
-[~,path1] = rayTraceQuadrics(R1, opticalSystem);
-[~,path2] = rayTraceQuadrics(R2, opticalSystem);
+% Now the accomodated eye
+subplot(2,1,2)
+[navarroD, ~, path1, path2] = calcAccommodation(5,eyeVarargin{:});
+sceneGeometry = createSceneGeometry('navarroD',navarroD,eyeVarargin{:});
+plotOpticalSystem('newFigure',false,'surfaceSet',sceneGeometry.refraction.cameraToRetina,'addLighting',true);
 
 % Add the rays
 plotOpticalSystem('newFigure',false,'rayPath',path1,'rayColor','red');
 plotOpticalSystem('newFigure',false,'rayPath',path2,'rayColor','red','viewAngle',[0 90]);
+xlim([-30 30]);
+
