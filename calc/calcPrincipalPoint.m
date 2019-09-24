@@ -60,6 +60,9 @@ function P = calcPrincipalPoint(opticalSystem)
     plot3(P(1),P(2),P(3),'*r')
 %}
 
+% Strip the optical system of any rows which are all nans
+opticalSystem = opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
+
 % Obtain the system direction
 systemDirection = calcSystemDirection(opticalSystem);
 
