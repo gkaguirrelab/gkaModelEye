@@ -41,12 +41,10 @@ function eye = modelEyeParameters( varargin )
 %  'accommodationDiopters' - Scalar that supplies the accommodation state
 %                           of the eye. Valid values range from zero
 %                           (unaccommodated) to +10. The value sets the
-%                           distance from the corneal apex to the point of
-%                           best focus, where diopters = 1000 /
-%                           distance(mm). The default value is the resting
-%                           accommodation value of 1.5. The model currently
-%                           can only model an accomodative state between
-%                           ~1.2 and ~8 diopters.
+%                           distance from the princpal point of the eye to
+%                           the focal point on the right, where diopters =
+%                           1000 / distance(mm). The default value is the
+%                           resting accommodation value of 1.5.
 %  'derivedParams'        - Struct that contains fields with parameters
 %                           used by various eye model components. If left 
 %                           empty, the parameters will be obtained from a
