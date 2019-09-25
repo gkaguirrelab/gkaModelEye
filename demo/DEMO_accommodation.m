@@ -26,7 +26,7 @@ xlim([-25 67]);
 title('Focused at 67mm (15D)')
 
 % Now the accomodated eye
-subplot(3,1,2)
+subplot(3,1,3)
 eyeVarargin = [{'sphericalAmetropia'},{0},{'spectacleLens'},{15}];
 [navarroD, ~, path1, path2] = calcAccommodation(15,eyeVarargin{:});
 sceneGeometry = createSceneGeometry('navarroD',navarroD,eyeVarargin{:});
