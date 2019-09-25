@@ -11,8 +11,10 @@ sceneGeometry = createSceneGeometry('navarroD',navarroD,eyeVarargin{:});
 plotOpticalSystem('newFigure',false,'surfaceSet',sceneGeometry.refraction.cameraToRetina,'addLighting',true);
 plotOpticalSystem('newFigure',false,'rayPath',path1,'rayColor','green');
 plotOpticalSystem('newFigure',false,'rayPath',path2,'rayColor','green','viewAngle',[0 90]);
+ylim([-25 25]);
 xlim([-25 67]);
 title('Focused at infinity (0D)')
+drawnow
 
 % Now the accomodated eye
 subplot(3,1,2)
@@ -22,8 +24,10 @@ sceneGeometry = createSceneGeometry('navarroD',navarroD,eyeVarargin{:});
 plotOpticalSystem('newFigure',false,'surfaceSet',sceneGeometry.refraction.cameraToRetina,'addLighting',true);
 plotOpticalSystem('newFigure',false,'rayPath',path1,'rayColor','red');
 plotOpticalSystem('newFigure',false,'rayPath',path2,'rayColor','red','viewAngle',[0 90]);
+ylim([-25 25]);
 xlim([-25 67]);
 title('Focused at 67mm (15D)')
+drawnow
 
 % Now the accomodated eye
 subplot(3,1,3)
@@ -33,5 +37,6 @@ sceneGeometry = createSceneGeometry('navarroD',navarroD,eyeVarargin{:});
 plotOpticalSystem('newFigure',false,'surfaceSet',sceneGeometry.refraction.cameraToRetina,'addLighting',true);
 plotOpticalSystem('newFigure',false,'rayPath',path1,'rayColor','green');
 plotOpticalSystem('newFigure',false,'rayPath',path2,'rayColor','green','viewAngle',[0 90]);
+ylim([-25 25]);
 xlim([-25 67]);
 title('Focused at 67mm (15D) using a spectacle lens')
