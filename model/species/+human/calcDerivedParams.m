@@ -24,7 +24,7 @@ function derivedParams = calcDerivedParams(varargin)
 %
 % Examples:
 %{
-    % ETTBSkip -- This takes about 15 minutes to run.
+    % ETTBSkip -- We don't want to remake the params when we are testing
     % Iteratively run the routine to find the stable set of params
     derivedParams = [];
     % Iteratively call the routine, but do not yet save the params to disk
@@ -59,68 +59,9 @@ p.parse(varargin{:})
 % parameter sets to converge.
 if isempty(p.Results.derivedParams)
     derivedParams = struct();
-    derivedParams.accommodationPolyCoef = [0.2804 3.2930 1.1188];
     derivedParams.stopEccenParams = [-1.7523 4.7609 0.1800 0.0973];
 else
     derivedParams = p.Results.derivedParams;
-end
-
-
-%% Accommodation values
-
-% Alert the user
-if p.Results.verbose
-    fprintf('Calculating Navarro D values for accommodation settings.\n');
-    tic
-end
-
-% Create a variable that holds the accomodation values that we wish to have
-accommodationDiopters = 0:1:15;
-
-% First, find the Navarro D values in the emmetropic eye that results in
-% a focal length for the model eye that matches the depth of the vitreous
-% chamber vertex. Store this value
-myEye=@(x) modelEyeParameters('navarroD',x);
-myVertex=@(x) getfield(myEye(x),'landmarks','vertex','coords');
-mySystem=@(x) assembleOpticalSystem(myEye(x),'surfaceSetName','cameraToRetina','opticalSystemNumRows',[]);
-myPoint=@(x) calcDioptersWrapper(mySystem(x));
-myObj=@(x) sum((myVertex(x)'-myPoint(x)).^2);
-navarroDVals(1) = fminsearch(myObj,5);
-
-% Obtain and store the optical power of the model eye when it is focused
-% at infinity
-myDiopters = @(x) calcDiopters(mySystem(x));
-eyeDioptersD0 = myDiopters(navarroDVals(1));
-
-% Now find the D vals that produce the called for increase in optical
-% power
-for dd = 2:length(accommodationDiopters)
-    targetPower = eyeDioptersD0+accommodationDiopters(dd);
-    myObj = @(x) (targetPower - myDiopters(x))^2;
-    navarroDVals(dd) = fminsearch(myObj,navarroDVals(dd-1));    
-end
-
-% Save these derived params
-derivedParams.accommodationPolyCoef = polyfit(accommodationDiopters,navarroDVals,4);
-
-% Plot it
-if p.Results.showPlots
-    figure
-    plot(accommodationDiopters,navarroDVals,'xk');
-    hold on
-    plot(0:0.1:max(accommodationDiopters),polyval(derivedParams.accommodationPolyCoef,0:0.1:max(accommodationDiopters)),'-r')
-    xlabel('Desired accommodation state of eye [diopters]');
-    ylabel('Navarro equation parameter [D]');
-    title('derivedParams.accommodationPolyCoef');
-end
-    
-% Alert the user
-if p.Results.verbose
-    toc
-    fprintf('derivedParams.accommodationPolyCoef = [%4.3f %4.3f %4.3f];\n\n', ...
-        derivedParams.accommodationPolyCoef(1), ...
-        derivedParams.accommodationPolyCoef(2), ...
-        derivedParams.accommodationPolyCoef(3));
 end
 
 
@@ -259,11 +200,4 @@ if ~isempty(p.Results.derivedParamsPath)
 end
 
 end
-
-%%%% LOCAL FUNCTION
-
-function focalPoint = calcDioptersWrapper(opticalSystem)
-[~, focalPoint] = calcDiopters(opticalSystem);
-end
-
 
