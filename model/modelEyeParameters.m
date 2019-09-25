@@ -38,20 +38,18 @@ function eye = modelEyeParameters( varargin )
 %  'ageYears'             - Scalar that supplies the age in years of the
 %                           eye to be modeled. Influences the refractive
 %                           index values of the lens.
-%  'accommodationDiopters' - Scalar that supplies the accommodation state
-%                           of the eye. Valid values range from zero
-%                           (unaccommodated) to +10. The value sets the
-%                           distance from the princpal point of the eye to
-%                           the focal point on the right, where diopters =
-%                           1000 / distance(mm). The default value is the
-%                           resting accommodation value of 1.5.
 %  'derivedParams'        - Struct that contains fields with parameters
 %                           used by various eye model components. If left 
 %                           empty, the parameters will be obtained from a
 %                           stored set of values.
-%  'navarroD'             - The parameter D of the Navarro 2014 lens model.
-%                           This value is used only during model
-%                           development and can normally be left undefined.
+%  'navarroD'             - Scalar. The parameter D of the Navarro 2014
+%                           lens model. This value is used to adjust the
+%                           accommodative state of the eye. In the
+%                           emmetropic eye, the default value of 0.6240
+%                           provides a "resting" accomodation that is
+%                           1.5 D. To calculate a navarroD parameter for
+%                           other states of accommodation, use the function
+%                           calcAccommodation.
 %  'measuredCornealCurvature' - 1x2 or 1x3 vector. Provides the horizontal 
 %                           and vertical curvature of the cornea (diopters;
 %                           K1 and K2). The third value is the rotation of
@@ -100,8 +98,7 @@ p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
 p.addParameter('ageYears',18,@isscalar);
 p.addParameter('derivedParams',[],@(x)(isstruct(x) || isempty(x)));
-p.addParameter('navarroD',[],@(x)(isempty(x) || isscalar(x)));
-p.addParameter('accommodationDiopters',1.5,@isscalar);
+p.addParameter('navarroD',0.6240,@(x)(isempty(x) || isscalar(x)));
 p.addParameter('measuredCornealCurvature',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('spectralDomain','nir',@ischar);
 p.addParameter('calcLandmarkFovea',false,@islogical);
@@ -162,7 +159,6 @@ eye.meta.axialLength = p.Results.axialLength;
 eye.meta.species = p.Results.species;
 eye.meta.ageYears = p.Results.ageYears;
 eye.meta.navarroD = p.Results.navarroD;
-eye.meta.accommodationDiopters = p.Results.accommodationDiopters;
 eye.meta.measuredCornealCurvature = p.Results.measuredCornealCurvature;
 eye.meta.spectralDomain = p.Results.spectralDomain;
 eye.meta.notes = notes;

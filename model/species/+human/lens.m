@@ -46,29 +46,11 @@ function lens = lens( eye )
 %
 
 
-% Obtain the age of the modeled subject.
+% Obtain the age of the modeled subject
 age = eye.meta.ageYears;
 
-% Set the D parameter of the model
-accommodationDiopters = [];
-if ~isempty(eye.meta.navarroD)
-    % The D parameter has been hard-coded
-    D = eye.meta.navarroD;
-else
-    if isfield(eye.meta,'accommodationDiopters')
-        accommodationDiopters = eye.meta.accommodationDiopters;
-    else
-        % If not set, assume the resting accommodation value of 1.5
-        % diopters
-        accommodationDiopters = 1.5;
-    end
-    
-    % Find the Navarro D parameter that produces the desired accomodation.
-    % This requires a recursive search across model eyes. We grab the
-    % varargin for this model eye and pass it to the search.
-    varargin = eye.meta.varargin;
-    D = calcAccommodation(accommodationDiopters, varargin{:});    
-end
+% Obtain the D parameter of the model
+D = eye.meta.navarroD;
 
 % Initialize the components of the optical system
 lens.S = [];
@@ -274,7 +256,6 @@ lens.mustIntersect = [lens.mustIntersect; 1];
 lens.label = [lens.label; {'lens.front'}];
 lens.plot.color = [lens.plot.color; {'red'}];
 lens.meta.navarroD = D;
-lens.meta.accommodationDiopters = accommodationDiopters;
 
 end
 
