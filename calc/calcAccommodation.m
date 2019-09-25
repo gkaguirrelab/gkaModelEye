@@ -38,7 +38,7 @@ function [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopter
 %
 % Examples:
 %{
-    navarroD = calcAccommodation(1.5)
+    navarroD = calcAccommodation(0)
 %}
 
 %% Anonymous functions for the eye
@@ -56,11 +56,11 @@ mySystem=@(x) getfield(myScene(x),'refraction','cameraToRetina','opticalSystem')
 
 %% Anonymous functions for the rays
 % Create a pair of rays that arise from the optical axis at a distance from
-% the principal point of the eye equal to 1/accommodationDiopters. The
-% behavior here handles the special case of a desired accommodation of
-% zero.
+% the principal point of the eye equal to 1/accommodationDiopters.
 intersectHeight = 1;
 
+% The behavior here handles the special case of a desired accommodation of
+% zero.
 if accommodationDiopters==0
     % The rays are fixed at parallel
     myR1 = @(x) quadric.normalizeRay([100,-1;intersectHeight,0;0,0]);
