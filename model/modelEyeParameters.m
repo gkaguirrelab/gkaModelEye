@@ -166,6 +166,7 @@ eye.meta.accommodationDiopters = p.Results.accommodationDiopters;
 eye.meta.measuredCornealCurvature = p.Results.measuredCornealCurvature;
 eye.meta.spectralDomain = p.Results.spectralDomain;
 eye.meta.notes = notes;
+eye.meta.varargin = varargin;
 
 % Switch parameters at the top level by species
 switch eye.meta.species
