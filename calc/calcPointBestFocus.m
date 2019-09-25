@@ -30,21 +30,13 @@ function [pointBestFocus, visualAxis, lineOfSight] = calcPointBestFocus(sceneGeo
 %
 % Examples:
 %{
-    % Check that the distance from the eye of the point of best focus 
-    % corresponds to the assigned accommodative state of the eye
-    D1 = 1.5;
-    sceneGeometry = createSceneGeometry('accommodationDiopters',D1,'calcLandmarkFovea',true);
-    pointBestFocus = calcPointBestFocus(sceneGeometry);
-    D2 = 1000/sqrt(sum(pointBestFocus.^2));
-    assert(abs(D1 - D2) < 0.1);
-%}
-%{
     % Plot the eye and the visual and line of sight axes
-    sceneGeometry = createSceneGeometry('accommodationDiopters',1.5,'sphericalAmetropia',0,'spectacleLens',0,'calcLandmarkFovea',true);
+    navarroD = calcAccommodation(10);
+    sceneGeometry = createSceneGeometry('navarroD',navarroD,'calcLandmarkFovea',true);
     [pointBestFocus, visualAxis, lineOfSight] = calcPointBestFocus(sceneGeometry);
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
-    plotOpticalSystem('newFigure',false,'outputRay',visualAxis);
-    plotOpticalSystem('newFigure',false,'outputRay',lineOfSight);
+    plotOpticalSystem('newFigure',false,'rayPath',[visualAxis(:,1) pointBestFocus]);
+    plotOpticalSystem('newFigure',false,'rayPath',[lineOfSight(:,1) pointBestFocus]);
 %}
 
 

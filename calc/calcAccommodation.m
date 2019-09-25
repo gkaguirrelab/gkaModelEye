@@ -38,7 +38,7 @@ function [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopter
 %
 % Examples:
 %{
-    navarroD = calcAccommodation(0)
+    navarroD = calcAccommodation(1.5)
 %}
 
 %% Anonymous functions for the eye

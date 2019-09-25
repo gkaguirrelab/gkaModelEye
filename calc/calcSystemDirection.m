@@ -43,8 +43,9 @@ function systemDirection = calcSystemDirection(opticalSystem)
 % Examples:
 %{
     % Test if a lens created for one system direction is correctly classed
-    systemDirection = 'cameraToEye';
-    opticalSystem = addSpectacleLens([],-2,'systemDirection',systemDirection);
+    sceneGeometry = createSceneGeometry();
+    systemDirectionIn = 'cameraToRetina';
+    opticalSystem = sceneGeometry.refraction.(systemDirectionIn).opticalSystem;
     systemDirectionOut = calcSystemDirection(opticalSystem);
     assert(strcmp(systemDirection,systemDirectionOut));
 %}
