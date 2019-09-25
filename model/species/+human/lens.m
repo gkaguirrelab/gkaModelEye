@@ -19,8 +19,8 @@ function lens = lens( eye )
 %   portions of the lens, are also taken from Navarro 2014.
 %
 %   The interior of the lens is modeled as a GRIN (gradient refractive
-%   index). This is realized as a set of ellipsoidal iso-indicial surfaces.
-%   The particular parameters are taken from Atchison 2006 Vision Research,
+%   index). This is realized as a set of iso-indicial surfaces. The
+%   particular parameters are taken from Atchison 2006 Vision Research,
 %   which were in turn derived from Jones et al 2005 Vision Research and
 %   Liou & Brennan 1997 JOSA-A.
 %
@@ -46,18 +46,8 @@ function lens = lens( eye )
 %
 
 
-% It is necessary to "tune" the assigned acommodation values so that a
-% requested acommodation state of the emmetropic eye results in the
-% expected point of best focus. This is determined in the routine
-% 'calcDerivedParams' and is implemented as a polynomial function that
-% converts between desired accmodative state of the eye and the value of
-% the "D" parameter of the Navarro equations.
-accommodationPolyCoef = eye.derivedParams.accommodationPolyCoef;
-
-% We ignore the assigned age of the eye and use a standard age of 18, as
-% our goal is to have the accomodative state of the eye well modeled
-% regardless of the age of the eye.
-age = 18;
+% Obtain the age of the modeled subject.
+age = eye.meta.ageYears;
 
 % Set the D parameter of the model
 accommodationDiopters = [];
@@ -73,9 +63,11 @@ else
         accommodationDiopters = 1.5;
     end
     
-    % Convert the requested accommodationDiopters to the corresponding
-    % Navarro D param.
-    D = polyval(accommodationPolyCoef,accommodationDiopters);
+    % Find the Navarro D parameter that produces the desired accomodation.
+    % This requires a recursive search across model eyes. We grab the
+    % varargin for this model eye and pass it to the search.
+    varargin = eye.meta.varargin;
+    D = calcAccommodation(accommodationDiopters, varargin{:});    
 end
 
 % Initialize the components of the optical system
@@ -90,6 +82,12 @@ lens.plot.color = {};
 % Obtain the core and edge refractive indices
 nEdge = returnRefractiveIndex( 'lens.edge', eye.meta.spectralDomain, 'age',  age);
 nCore = returnRefractiveIndex( 'lens.core', eye.meta.spectralDomain, 'age',  age);
+
+% The refractive index varies as a function of relative position between
+% the edge (1) and core (0). This anonymous function follows Atchison 2006,
+% and specifies the relative position of a gradient shell as a function of
+% the refractive index of that shell.
+nPosition = @(n) (nCore - n).^(1/2)./(nCore - nEdge).^(1/2);
 
 % The position of the point in the lens with the maximal refractive index.
 % Positioned so that when the eye is accommodated to focus on a point 200
@@ -118,29 +116,7 @@ lens.front(1) = lens.front(1) + lensThickFront;
 % The number of discarded shells varies by the accommodative state of the
 % lens. This has the effect of causing the gradient encountered by the ray
 % to be slightly discontinuous close to the outer edges of the lens.
-nShells = 21;
-endShell = 21;
-if D < 2
-    startShell = 7;
-end
-if D >= 2 && D < 6
-    startShell = 6;
-end
-if D >=6 && D < 11
-    startShell = 5;
-end
-if D >= 11 && D < 15
-    startShell = 4;
-end
-if D >= 15 && D < 20
-    startShell = 3;
-end
-if D >= 20 && D < 25
-    startShell = 2;
-end
-if D >= 25
-    startShell = 1;
-end
+numShells = 21;
 
 
 %% Back lens surface
@@ -164,11 +140,15 @@ R = 1./( -(1/(5.9 - 0.013*age)) - 0.0043*D  );
 Q = -3;
 a = R * sqrt(abs( 1 / (Q - 1 ) )) * sign(Q);
 b = R / (Q - 1 );
-radii(1) = abs(b); radii(2:3) = abs(a);
+lensBackRadii(1) = abs(b); lensBackRadii(2:3) = abs(a);
 
-% Build the quadric
-S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
-S = quadric.translate(S,[lens.back(1)-radii(1) 0 0]);
+% Build the quadric. We save the back lens surface primitive for use below
+% in the gradient refractive index
+backQuadricPrimitive = quadric.scale(quadric.unitTwoSheetHyperboloid, lensBackRadii./lensBackRadii(1));
+S = quadric.scale(backQuadricPrimitive,lensBackRadii(1));
+S = quadric.translate(S,[lens.back(1)-lensBackRadii(1) 0 0]);
+
+% A bounding box for the back lens surface
 boundingBox = [lens.back(1) lens.center(1) -5 5 -5 5];
 
 % Add to the optical system structure
@@ -180,19 +160,37 @@ lens.index = [lens.index; nEdge];
 lens.label = [lens.label; {'lens.back'}];
 lens.plot.color = [lens.plot.color; {'red'}];
 
+
 %% Back gradient shells
-boundingBox = [lens.center(1)-lensThickBack lens.center(1) -5 5 -5 5];
-nLensVals = linspace(nEdge,nCore,nShells*2+1);
-for ii = startShell:endShell
-    nBackQuadric = [-0.010073731138546 0 0 0.0; 0 -0.002039930555556 0 0; 0 0 -0.002039930555556 0; 0 0 0 1.418000000000000];
-    S = nBackQuadric;
-    S(end,end)=S(end,end)-nLensVals(ii*2);
-    S = quadric.translate(S,[lens.center(1) 0 0]);
+% The shells are scaled and then shifted to be equally spaced across
+% the thickness of the lens.
+
+% Create a set of equally spaced refractive indices
+nLensVals = linspace(nEdge,nCore,numShells*2+1);
+
+for ii = 1:numShells
+    
+    % Find the position of this shell within the back half of the lens,
+    % where position 1 is the edge and 0 is the core
+    proportion = nPosition(nLensVals(ii));
+    
+    % The radius of the quadric shell is equal to proportionally scaled
+    % form of the lens back radius
+    radius = lensBackRadii(1) * proportion;
+    
+    % Scale the quadric surface to this radius size    
+    S = quadric.scale(backQuadricPrimitive,radius);
+
+    % Position the surface 
+    S = quadric.translate(S,[lens.center(1)-(proportion*lensThickBack)-radius 0 0]);
+    
+    % Create a bounding box
+    boundingBox = [lens.center(1)-(proportion*lensThickBack) lens.center(1) -5 5 -5 5];
     
     % Add this shell to the optical system structure
     lens.S = [lens.S; quadric.matrixToVec(S)];
     lens.boundingBox = [lens.boundingBox; boundingBox];
-    lens.side = [lens.side; 1];
+    lens.side = [lens.side; -1];
     lens.mustIntersect = [lens.mustIntersect; 0];
     lens.index = [lens.index; nLensVals(ii*2+1)];
     lens.label = [lens.label; {sprintf('lens.back.shell_n=%0.3f',nLensVals(ii*2))}];
@@ -204,15 +202,52 @@ end
 lens.index(end) = nCore;
 
 
+%% Front lens surface
+% This is calculated now so that the form is available for the
+% construction of the front gradient shells, but not stored in the optical
+% system until after the lens gradient is finished
+
+% Taken from Navarro 2014.
+R = 1/( 1/(12.7-0.058*age) + 0.0077*D  );
+Q = -4 - (0.5*D);
+a = R * sqrt(abs( 1 / (Q - 1 ) )) * sign(Q);
+b = R / (Q - 1 );
+lensFrontRadii(1) = abs(b);
+lensFrontRadii(2:3) = abs(a);
+
+% Build the quadric. We save the back lens surface primitive for use below
+% in the gradient refractive index
+frontQuadricPrimitive = quadric.scale(quadric.unitTwoSheetHyperboloid, lensFrontRadii./lensFrontRadii(1));
+S = quadric.scale(frontQuadricPrimitive,lensFrontRadii(1));
+S = quadric.translate(S,[lens.front(1)-lensFrontRadii(1) 0 0]);
+
+
 %% Front gradient shells
-boundingBox = [lens.center(1) lens.center(1)+lensThickFront -5 5 -5 5];
-nLensVals = linspace(nEdge,nCore,nShells*2+1);
-for ii = endShell:-1:startShell
-    nFrontQuadric = [0.022665895061728 0 0 0; 0 0.002039930555556 0 0; 0 0 0.002039930555556 0; 0 0 0 1.371000000000000];
-    S = nFrontQuadric;
-    S(end,end)=nLensVals(ii*2)-nCore;
-    S = quadric.translate(S,[lens.center(1)-0.065277777777778 0 0]);
+% The shells are scaled and then shifted to be equally spaced across
+% the thickness of the lens.
+
+% Create a set of equally spaced refractive indices
+nLensVals = linspace(nEdge,nCore,numShells*2+1);
+
+for ii = numShells:-1:1
     
+    % Find the position of this shell within the front half of the lens,
+    % where position 1 is the edge and 0 is the core
+    proportion = nPosition(nLensVals(ii));
+    
+    % The radius of the quadric shell is equal to proportionally scaled
+    % form of the lens front radius
+    radius = lensFrontRadii(1) * proportion;
+    
+    % Scale the quadric surface to this radius size    
+    S = quadric.scale(frontQuadricPrimitive,radius);
+
+    % Position the surface 
+    S = quadric.translate(S,[lens.center(1)+(proportion*lensThickFront)+radius 0 0]);
+
+    % Create a bounding box
+    boundingBox = [lens.center(1) lens.center(1)+(proportion*lensThickFront) -5 5 -5 5];
+
     % Add this shell to the optical system structure
     lens.S = [lens.S; quadric.matrixToVec(S)];
     lens.boundingBox = [lens.boundingBox; boundingBox];
@@ -222,30 +257,16 @@ for ii = endShell:-1:startShell
     lens.label = [lens.label; {sprintf('lens.front.shell_n=%0.3f',nLensVals(ii*2))}];
     lens.plot.color = [lens.plot.color; [0.5 (nLensVals(ii*2)-nEdge)/(nCore-nEdge)/2+0.5 0.5]];
 end
+
 % Force the index of the space between the last front shell and the front
 % lens surface to be equal to the lens edge refractive index. The value can
 % be something other than this when the start shell is something other than
 % one.
 lens.index(end) = nEdge;
 
-
-%% Front lens surface
-% Taken from Navarro 2014.
-R = 1/( 1/(12.7-0.058*age) + 0.0077*D  );
-Q = -4 - (0.5*D);
-a = R * sqrt(abs( 1 / (Q - 1 ) )) * sign(Q);
-b = R / (Q - 1 );
-radii(1) = abs(b);
-radii(2:3) = abs(a);
-
-% Build the quadric
-S = quadric.scale(quadric.unitTwoSheetHyperboloid, radii);
-S = quadric.translate(S,[lens.front(1)+radii(1) 0 0]);
-c = quadric.center(S); r = quadric.radii(S);
-boundingBox = [lens.center(1) lens.front(1) -5 5 -5 5];
-
-% Add to the optical system structure. No refractive index added with this
+% Add the front surface to the optical system structure. No refractive index added with this
 % surface, as this is the last surface of this set.
+boundingBox = [lens.center(1) lens.front(1) -5 5 -5 5];
 lens.S = [lens.S; quadric.matrixToVec(S)];
 lens.boundingBox = [lens.boundingBox; boundingBox];
 lens.side = [lens.side; 1];
