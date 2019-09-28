@@ -44,10 +44,10 @@ function systemDirection = calcSystemDirection(opticalSystem)
 %{
     % Test if a lens created for one system direction is correctly classed
     sceneGeometry = createSceneGeometry();
-    systemDirectionIn = 'cameraToRetina';
-    opticalSystem = sceneGeometry.refraction.(systemDirectionIn).opticalSystem;
+    systemDirectionIn = 'eyeToCamera';
+    opticalSystem = sceneGeometry.refraction.stopToCamera.opticalSystem;
     systemDirectionOut = calcSystemDirection(opticalSystem);
-    assert(strcmp(systemDirection,systemDirectionOut));
+    assert(strcmp(systemDirectionIn,systemDirectionOut));
 %}
 
 % Strip the optical system of any rows which are all nans
