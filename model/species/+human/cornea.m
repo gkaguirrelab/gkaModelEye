@@ -137,9 +137,11 @@ else
     radii(2:3) = sqrt(radii(1).*RoC(eye.meta.measuredCornealCurvature(1:2)));
     % Create the quadric
     S = quadric.scale(quadric.unitSphere,radii);
-    % Apply a torsional rotation to the ellipse if requested
+    % Here is where I would apply a torsional rotation to the ellipsoid.
+    % However, the quadric rotation is not working properly so this is not
+    % implemented currently.
     if length(eye.meta.measuredCornealCurvature)==3
-        cornealRotation = [eye.meta.measuredCornealCurvature(3) 0 0];
+%         cornealRotation = [eye.meta.measuredCornealCurvature(3) 0 0];
     end
 end
 
