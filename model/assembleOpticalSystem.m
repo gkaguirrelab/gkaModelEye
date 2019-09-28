@@ -111,17 +111,13 @@ mediumRefractiveIndex = returnRefractiveIndex( p.Results.cameraMedium, eye.meta.
 opticalSystem = nan(1,19);
 
 % This variable is set to empty by default
-magnification = [];
+magnification = struct();
 
 % The optical system is always assembled in the eyeToCamera direction, but
 % the reversed version is returned if that is what was requested
 switch p.Results.surfaceSetName
     case {'retinaToCamera','cameraToRetina'}
-        
-        % For this case, magnification defaults to unity unless adjusted by
-        % an artificial lens
-        magnification = 1;
-        
+                
         % We start in the vitreous chamber. Assign this refractive index
         opticalSystem(1,19) = returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain );
         
@@ -161,7 +157,7 @@ switch p.Results.surfaceSetName
             
             % Calculate the magnification produced by the this lens
             if ~p.Results.skipMagCalc
-                magnification = calcAngularMagnification(eye,'contactLens',p.Results.contactLens);
+                magnification.contact = calcAngularMagnification(eye,'contactLens',p.Results.contactLens);
             end
         end
         
@@ -185,7 +181,7 @@ switch p.Results.surfaceSetName
             
             % Calculate the magnification produced by the this lens
             if ~p.Results.skipMagCalc
-                magnification = calcAngularMagnification(eye,'spectacleLens',p.Results.spectacleLens);
+                magnification.spectacle = calcAngularMagnification(eye,'spectacleLens',p.Results.spectacleLens);
             end
         end
         
