@@ -51,8 +51,8 @@ P = calcOpticalCenter(eye);
 R = quadric.normalizeRay([X P-X]);
 
 % Optical systems with and without the artificial lens
-opticalSystemNoLens = assembleOpticalSystem(eye,'surfaceSetName','retinaToCamera','opticalSystemNumRows',[]);
-opticalSystemWithLens = assembleOpticalSystem(eye,'surfaceSetName','retinaToCamera','opticalSystemNumRows',[],varargin{:});
+opticalSystemNoLens = assembleOpticalSystem(eye,'surfaceSetName','retinaToCamera','opticalSystemNumRows',[],'skipMagCalc',true);
+opticalSystemWithLens = assembleOpticalSystem(eye,'surfaceSetName','retinaToCamera','opticalSystemNumRows',[],'skipMagCalc',true,varargin{:});
 
 % Ray trace 
 outputRayNoLens = rayTraceQuadrics(R,opticalSystemNoLens);

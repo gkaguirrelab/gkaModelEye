@@ -211,7 +211,7 @@ sceneGeometry.eye = modelEyeParameters('spectralDomain',p.Results.spectralDomain
 
 %% refraction
 for ii = 1:length(p.Results.surfaceSetName)
-    [opticalSystem, surfaceLabels, surfaceColors] = ...
+    [opticalSystem, surfaceLabels, surfaceColors, magnification] = ...
         assembleOpticalSystem( sceneGeometry.eye, ...
         'surfaceSetName', p.Results.surfaceSetName{ii}, ...
         'cameraMedium', p.Results.cameraMedium, ...
@@ -220,6 +220,9 @@ for ii = 1:length(p.Results.surfaceSetName)
     sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).opticalSystem = opticalSystem;
     sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceLabels = surfaceLabels;
     sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceColors = surfaceColors;
+    if ~isempty(magnification)
+        sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).magnification = magnification;
+    end
 end
 
 

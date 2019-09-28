@@ -1,4 +1,4 @@
-function [opticalSystem, surfaceLabels, surfaceColors] = assembleOpticalSystem( eye, varargin )
+function [opticalSystem, surfaceLabels, surfaceColors, magnification] = assembleOpticalSystem( eye, varargin )
 % Create a matrix to be used for ray tracing a set of optical surfaces
 %
 % Syntax:
@@ -41,10 +41,13 @@ function [opticalSystem, surfaceLabels, surfaceColors] = assembleOpticalSystem( 
 %                           optical system will have 100-m rows of nans. If
 %                           the key-value is set to empty, no nan rows will
 %                           be added.
+%  'skipMagCalc'          - During calculation of magnification, this
+%                           routine is called recursively. This flag is set
+%                           to prevent a loop.
 %
 % Outputs:
 %   opticalSystem         - An mx19 matrix, where m is set by the key value
-%                           opticalSystemNumRows. Each row contains the 
+%                           opticalSystemNumRows. Each row contains the
 %                           values:
 %                               [S side bb must n]
 %                           where:
@@ -78,6 +81,10 @@ function [opticalSystem, surfaceLabels, surfaceColors] = assembleOpticalSystem( 
 %   surfaceColors         - A cell array of 3x1 vectors that provide the
 %                           color specification for plotting each surface
 %                           of the optical system.
+%   magnification         - Scalar. The magnification of the visual world
+%                           experienced by the eye as a consequence of
+%                           artificial lenses. Only calculated for the
+%                           'retinaToCamera' system set.
 %
 
 %% input parser
@@ -91,6 +98,7 @@ p.addParameter('cameraMedium','air',@ischar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('opticalSystemNumRows',100,@isnumeric);
+p.addParameter('skipMagCalc',false, @islogical);
 
 % parse
 p.parse(eye, varargin{:})
@@ -102,14 +110,21 @@ mediumRefractiveIndex = returnRefractiveIndex( p.Results.cameraMedium, eye.meta.
 % of the medium in which the ray originates.
 opticalSystem = nan(1,19);
 
+% This variable is set to empty by default
+magnification = [];
+
 % The optical system is always assembled in the eyeToCamera direction, but
 % the reversed version is returned if that is what was requested
 switch p.Results.surfaceSetName
     case {'retinaToCamera','cameraToRetina'}
-
+        
+        % For this case, magnification defaults to unity unless adjusted by
+        % an artificial lens
+        magnification = 1;
+        
         % We start in the vitreous chamber. Assign this refractive index
         opticalSystem(1,19) = returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain );
-       
+        
         % Add the vitreous chamber surface. As this has the same refractive
         % index as the first line of the optical system, this surface does
         % not induce any refraction.
@@ -143,6 +158,11 @@ switch p.Results.surfaceSetName
             end
             surfaceLabels = [surfaceLabels; {'contactLens'}; {'tearfilm'}];
             surfaceColors = [surfaceColors; {[.5 .5 .5]}; {'blue'}];
+            
+            % Calculate the magnification produced by the this lens
+            if ~p.Results.skipMagCalc
+                magnification = calcAngularMagnification(eye,'contactLens',p.Results.contactLens);
+            end
         end
         
         % Add a spectacle lens if requested
@@ -162,21 +182,26 @@ switch p.Results.surfaceSetName
             end
             surfaceLabels = [surfaceLabels; {'spectacleLensBack'}; {'spectacleLensFront'}];
             surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[.5 .5 .5]}];
+            
+            % Calculate the magnification produced by the this lens
+            if ~p.Results.skipMagCalc
+                magnification = calcAngularMagnification(eye,'spectacleLens',p.Results.spectacleLens);
+            end
         end
-
+        
         % Reverse the system if needed
         if strcmp(p.Results.surfaceSetName,'cameraToRetina')
             opticalSystem = reverseSystemDirection(opticalSystem);
             surfaceColors = flipud([surfaceColors(2:end); {[nan nan nan]}]);
             surfaceLabels = flipud([surfaceLabels(2:end); {'camera'}]);
         end
-
+        
         
     case {'retinaToStop','stopToRetina'}
         
         % We start in the vitreous chamber. Assign this refractive index
         opticalSystem(1,19) = returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain );
-
+        
         % Add the vitreous chamber surface. As this has the same refractive
         % index as the first line of the optical system, this surface does
         % not induce any refraction.
@@ -194,7 +219,7 @@ switch p.Results.surfaceSetName
         
         % Assemble the surface plot colors
         surfaceColors = [{[nan nan nan]}; eye.retina.plot.color; eye.lens.plot.color];
-
+        
         % Reverse the system if needed
         if strcmp(p.Results.surfaceSetName,'stopToRetina')
             opticalSystem = reverseSystemDirection(opticalSystem);
@@ -251,14 +276,14 @@ switch p.Results.surfaceSetName
             surfaceLabels = [surfaceLabels; {'spectacleLensBack'}; {'spectacleLensFront'}];
             surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[.5 .5 .5]}];
         end
-
+        
         % Reverse the system if needed
         if strcmp(p.Results.surfaceSetName,'cameraToStop')
             opticalSystem = reverseSystemDirection(opticalSystem);
             surfaceColors = flipud([surfaceColors(2:end); {[nan nan nan]}]);
             surfaceLabels = flipud([surfaceLabels(2:end); {'camera'}]);
         end
-                
+        
     otherwise
         error('Unrecognized surfaceSetName');
         
