@@ -41,6 +41,11 @@ function [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopter
     navarroD = calcAccommodation(1.5)
 %}
 
+
+% force the varargin to include skipping the calculation of angular
+% magnification effects from lenses
+varargin = [varargin,'skipMagCalc',true];
+
 %% Anonymous functions for the eye
 % Define these here to use in a subsequent nonlinear search. Each function
 % takes as input a candidate Navarro D value.
