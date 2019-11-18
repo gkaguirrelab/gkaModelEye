@@ -162,8 +162,14 @@ imageSizeY = sceneGeometry.cameraIntrinsic.sensorResolution(2);
 % A blank frame to initialize the figure
 if ~isempty(p.Results.backgroundImage)
     backgroundImage = p.Results.backgroundImage;
-    if size(backgroundImage) ~= [imageSizeY imageSizeX 3]
-        error('renderEyePose:backgroundImageSize','The passed background image does not match the camera sensor specified in sceneGeometry');
+    if ismatrix(backgroundImage)
+        if size(backgroundImage) ~= [imageSizeY imageSizeX]
+            error('renderEyePose:backgroundImageSize','The passed background image does not match the camera sensor specified in sceneGeometry');
+        end
+    else
+        if size(backgroundImage) ~= [imageSizeY imageSizeX 3]
+            error('renderEyePose:backgroundImageSize','The passed background image does not match the camera sensor specified in sceneGeometry');
+        end
     end
 else
     backgroundImage = zeros(imageSizeY,imageSizeX)+0.5;
