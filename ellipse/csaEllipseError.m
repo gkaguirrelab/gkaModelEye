@@ -27,20 +27,17 @@ function [centerError, shapeError, areaError] = csaEllipseError(targetEllipse,fi
 centerError = sqrt((targetEllipse(1) - fittedEllipse(1))^2 + ...
     (targetEllipse(2) - fittedEllipse(2))^2);
 
-% The theta and eccentricity of an ellipse can be described as
-% a point in polar coordinates. We express the error as
-% the vector distance between these points. Direct minimization
-% of differences in theta is a poor constraint, as differences
-% in theta have reduced meaning at small eccentricities.
-% Because ellipses are symmetric, theta spans the range of
-% 0:pi. Therefore, the theta value is doubled prior to
-% conversion to Cartesian coordinates so that the space wraps
-% at the 0 - pi transition point. Eccentricity has a value
-% ranging from zero (circular) to 1 (a fully flattened
-% ellipse). I linearize the eccentricity value so that the
-% error metric is sensitive to small differences in
-% eccentricity. Finally, the value is divided by 2, so that the
-% largest possible error is unity.
+% The theta and eccentricity of an ellipse can be described as a point in
+% polar coordinates. We express the error as the vector distance between
+% these points. Direct minimization of differences in theta is a poor
+% constraint, as differences in theta have reduced meaning at small
+% eccentricities. Because ellipses are symmetric, theta spans the range of
+% 0:pi. Therefore, the theta value is doubled prior to conversion to
+% Cartesian coordinates so that the space wraps at the 0 - pi transition
+% point. Eccentricity has a value ranging from zero (circular) to 1 (a
+% fully flattened ellipse). I linearize the eccentricity value so that the
+% error metric is sensitive to small differences in eccentricity. Finally,
+% the value is divided by 2, so that the largest possible error is unity.
 thetaT = targetEllipse(5)*2;
 thetaC = fittedEllipse(5)*2;
 rhoT = 1-sqrt(1-targetEllipse(4)^2);
