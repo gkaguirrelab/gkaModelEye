@@ -55,7 +55,7 @@ retina.side = -1;
 retina.boundingBox = [-30 -7 -15 15 -15 15];
 retina.mustIntersect = 1;
 retina.label = {'retina'};
-retina.plot.color = {[.7,.5,.7]};
+retina.plot.color = {[0.75, 0.75, 0.75]};
 
 end
 

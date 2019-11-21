@@ -131,7 +131,7 @@ S = quadric.scale(backQuadricPrimitive,lensBackRadii(1));
 S = quadric.translate(S,[lens.back(1)-lensBackRadii(1) 0 0]);
 
 % A bounding box for the back lens surface
-boundingBox = [lens.back(1) lens.center(1) -5 5 -5 5];
+boundingBox = [lens.back(1) lens.center(1) -3 3 -3 3];
 
 % Add to the optical system structure
 lens.S = [lens.S; quadric.matrixToVec(S)];
@@ -140,7 +140,7 @@ lens.side = [lens.side; -1];
 lens.mustIntersect = [lens.mustIntersect; 1];
 lens.index = [lens.index; nEdge];
 lens.label = [lens.label; {'lens.back'}];
-lens.plot.color = [lens.plot.color; {'red'}];
+lens.plot.color = [lens.plot.color; {[0.75 0.75 0.75]}];
 
 
 %% Back gradient shells
@@ -167,7 +167,7 @@ for ii = 1:numShells
     S = quadric.translate(S,[lens.center(1)-(proportion*lensThickBack)-radius 0 0]);
     
     % Create a bounding box
-    boundingBox = [lens.center(1)-(proportion*lensThickBack) lens.center(1) -5 5 -5 5];
+    boundingBox = [lens.center(1)-(proportion*lensThickBack) lens.center(1) -3 3 -3 3];
     
     % Add this shell to the optical system structure
     lens.S = [lens.S; quadric.matrixToVec(S)];
@@ -176,7 +176,7 @@ for ii = 1:numShells
     lens.mustIntersect = [lens.mustIntersect; 0];
     lens.index = [lens.index; nLensVals(ii*2+1)];
     lens.label = [lens.label; {sprintf('lens.back.shell_n=%0.3f',nLensVals(ii*2))}];
-    lens.plot.color = [lens.plot.color; [0.5 (nLensVals(ii*2)-nEdge)/(nCore-nEdge)/2+0.5 0.5]];
+    lens.plot.color = [lens.plot.color; [0.75 0.75+0.25*(ii/numShells) 0.75]];
 end
 % Force the index of the center shell to be equal to the lens core
 % refractive index. The value can be something other than this when
@@ -228,7 +228,7 @@ for ii = numShells:-1:1
     S = quadric.translate(S,[lens.center(1)+(proportion*lensThickFront)+radius 0 0]);
 
     % Create a bounding box
-    boundingBox = [lens.center(1) lens.center(1)+(proportion*lensThickFront) -5 5 -5 5];
+    boundingBox = [lens.center(1) lens.center(1)+(proportion*lensThickFront) -3 3 -3 3];
 
     % Add this shell to the optical system structure
     lens.S = [lens.S; quadric.matrixToVec(S)];
@@ -237,7 +237,7 @@ for ii = numShells:-1:1
     lens.mustIntersect = [lens.mustIntersect; 0];
     lens.index = [lens.index; nLensVals(ii*2-1)];
     lens.label = [lens.label; {sprintf('lens.front.shell_n=%0.3f',nLensVals(ii*2))}];
-    lens.plot.color = [lens.plot.color; [0.5 (nLensVals(ii*2)-nEdge)/(nCore-nEdge)/2+0.5 0.5]];
+    lens.plot.color = [lens.plot.color; [0.75 0.75+0.25*(ii/numShells) 0.75]];
 end
 
 % Force the index of the space between the last front shell and the front
@@ -248,13 +248,13 @@ lens.index(end) = nEdge;
 
 % Add the front surface to the optical system structure. No refractive index added with this
 % surface, as this is the last surface of this set.
-boundingBox = [lens.center(1) lens.front(1) -5 5 -5 5];
+boundingBox = [lens.center(1) lens.front(1) -3 3 -3 3];
 lens.S = [lens.S; quadric.matrixToVec(S)];
 lens.boundingBox = [lens.boundingBox; boundingBox];
 lens.side = [lens.side; 1];
 lens.mustIntersect = [lens.mustIntersect; 1];
 lens.label = [lens.label; {'lens.front'}];
-lens.plot.color = [lens.plot.color; {'red'}];
+lens.plot.color = [lens.plot.color; {[0.75 0.75 0.75]}];
 lens.meta.navarroD = D;
 
 end

@@ -255,7 +255,7 @@ cornea.mustIntersect = [1; 1;1 ];
 cornea.index = [returnRefractiveIndex( 'cornea', eye.meta.spectralDomain); ...
     returnRefractiveIndex( 'tears', eye.meta.spectralDomain)];
 cornea.label = {'cornea.back'; 'cornea.front'; 'cornea.tearfilm'};
-cornea.plot.color = {'blue'; 'blue'; 'blue'};
+cornea.plot.color = {[0.5 0.5 0.75]; [0.5 0.5 0.75]; [0.5 0.5 0.75]};
 
 % Code here to calculate the Navarro 1985 corneal parameters that
 % were used by Fedtke 2010 in her simulation. These may be used for
