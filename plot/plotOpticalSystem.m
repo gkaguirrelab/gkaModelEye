@@ -56,6 +56,7 @@ p.addParameter('retinaGeodetics', false,@islogical);
 p.addParameter('rayPath',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('rayColor','red',@(x)(ischar(x) | isnumeric(x)));
 p.addParameter('outputRay',[], @(x)(isempty(x) | isnumeric(x)));
+p.addParameter('outputRayColor','red',@(x)(ischar(x) | isnumeric(x)));
 p.addParameter('addLighting',false, @islogical);
 p.addParameter('viewAngle',[40 40],@isnumeric);
 
@@ -142,7 +143,7 @@ if ~isempty(p.Results.outputRay)
     p1=outputRay(:,1);
     p2=p1+outputRay(:,2).*3;
     r = [p1 p2];
-    plot3(r(1,:),r(2,:),r(3,:),'-g');
+    plot3(r(1,:),r(2,:),r(3,:),'-','Color',p.Results.outputRayColor);
 end
 
 % Add a lighting source if requested
