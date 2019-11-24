@@ -131,7 +131,7 @@ S = quadric.scale(backQuadricPrimitive,lensBackRadii(1));
 S = quadric.translate(S,[lens.back(1)-lensBackRadii(1) 0 0]);
 
 % A bounding box for the back lens surface
-boundingBox = [lens.back(1) lens.center(1) -3 3 -3 3];
+boundingBox = [lens.back(1) lens.center(1) -5 5 -5 5];
 
 % Add to the optical system structure
 lens.S = [lens.S; quadric.matrixToVec(S)];
@@ -167,7 +167,7 @@ for ii = 1:numShells
     S = quadric.translate(S,[lens.center(1)-(proportion*lensThickBack)-radius 0 0]);
     
     % Create a bounding box
-    boundingBox = [lens.center(1)-(proportion*lensThickBack) lens.center(1) -3 3 -3 3];
+    boundingBox = [lens.center(1)-(proportion*lensThickBack) lens.center(1) -5 5 -5 5];
     
     % Add this shell to the optical system structure
     lens.S = [lens.S; quadric.matrixToVec(S)];
@@ -228,7 +228,7 @@ for ii = numShells:-1:1
     S = quadric.translate(S,[lens.center(1)+(proportion*lensThickFront)+radius 0 0]);
 
     % Create a bounding box
-    boundingBox = [lens.center(1) lens.center(1)+(proportion*lensThickFront) -3 3 -3 3];
+    boundingBox = [lens.center(1) lens.center(1)+(proportion*lensThickFront) -5 5 -5 5];
 
     % Add this shell to the optical system structure
     lens.S = [lens.S; quadric.matrixToVec(S)];
@@ -248,7 +248,7 @@ lens.index(end) = nEdge;
 
 % Add the front surface to the optical system structure. No refractive index added with this
 % surface, as this is the last surface of this set.
-boundingBox = [lens.center(1) lens.front(1) -3 3 -3 3];
+boundingBox = [lens.center(1) lens.front(1) -5 5 -5 5];
 lens.S = [lens.S; quadric.matrixToVec(S)];
 lens.boundingBox = [lens.boundingBox; boundingBox];
 lens.side = [lens.side; 1];
