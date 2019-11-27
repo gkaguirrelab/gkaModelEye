@@ -65,8 +65,6 @@ fh=@(x,y) pFitImplicit(1).*x.^2 +pFitImplicit(2).*x.*y +pFitImplicit(3).*y.^2 +p
 % fallback option for older Matlab versions)
 if fImplicitPresent
     objectHandle = fimplicit(fh,[1, imageSizeX, 1, imageSizeY],'Color', Color,'LineWidth',LineWidth);
-    set(gca,'position',[0 0 1 1],'units','normalized')
-    axis off;
 else
     objectHandle = ezplot(fh,[1, imageSizeX, 1, imageSizeY]);
     set(objectHandle, 'Color', Color)
