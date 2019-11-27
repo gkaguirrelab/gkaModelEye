@@ -54,7 +54,7 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
 %  'modelEyeSymbolSizeScaler' - Scalar. Determines if the rendered plot
 %                           elements are made larger (>1) or smaller (<1)
 %                           than default.
-%  'fImplicitPresent'       Logical. Older versions of MATLAB do not have 
+%  'fImplicitPresent'       Logical. Older versions of MATLAB do not have
 %                           the 'fImplicit' function available for plotting
 %                           of implicit functions. This flag is used to
 %                           indicate if the fImplicit function is
@@ -149,7 +149,7 @@ end
 % Expand the modelEyeAlpha parameter to the full length of the model
 % components to be labeled
 if length(p.Results.modelEyeAlpha)==1
-	modelEyeAlpha = zeros(size(p.Results.modelEyeLabelNames));
+    modelEyeAlpha = zeros(size(p.Results.modelEyeLabelNames));
     modelEyeAlpha(:) = p.Results.modelEyeAlpha;
 else
     modelEyeAlpha = p.Results.modelEyeAlpha;
@@ -182,9 +182,13 @@ if p.Results.newFigure
     else
         figHandle = figure('Visible', 'off');
     end
-    imshow(backgroundImage, 'Border', 'tight');
+    imshow(backgroundImage,[], 'Border', 'tight');
 else
     figHandle = gcf;
+    % Only add a background image if one was passed
+    if ~isempty(p.Results.backgroundImage)
+        imshow(backgroundImage,[], 'Border', 'tight');
+    end
 end
 
 % Prepare the figure
@@ -234,14 +238,14 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
         % like to label them
         if p.Results.showPupilTextLabels
             if strcmp(p.Results.modelEyeLabelNames{pp},'pupilPerimeterFront') || strcmp(p.Results.modelEyeLabelNames{pp},'pupilPerimeter')
-            % Put text labels for the pupil perimeter points so that we can
-            % follow them through rotations and translations to validate
-            % the projection model
-            txtHandles = text(imagePoints(idx,1), imagePoints(idx,2), num2str(find(idx)));
-            plotObjectHandles = [plotObjectHandles txtHandles'];
+                % Put text labels for the pupil perimeter points so that we can
+                % follow them through rotations and translations to validate
+                % the projection model
+                txtHandles = text(imagePoints(idx,1), imagePoints(idx,2), num2str(find(idx)));
+                plotObjectHandles = [plotObjectHandles txtHandles'];
             end
         end
-
+        
     end
 end % loop over label names
 
