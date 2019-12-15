@@ -212,6 +212,14 @@ p.addParameter('refractionHandle',@inverseRayTraceMex,@(x)(isa(x,'function_handl
 p.parse(eyePose, sceneGeometry, varargin{:})
 
 
+%% Extract fields from Results struct
+% Accessing struct elements is relatively slow. Do this hear so it is not
+% done in a loop.
+refractionHandle = p.Results.refractionHandle;
+replaceReflectedPoints = p.Results.replaceReflectedPoints;
+rayTraceErrorThreshold = p.Results.rayTraceErrorThreshold;
+borderSearchPrecision = p.Results.borderSearchPrecision;
+
 %% Prepare variables
 % Separate the eyePoses into individual variables
 eyeAzimuth = eyePose(1);
@@ -291,6 +299,7 @@ else
     pointLabels = tmpLabels;
 end
 eyePoints = stopPoints;
+
 
 %% Define full eye model
 % If the fullEyeModel flag is set, then we will create a model of the
@@ -430,21 +439,24 @@ if refractFlag
         
         % Perform the computation using the passed function handle.
         [virtualImageRay, ~, intersectError] = ...
-            p.Results.refractionHandle(eyePoint, eyePose, args{:});
+            refractionHandle(eyePoint, eyePose, args{:});
         virtualPoint = virtualImageRay(1,:);
         
-        % Check if the point has encountered total internal reflection or
-        % is bad ray trace
+        % Optionally check if the point has encountered total internal
+        % reflection or is a bad ray trace
         retainPoint = true;
-        if or(isnan(intersectError),intersectError > p.Results.rayTraceErrorThreshold)
-            % The eyePoint did not yield a valid image point. We will not
-            % retain the point unless we find a replacement.
+        
+        
+        if isnan(intersectError) || (intersectError > rayTraceErrorThreshold)
+            % The eyePoint did not yield a valid image point. We will
+            % not retain the point unless we find a replacement.
             retainPoint = false;
-            % If this eyePoint is on the stop border, and we are instructed
-            % to do so, search across smaller stop radii to find a
-            % replacement point on the boundary of the pupil perimeter that
-            % does make it through.
-            if p.Results.replaceReflectedPoints
+            
+            % If this eyePoint is on the stop border, search across
+            % smaller stop radii to find a replacement point on the
+            % boundary of the pupil perimeter that does make it
+            % through.
+            if replaceReflectedPoints                
                 % Find the appropriate center target for the search
                 switch pointLabels{refractPointsIdx(ii)}
                     case 'stopPerimeter'
@@ -457,7 +469,7 @@ if refractFlag
                         centerTarget = sceneGeometry.eye.iris.center;
                 end
                 % Initialize the searchScalar
-                searchScalar = 1.0 - p.Results.borderSearchPrecision;
+                searchScalar = 1.0 - borderSearchPrecision;
                 % Perform the search
                 stillSearching = true;
                 while stillSearching
@@ -466,15 +478,15 @@ if refractFlag
                     shiftedEyePoint = eyePoint - (eyePoint - centerTarget).*(1 - searchScalar);
                     % Subject the shifted point to refraction
                     [virtualImageRay, ~, intersectError] = ...
-                        p.Results.refractionHandle(shiftedEyePoint, eyePose, args{:});
+                        refractionHandle(shiftedEyePoint, eyePose, args{:});
                     virtualPoint = virtualImageRay(1,:);
                     % Update the search scalar
-                    searchScalar = searchScalar - p.Results.borderSearchPrecision;
+                    searchScalar = searchScalar - borderSearchPrecision;
                     if searchScalar <= 0
                         stillSearching = false;
                     end
                     % Test if the newly refracted point meets criterion
-                    if intersectError < p.Results.rayTraceErrorThreshold
+                    if intersectError < rayTraceErrorThreshold
                         stillSearching = false;
                         retainPoint = true;
                     end
