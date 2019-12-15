@@ -31,10 +31,13 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %                           represent the physical limits of the projection
 %                           model for azimuth, elevation, and stop radius.
 %                           Torsion is constrained to zero by default.
-%  'rmseThresh'           - Scalar that defines the stopping point for the
-%                           search. The default value allows reconstruction
-%                           of eyePose within 0.1% of the veridical,
-%                           simulated value.
+%  'rmseThresh'           - Scalar. The eyePose search will stop when the
+%                           pupil perimeter is fit with less than this
+%                           error. The search may also terminate with
+%                           higher error if other stopping criteria are
+%                           met.
+%  'eyePoseTol'           - Scalar. The eyePose values will be searched to
+%                           within this level of precision.
 %  'nMaxSearches'         - Scalar. The maximum number of searches that the
 %                           routine will conduct as it attempts to avoid
 %                           local minima.
@@ -80,12 +83,14 @@ p.addParameter('x0',[],@(x)(isempty(x) | isnumeric(x)));
 p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
 p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
 p.addParameter('rmseThresh',1e-2,@isscalar);
+p.addParameter('eyePoseTol',1e-4,@isscalar);
 p.addParameter('nMaxSearches',5,@isscalar);
 
 % Parse and check the parameters
 p.parse(Xp, Yp, sceneGeometry, varargin{:});
 
 
+%% Check inputs
 % Initialize the return variables
 eyePose = [nan nan nan nan];
 RMSE = nan;
@@ -102,15 +107,32 @@ if sum((p.Results.eyePoseUB(1:3) - p.Results.eyePoseLB(1:3))==0) < 1
     warning('eyePoseEllipseFit:underconstrainedSearch','The eye pose search across possible eye rotations is underconstrained');
 end
 
+
 %% Set bounds
 % Identify the center of projection.
 eyePoseLB = p.Results.eyePoseLB;
 eyePoseUB = p.Results.eyePoseUB;
 
+% Identify the eyePose values that are free to vary in the search
+notLocked = eyePoseLB ~= eyePoseUB;
+
 % Clear the case of nans in the input
 if any(isnan(eyePoseLB)) || any(isnan(eyePoseUB)) || any(any(isnan(p.Results.x0)))
     return
 end
+
+
+%% Determine the search termination parameters
+% The best that this routine could do would be to match the fit provided by
+% an unconstrained ellipse fit. We scale the stopping point for the search
+% to these values
+unconstrainedEllipse=ellipse_ex2transparent(ellipse_im2ex(ellipsefit_direct(Xp,Yp)));
+errorFloor = sqrt(nanmean(ellipsefit_distance(Xp,Yp,ellipse_transparent2ex(unconstrainedEllipse)).^2));
+
+% Set the search stopping points, adapted to the best possible fit error.
+rmseThresh = max([p.Results.rmseThresh,errorFloor*1.05]);
+rmseThreshIter = errorFloor/5;
+eyePoseTol = p.Results.eyePoseTol;
 
 
 %% Define x0
@@ -124,20 +146,24 @@ if isempty(p.Results.x0)
     rotationCenterEllipse = pupilProjection_fwd([0 0 0 2], sceneGeometry);
     CoP = [rotationCenterEllipse(1),rotationCenterEllipse(2)];
     
-    meanXp = mean(Xp);
-    meanYp = mean(Yp);
+    % Now the number of pixels that the pupil center is displaced from the
+    % CoP. Handle the direction of eye rotation
+    displacePix = (unconstrainedEllipse(1:2)-CoP);
+    displaceScaled = displacePix ./ max(displacePix);
+    displaceScaled(2) = -displaceScaled(2);
     
     % Probe the forward model to determine how many pixels of change in
     % the location of the pupil ellipse correspond to one degree of
     % rotation.
-    probeEllipse=pupilProjection_fwd([1 1 0 2],sceneGeometry);
-    pixelsPerDegHorz = probeEllipse(1)-CoP(1);
-    pixelsPerDegVert = probeEllipse(2)-CoP(2);
+    probeEllipse = pupilProjection_fwd([displaceScaled 0 2],sceneGeometry);
+    pixelsPerDeg = abs(probeEllipse(1:2)-CoP)./abs(displaceScaled);
     
     % Estimate the eye azimuth and elevation by the X and Y displacement of
-    % the ellipse center from the center of projection.
-    x0(1) = ((meanXp - CoP(1))/pixelsPerDegHorz);
-    x0(2) = ((meanYp - CoP(2))/pixelsPerDegVert);
+    % the ellipse center from the center of projection. Need to make the
+    % second value negative to match the direction of rotation convention
+    % for elevation.
+    x0(1) = displacePix(1)/pixelsPerDeg(1);
+    x0(2) = -displacePix(2)/pixelsPerDeg(2);
     
     % Force the angles within bounds
     x0=[min([eyePoseUB(1:3); x0(1:3)]) 0];
@@ -159,6 +185,10 @@ if isempty(p.Results.x0)
     boundHeadroom = (eyePoseUB - eyePoseLB)*0.001;
     x0=min([eyePoseUB-boundHeadroom; x0]);
     x0=max([eyePoseLB+boundHeadroom; x0]);
+    
+    % Force any locked parameter to have the locked value
+    x0(~notLocked) = eyePoseUB(~notLocked);
+    
 else
     x0 = p.Results.x0;
 end
@@ -169,8 +199,12 @@ end
 % Define variables used in the nested functions
 fittedEllipse = nan(1,5);
 
-% define some search options
-options = optimset('Display','off');
+% define some search options for fminbnd
+options = optimset('fminbnd');
+options.Display = 'off';
+options.TolFun = rmseThresh; % Stopping point
+options.TolX = eyePoseTol; % eyePose search precision
+options.MaxFunEvals = 20;
 
 % Turn off warnings that can arise during the search
 warningState = warning;
@@ -195,18 +229,26 @@ subP = @(ii,p,x) [x(1:ii-1) p x(ii+1:end)];
 while searchingFlag
     % Iterate the search count
     nSearches = nSearches+1;
-    % Copy over the RMSE
+    % Copy over the RMSE and eyePose
     lastRMSE = RMSE;
+    lastEyePose = eyePose;
     % Loop over the elements of the eyePose and search
     for ii = 1:length(eyePose)
-        localObj = @(p) objfun(subP(ii,p,eyePose));
-        [eyePose(ii), RMSE] = fminbnd(localObj, eyePoseLB(ii), eyePoseUB(ii), options);
+        if notLocked(ii)
+            localObj = @(p) objfun(subP(ii,p,eyePose));
+            [eyePose(ii), RMSE] = fminbnd(localObj, eyePoseLB(ii), eyePoseUB(ii), options);
+        end
     end
     % Check for termination conditions, which are any of:
-    %   objective value is less than rmseThresh
-    %   the change in objective val from last loop is less than rmseThresh
-    %   we have used up all of our searches
-    if RMSE < p.Results.rmseThresh || (lastRMSE-RMSE) < p.Results.rmseThresh || nSearches == p.Results.nMaxSearches
+    %   - objective value is less than rmseThresh
+    %   - the change in objective val from last loop is less than rmseThreshIter
+    %   - the change in eyePose values are all below eyePoseTol
+    %   - we have used up all of our searches
+    if ...
+            RMSE < rmseThresh || ...
+            abs(lastRMSE-RMSE) < rmseThreshIter || ...
+            all(abs(lastEyePose-eyePose) < eyePoseTol) || ...
+            nSearches == p.Results.nMaxSearches
         searchingFlag = false;
     end
 end % while
@@ -238,7 +280,6 @@ end % while
 
 
 % Check if the fit is at a boundary for any parameter that is not locked
-notLocked = eyePoseLB ~= eyePoseUB;
 fitAtBound = any([any(abs(eyePose(notLocked)-eyePoseLB(notLocked))<1e-4) any(abs(eyePose(notLocked)-eyePoseUB(notLocked))<1e-4)]);
 
 % Restore the warning state
