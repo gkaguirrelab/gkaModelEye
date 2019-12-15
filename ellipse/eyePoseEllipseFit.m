@@ -66,7 +66,7 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
     [ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 5, 0 );
     [recoveredEyePose,RMSE,recoveredEllipse,fitAtBound,nSearches] = eyePoseEllipseFit(Xp, Yp, sceneGeometry);
     % Test that the recovered eye pose has no more than 0.01% error
-    assert(max(abs((eyePose-recoveredEyePose)./eyePose)) < 1e-4)
+    assert(max(abs((eyePose - recoveredEyePose)./eyePose)) < 1e-4)
 %}
 
 
@@ -82,7 +82,8 @@ p.addRequired('sceneGeometry',@isstruct);
 p.addParameter('x0',[],@(x)(isempty(x) | isnumeric(x)));
 p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
 p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
-p.addParameter('rmseThresh',1e-2,@isscalar);
+p.addParameter('rmseThresh',[],@isscalar);
+p.addParameter('rmseThreshIter',1e-2,@isscalar);
 p.addParameter('eyePoseTol',1e-4,@isscalar);
 p.addParameter('nMaxSearches',5,@isscalar);
 
@@ -123,15 +124,24 @@ end
 
 
 %% Determine the search termination parameters
-% The best that this routine could do would be to match the fit provided by
-% an unconstrained ellipse fit. We scale the stopping point for the search
-% to these values
-unconstrainedEllipse=ellipse_ex2transparent(ellipse_im2ex(ellipsefit_direct(Xp,Yp)));
-errorFloor = sqrt(nanmean(ellipsefit_distance(Xp,Yp,ellipse_transparent2ex(unconstrainedEllipse)).^2));
 
-% Set the search stopping points, adapted to the best possible fit error.
-rmseThresh = max([p.Results.rmseThresh,errorFloor*1.05]);
-rmseThreshIter = errorFloor/5;
+% Obtain the unconstrained ellipse fit to the perimeter.
+unconstrainedEllipse=ellipse_ex2transparent(ellipse_im2ex(ellipsefit_direct(Xp,Yp)));
+
+% Set the rmseThresh
+if isempty(p.Results.rmseThresh)
+    % The best that this routine could do would be to match the fit provided by
+    % an unconstrained ellipse fit.
+    rmseThresh = sqrt(nanmean(ellipsefit_distance(Xp,Yp,ellipse_transparent2ex(unconstrainedEllipse)).^2));
+else
+    rmseThresh = p.Results.rmseThresh;
+end
+
+% When the search is not improving the RMSE by more than this, it is time
+% to stop.
+rmseThreshIter = p.Results.rmseThreshIter;    
+
+% Set the eyePose search tolerance.
 eyePoseTol = p.Results.eyePoseTol;
 
 
@@ -202,9 +212,8 @@ fittedEllipse = nan(1,5);
 % define some search options for fminbnd
 options = optimset('fminbnd');
 options.Display = 'off';
-options.TolFun = rmseThresh; % Stopping point
 options.TolX = eyePoseTol; % eyePose search precision
-options.MaxFunEvals = 20;
+options.MaxFunEvals = 50;
 
 % Turn off warnings that can arise during the search
 warningState = warning;
@@ -240,12 +249,12 @@ while searchingFlag
         end
     end
     % Check for termination conditions, which are any of:
-    %   - objective value is less than rmseThresh
+    %   - objective value is within rmseThreshIter of rmseThresh
     %   - the change in objective val from last loop is less than rmseThreshIter
     %   - the change in eyePose values are all below eyePoseTol
     %   - we have used up all of our searches
     if ...
-            RMSE < rmseThresh || ...
+            abs(RMSE-rmseThresh) < rmseThreshIter || ...
             abs(lastRMSE-RMSE) < rmseThreshIter || ...
             all(abs(lastEyePose-eyePose) < eyePoseTol) || ...
             nSearches == p.Results.nMaxSearches
