@@ -32,10 +32,13 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %                           model for azimuth, elevation, and stop radius.
 %                           Torsion is constrained to zero by default.
 %  'rmseThresh'           - Scalar. The eyePose search will stop when the
-%                           pupil perimeter is fit with less than this
-%                           error. The search may also terminate with
-%                           higher error if other stopping criteria are
-%                           met.
+%                           pupil perimeter points are fit with less than
+%                           this error (in units of pixels). The search may
+%                           also terminate with higher error if other
+%                           stopping criteria are met.
+%  'rmseThreshIter'       - Scalar. The eyePose search will stop when 
+%                           sequential searches are producing a change in
+%                           the RMSE of the fit than less than this value.
 %  'eyePoseTol'           - Scalar. The eyePose values will be searched to
 %                           within this level of precision.
 %  'nMaxSearches'         - Scalar. The maximum number of searches that the
@@ -123,16 +126,30 @@ if any(isnan(eyePoseLB)) || any(isnan(eyePoseUB)) || any(any(isnan(p.Results.x0)
 end
 
 
+%% Obtain the unconstrained ellipse fit to the perimeter
+% This lives within a try-catch block, as various degenerate sets of
+% perimeter points can cause the ellipse fit to fail.
+try
+    % Use direct least squares ellipse fit to obtain an initial estimate
+    unconstrainedEllipse=ellipse_ex2transparent(ellipse_im2ex(ellipsefit_direct(Xp,Yp)));
+    % Obtain the RMSE of the unconstrained fit
+    unconstrainedRMSE = sqrt(nanmean(ellipsefit_distance(Xp,Yp,ellipse_transparent2ex(unconstrainedEllipse)).^2));
+catch
+    % The fit failed. Sythesize an ellipse vector that has as its center
+    % the mean of the X and Y positions of the perimeter points.
+    unconstrainedEllipse = nan(1,5);
+    unconstrainedEllipse(1:2) = [mean(Xp) mean(Yp)];
+    % Set the unconstrainedRMSE to an arbitrary, relatively large number.
+    unconstrainedRMSE = 1.0;
+end
+
+
 %% Determine the search termination parameters
-
-% Obtain the unconstrained ellipse fit to the perimeter.
-unconstrainedEllipse=ellipse_ex2transparent(ellipse_im2ex(ellipsefit_direct(Xp,Yp)));
-
 % Set the rmseThresh
 if isempty(p.Results.rmseThresh)
-    % The best that this routine could do would be to match the fit provided by
-    % an unconstrained ellipse fit.
-    rmseThresh = sqrt(nanmean(ellipsefit_distance(Xp,Yp,ellipse_transparent2ex(unconstrainedEllipse)).^2));
+    % The best that this routine could do would be to match the fit
+    % provided by an unconstrained ellipse fit.
+    rmseThresh = unconstrainedRMSE;
 else
     rmseThresh = p.Results.rmseThresh;
 end
@@ -213,7 +230,7 @@ fittedEllipse = nan(1,5);
 options = optimset('fminbnd');
 options.Display = 'off';
 options.TolX = eyePoseTol; % eyePose search precision
-options.MaxFunEvals = 50;
+options.MaxFunEvals = 50; % I think this value is a good speed-accuracy trade off, but have not carefully tested
 
 % Turn off warnings that can arise during the search
 warningState = warning;
@@ -243,6 +260,8 @@ while searchingFlag
     lastEyePose = eyePose;
     % Loop over the elements of the eyePose and search
     for ii = 1:length(eyePose)
+        % Only search over the eyePose parameters that are not fully
+        % constrained by the bounds
         if notLocked(ii)
             localObj = @(p) objfun(subP(ii,p,eyePose));
             [eyePose(ii), RMSE] = fminbnd(localObj, eyePoseLB(ii), eyePoseUB(ii), options);
