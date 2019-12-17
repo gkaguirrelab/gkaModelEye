@@ -179,9 +179,8 @@ if isempty(p.Results.x0)
     displaceScaled = displacePix ./ max(displacePix);
     displaceScaled(2) = -displaceScaled(2);
     
-    % Probe the forward model to determine how many pixels of change in
-    % the location of the pupil ellipse correspond to one degree of
-    % rotation.
+    % Probe the forward model to determine how many pixels of change in the
+    % location of the pupil ellipse correspond to one degree of rotation.
     probeEllipse = pupilProjection_fwd([displaceScaled 0 2],sceneGeometry);
     pixelsPerDeg = abs(probeEllipse(1:2)-CoP)./abs(displaceScaled);
     
