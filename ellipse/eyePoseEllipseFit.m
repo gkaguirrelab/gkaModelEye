@@ -5,9 +5,9 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %  [eyePose, RMSE, fittedEllipse, fitAtBound] = eyePoseEllipseFit(Xp, Yp, sceneGeometry)
 %
 % Description:
-%   The routine fits points on the image plane based upon the eye
-%   parameters (azimuth, elevation, torsion, stop radius) that produce the
-%   best fitting ellipse projected according to sceneGeometry.
+%   The routine fits the pupil perimeter points on the image plane based
+%   upon the eye parameters (azimuth, elevation, torsion, stop radius) that
+%   produce the best fitting ellipse projected according to sceneGeometry.
 %
 %   The search is constrained by the upper and lower bounds of the eyePose.
 %   The default values specified here represent the physical boundaries of
@@ -21,10 +21,7 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 % Optional key/value pairs:
 %  'x0'                   - A 1x4 vector that provides starting points for
 %                           the search for the eyePose. If not defined, the
-%                           starting point will be estimated either from
-%                           the polyModel field of the sceneGeometry or
-%                           from the coordinates of the ellipse center.
-%                           selected within the eyePose bounds.
+%                           starting point will be estimated.
 %  'eyePoseLB/UB'         - A 1x4 vector that provides the lower (upper)
 %                           bounds on the eyePose [azimuth, elevation,
 %                           torsion, stop radius]. The default values here
@@ -307,7 +304,7 @@ end % while
 
 
 % Check if the fit is at a boundary for any parameter that is not locked
-fitAtBound = any([any(abs(eyePose(notLocked)-eyePoseLB(notLocked))<1e-4) any(abs(eyePose(notLocked)-eyePoseUB(notLocked))<1e-4)]);
+fitAtBound = any([any(abs(eyePose(notLocked)-eyePoseLB(notLocked)) < eyePoseTol) any(abs(eyePose(notLocked)-eyePoseUB(notLocked)) < eyePoseTol)]);
 
 % Restore the warning state
 warning(warningState);
