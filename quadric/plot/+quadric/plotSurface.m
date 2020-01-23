@@ -51,6 +51,21 @@ function p = plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLi
 %}
 
 % Handle incomplete input arguments
+if nargin==1
+    % synthesize a bounding box that holds the radii of the quadric
+    center = quadric.center(S);
+    radii = quadric.radii(S);
+    boundingBox = [...
+        center(1)-radii(1), center(1)+radii(1), ...
+        center(2)-radii(2), center(2)+radii(2), ...
+        center(3)-radii(3), center(3)+radii(3)];        
+    surfColor=[0.9 0.9 0.9];
+    surfAlpha=0.8;
+    betaLineColor = [];
+    omegaLineColor = [];
+    bbTol = 1e-2;
+end
+
 if nargin==2
     surfColor=[0.9 0.9 0.9];
     surfAlpha=0.8;
