@@ -160,7 +160,7 @@ if ~isempty(p.Results.surfaceSet)
 
         % The surfaces are gray and the labels are unknown
         surfaceColors=cell(nSurfaces,1);
-        surfaceColors(:) = {'k'};%{[0.5 0.5 0.5]};
+        surfaceColors(:) = {[0.5 0.5 0.5]};
         surfaceLabels=cell(nSurfaces,1);
         surfaceLabels(:) = {'unknown'};
         
