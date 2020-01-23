@@ -6,7 +6,8 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %
 % Description:
 %   Create a schematic diagram of the model eye specified in the passed
-%   eye variable.
+%   eye variable. The eye structure is described in the routine:
+%       model/modelEyeParameters.m
 %
 % Inputs:
 %   eye                   - An eye struct returned from
@@ -18,6 +19,18 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %  'newFigure'            - Logical. Determines if we create a new figure.
 %  'plotColor'            - String. Matlab line spec code for line color,
 %                           e.g., {'k','r','b'};
+%  'rayPath'              - 3xm matrix that provides the ray coordinates
+%                           at each surface. The value for rayPath(1,:)
+%                           is equal to initial position. If a surface is
+%                           missed, then the coordinates for that surface
+%                           will be nan. This rayPath could be obtained
+%                           using the function:
+%                               quadric/rayTraceQuadrics.m
+%  'outputRay'            - 3x2 matrix that specifies the ray as a unit 
+%                           vector of the form [p; d], corresponding to
+%                               R = p + t*u
+%                           where p is vector origin, d is the direction
+%                           expressed as a unit step, and t is unity.
 %
 % Outputs:
 %   figHandle             - Handle to a created figure. Empty if a new

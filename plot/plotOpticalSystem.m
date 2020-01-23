@@ -1,5 +1,5 @@
 function figHandle = plotOpticalSystem(varargin)
-% Creates a cross-section schematic illustration of the model eye
+% Create a 3D rendered plot of the specified optical system 
 %
 % Syntax:
 %  figHandle = plotOpticalSystem(varargin)
@@ -7,12 +7,58 @@ function figHandle = plotOpticalSystem(varargin)
 % Description:
 %   Create a 3D rendered plot of the specified optical system 
 %
+% Inputs:
+%   none
+%
 % Optional key/value pairs:
-%  'view'                 - String. The view to display. Valid choices
-%                           include {'axial','sagittal'};
-%  'newFigure'            - Logical. Determines if we create a new figure.
-%  'plotColor'            - String. Matlab line spec code for line color,
-%                           e.g., {'k','r','b'};
+%  'newFigure'            - Logical. Determines if we create a new figure,
+%                           or plot in the currently active figure.
+%  'visible'              - Logical. If we are crearing a new figure, 
+%                           dertermines if that figure is made visible or
+%                           not.
+%  'surfaceSet'           - Struct or numeric. This is the specification of
+%                           the optical system to be shown. If the calling
+%                           function the optical system within a
+%                           sceneGeometry struct, then this key value
+%                           should be one of the fields within
+%                               sceneGeometry.refraction
+%                           with typical options being 'cameraToRetina' or
+%                           'stopToCamera'. In this circumstance, the
+%                           passed structure contains the fields
+%                               opticalSystem, surfaceLabels,surfaceColors
+%                           with the last two fields defining the plotted
+%                           appearance of the surfaces. See
+%                               model/createSceneGeometry.m
+%                           for more information on the sceneGeometry
+%                           structure. The routine also accepts just an
+%                           opticalSystem matrix, in which case the system
+%                           will be plotted in gray. See
+%                               quadric/rayTraceQuadrics.m
+%                           for a description of the opticalSystem matrix.
+%  'surfaceAlpha'         - Scalar. The alpha transparency to use for the
+%                           surfaces.
+%  'retinaGeodetics'      - Logical. If set to true, and the surfaceSet is
+%                           a structure that contains a "retina"
+%                           surfaceLabel, then geodetic lines will be
+%                           added to the retinal surface.
+%  'rayPath'              - 3xm matrix that provides the ray coordinates
+%                           at each surface. The value for rayPath(1,:)
+%                           is equal to initial position. If a surface is
+%                           missed, then the coordinates for that surface
+%                           will be nan. This rayPath could be obtained
+%                           using the function:
+%                               quadric/rayTraceQuadrics.m
+%  'rayColor'             - Char vector or 1x3 vector that specifies the 
+%                           line color for the ray.
+%  'outputRay'            - 3x2 matrix that specifies the ray as a unit 
+%                           vector of the form [p; d], corresponding to
+%                               R = p + t*u
+%                           where p is vector origin, d is the direction
+%                           expressed as a unit step, and t is unity.
+%  'outputRayColor'       - Char vector or 1x3 vector that specifies the 
+%                           line color for the outputRay.
+%  'addLighting'          - Logical. Adds gouraud lighting to the plot.
+%  'viewAngle'            - 1x2 vector. The view angle for the plot
 %
 % Outputs:
 %   figHandle             - Handle to a created figure. Empty if a new
