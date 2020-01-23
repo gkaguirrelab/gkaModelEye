@@ -74,21 +74,31 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
     %   Elagha, Hassan A. "Generalized formulas for ray-tracing and
     %   longitudinal spherical aberration." JOSA A 34.3 (2017): 335-343.
 
-    % Create the optical system of spherical, aligned surfaces
-    boundingBox = [-inf inf -inf inf -inf inf];
+    % Create the optical system of hemi-spherical, aligned surfaces
+    % The bounding boxes are not needed for this ray trace, but are
+    % included to support plotting of the optical system.
     clear opticalSystem
+    % First row provides the initial refractive index
     opticalSystem(1,:)=[nan(1,10) nan nan(1,6) nan 1];
+    % First quadric
     S = quadric.scale(quadric.unitSphere,10);
     S = quadric.translate(S,[22; 0; 0]);
+    boundingBox = [12    22   -10    10   -10    10];
     opticalSystem(end+1,:)=[quadric.matrixToVec(S) -1 boundingBox 1 1.2];
+    % Second quadric
     S = quadric.scale(quadric.unitSphere,8);
     S = quadric.translate(S,[9; 0; 0]);
+    boundingBox = [9    17    -8     8    -8     8];
     opticalSystem(end+1,:)=[quadric.matrixToVec(S) 1 boundingBox 1 1];
+    % Third quadric
     S = quadric.scale(quadric.unitSphere,12);
     S = quadric.translate(S,[34; 0; 0]);
+    boundingBox = [22    34   -12    12   -12    12];
     opticalSystem(end+1,:)=[quadric.matrixToVec(S) -1 boundingBox 1 1.5];
+    % Fourth quadric
     S = quadric.scale(quadric.unitSphere,10);
     S = quadric.translate(S,[20; 0; 0]);
+    boundingBox = [20    30   -10    10   -10    10];
     opticalSystem(end+1,:)=[quadric.matrixToVec(S) 1 boundingBox 1 1.0];
 
     % Define an initial ray
@@ -105,6 +115,9 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
     recoveredThetas = atand(diff(rayPath(2,:))./diff(rayPath(1,:)));
     elaghaThetasDeg = [17.309724 9.479589 4.143784 -5.926743];
     assert(max(abs(recoveredThetas - elaghaThetasDeg))<1e-6);
+
+    % Display the optical system and ray
+    plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'rayPath',rayPath,'outputRay',outputRay,'outputRayColor','green');
 %}
 %{
     %% Pupil point through cornea
