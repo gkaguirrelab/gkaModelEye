@@ -66,8 +66,14 @@ function figHandle = plotOpticalSystem(varargin)
 %
 % Examples:
 %{
+    % Plot an entire surface set
     sceneGeometry = createSceneGeometry();
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
+%}
+%{
+    % Plot just the opticalSystem with default color and transparency
+    sceneGeometry = createSceneGeometry();
+    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera.opticalSystem,'addLighting',true);
 %}
 %{
     %% Rays from the retina through the eye and a spectacle lens
@@ -90,6 +96,7 @@ function figHandle = plotOpticalSystem(varargin)
     end
 %}
 
+
 %% input parser
 p = inputParser; p.KeepUnmatched = true;
 
@@ -110,7 +117,6 @@ p.addParameter('viewAngle',[40 40],@isnumeric);
 p.parse(varargin{:})
 
 
-
 % Open a figure
 if p.Results.newFigure
     if p.Results.visible
@@ -126,7 +132,7 @@ hold on
 % Plot the surfaceSet if provided
 if ~isempty(p.Results.surfaceSet)
 
-    % Assemble to surfaceSet components
+    % Assemble surfaceSet components
     if isstruct(p.Results.surfaceSet)
         % If we have a whole surface set, extract the optical system and
         % plot information
@@ -154,7 +160,7 @@ if ~isempty(p.Results.surfaceSet)
 
         % The surfaces are gray and the labels are unknown
         surfaceColors=cell(nSurfaces,1);
-        surfaceColors(:) = {[0.5 0.5 0.5]};
+        surfaceColors(:) = {'k'};%{[0.5 0.5 0.5]};
         surfaceLabels=cell(nSurfaces,1);
         surfaceLabels(:) = {'unknown'};
         
