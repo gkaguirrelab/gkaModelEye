@@ -108,13 +108,11 @@ function sceneGeometry = createSceneGeometry(varargin)
 %         'surfaceColors' - A cell array of 3x1 vectors that provide the
 %                           color specification for plotting each surface
 %                           of the optical system.
-%         'lenses'        - An optional structure that describes the 
-%                           properties of refractive lenses that are
-%                           present between the eye and the camera.
-%                           Possible sub-fields are 'contact' and
-%                           'spectacle', each of which holds the parameters
-%                           that were used to add a refractive lens to the
-%                           optical path.
+%         'magnification' - An optional field that is only populated if
+%                           the sceneGeometry includes artificial lenses 
+%                           (e.g., spectacles or contacts). This field
+%                           provides the angular magnification of the world
+%                           as experienced by the eye through the lens.
 %
 %  'meta' - A structure that contains information regarding the creation
 %       and modification of the sceneGeometry.
