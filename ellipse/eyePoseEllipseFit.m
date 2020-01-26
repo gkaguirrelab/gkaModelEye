@@ -124,14 +124,11 @@ end
 
 
 %% Obtain the unconstrained ellipse fit to the perimeter
-% This lives within a try-catch block, as various degenerate sets of
-% perimeter points can cause the ellipse fit to fail.
-try
-    % Use direct least squares ellipse fit to obtain an initial estimate
-    unconstrainedEllipse=ellipse_ex2transparent(ellipse_im2ex(ellipsefit_direct(Xp,Yp)));
-    % Obtain the RMSE of the unconstrained fit
-    unconstrainedRMSE = sqrt(nanmean(ellipsefit_distance(Xp,Yp,ellipse_transparent2ex(unconstrainedEllipse)).^2));
-catch
+[unconstrainedEllipse, unconstrainedRMSE] = pupilEllipseFit([Xp;Yp]);
+
+% Various degenerate sets of
+% perimeter points can cause the ellipse fit to fail and return nans
+if any(isnan(unconstrainedEllipse))
     % The fit failed. Sythesize an ellipse vector that has as its center
     % the mean of the X and Y positions of the perimeter points.
     unconstrainedEllipse = nan(1,5);
