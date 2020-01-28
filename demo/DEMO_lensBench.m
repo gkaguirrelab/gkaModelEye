@@ -53,7 +53,7 @@ end
 opticalSystem = reverseSystemDirection(opticalSystem);
 
 
-%% Display the optical system and ray
+%% Display the optical system
 plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'viewAngle',[0 90]);
 
 
@@ -70,6 +70,7 @@ colors = {'red','red','red';...
 % Loop over the desired rays and display
 for hh = 1:length(horizPos)
     for aa = 1:length(angles)
+        
         % Create the ray
         inputRay = quadric.normalizeRay(quadric.anglesToRay([DLPpostion;horizPos(hh);0],-180+angles(aa),0));
         
@@ -85,8 +86,7 @@ for hh = 1:length(horizPos)
             surfaces = find(~any(isnan(rayPath)));            
             outputRay = rayTraceQuadrics(inputRay, opticalSystem(surfaces,:));
             outputRay(:,2) = outputRay(:,2) * 5; % Pump up the volume
-            plotOpticalSystem('newFigure',false,'outputRay',outputRay,'rayColor',colors{hh,aa},'viewAngle',[0 90]);
-            
+            plotOpticalSystem('newFigure',false,'outputRay',outputRay,'rayColor',colors{hh,aa},'viewAngle',[0 90]);            
         end
     end
 end
