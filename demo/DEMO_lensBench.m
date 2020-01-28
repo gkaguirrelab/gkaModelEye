@@ -11,42 +11,54 @@
 %   positive) position.
 %
 
+% Housekeeping
 clear all
 close all
 clc
 
-% Set up the properties of the medium and the lenses
+%% Set up the refractive index of the medium and lens
 mediumRefractiveIndex = 1.0;
-lensRefractiveIndex = 2;
+lensRefractiveIndex = 2.0;
 
+
+%% Set the properties of the lenses and position of DLP chip
+DLPpostion = 200; % DLP distance from the cornea in mm
+diopters = 20; % Lens power
+radius = 30; % Lens radius un mm
+lensCenters = [50, 150]; % positions of the lenses, in mm. Must be ordered near to far
+
+% Grind the lens
+[thickness, curvature] = grindPlus(diopters, radius, lensRefractiveIndex, mediumRefractiveIndex);
+
+
+%% Initialize the optical system with an eye
 % Create an initial optical system in the eyeToCamera (left to right)
 % direction with an emmetropic right eye focused at 1.5 meters.
 sceneGeometry = createSceneGeometry();
 opticalSystem = sceneGeometry.refraction.retinaToCamera.opticalSystem;
 
-% Design a +20 lens
-diopters = 20;
-radius = 30; % mm
-[thickness, curvature] = grindPlus(diopters, radius, lensRefractiveIndex, mediumRefractiveIndex);
 
-% Add it to the optical system at two locations (must be ordered in the eye
-% to camera direction)
-lensCenter = 50;
-opticalSystem = assembleLensWrapper(opticalSystem, lensRefractiveIndex, mediumRefractiveIndex, thickness, curvature, lensCenter, radius);
+%% Add the lenses to the optical system at desired locations
+for ll = 1:length(lensCenters)
+opticalSystem = assembleLensWrapper(opticalSystem, lensRefractiveIndex, mediumRefractiveIndex, thickness, curvature, lensCenters(ll), radius);
+end
 
-lensCenter = 150;
-opticalSystem = assembleLensWrapper(opticalSystem, lensRefractiveIndex, mediumRefractiveIndex, thickness, curvature, lensCenter, radius);
 
-% Reverse the optical system to be in cameraToEye orientation
+%% Reverse the optical system direction
+% The optical system is assembled for ray tracing from left-to-right (away
+% from the eye), but we want to do ray tracing from right-to-left (towards
+% the eye)
 opticalSystem = reverseSystemDirection(opticalSystem);
 
-% Display the optical system and ray
+
+%% Display the optical system and ray
 plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'viewAngle',[0 90]);
 
+
+%% Add some rays
 % Send rays from the horizontal bounds of the DLP chip, which will be 11.5
 % mm on either side of the optical axis, and have an angle w.r.t. the
 % optical axis of +- 12 degrees
-DLPpostion = 200;
 angles = [-12,0,12];
 horizPos = [-11.5,0,11.5];
 colors = {'red','red','red';...
