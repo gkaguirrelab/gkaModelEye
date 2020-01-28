@@ -86,7 +86,7 @@ for hh = 1:length(horizPos)
             surfaces = find(~any(isnan(rayPath)));            
             outputRay = rayTraceQuadrics(inputRay, opticalSystem(surfaces,:));
             outputRay(:,2) = outputRay(:,2) * 5; % Pump up the volume
-            plotOpticalSystem('newFigure',false,'outputRay',outputRay,'rayColor',colors{hh,aa},'viewAngle',[0 90]);            
+            plotOpticalSystem('newFigure',false,'outputRay',outputRay,'outputRayColor',colors{hh,aa},'viewAngle',[0 90]);            
         end
     end
 end
