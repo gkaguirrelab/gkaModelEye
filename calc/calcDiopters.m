@@ -1,4 +1,4 @@
-function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera, rayStartDepth)
+function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera, rayStartDepth, rayOffset)
 % Calcuate the cameraToEye-direction refractive power of an opticalSystem
 %
 % Syntax:
@@ -73,11 +73,18 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera, 
 if nargin==1
     forceEyeToCamera = false;
     rayStartDepth = [100, -100];
+    rayOffset = 1;
 end
 
 % Handle nargin
 if nargin==2
     rayStartDepth = [100, -100];
+    rayOffset = 1;
+end
+
+% Handle nargin
+if nargin==3
+    rayOffset = 1;
 end
 
 % Strip the optical system of any rows which are all nans
@@ -104,12 +111,12 @@ P = calcPrincipalPoint(opticalSystem, rayStartDepth);
 % Create parallel rays in the valid direction
 switch systemDirection
     case 'cameraToEye'
-        R1 = quadric.normalizeRay([rayStartDepth(1),-1;-1,0;0,0]);
-        R2 = quadric.normalizeRay([rayStartDepth(1),-1;1,0;0,0]);
+        R1 = quadric.normalizeRay([rayStartDepth(1),-rayOffset;-rayOffset,0;0,0]);
+        R2 = quadric.normalizeRay([rayStartDepth(1),-rayOffset;rayOffset,0;0,0]);
         signD = 1;
     case 'eyeToCamera'
-        R1 = quadric.normalizeRay([rayStartDepth(2),1;-1,0;0,0]);
-        R2 = quadric.normalizeRay([rayStartDepth(2),1;1,0;0,0]);
+        R1 = quadric.normalizeRay([rayStartDepth(2),rayOffset;-rayOffset,0;0,0]);
+        R2 = quadric.normalizeRay([rayStartDepth(2),rayOffset;rayOffset,0;0,0]);
         signD = -1;
     otherwise
         error(['Not a valid system direction: ' systemDirection])

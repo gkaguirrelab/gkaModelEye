@@ -112,7 +112,7 @@ mySystem = @(p) assembleLensWrapper(opticalSystem, lensRefractiveIndex, mediumRe
 myConstraint = @(p) checkLensShape(mySystem(p),radius);
 
 % The objective, which is the requested lens power in diopters
-myObj = @(p) norm(diopters-calcDiopters(mySystem(p),true,[-100 -100]));
+myObj = @(p) norm(diopters-calcDiopters(mySystem(p),true,[-100 -100],radius/3));
 
 % Set an x0 that is a 20 mm thickness and a curvature based on the thin
 % lens approximation.
