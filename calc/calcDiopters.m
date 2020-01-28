@@ -1,4 +1,4 @@
-function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera)
+function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera, rayStartDepth)
 % Calcuate the cameraToEye-direction refractive power of an opticalSystem
 %
 % Syntax:
@@ -45,6 +45,9 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera)
 %                               n     - Refractive index of the surface.
 %   forceEyeToCamera      - Logical. Optional. Defaults to false if not
 %                           set.
+%   rayStartDepth         - Scalar. Point of origin of the ray along the
+%                           optical axis used to probe the system. Defaults
+%                           to 100.
 %
 % Outputs:
 %   diopters              - Scalar. The optical power of the system.
@@ -69,13 +72,19 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera)
 % Handle nargin
 if nargin==1
     forceEyeToCamera = false;
+    rayStartDepth = [100, -100];
+end
+
+% Handle nargin
+if nargin==2
+    rayStartDepth = [100, -100];
 end
 
 % Strip the optical system of any rows which are all nans
 opticalSystem = opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
 
 % Obtain the system direction
-systemDirection = calcSystemDirection(opticalSystem);
+systemDirection = calcSystemDirection(opticalSystem, rayStartDepth);
 
 % Unless the forceEyeToCamera flag is set, ensure that the optical system
 % is in the cameraToEye state.
@@ -87,23 +96,23 @@ if strcmp(systemDirection,'cameraToEye') && forceEyeToCamera
 end
 
 % Obtain the system direction again after that potential reversing
-systemDirection = calcSystemDirection(opticalSystem);
+systemDirection = calcSystemDirection(opticalSystem, rayStartDepth);
 
 % Obtain the principal point
-P = calcPrincipalPoint(opticalSystem);
+P = calcPrincipalPoint(opticalSystem, rayStartDepth);
 
 % Create parallel rays in the valid direction
 switch systemDirection
     case 'cameraToEye'
-        R1 = quadric.normalizeRay([100,-1;-1,0;0,0]);
-        R2 = quadric.normalizeRay([100,-1;1,0;0,0]);
+        R1 = quadric.normalizeRay([rayStartDepth(1),-1;-1,0;0,0]);
+        R2 = quadric.normalizeRay([rayStartDepth(1),-1;1,0;0,0]);
         signD = 1;
     case 'eyeToCamera'
-        R1 = quadric.normalizeRay([-100,1;-1,0;0,0]);
-        R2 = quadric.normalizeRay([-100,1;1,0;0,0]);
+        R1 = quadric.normalizeRay([rayStartDepth(2),1;-1,0;0,0]);
+        R2 = quadric.normalizeRay([rayStartDepth(2),1;1,0;0,0]);
         signD = -1;
     otherwise
-        error('Not a valid system direction')
+        error(['Not a valid system direction: ' systemDirection])
 end
 
 % Trace the rays

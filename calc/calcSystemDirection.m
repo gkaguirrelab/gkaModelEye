@@ -1,4 +1,4 @@
-function systemDirection = calcSystemDirection(opticalSystem)
+function systemDirection = calcSystemDirection(opticalSystem, rayStartDepth)
 % Returns the valid direction for ray tracing in this optical syste,
 %
 % Syntax:
@@ -50,6 +50,11 @@ function systemDirection = calcSystemDirection(opticalSystem)
     assert(strcmp(systemDirectionIn,systemDirectionOut));
 %}
 
+% Handle nargin
+if nargin==1
+    rayStartDepth = [100, -100];
+end
+
 % Strip the optical system of any rows which are all nans
 opticalSystem = opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
 
@@ -69,11 +74,11 @@ end
 
 
 % Trace an axial ray from the right (cameraToEye)
-R1 = quadric.normalizeRay(quadric.anglesToRay([100;0;0],180,0));
+R1 = quadric.normalizeRay(quadric.anglesToRay([rayStartDepth(1);0;0],180,0));
 M1 = rayTraceQuadrics(R1, opticalSystem);
 
 % Trace an axial ray from the left (eyeToCamera)
-R2 = quadric.normalizeRay(quadric.anglesToRay([-100;0;0],0,0));
+R2 = quadric.normalizeRay(quadric.anglesToRay([rayStartDepth(2);0;0],0,0));
 M2 = rayTraceQuadrics(R2, opticalSystem);
 
 % Find the non-nan value
