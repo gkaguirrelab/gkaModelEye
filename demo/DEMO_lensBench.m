@@ -25,9 +25,9 @@ lensRefractiveIndex = 2.0;
 %% Set the properties of the lenses and position of DLP chip
 DLPpostion = 200; % DLP distance from the cornea in mm
 diopters = 20; % Lens power
-radius = 30; % Lens radius un mm
-lensCenters = [50, 150];    % Positions of the lenses, in mm.
-% Must be ordered near to far
+radius = 30; % Lens radius in mm
+% Positions of the lenses, in mm.  Must be ordered near to far
+lensCenters = [50, 150];    
 
 % Grind the lens
 [thickness, curvature] = grindPlus(diopters, radius, lensRefractiveIndex, mediumRefractiveIndex);
@@ -78,6 +78,16 @@ for hh = 1:length(horizPos)
         
         % Add it to the plot
         plotOpticalSystem('newFigure',false,'rayPath',rayPath,'rayColor',colors{hh,aa},'viewAngle',[0 90]);
+        
+        % If the outputRay is nan (that is, the ray missed the eye), then
+        % extend the ray as it left the last lens surface
+        if any(any(isnan(outputRay)))
+            surfaces = find(~any(isnan(rayPath)));            
+            outputRay = rayTraceQuadrics(inputRay, opticalSystem(surfaces,:));
+            outputRay(:,2) = outputRay(:,2) * 5; % Pump up the volume
+            plotOpticalSystem('newFigure',false,'outputRay',outputRay,'rayColor',colors{hh,aa},'viewAngle',[0 90]);
+            
+        end
     end
 end
 
