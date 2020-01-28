@@ -16,6 +16,7 @@ clear all
 close all
 clc
 
+
 %% Set up the refractive index of the medium and lens
 mediumRefractiveIndex = 1.0;
 lensRefractiveIndex = 2.0;
@@ -25,7 +26,8 @@ lensRefractiveIndex = 2.0;
 DLPpostion = 200; % DLP distance from the cornea in mm
 diopters = 20; % Lens power
 radius = 30; % Lens radius un mm
-lensCenters = [50, 150]; % positions of the lenses, in mm. Must be ordered near to far
+lensCenters = [50, 150];    % Positions of the lenses, in mm.
+% Must be ordered near to far
 
 % Grind the lens
 [thickness, curvature] = grindPlus(diopters, radius, lensRefractiveIndex, mediumRefractiveIndex);
@@ -40,7 +42,7 @@ opticalSystem = sceneGeometry.refraction.retinaToCamera.opticalSystem;
 
 %% Add the lenses to the optical system at desired locations
 for ll = 1:length(lensCenters)
-opticalSystem = assembleLensWrapper(opticalSystem, lensRefractiveIndex, mediumRefractiveIndex, thickness, curvature, lensCenters(ll), radius);
+    opticalSystem = assembleLensWrapper(opticalSystem, lensRefractiveIndex, mediumRefractiveIndex, thickness, curvature, lensCenters(ll), radius);
 end
 
 
@@ -70,7 +72,7 @@ for hh = 1:length(horizPos)
     for aa = 1:length(angles)
         % Create the ray
         inputRay = quadric.normalizeRay(quadric.anglesToRay([DLPpostion;horizPos(hh);0],-180+angles(aa),0));
-
+        
         % Trace it
         [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem);
         
