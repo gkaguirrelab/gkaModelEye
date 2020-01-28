@@ -1,4 +1,4 @@
-%% J&J device setup
+%% Lens Bench Demo
 % A simple optical bench explorer
 %
 % Description:
