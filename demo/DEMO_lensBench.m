@@ -17,6 +17,10 @@ close all
 clc
 
 
+%% Plot options
+plotOutputRays = false;
+
+
 %% Set up the refractive index of the medium and lens
 mediumRefractiveIndex = 1.0;
 lensRefractiveIndex = 2.0;
@@ -35,9 +39,15 @@ lensCenters = [50, 150];
 
 %% Initialize the optical system with an eye
 % Create an initial optical system in the eyeToCamera (left to right)
-% direction with an emmetropic right eye focused at 1.5 meters.
-sceneGeometry = createSceneGeometry();
+% direction with an emmetropic right eye focused at 1.5 meters, with the
+% refractive indices for the visible spectrum.
+sceneGeometry = createSceneGeometry('spectralDomain','vis');
 opticalSystem = sceneGeometry.refraction.retinaToCamera.opticalSystem;
+
+% Insert an iris stop into the system
+stopRadius = 2;
+rowInsertAfter = find(strcmp(sceneGeometry.refraction.retinaToCamera.surfaceLabels,'lens.front'));
+opticalSystem = addIrisStop(opticalSystem,sceneGeometry.eye.stop.center,stopRadius,rowInsertAfter);
 
 
 %% Add the lenses to the optical system at desired locations
@@ -82,7 +92,7 @@ for hh = 1:length(horizPos)
         
         % If the outputRay is nan (that is, the ray missed the eye), then
         % extend the ray as it left the last lens surface
-        if any(any(isnan(outputRay)))
+        if any(any(isnan(outputRay))) && plotOutputRays
             surfaces = find(~any(isnan(rayPath)));            
             outputRay = rayTraceQuadrics(inputRay, opticalSystem(surfaces,:));
             outputRay(:,2) = outputRay(:,2) * 5; % Pump up the volume
@@ -198,3 +208,47 @@ lensLine(end) = mediumRefractiveIndex;
 opticalSystemOut = [opticalSystemOut; lensLine];
 
 end
+
+
+function z = radiusAtX(F,x)
+    myObj = @(z) F(x,0,z);
+    z = abs(fzero(myObj,0));
+end
+
+
+function opticalSystemOut = addIrisStop(opticalSystemIn, stopCenter, stopRadius, rowInsertAfter)
+
+S = quadric.scale(quadric.unitSphere,[1,20,20]);
+t = stopCenter; t(1) = t(1)-1;
+S = quadric.translate(S,t);
+
+stopFront = stopCenter(1);
+
+% Find the x-axis position at which the height of the ellipsoid is equal to
+% the desired stop radius
+F = quadric.vecToFunc(S);
+myObj = @(x) radiusAtX(F,stopFront-1+x)-stopRadius;
+x = fzero(myObj,0.9999);
+
+% Create the bounding box
+bb = [stopFront-x stopFront  -stopRadius stopRadius -stopRadius stopRadius];
+
+% Assemble a line for the optical system
+stopLine = nan(1,19);
+stopLine(1:10) = quadric.matrixToVec(S);
+stopLine(11) = 1; % Rays traveling left-to-right encounter concave surface
+stopLine(12:17) = bb;
+stopLine(18) = 1; % Must intersect
+% Use the same index of refraction as the surrounding medium, so that the
+% aperture stop does not have any effect of refraction.
+stopLine(19) = opticalSystemIn(rowInsertAfter,19);
+
+% Add this line to the opticalSystem
+opticalSystemOut = [ ...
+    opticalSystemIn(1:rowInsertAfter,:); ...
+    stopLine; ...
+    opticalSystemIn(rowInsertAfter+1:end,:)];
+
+end
+
+
