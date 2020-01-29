@@ -55,7 +55,7 @@ function P = calcPrincipalPoint(opticalSystem, rayStartDepth)
     opticalSystem = addSpectacleLens([],-10,'systemDirection',systemDirection);
     % Plot this
     plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true);
-    % Find the principal points and plot these
+    % Find the principal point and plot this
     P = calcPrincipalPoint(opticalSystem);
     plot3(P(1),P(2),P(3),'*r')
 %}
