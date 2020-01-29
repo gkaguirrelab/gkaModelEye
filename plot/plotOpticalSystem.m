@@ -42,7 +42,7 @@ function figHandle = plotOpticalSystem(varargin)
 %                           surfaceLabel, then geodetic lines will be
 %                           added to the retinal surface.
 %  'rayPath'              - 3xm matrix that provides the ray coordinates
-%                           at each surface. The value for rayPath(1,:)
+%                           at each surface. The value for rayPath(:,1)
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
 %                           will be nan. This rayPath could be obtained
