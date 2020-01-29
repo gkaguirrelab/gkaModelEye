@@ -1,4 +1,4 @@
-function p = plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLineColor,lineAlpha,bbTol)
+function p = plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLineColor,lineAlpha,bbTol,meshGridSamples)
 % Add a 3D plot of the quadric surface to the active figure
 %
 % Syntax:
@@ -36,6 +36,7 @@ function p = plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLi
 %                           Default value is 0.1. Handles the situation in
 %                           which the intersection is right on the boundary
 %                           but is numerically outside.
+%   meshGridSamples       - Scalar. Defines the density of surface samples.
 %
 % Outputs:
 %   p                     - Handle to the surface plot object
@@ -64,6 +65,7 @@ if nargin==1
     betaLineColor = [];
     omegaLineColor = [];
     bbTol = 1e-2;
+    meshGridSamples = 100;
 end
 
 if nargin==2
@@ -72,6 +74,7 @@ if nargin==2
     betaLineColor = [];
     omegaLineColor = [];
     bbTol = 1e-2;
+    meshGridSamples = 100;
 end
 
 if nargin==3
@@ -79,31 +82,37 @@ if nargin==3
     betaLineColor = [];
     omegaLineColor = [];
     bbTol = 1e-2;
+    meshGridSamples = 100;
 end
 
 if nargin==4
     betaLineColor = [];
     omegaLineColor = [];
     bbTol = 1e-2;
+    meshGridSamples = 100;
 end
 
 if nargin==5
     omegaLineColor = [];
     lineAlpha = 1;
     bbTol = 1e-2;
+    meshGridSamples = 100;
 end
 
 if nargin==6
     lineAlpha = 1;
     bbTol = 1e-2;
+    meshGridSamples = 100;
 end
 
 if nargin==7
     bbTol = 1e-2;
+    meshGridSamples = 100;
 end
 
-% Define the level of detail of the surface mesh.
-meshGridSamples = 100;
+if nargin==8
+    meshGridSamples = 100;
+end
 
 % Create a linear meshgrid within the boundingBox range
 [xx, yy, zz]=meshgrid( linspace(boundingBox(1)-bbTol,boundingBox(2)+bbTol,meshGridSamples),...
