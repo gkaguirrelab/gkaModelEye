@@ -20,21 +20,15 @@ Matrix:
        G H I K]
        
 Vector:
-       [A B C D E F G H I J K]
+       [A B C D E F G H I K]
 
 
 The directories are:
 
-convert		- Convert quadrics between these forms, and from angles to rays
-
-geodetics	- Points and paths on ellipsoidal surfaces
-
-plot		- Plot quadric surfaces
-
-primitives	- Return primitive quadric surfaces (sphere, paraboloid, hyperboloid)
-
-properties	- Obtain the properties of a given quadric surface
-
-relations	- Spatial relationships between rays, surfaces, and points
-
-transform	- Affine (and other) transforms of surfaces and rays
+- convert		- Convert quadrics between these forms, and from angles to rays
+- geodetics	- Points and paths on ellipsoidal surfaces
+- plot		- Plot quadric surfaces
+- primitives	- Return primitive quadric surfaces (sphere, paraboloid, hyperboloid)
+- properties	- Obtain the properties of a given quadric surface
+- relations	- Spatial relationships between rays, surfaces, and points
+- transform	- Affine (and other) transforms of surfaces and rays
