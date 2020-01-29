@@ -20,7 +20,7 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %  'plotColor'            - String. Matlab line spec code for line color,
 %                           e.g., {'k','r','b'};
 %  'rayPath'              - 3xm matrix that provides the ray coordinates
-%                           at each surface. The value for rayPath(1,:)
+%                           at each surface. The value for rayPath(:,1)
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
 %                           will be nan. This rayPath could be obtained
