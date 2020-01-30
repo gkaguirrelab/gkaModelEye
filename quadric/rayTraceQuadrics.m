@@ -181,10 +181,10 @@ for ii=2:nSurfaces
     N = quadric.surfaceNormal(S,X,side,[]);
 
     % Get the refracted or reflected ray
-    if sign(opticalSystem(ii,19))
+    if sign(opticalSystem(ii,19))==1
         R = quadric.refractRay(R,N,nRel);
     else
-        R = quadric.reflectRay(R,N,nRel);
+        R = quadric.reflectRay(R,N);
     end
     
     % Store the ray path
