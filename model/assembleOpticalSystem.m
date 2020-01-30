@@ -18,7 +18,7 @@ function [opticalSystem, surfaceLabels, surfaceColors, magnification] = assemble
 %  'surfaceSetName'       - A string or char vector that from the set:
 %                           {'retinaToCamera','retinaToStop',
 %                            'stopToCamera','cameraToStop','stopToRetina',
-%                            'cameraToRetina'}
+%                            'cameraToRetina','glint'}
 %  'cameraMedium'         - String, options include:
 %                           {'air','water','vacuum'}. This sets the index
 %                           of refraction of the medium between the eye and
@@ -116,8 +116,9 @@ magnification = struct();
 % The optical system is always assembled in the eyeToCamera direction, but
 % the reversed version is returned if that is what was requested
 switch p.Results.surfaceSetName
+    
     case {'retinaToCamera','cameraToRetina'}
-                
+        
         % We start in the vitreous chamber. Assign this refractive index
         opticalSystem(1,19) = returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain );
         
@@ -278,6 +279,82 @@ switch p.Results.surfaceSetName
             opticalSystem = reverseSystemDirection(opticalSystem);
             surfaceColors = flipud([surfaceColors(2:end); {[nan nan nan]}]);
             surfaceLabels = flipud([surfaceLabels(2:end); {'camera'}]);
+        end
+        
+        
+    case {'glint'}
+        
+        % First assemble the path tearfilm --> camera
+        
+        % We start in the tearfilm
+        opticalSystem(1,19) = eye.cornea.index(2);
+        
+        % Add the tear surface
+        opticalSystem = [opticalSystem; ...
+            eye.cornea.S(3,:) eye.cornea.side(3) eye.cornea.boundingBox(3,:) 1 mediumRefractiveIndex];
+        
+        % Assemble the labels
+        surfaceLabels = [eye.cornea.label(3); eye.cornea.label(3)];
+        
+        % Assemble the surface plot colors
+        surfaceColors = [eye.cornea.plot.color(3); eye.cornea.plot.color(3)];
+        
+        % Add a contact lens if requested
+        if ~isempty(p.Results.contactLens)
+            switch length(p.Results.contactLens)
+                case 1
+                    lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', eye.meta.spectralDomain );
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex);
+                case 2
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2));
+                otherwise
+                    error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
+            end
+            surfaceLabels = [surfaceLabels; {'contactLens'}; {'tearfilm'}];
+            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {'blue'}];
+        end
+        
+        % Add a spectacle lens if requested
+        if ~isempty(p.Results.spectacleLens)
+            switch length(p.Results.spectacleLens)
+                case 1
+                    lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex, 'systemDirection', 'eyeToCamera');
+                case 2
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2), 'systemDirection', 'eyeToCamera');
+                case 3
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'systemDirection', 'eyeToCamera');
+                case 4
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4), 'systemDirection', 'eyeToCamera');
+                otherwise
+                    error('The key-value pair spectacleLens is limited to four elements: [refractionDiopters, refractionIndex, vertexDistance, baseCurve]');
+            end
+            surfaceLabels = [surfaceLabels; {'spectacleLensBack'}; {'spectacleLensFront'}];
+            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[.5 .5 .5]}];
+        end
+        
+        % Now reverse and combine this system to give us a path from the
+        % camera medium to the tear film        
+        opticalSystem = reverseSystemDirection(opticalSystem);
+        surfaceColors = flipud([surfaceColors(2:end); {[nan nan nan]}]);
+        surfaceLabels = flipud([surfaceLabels(2:end); {'cameraMedium'}]);
+        
+        % Set the refractive index of the tearfilm surface to be that of
+        % the medium, with a negative value. This results in a ray that is
+        % reflected and does not undergo refraction
+        opticalSystem(end,19) = -mediumRefractiveIndex;
+        
+        % If the optical system has more than two rows, that means we have
+        % surfaces in between the camera and the tear film. In this case,
+        % we have to add the surfaces heading back out.
+        if size(opticalSystem,1)>2
+            opticalSystemR = reverseSystemDirection(opticalSystem);
+            surfaceColorsR = flipud([surfaceColors(2:end); {[nan nan nan]}]);
+            surfaceLabelsR = flipud([surfaceLabels(2:end); eye.cornea.label(3)]);            
+            
+            opticalSystem = [opticalSystem; opticalSystemR(3:end,:)];
+            surfaceColors = [surfaceColors; surfaceColorsR(3:end)];
+            surfaceLabels = [surfaceLabels; surfaceLabelsR(3:end)];
         end
         
     otherwise
