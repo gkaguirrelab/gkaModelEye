@@ -73,7 +73,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 %                           render the retina ellipsoid. About 24 makes a
 %                           nice image.
 %  'refractionHandle'     - Function handle. By default, this is set to the
-%                           'inverseRayTraceMex'. This option is provided
+%                           'findPupilRayMex'. This option is provided
 %                           so that the pupilProjection can be conducted
 %                           with the native MATLAB code for testing
 %                           purposes.
@@ -182,7 +182,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     fprintf('\tUsing compiled ray tracing: %4.2f msecs.\n',msecPerModel);
     tic
     for pp = 1:nPoses
-    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,'refractionHandle',@inverseRayTrace);
+    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,'refractionHandle',@findPupilRay);
     end
     msecPerModel = toc / nPoses * 1000;
     fprintf('\tUsing MATLAB ray tracing: %4.2f msecs.\n',msecPerModel);
@@ -206,7 +206,7 @@ p.addParameter('rayTraceErrorThreshold',0.01,@isscalar);
 p.addParameter('nIrisPerimPoints',5,@isscalar);
 p.addParameter('corneaMeshDensity',23,@isscalar);
 p.addParameter('retinaMeshDensity',30,@isscalar);
-p.addParameter('refractionHandle',@inverseRayTraceMex,@(x)(isa(x,'function_handle')));
+p.addParameter('refractionHandle',@findPupilRayMex,@(x)(isa(x,'function_handle')));
 
 % parse
 p.parse(eyePose, sceneGeometry, varargin{:})
@@ -420,7 +420,7 @@ end
 
 % Perform refraction
 if refractFlag
-    % Assemble the static args for the inverseRayTrace
+    % Assemble the static args for the findPupilRay
     args = {sceneGeometry.cameraPosition.translation, ...
         sceneGeometry.eye.rotationCenters, ...
         sceneGeometry.refraction.stopToCamera.opticalSystem};

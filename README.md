@@ -1,4 +1,4 @@
-# A model of the entrance pupil and retinal landmarks
+findPupilRay# A model of the entrance pupil and retinal landmarks
 
 <p float="left">
   <img src="img/renderEyePose.png" height="150" />
@@ -14,7 +14,7 @@ The model is described in:
 
  * GK Aguirre (2019) [A Model of the Entrance Pupil of the Human Eye](https://www.nature.com/articles/s41598-019-45827-3). Scientific Reports, volume 9, Article number: 9360 (2019) 
 
-The anatomical properties of the eye are described in a set of routines that account for variation in biometric properties as a function of variation in spherical refractive error (ametropia). Ray tracing through the optical components of the eye (and any artificial lenses) is implemented as skew rays through generalized quadric surfaces. The routine `inverseRayTrace.m` calculates the effect of refraction, making use of calls to `rayTraceQuadrics.m`. An improvement in execution time can be achieved by compiling the ray tracing routines. To do so, issue the command `compileInverseRayTrace` at the MATLAB console. A compiled MEX file version of `inverseRayTrace` will be placed in the `bin` directory of this repository if it is not already present.
+The anatomical properties of the eye are described in a set of routines that account for variation in biometric properties as a function of variation in spherical refractive error (ametropia). Ray tracing through the optical components of the eye (and any artificial lenses) is implemented as skew rays through generalized quadric surfaces. The routine `findPupilRay.m` calculates the effect of refraction, making use of calls to `rayTraceQuadrics.m`. An improvement in execution time can be achieved by compiling the ray tracing routines. To do so, issue the command `compileInverseRayTrace` at the MATLAB console. A compiled MEX file version of `findPupilRay` will be placed in the `bin` directory of this repository if it is not already present.
 
 The function `pupilProjection_fwd` implements a forward model of the appearance of the entrance pupil in a camera observing the eye. Inputs to this routine are:
  * `eyePose` which is a vector that describes dynamic aspects of the eye, specifically rotation in degrees of azimuth, elevation, and torsion, and the radius of the aperture stop in mm.
@@ -58,7 +58,7 @@ A hierarchy of the functions is as follows:
     pupilProjection_fwd  <--  createSceneGeometry
             |                   ├── modelEyeParameters
             V                   |    ├─ human.stop
-     inverseRayTrace            |    ├─ human.cornea
+     findPupilRay            |    ├─ human.cornea
             |                   |    └─ human.retina, etc.
             V                   |    
     rayTraceQuadrics            └─ assembleOpticalSystem

@@ -1,18 +1,18 @@
 function compileInverseRayTrace( varargin )
-% Compiles the inverseRayTrace function
+% Compiles the findPupilRay and findGlintRay functions
 %
 % Syntax:
 %  compileInverseRayTrace
 %
 % Description:
-%   This routine produces a compiled mex file for inverseRayTrace, saves
-%   the file at the specified disk location, and places the function on the
-%   MATLAB path.
+%   This routine produces a compiled mex files for findPupilRay and
+%   findGlintRay, saves the files at the specified disk location, and
+%   places the functions on the MATLAB path.
 %
 %   The default save location is the directory that contains this function.
 %
-%   Calls to the compiled inverseRayTraceMex execute roughly ~30x faster
-%   than the native inverseRayTrace routine.
+%   Calls to the compiled functions execute roughly ~30x faster than the
+%   native routines.
 %
 % Inputs:
 %   none
@@ -21,7 +21,7 @@ function compileInverseRayTrace( varargin )
 %  'functionDirPath'      - Character vector. Specifies the location in 
 %                           which the compiled function is writen.
 %  'replaceExistingFunc'  - Logical, default false. If set to true, any
-%                           existing versions of inverseRayTraceMex will
+%                           existing versions of findPupilRayMex will
 %                           be removed from the path and a new version will
 %                           be created.
 %
@@ -30,38 +30,38 @@ function compileInverseRayTrace( varargin )
 %
 % Examples:
 %{
-    % Confirm that compiled and native inverseRayTrace yield same value
+    % Confirm that compiled and native findPupilRay yield same value
     sceneGeometry = createSceneGeometry();
-    % Assemble the args for the inverseRayTrace
+    % Assemble the args for the findPupilRay
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.stopToCamera.opticalSystem};
-    inverseRayNative = inverseRayTrace( [sceneGeometry.eye.stop.center(1) 2 0], [-5 10 0 2], args{:} );
-    inverseRayCompiled = inverseRayTraceMex( [sceneGeometry.eye.stop.center(1) 2 0], [-5 10 0 2], args{:} );
+    inverseRayNative = findPupilRay( [sceneGeometry.eye.stop.center(1) 2 0], [-5 10 0 2], args{:} );
+    inverseRayCompiled = findPupilRayMex( [sceneGeometry.eye.stop.center(1) 2 0], [-5 10 0 2], args{:} );
     % Test if the outputs agree
     assert(max(max(abs(inverseRayNative - inverseRayCompiled))) < 1e-6)
 %}
 %{
     % Compare computation time for MATLAB and compiled code
     nComputes = 100;
-    fprintf('\nTime to execute inverseRayTrace (average over %d projections):\n',nComputes);
+    fprintf('\nTime to execute findPupilRay (average over %d projections):\n',nComputes);
     % Native function
     sceneGeometry = createSceneGeometry();
-    % Assemble the args for the inverseRayTrace
+    % Assemble the args for the findPupilRay
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.stopToCamera.opticalSystem};
     % Native matlab function
     tic
     for ii=1:nComputes
-        inverseRayTrace( [-3.7 2 0], [0 0 0 2], args{:} );
+        findPupilRay( [-3.7 2 0], [0 0 0 2], args{:} );
     end
     msecPerComputeNative = toc / nComputes * 1000;
     fprintf('\tUsing the MATLAB function: %4.2f msecs.\n',msecPerComputeNative);
     % Compiled MEX function
     tic
     for ii=1:nComputes
-        inverseRayTraceMex( [-3.7 2 0], [0 0 0 2], args{:} );
+        findPupilRayMex( [-3.7 2 0], [0 0 0 2], args{:} );
     end
     msecPerComputeCompile = toc / nComputes * 1000;
     fprintf('\tUsing the compiled function: %4.2f msecs.\n',msecPerComputeCompile);
@@ -85,8 +85,8 @@ functionDirPath = p.Results.functionDirPath;
 % compiled function exists. If so, exit.
 if ~p.Results.replaceExistingFunc
     % Exist returns 3 for 'MEX-file on your MATLAB search path'
-    if exist('inverseRayTraceMex')==3
-        warning('compileInverseRayTrace:functionExists','inverseRayTraceMex already exists; set replaceExistingFunc to true to over-write.')
+    if exist('findPupilRayMex')==3
+        warning('compileInverseRayTrace:functionExists','findPupilRayMex already exists; set replaceExistingFunc to true to over-write.')
         return
     end
 end
@@ -100,27 +100,27 @@ end
 
 %% Remove pre-existing functions from the path
 % Detect the case in which the current directory itself contains a compiled
-% inverseRayTraceMex file, in which case the user needs to change
+% findPupilRayMex file, in which case the user needs to change
 % directories
-if strcmp(pwd(),fileparts(which('inverseRayTraceMex')))
-    error('compileInverseRayTrace:dirConflict','The current folder itself contains a compiled inverseRayTrace. Change directories to avoid function shadowing.')
+if strcmp(pwd(),fileparts(which('findPupilRayMex')))
+    error('compileInverseRayTrace:dirConflict','The current folder itself contains a compiled findPupilRay. Change directories to avoid function shadowing.')
 end
 
-% Remove any existing versions of the inverseRayTraceMex from the path.
+% Remove any existing versions of the findPupilRayMex from the path.
 notDoneFlag = true;
 removalsCounter = 0;
 tooManyRemovals = 4;
 while notDoneFlag
-    funcPath = which('inverseRayTraceMex');
+    funcPath = which('findPupilRayMex');
     if isempty(funcPath)
         notDoneFlag = false;
     else
-        warning('compileInverseRayTrace:previousFunc','Removing a previous inverseRayTraceMex from the path');
+        warning('compileInverseRayTrace:previousFunc','Removing a previous findPupilRayMex from the path');
         rmpath(fileparts(funcPath));
         removalsCounter = removalsCounter+1;
     end
     if removalsCounter == tooManyRemovals
-        error('compileInverseRayTrace:tooManyRemovals','Potentially stuck in a loop trying to remove previous inverseRayTraceMex functions from the path.')
+        error('compileInverseRayTrace:tooManyRemovals','Potentially stuck in a loop trying to remove previous findPupilRayMex functions from the path.')
     end
 end
 
@@ -144,7 +144,7 @@ args = [dynamicArgs, staticArgs{:}];
 % Change to the compile directory
 initialDir = cd(functionDirPath);
 % Compile the mex file
-codegen -o inverseRayTraceMex inverseRayTrace -args args
+codegen -o findPupilRayMex findPupilRay -args args
 % Clean up the compile dir. Turn off warnings regarding the removal of
 % these files
 warnState = warning();

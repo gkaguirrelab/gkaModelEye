@@ -1,8 +1,8 @@
-function [outputRay, initialRay, targetIntersectError ] = inverseRayTrace( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
+function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
 % Returns the virtual image ray of a point in eyeWorld coordinates
 %
 % Syntax:
-%  [outputRay, initialRay, targetIntersectError ] = inverseRayTrace( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
+%  [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
 %
 % Description:
 %   This routine returns the outputRay from the last surface of an optical
@@ -52,14 +52,13 @@ function [outputRay, initialRay, targetIntersectError ] = inverseRayTrace( eyePo
     % Basic example that finds the virtual image location for the center of
     % the aperture stop, with eye and the camera in their default positions
     sceneGeometry = createSceneGeometry();
-    % Assemble the args for the inverseRayTrace
+    % Assemble the args for the findPupilRay
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.stopToCamera.opticalSystem};
-    outputRay = inverseRayTrace( sceneGeometry.eye.stop.center, [-5 10 0 2], args{:} );
+    outputRay = findPupilRay( sceneGeometry.eye.stop.center, [-5 10 0 2], args{:} );
     % Test output against cached value
-    outputRayCached = [  -0.028495571122445   0.316608706150184  -0.630653044287995
-   0.978179527611291   0.093602908796159  -0.185481285382246];
+    outputRayCached = [  -0.028495571122445   0.316608706150184  -0.630653044287995 0.978179527611291   0.093602908796159  -0.185481285382246];
     assert(max(max(abs(outputRay - outputRayCached))) < 1e-6)
 %}
 %{
@@ -212,7 +211,7 @@ initialRay = quadric.anglesToRay(eyePoint', angle_p1p2, angle_p1p3)';
 outputRay = rayTraceQuadrics(initialRay', opticalSystem);
 outputRay = outputRay';
 
-end % inverseRayTrace -- MAIN
+end % findPupilRay -- MAIN
 
 
 
