@@ -128,8 +128,8 @@ p.addParameter('showPupilTextLabels',false,@islogical);
 p.addParameter('showAzimuthPlane',false,@islogical);
 p.addParameter('nStopPerimPoints',8,@isscalar);
 p.addParameter('nIrisPerimPoints',20,@isscalar);
-p.addParameter('modelEyeLabelNames', {'aziRotationCenter' 'eleRotationCenter', 'retina' 'irisPerimeter' 'stopCenter' 'pupilPerimeter' 'pupilEllipse' 'cornea' 'cornealApex'}, @iscell);
-p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '+r' '*g' '-g' '.y' '*y'}, @iscell);
+p.addParameter('modelEyeLabelNames', {'aziRotationCenter' 'eleRotationCenter', 'retina' 'irisPerimeter' 'stopCenter' 'pupilPerimeter' 'pupilEllipse' 'cornea' 'cornealApex' 'glint'}, @iscell);
+p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '+r' '*g' '-g' '.y' '*y' '*w'}, @iscell);
 p.addParameter('modelEyeAlpha',1,@isnumeric);
 p.addParameter('modelEyeSymbolSizeScaler',1,@isnumeric);
 p.addParameter('fImplicitPresent',[],@islogical);
@@ -198,9 +198,17 @@ axis equal
 xlim([0 imageSizeX]);
 ylim([0 imageSizeY]);
 
+% Determine if we are showing a glint
+if any(strcmp(p.Results.modelEyeLabelNames,'glint'))
+    calcGlint = true;
+else
+    calcGlint = false;
+end
+
 % Obtain the pupilProjection of the model eye to the image plane
 [pupilEllipseParams, imagePoints, ~, ~, ~, pointLabels] = ...
     pupilProjection_fwd(eyePose, sceneGeometry, ...
+    'calcGlint', calcGlint, ...
     'fullEyeModelFlag', true, 'replaceReflectedPoints', true, ...
     'nStopPerimPoints',p.Results.nStopPerimPoints, ...
     'nIrisPerimPoints',p.Results.nIrisPerimPoints);
