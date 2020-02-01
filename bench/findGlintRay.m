@@ -1,21 +1,22 @@
-function [outputRay, initialRay, targetIntersectError ] = inverseRayTrace( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
-% Returns the virtual image ray of a point in eyeWorld coordinates
+function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldPoint, eyePose, worldTarget, rotationCenters, opticalSystem )
+% Returns the eyeWorld output ray for a worldPoint input ray
 %
 % Syntax:
-%  [outputRay, initialRay, targetIntersectError ] = inverseRayTrace( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
+%  [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldPoint, eyePose, worldTarget, rotationCenters, opticalSystem )
 %
 % Description:
 %   This routine returns the outputRay from the last surface of an optical
-%   system for a point that has originated from an eyeWorld coordinate
-%   point and has arrived at an observer positioned at the worldTarget
-%   location. The routine accounts for rotation of the eye specified in the
-%   eyePose variable. The outputRay returned by this routine provides the
-%   location of the virtual image of that point.
+%   system for a point that has originated from a worldPoint and has
+%   arrived at an observer positioned at the worldTarget location. The
+%   routine accounts for rotation of the eye specified in the eyePose
+%   variable. The outputRay returned by this routine provides the location
+%   of the virtual image of that point.
 %
 % Inputs:
-%   eyePoint              - A 1x3 vector that gives the coordinates (in mm)
-%                           of a point in eyeWorld space with the
-%                           dimensions p1, p2, p3.
+%   worldPoint            - A 3x1 vector that specifies the point in world 
+%                           coordinates (x, y, z) of the source of a ray.
+%                           This could be the coordinates of the light
+%                           source of an active IR camera.
 %   eyePose               - A 1x4 vector provides values for [eyeAzimuth,
 %                           eyeElevation, eyeTorsion, stopRadius].
 %                           Azimuth, elevation, and torsion are in units of
@@ -49,41 +50,14 @@ function [outputRay, initialRay, targetIntersectError ] = inverseRayTrace( eyePo
 %
 % Examples:
 %{
-    % Basic example that finds the virtual image location for the center of
-    % the aperture stop, with eye and the camera in their default positions
+    % Glint location in a rotated eye
     sceneGeometry = createSceneGeometry();
-    % Assemble the args for the inverseRayTrace
-    args = {sceneGeometry.cameraPosition.translation, ...
-    	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.stopToCamera.opticalSystem};
-    outputRay = inverseRayTrace( sceneGeometry.eye.stop.center, [-5 10 0 2], args{:} );
-    % Test output against cached value
-    outputRayCached = [  -0.028495571122445   0.316608706150184  -0.630653044287995
-   0.978179527611291   0.093602908796159  -0.185481285382246];
-    assert(max(max(abs(outputRay - outputRayCached))) < 1e-6)
-%}
-%{
-    %% Confirm that targetIntersectError remains small across eye poses
-    % Obtain a default sceneGeometry structure
-    sceneGeometry=createSceneGeometry();
-    % Perform 100 forward projections with randomly selected eye poses
-    nPoses = 100;
-    eyePoses=[(rand(nPoses,1)-0.5)*70, (rand(nPoses,1)-0.5)*70, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
-    nStopPerimPoints = 6;
-    rayTraceErrorThreshold = 1;
-    clear targetIntersectError
-    targetIntersectError = nan(nStopPerimPoints,nPoses);
-    for pp = 1:nPoses
-    	[~,~,~,~,~,pointLabels,errors]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,'nStopPerimPoints',nStopPerimPoints,'rayTraceErrorThreshold',rayTraceErrorThreshold);
-        idx = strcmp(pointLabels,'pupilPerimeter');
-        targetIntersectError(1:sum(idx),pp) = errors(idx);
-    end
-    % Make sure the targetIntersectError is small and not systematically
-    % related to eyePose
-    figure
-    plot(sqrt(eyePoses(:,1).^2+eyePoses(:,2).^2),nanmax(targetIntersectError),'.r')
-    xlabel('Euclidean rotation distance [deg]');
-    ylabel('Max ray trace camera intersection error [mm]');
+    eyePose = [-5, 3, 0, 2];
+    cameraNodalPoint = sceneGeometry.cameraPosition.translation;
+    irSourceLocation = cameraNodalPoint - [14; 0; 0];
+    rotationCenters = sceneGeometry.eye.rotationCenters;
+    opticalSystem = sceneGeometry.refraction.glint.opticalSystem;
+    [outputRay, initialRay, targetIntersectError ] = findGlintRay( irSourceLocation, eyePose, cameraNodalPoint, rotationCenters, opticalSystem )
 %}
 
 
@@ -113,25 +87,44 @@ TolX = 1e-6; % precision with which theta is estimated
 options = optimset('TolFun',TolFun,'TolX',TolX,'Display','off');
 
 % Set the inital guess for the angles by finding (w.r.t. the optical axis)
-% the angle of the ray that connects the eye point to the worldTarget
-% (after re-arranging the dimensions of the worldTarget variable).
-eyeCoordTarget = relativeCameraPosition(eyePose, worldTarget, rotationCenters);
-[angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; eyeCoordTarget-eyePoint]'));
+% the angle of the ray that connects the worldPoint to the corneal apex
+% (which is at [0 0 0]), after re-arranging the dimensions of the
+% worldPoint variable.
+eyePoint = relativeCameraPosition(eyePose, worldPoint, rotationCenters);
+[angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; -eyePoint]'));
+
+% If the absolute value of an initial search angle is greater than 90, we
+% flip the direction in the search so that we don't get stuck at the
+% -180/180 wrap around point.
+p1p2Adjust = round(angle_p1p2/180)*180;
+p1p3Adjust = round(angle_p1p3/180)*180;
+angle_p1p2 = wrapTo180(angle_p1p2-p1p2Adjust);
+angle_p1p3 = wrapTo180(angle_p1p3-p1p3Adjust);
+
+% Find the angular extent of the bounding box for the first surface to set
+% the upper and lower bounds on the search angles
+bb = opticalSystem(2,12:17);
+[~,p1Idx]=min(eyePoint(1)-bb(1:2));
+boundAngles_p1p2 = nan(2,2);
+boundAngles_p1p3 = nan(2,2);
+for xx=1:2
+    for yy=1:2
+        cornerPoint = [bb(p1Idx),bb(2+xx),bb(4+yy)];
+        [p1p2B,p1p3B] = ...
+            quadric.rayToAngles(quadric.normalizeRay([eyePoint; cornerPoint-eyePoint]'));
+        boundAngles_p1p2(xx,yy) = wrapTo180(p1p2B-p1p2Adjust);
+        boundAngles_p1p3(xx,yy) = wrapTo180(p1p3B-p1p3Adjust);
+    end
+end
 
 % Set bounds on the search
-ub_p1p2 = 90;
-ub_p1p3 = 90;
-lb_p1p2 = -90;
-lb_p1p3 = -90;
-
-% Ensure that the initial guess is in bounds
-angle_p1p2 = max([angle_p1p2 lb_p1p2]);
-angle_p1p2 = min([angle_p1p2 ub_p1p2]);
-angle_p1p3 = max([angle_p1p3 lb_p1p3]);
-angle_p1p3 = min([angle_p1p3 ub_p1p3]);
+ub_p1p2 = max(max(boundAngles_p1p2));
+ub_p1p3 = max(max(boundAngles_p1p3));
+lb_p1p2 = min(min(boundAngles_p1p2));
+lb_p1p3 = min(min(boundAngles_p1p3));
 
 % Create an anonymous function for ray tracing
-intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyePoint, p1p2, p1p3, eyePose, worldTarget, rotationCenters, opticalSystem);
+intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyePoint, wrapTo180(p1p2+p1p2Adjust), wrapTo180(p1p3+p1p3Adjust), eyePose, worldTarget, rotationCenters, opticalSystem);
 
 % Get the intial target error
 targetIntersectError = intersectErrorFunc(angle_p1p2, angle_p1p3);
@@ -201,6 +194,11 @@ if targetIntersectError > intersectErrorTolerance
 end % Test x0 guess
 
 
+% Remove any angle adjustment
+angle_p1p2 = wrapTo180(angle_p1p2+p1p2Adjust);
+angle_p1p3 = wrapTo180(angle_p1p3+p1p3Adjust);
+
+
 %% Obtain the initial and output rays
 
 % Assemble the input ray. Note that the rayTraceQuadrics routine handles
@@ -212,7 +210,7 @@ initialRay = quadric.anglesToRay(eyePoint', angle_p1p2, angle_p1p3)';
 outputRay = rayTraceQuadrics(initialRay', opticalSystem);
 outputRay = outputRay';
 
-end % inverseRayTrace -- MAIN
+end % findPupilRay -- MAIN
 
 
 
@@ -220,6 +218,21 @@ end % inverseRayTrace -- MAIN
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% LOCAL FUNCTIONS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%% Angle wrap functions
+% Shadowing the Mathworks code to allow code generation
+function lon = wrapTo180(lon)
+q = (lon < -180) | (180 < lon);
+lon(q) = wrapTo360(lon(q) + 180) - 180;
+end
+
+function lon = wrapTo360(lon)
+positiveInput = (lon > 0);
+lon = mod(lon, 360);
+lon((lon == 0) & positiveInput) = 360;
+end
 
 
 %% calcTargetIntersectError
@@ -259,10 +272,10 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 %
 
 % Test the input angles. If they are greater than +-90, return inf
-if abs(angle_p1p2)>=90 || abs(angle_p1p3)>=90
-    distance = Inf;
-    return
-end
+% if abs(angle_p1p2)>=90 || abs(angle_p1p3)>=90
+%     distance = Inf;
+%     return
+% end
 
 % Assemble the input ray. Note that the rayTraceQuadrics routine handles
 % vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
@@ -276,7 +289,7 @@ outputRayEyeWorld = outputRayEyeWorld';
 % If any must intersect surfaces were missed, the output ray will contain
 % nans. In this case, return Inf for the distance
 if any(isnan(outputRayEyeWorld))
-    distance = Inf;
+    distance = 1e6;
     return
 end
 

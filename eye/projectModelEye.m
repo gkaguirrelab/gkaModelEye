@@ -1,8 +1,8 @@
-function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
+function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = projectModelEye(eyePose, sceneGeometry, varargin)
 % Obtain the parameters of the entrance pupil ellipse on the image plane
 %
 % Syntax:
-%  [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry)
+%  [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = projectModelEye(eyePose, sceneGeometry)
 %
 % Description:
 %   Given the sceneGeometry, this routine simulates the aperture stop in a
@@ -13,6 +13,8 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 %   accurate eye, with points positioned behind the cornea subject to
 %   refractive displacement. The projection incorporates the intrinsic
 %   properties of the camera, including any radial lens distortion.
+%
+%   The 'fullEyeModelFlag' will render the entire eye, not just the pupil.
 %
 % Notes:
 %   Rotations - Eye rotation is given as azimuth, elevation, and torsion in
@@ -42,7 +44,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 %  'fullEyeModelFlag'     - Logical. Determines if the full eye model will
 %                           be created.
 %  'nStopPerimPoints'     - Scalar. The number of points that are
-%                           distributed around the stop elliopse. A minimum
+%                           distributed around the stop ellipse. A minimum
 %                           of 5 is required to uniquely specify the image
 %                           ellipse, and 6 to obtain a meaningful
 %                           pupilFitError.
@@ -72,11 +74,10 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 %  'retinaMeshDensity'    - Scalar. The number of geodetic lines used to
 %                           render the retina ellipsoid. About 24 makes a
 %                           nice image.
-%  'refractionHandle'     - Function handle. By default, this is set to the
-%                           'inverseRayTraceMex'. This option is provided
-%                           so that the pupilProjection can be conducted
-%                           with the native MATLAB code for testing
-%                           purposes.
+%  'pupilRayFunc','glintRayFunc' - Function handles. By default, these are 
+%                           set to 'findPupilRayMex' and 'findGlintRayMex'.
+%                           This option is provided so that the routine can
+%                           be tested with the native MATLAB code.
 %
 % Outputs:
 %   pupilEllipseOnImagePlane - A 1x5 vector with the parameters of the
@@ -123,9 +124,9 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     eyePose = [-10 5 0 3];
     % Obtain the pupil ellipse parameters in transparent format for the
     % default sceneGeometry
-    pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
+    pupilEllipseOnImagePlane = projectModelEye(eyePose,sceneGeometry);
     % Test against cached result
-    pupilEllipseOnImagePlaneCached = [ 0.027832035539061   0.022396191155864   1.552633202566208   0.000023070588443   0.000192063486465 ].*1e4;
+    pupilEllipseOnImagePlaneCached = [ 0.027832036523202   0.022396190713864   1.552632974343349   0.000023070663658   0.000192063110130 ].*1e4;
     assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-4)
 %}
 %{
@@ -135,7 +136,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     pupilFitError = [];
     for aa = 1:length(aziVals)
         eyePose = [aziVals(aa) -3 0 3];
-        [pupilEllipseOnImagePlane, ~, ~, ~, ~, ~, ~, pupilFitError(aa)] = pupilProjection_fwd(eyePose, sceneGeometry,'nStopPerimPoints',16);
+        [pupilEllipseOnImagePlane, ~, ~, ~, ~, ~, ~, pupilFitError(aa)] = projectModelEye(eyePose, sceneGeometry,'nStopPerimPoints',16);
     end
     figure
     plot(aziVals,pupilFitError,'.r');
@@ -145,7 +146,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     sceneGeometry=createSceneGeometry();
     eyePose = [-65 0 0 3];
     [pupilEllipseOnImagePlane, imagePoints, ~, ~, ~, pointLabels] = ...
-        pupilProjection_fwd(eyePose, sceneGeometry,'nStopPerimPoints',16, ...
+        projectModelEye(eyePose, sceneGeometry,'nStopPerimPoints',16, ...
         'replaceReflectedPoints',true, ...
         'nIrisPerimPoints',16,'fullEyeModelFlag', true);
     figure
@@ -156,7 +157,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     idx = strcmp(pointLabels,'irisPerimeter');
     plot(imagePoints(idx,1),imagePoints(idx,2),'.b');
     [pupilEllipseOnImagePlane, imagePoints, ~, ~, ~, pointLabels] = ...
-        pupilProjection_fwd(eyePose, sceneGeometry,'nStopPerimPoints',16, ...
+        projectModelEye(eyePose, sceneGeometry,'nStopPerimPoints',16, ...
         'replaceReflectedPoints',false, ...
         'nIrisPerimPoints',16,'fullEyeModelFlag', true);
     idx = strcmp(pointLabels,'pupilPerimeter');
@@ -176,13 +177,13 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     fprintf('\nTime to compute forward projection model (average over %d projections):\n',nPoses);
     tic
     for pp = 1:nPoses
-    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
+    	projectModelEye(eyePoses(pp,:),sceneGeometry);
     end
     msecPerModel = toc / nPoses * 1000;
     fprintf('\tUsing compiled ray tracing: %4.2f msecs.\n',msecPerModel);
     tic
     for pp = 1:nPoses
-    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,'refractionHandle',@inverseRayTrace);
+    	projectModelEye(eyePoses(pp,:),sceneGeometry,'pupilRayFunc',@findPupilRay);
     end
     msecPerModel = toc / nPoses * 1000;
     fprintf('\tUsing MATLAB ray tracing: %4.2f msecs.\n',msecPerModel);
@@ -206,7 +207,8 @@ p.addParameter('rayTraceErrorThreshold',0.01,@isscalar);
 p.addParameter('nIrisPerimPoints',5,@isscalar);
 p.addParameter('corneaMeshDensity',23,@isscalar);
 p.addParameter('retinaMeshDensity',30,@isscalar);
-p.addParameter('refractionHandle',@inverseRayTraceMex,@(x)(isa(x,'function_handle')));
+p.addParameter('pupilRayFunc',@findPupilRayMex,@(x)(isa(x,'function_handle')));
+p.addParameter('glintRayFunc',@findGlintRayMex,@(x)(isa(x,'function_handle')));
 
 % parse
 p.parse(eyePose, sceneGeometry, varargin{:})
@@ -215,7 +217,8 @@ p.parse(eyePose, sceneGeometry, varargin{:})
 %% Extract fields from Results struct
 % Accessing struct elements is relatively slow. Do this hear so it is not
 % done in a loop.
-refractionHandle = p.Results.refractionHandle;
+pupilRayFunc = p.Results.pupilRayFunc;
+glintRayFunc = p.Results.glintRayFunc;
 replaceReflectedPoints = p.Results.replaceReflectedPoints;
 rayTraceErrorThreshold = p.Results.rayTraceErrorThreshold;
 borderSearchPrecision = p.Results.borderSearchPrecision;
@@ -383,7 +386,7 @@ if p.Results.fullEyeModelFlag
         (retinaPoints(:,1) < sceneGeometry.eye.iris.center(1)) .* ...
         sqrt(retinaPoints(:,2).^2+retinaPoints(:,3).^2) > sceneGeometry.eye.iris.radius );
     if all(~retainIdx)
-        error('pupilProjection_fwd:irisCenterPosition','The iris center is behind the center of the retina');
+        error('projectModelEye:irisCenterPosition','The iris center is behind the center of the retina');
     end
     retinaPoints = retinaPoints(retainIdx,:);
     
@@ -420,7 +423,7 @@ end
 
 % Perform refraction
 if refractFlag
-    % Assemble the static args for the inverseRayTrace
+    % Assemble the static args for the findPupilRay
     args = {sceneGeometry.cameraPosition.translation, ...
         sceneGeometry.eye.rotationCenters, ...
         sceneGeometry.refraction.stopToCamera.opticalSystem};
@@ -439,7 +442,7 @@ if refractFlag
         
         % Perform the computation using the passed function handle.
         [virtualImageRay, ~, intersectError] = ...
-            refractionHandle(eyePoint, eyePose, args{:});
+            pupilRayFunc(eyePoint, eyePose, args{:});
         virtualPoint = virtualImageRay(1,:);
         
         % Optionally check if the point has encountered total internal
@@ -478,7 +481,7 @@ if refractFlag
                     shiftedEyePoint = eyePoint - (eyePoint - centerTarget).*(1 - searchScalar);
                     % Subject the shifted point to refraction
                     [virtualImageRay, ~, intersectError] = ...
-                        refractionHandle(shiftedEyePoint, eyePose, args{:});
+                        pupilRayFunc(shiftedEyePoint, eyePose, args{:});
                     virtualPoint = virtualImageRay(1,:);
                     % Update the search scalar
                     searchScalar = searchScalar - borderSearchPrecision;
@@ -551,6 +554,37 @@ else
         pointLabels = [pointLabels; {newPointLabel}];
     end
     
+end
+
+
+%% Calc glint
+% If instructed to do so, find the location of the glint in the eye world
+% coordinate frame. The glint is the reflection of a light source from the
+% tear film of the eye. The location of the glint in the image is subject
+% to refraction by artificial lenses.
+if p.Results.fullEyeModelFlag && isfield(sceneGeometry,'refraction')
+    if isfield(sceneGeometry.refraction,'glint')
+        
+        % The position of the light source in the world coordinate frame that
+        % is the source of the glint
+        glintSourceWorld = sceneGeometry.cameraPosition.translation + ...
+            sceneGeometry.cameraPosition.glintSourceRelative;
+        
+        % Assemble the args
+        args = {sceneGeometry.cameraPosition.translation, ...
+            sceneGeometry.eye.rotationCenters, ...
+            sceneGeometry.refraction.glint.opticalSystem};
+        
+        % Perform the computation using the passed function handle.
+        [virtualImageRay, ~, intersectError] = ...
+            glintRayFunc(glintSourceWorld, eyePose, args{:});
+        
+        % If we have a good trace, add the glint point and label
+        if intersectError < rayTraceErrorThreshold
+            eyePoints = [eyePoints; virtualImageRay(1,:)];
+            pointLabels = [pointLabels; {'glint'}];
+        end
+    end
 end
 
 
@@ -778,4 +812,4 @@ else
 end
 
 
-end % pupilProjection_fwd
+end % projectModelEye

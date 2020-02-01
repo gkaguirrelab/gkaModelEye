@@ -50,13 +50,13 @@ function [pointBestFocus, visualAxis, lineOfSight] = calcPointBestFocus(sceneGeo
     % Obtain the pupil area in the image for the entrance radius
     % assuming no ray tracing
     sceneGeometry.refraction = [];
-    pupilImage = pupilProjection_fwd([0, 0, 0, entranceRadius],sceneGeometry);
+    pupilImage = projectModelEye([0, 0, 0, entranceRadius],sceneGeometry);
     stopArea = pupilImage(3);
     % Add the ray tracing function to the sceneGeometry
     sceneGeometry = createSceneGeometry();
     % Search across stop radii to find the value that matches the observed
     % entrance area.
-    myPupilEllipse = @(radius) pupilProjection_fwd([0, 0, 0, radius],sceneGeometry);
+    myPupilEllipse = @(radius) projectModelEye([0, 0, 0, radius],sceneGeometry);
     myArea = @(ellipseParams) ellipseParams(3);
     myObj = @(radius) (myArea(myPupilEllipse(radius))-stopArea(1)).^2;
     stopRadius = fminunc(myObj, entranceRadius)

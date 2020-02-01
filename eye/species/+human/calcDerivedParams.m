@@ -114,9 +114,9 @@ sg.eye.stop.eccenFcnString = '@(x) 0';
 sg.refraction = [];
 
 % Obtain the pupil area in the image for each entrance radius
-pupilImage = pupilProjection_fwd([-sg.eye.landmarks.fovea.degField(1), -sg.eye.landmarks.fovea.degField(2), 0, entranceRadius(1)],sg,'nStopPerimPoints',16);
+pupilImage = projectModelEye([-sg.eye.landmarks.fovea.degField(1), -sg.eye.landmarks.fovea.degField(2), 0, entranceRadius(1)],sg,'nStopPerimPoints',16);
 stopArea(1) = pupilImage(3);
-pupilImage = pupilProjection_fwd([-sg.eye.landmarks.fovea.degField(1), -sg.eye.landmarks.fovea.degField(2), 0, entranceRadius(2)],sg,'nStopPerimPoints',16);
+pupilImage = projectModelEye([-sg.eye.landmarks.fovea.degField(1), -sg.eye.landmarks.fovea.degField(2), 0, entranceRadius(2)],sg,'nStopPerimPoints',16);
 stopArea(2) = pupilImage(3);
 
 % Add the ray tracing function to the sceneGeometry
@@ -127,7 +127,7 @@ sg.eye.stop.eccenFcnString = '@(x) 0';
 
 % Search across stop radii to find the values that match the observed
 % entrance areas.
-myPupilEllipse = @(radius) pupilProjection_fwd([-sg.eye.landmarks.fovea.degField(1), -sg.eye.landmarks.fovea.degField(2), 0, radius],sg,'nStopPerimPoints',16);
+myPupilEllipse = @(radius) projectModelEye([-sg.eye.landmarks.fovea.degField(1), -sg.eye.landmarks.fovea.degField(2), 0, radius],sg,'nStopPerimPoints',16);
 myArea = @(ellipseParams) ellipseParams(3);
 myObj = @(radius) (myArea(myPupilEllipse(radius))-stopArea(1)).^2;
 stopRadius(1) = fminunc(myObj, entranceRadius(1));
@@ -143,13 +143,13 @@ opts = optimset(opts,'Display','off');
 sg.eye.stop.thetas=[0 0];
 place = {'eye' 'stop' 'eccenFcnString'};
 mySceneGeom = @(eccen) setfield(sg,place{:},['@(x) ' num2str(eccen)]);
-myPupilEllipse = @(eccen) pupilProjection_fwd([-sg.eye.landmarks.fovea.degField(1), -sg.eye.landmarks.fovea.degField(2), 0, stopRadius(1)],mySceneGeom(eccen),'nStopPerimPoints',16);
+myPupilEllipse = @(eccen) projectModelEye([-sg.eye.landmarks.fovea.degField(1), -sg.eye.landmarks.fovea.degField(2), 0, stopRadius(1)],mySceneGeom(eccen),'nStopPerimPoints',16);
 myEccen = @(ellipseParams) ellipseParams(4);
 myObj = @(eccen) 1e4*(myEccen(myPupilEllipse(eccen))-abs(entranceEccen(1))).^2;
 stopEccen(1) = -fminsearch(myObj, 0.1,opts);
 sg.eye.stop.thetas = [pi/2, pi/2];
 mySceneGeom = @(eccen) setfield(sg,place{:},['@(x) ' num2str(eccen)]);
-myPupilEllipse = @(eccen) pupilProjection_fwd([-sg.eye.landmarks.fovea.degField(1), -sg.eye.landmarks.fovea.degField(2), 0, stopRadius(2)],mySceneGeom(eccen),'nStopPerimPoints',16);
+myPupilEllipse = @(eccen) projectModelEye([-sg.eye.landmarks.fovea.degField(1), -sg.eye.landmarks.fovea.degField(2), 0, stopRadius(2)],mySceneGeom(eccen),'nStopPerimPoints',16);
 myEccen = @(ellipseParams) ellipseParams(4);
 myObj = @(eccen) 1e4*(myEccen(myPupilEllipse(eccen))-abs(entranceEccen(2))).^2;
 stopEccen(2) = fminsearch(myObj, 0.2,opts);

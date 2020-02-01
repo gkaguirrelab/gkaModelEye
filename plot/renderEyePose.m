@@ -36,7 +36,7 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
 %  'nIrisPerimPoints'     - Scalar. The number of iris perimeter points
 %  'modelEyeLabelNames'   - Cell array of character vectors. Identifies the
 %                           elements of the 'pointLabels' variable returned
-%                           by pupilProjection_fwd that are to be plotted.
+%                           by projectModelEye that are to be plotted.
 %                           A special case is the label 'pupilEllipse',
 %                           which is not an element of pointLabels, but is
 %                           recognized by this routine and prompts the
@@ -128,8 +128,8 @@ p.addParameter('showPupilTextLabels',false,@islogical);
 p.addParameter('showAzimuthPlane',false,@islogical);
 p.addParameter('nStopPerimPoints',8,@isscalar);
 p.addParameter('nIrisPerimPoints',20,@isscalar);
-p.addParameter('modelEyeLabelNames', {'aziRotationCenter' 'eleRotationCenter', 'retina' 'irisPerimeter' 'stopCenter' 'pupilPerimeter' 'pupilEllipse' 'cornea' 'cornealApex'}, @iscell);
-p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '+r' '*g' '-g' '.y' '*y'}, @iscell);
+p.addParameter('modelEyeLabelNames', {'aziRotationCenter' 'eleRotationCenter', 'retina' 'irisPerimeter' 'stopCenter' 'pupilPerimeter' 'pupilEllipse' 'cornea' 'cornealApex' 'glint'}, @iscell);
+p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '+r' '*g' '-g' '.y' '*y' '*w'}, @iscell);
 p.addParameter('modelEyeAlpha',1,@isnumeric);
 p.addParameter('modelEyeSymbolSizeScaler',1,@isnumeric);
 p.addParameter('fImplicitPresent',[],@islogical);
@@ -200,7 +200,7 @@ ylim([0 imageSizeY]);
 
 % Obtain the pupilProjection of the model eye to the image plane
 [pupilEllipseParams, imagePoints, ~, ~, ~, pointLabels] = ...
-    pupilProjection_fwd(eyePose, sceneGeometry, ...
+    projectModelEye(eyePose, sceneGeometry, ...
     'fullEyeModelFlag', true, 'replaceReflectedPoints', true, ...
     'nStopPerimPoints',p.Results.nStopPerimPoints, ...
     'nIrisPerimPoints',p.Results.nIrisPerimPoints);
@@ -252,9 +252,9 @@ end % loop over label names
 % Add a line that shows the azimuthal plane of rotation. This reflects
 % camera torsion
 if p.Results.showAzimuthPlane
-    [~, imagePoints] = pupilProjection_fwd([-50 0 0 1], sceneGeometry);
+    [~, imagePoints] = projectModelEye([-50 0 0 1], sceneGeometry);
     A = nanmean(imagePoints);
-    [~, imagePoints] = pupilProjection_fwd([50 0 0 1], sceneGeometry);
+    [~, imagePoints] = projectModelEye([50 0 0 1], sceneGeometry);
     B = nanmean(imagePoints);
     plot([A(1) B(1)],[A(2) B(2)],'-r')
 end

@@ -19,10 +19,10 @@ function distance = distancePointRay(p,R)
 %                           point of closest approach
 %
 
-d = norm(cross(R(:,2),p - R(:,1))) ...
-    / norm(R(:,1));
+t = dot(R(:,2),(p-R(:,1)))/dot(R(:,2),R(:,2));
+d = p-(R(:,1)+t.*R(:,2));
       
 % Obtain the Euclidean distance in the 3 dimensions.
-distance = sqrt(sum(d.^2));
+distance = norm(d);
 
 end

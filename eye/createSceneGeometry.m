@@ -58,6 +58,12 @@ function sceneGeometry = createSceneGeometry(varargin)
 %           movement properties in the azimuthal and elevational
 %           directions, and has a non circular exit pupil.
 %
+%       'glintSourceRelative' - A 3x1 vector of the form [horizontal;
+%           vertical; depth] in units of mm. Specifies the relative
+%           location of an active light source of a camera relative to the
+%           translation camera position. This is the source of light for
+%           the modeled glint.
+%
 %  'screenPosition' - A structure that defines the spatial position of a
 %           screen that the eye is fixating upon. Sub-fields:
 %
@@ -169,11 +175,12 @@ p.addParameter('intrinsicCameraMatrix',[2600 0 320; 0 2600 240; 0 0 1],@isnumeri
 p.addParameter('sensorResolution',[640 480],@isnumeric);
 p.addParameter('radialDistortionVector',[0 0],@isnumeric);
 p.addParameter('cameraTranslation',[0; 0; 120],@isnumeric);
+p.addParameter('cameraGlintSourceRelative',[-14; 0; 0],@isnumeric);
 p.addParameter('cameraTorsion',0,@isnumeric);
 p.addParameter('screenDistance',1065,@isnumeric);
 p.addParameter('screenDimensions',[697.347,392.257],@isnumeric);
 p.addParameter('screenResolutions',[1920,1080],@isnumeric);
-p.addParameter('surfaceSetName',{'retinaToStop','stopToCamera','retinaToCamera','cameraToRetina'},@ischar);
+p.addParameter('surfaceSetName',{'retinaToStop','stopToCamera','retinaToCamera','cameraToRetina','glint'},@ischar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('cameraMedium','air',@ischar);
@@ -192,7 +199,7 @@ sceneGeometry.cameraIntrinsic.sensorResolution = p.Results.sensorResolution;
 %% cameraPosition
 sceneGeometry.cameraPosition.translation = p.Results.cameraTranslation;
 sceneGeometry.cameraPosition.torsion = p.Results.cameraTorsion;
-
+sceneGeometry.cameraPosition.glintSourceRelative = p.Results.cameraGlintSourceRelative;
 
 %% screenPosition
 sceneGeometry.screenPosition.distance = p.Results.screenDistance;

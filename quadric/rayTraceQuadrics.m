@@ -162,7 +162,11 @@ for ii=2:nSurfaces
     side = opticalSystem(ii,11);
     boundingBox = opticalSystem(ii,12:17);
     mustIntersectFlag = opticalSystem(ii,18);
-    nRel = opticalSystem(ii-1,19)/opticalSystem(ii,19);
+    
+    % The relative index of refractrion is subject to an absolute value
+    % operation to handle the use of negative refractive indices as the
+    % manner in which a reflective surface is indicated
+    nRel = abs(opticalSystem(ii-1,19)/opticalSystem(ii,19));
 
     % Compute the intersection
     X = quadric.intersectRay(S,R,side,boundingBox);
@@ -176,9 +180,13 @@ for ii=2:nSurfaces
     % skip checking if the X coordinate is on the surface of the quadric
     N = quadric.surfaceNormal(S,X,side,[]);
 
-    % Get the refracted ray
-    R = quadric.refractRay(R,N,nRel);
-
+    % Get the refracted or reflected ray
+    if sign(opticalSystem(ii,19))==1
+        R = quadric.refractRay(R,N,nRel);
+    else
+        R = quadric.reflectRay(R,N);
+    end
+    
     % Store the ray path
     rayPath(:,ii) = X;
 end
