@@ -1,4 +1,4 @@
-A model of the entrance pupil and retinal landmarks
+#A model of the entrance pupil and retinal landmarks
 
 <p float="left">
   <img src="img/renderEyePose.png" height="150" />
