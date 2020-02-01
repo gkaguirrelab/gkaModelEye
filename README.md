@@ -14,7 +14,7 @@ These routines implement a ray-traced model eye in MATLAB. The software is desig
 - mapping of the visual field to retinal locations
 - optical properties of the eye (power, optical center, axes, etc)
 - effect of biometric variation upon these measurements
-- effect of artificial lenses (contacts, spectacles) upon these measurement
+- effect of artificial lenses (contacts, spectacles) upon these measurements
 
 The model is described in:
 
