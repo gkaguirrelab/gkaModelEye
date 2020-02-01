@@ -21,6 +21,12 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera, 
 %   passed optical system, unless the "forceEyeToCamera" argument is set to
 %   true.
 %
+%   Note that for optical systems with spherical aberration, the calculated
+%   optical power will vary depending upon the path of the ray. The
+%   rayOffset parameter controls the height at which the ray strikes the
+%   first surface.
+%
+%
 % Inputs:
 %   opticalSystem         - An mx19 matrix, where m is set by the key value
 %                           opticalSystemNumRows. Each row contains the
