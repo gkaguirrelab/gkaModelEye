@@ -199,7 +199,6 @@ p.addRequired('sceneGeometry',@isstruct);
 
 % Optional
 p.addParameter('fullEyeModelFlag',false,@islogical);
-p.addParameter('calcGlint',false,@islogical);
 p.addParameter('nStopPerimPoints',6,@(x)(isscalar(x) && x>4));
 p.addParameter('stopPerimPhase',0,@isscalar);
 p.addParameter('replaceReflectedPoints',false,@islogical);
@@ -563,26 +562,28 @@ end
 % coordinate frame. The glint is the reflection of a light source from the
 % tear film of the eye. The location of the glint in the image is subject
 % to refraction by artificial lenses.
-if p.Results.fullEyeModelFlag && isfield(sceneGeometry.refraction,'glint')
-    
-    % The position of the light source in the world coordinate frame that
-    % is the source of the glint
-    glintSourceWorld = sceneGeometry.cameraPosition.translation + ...
-        sceneGeometry.cameraPosition.glintSourceRelative;
-    
-    % Assemble the args
-    args = {sceneGeometry.cameraPosition.translation, ...
-        sceneGeometry.eye.rotationCenters, ...
-        sceneGeometry.refraction.glint.opticalSystem};
-    
-    % Perform the computation using the passed function handle.
-    [virtualImageRay, ~, intersectError] = ...
-        glintRayFunc(glintSourceWorld, eyePose, args{:});
-    
-    % If we have a good trace, add the glint point and label
-    if intersectError < rayTraceErrorThreshold
-        eyePoints = [eyePoints; virtualImageRay(1,:)];
-        pointLabels = [pointLabels; {'glint'}];
+if p.Results.fullEyeModelFlag && isfield(sceneGeometry,'refraction')
+    if isfield(sceneGeometry.refraction,'glint')
+        
+        % The position of the light source in the world coordinate frame that
+        % is the source of the glint
+        glintSourceWorld = sceneGeometry.cameraPosition.translation + ...
+            sceneGeometry.cameraPosition.glintSourceRelative;
+        
+        % Assemble the args
+        args = {sceneGeometry.cameraPosition.translation, ...
+            sceneGeometry.eye.rotationCenters, ...
+            sceneGeometry.refraction.glint.opticalSystem};
+        
+        % Perform the computation using the passed function handle.
+        [virtualImageRay, ~, intersectError] = ...
+            glintRayFunc(glintSourceWorld, eyePose, args{:});
+        
+        % If we have a good trace, add the glint point and label
+        if intersectError < rayTraceErrorThreshold
+            eyePoints = [eyePoints; virtualImageRay(1,:)];
+            pointLabels = [pointLabels; {'glint'}];
+        end
     end
 end
 

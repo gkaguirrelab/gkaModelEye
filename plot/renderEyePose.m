@@ -198,17 +198,9 @@ axis equal
 xlim([0 imageSizeX]);
 ylim([0 imageSizeY]);
 
-% Determine if we are showing a glint
-if any(strcmp(p.Results.modelEyeLabelNames,'glint'))
-    calcGlint = true;
-else
-    calcGlint = false;
-end
-
 % Obtain the pupilProjection of the model eye to the image plane
 [pupilEllipseParams, imagePoints, ~, ~, ~, pointLabels] = ...
     projectModelEye(eyePose, sceneGeometry, ...
-    'calcGlint', calcGlint, ...
     'fullEyeModelFlag', true, 'replaceReflectedPoints', true, ...
     'nStopPerimPoints',p.Results.nStopPerimPoints, ...
     'nIrisPerimPoints',p.Results.nIrisPerimPoints);
