@@ -58,7 +58,7 @@ function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyePoint
     	sceneGeometry.refraction.stopToCamera.opticalSystem};
     outputRay = findPupilRay( sceneGeometry.eye.stop.center, [-5 10 0 2], args{:} );
     % Test output against cached value
-    outputRayCached = [ -0.028495571780279   0.316608707224537  -0.630653051462113; 0.978179527188788   0.093602909096939  -0.185481287458627];
+    outputRayCached = [ -0.028495523194738   0.316607564709486  -0.630653039096695; 0.978179559570976   0.093602572649092  -0.185481286471179];
     assert(max(max(abs(outputRay - outputRayCached))) < 1e-6)
 %}
 %{
