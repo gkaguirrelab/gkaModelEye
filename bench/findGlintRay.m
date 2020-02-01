@@ -88,23 +88,40 @@ options = optimset('TolFun',TolFun,'TolX',TolX,'Display','off');
 
 % Set the inital guess for the angles by finding (w.r.t. the optical axis)
 % the angle of the ray that connects the worldPoint to the corneal apex
-% (after re-arranging the dimensions of the worldPoint variable).
+% (which is at [0 0 0]), after re-arranging the dimensions of the
+% worldPoint variable.
 eyePoint = relativeCameraPosition(eyePose, worldPoint, rotationCenters);
-[angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; [0 -1 0]-eyePoint]'));
+[angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; -eyePoint]'));
 
 % If the absolute value of an initial search angle is greater than 90, we
 % flip the direction in the search so that we don't get stuck at the
 % -180/180 wrap around point.
 p1p2Adjust = round(angle_p1p2/180)*180;
 p1p3Adjust = round(angle_p1p3/180)*180;
-angle_p1p2 = angle_p1p2-p1p2Adjust;
-angle_p1p3 = angle_p1p3-p1p3Adjust;
+angle_p1p2 = wrapTo180(angle_p1p2-p1p2Adjust);
+angle_p1p3 = wrapTo180(angle_p1p3-p1p3Adjust);
+
+% Find the angular extent of the bounding box for the first surface to set
+% the upper and lower bounds on the search angles
+bb = opticalSystem(2,12:17);
+[~,p1Idx]=min(eyePoint(1)-bb(1:2));
+boundAngles_p1p2 = nan(2,2);
+boundAngles_p1p3 = nan(2,2);
+for xx=1:2
+    for yy=1:2
+        cornerPoint = [bb(p1Idx),bb(2+xx),bb(4+yy)];
+        [p1p2B,p1p3B] = ...
+            quadric.rayToAngles(quadric.normalizeRay([eyePoint; cornerPoint-eyePoint]'));
+        boundAngles_p1p2(xx,yy) = wrapTo180(p1p2B-p1p2Adjust);
+        boundAngles_p1p3(xx,yy) = wrapTo180(p1p3B-p1p3Adjust);
+    end
+end
 
 % Set bounds on the search
-ub_p1p2 = 90;
-ub_p1p3 = 90;
-lb_p1p2 = -90;
-lb_p1p3 = -90;
+ub_p1p2 = max(max(boundAngles_p1p2));
+ub_p1p3 = max(max(boundAngles_p1p3));
+lb_p1p2 = min(min(boundAngles_p1p2));
+lb_p1p3 = min(min(boundAngles_p1p3));
 
 % Create an anonymous function for ray tracing
 intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyePoint, wrapTo180(p1p2+p1p2Adjust), wrapTo180(p1p3+p1p3Adjust), eyePose, worldTarget, rotationCenters, opticalSystem);
@@ -178,8 +195,8 @@ end % Test x0 guess
 
 
 % Remove any angle adjustment
-angle_p1p2 = angle_p1p2+p1p2Adjust;
-angle_p1p3 = angle_p1p3+p1p3Adjust;
+angle_p1p2 = wrapTo180(angle_p1p2+p1p2Adjust);
+angle_p1p3 = wrapTo180(angle_p1p3+p1p3Adjust);
 
 
 %% Obtain the initial and output rays
