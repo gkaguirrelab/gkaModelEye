@@ -41,8 +41,13 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 % Optional key/value pairs:
 %  'fullEyeModelFlag'     - Logical. Determines if the full eye model will
 %                           be created.
+%  'calcGlint'            - Logical Calculates the location of a glint in
+%                           the image. The glint is the reflection of a
+%                           light source from the tear film of the eye. The
+%                           location of the glint in the image is subject
+%                           to refraction by artificial lenses.
 %  'nStopPerimPoints'     - Scalar. The number of points that are
-%                           distributed around the stop elliopse. A minimum
+%                           distributed around the stop ellipse. A minimum
 %                           of 5 is required to uniquely specify the image
 %                           ellipse, and 6 to obtain a meaningful
 %                           pupilFitError.
@@ -72,7 +77,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 %  'retinaMeshDensity'    - Scalar. The number of geodetic lines used to
 %                           render the retina ellipsoid. About 24 makes a
 %                           nice image.
-%  'pupilRayFunc','glintRayFunc' - Function handle. By default, these are 
+%  'pupilRayFunc','glintRayFunc' - Function handles. By default, these are 
 %                           set to 'findPupilRayMex' and 'findGlintRayMex'.
 %                           This option is provided so that the routine can
 %                           be tested with the native MATLAB code.
@@ -207,7 +212,7 @@ p.addParameter('nIrisPerimPoints',5,@isscalar);
 p.addParameter('corneaMeshDensity',23,@isscalar);
 p.addParameter('retinaMeshDensity',30,@isscalar);
 p.addParameter('pupilRayFunc',@findPupilRayMex,@(x)(isa(x,'function_handle')));
-p.addParameter('glintRayFunc',@findGlintRay,@(x)(isa(x,'function_handle')));
+p.addParameter('glintRayFunc',@findGlintRayMex,@(x)(isa(x,'function_handle')));
 
 % parse
 p.parse(eyePose, sceneGeometry, varargin{:})
