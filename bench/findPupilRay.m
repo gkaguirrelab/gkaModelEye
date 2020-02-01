@@ -73,7 +73,7 @@ function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyePoint
     clear targetIntersectError
     targetIntersectError = nan(nStopPerimPoints,nPoses);
     for pp = 1:nPoses
-    	[~,~,~,~,~,pointLabels,errors]=pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,'nStopPerimPoints',nStopPerimPoints,'rayTraceErrorThreshold',rayTraceErrorThreshold);
+    	[~,~,~,~,~,pointLabels,errors]=projectModelEye(eyePoses(pp,:),sceneGeometry,'nStopPerimPoints',nStopPerimPoints,'rayTraceErrorThreshold',rayTraceErrorThreshold);
         idx = strcmp(pointLabels,'pupilPerimeter');
         targetIntersectError(1:sum(idx),pp) = errors(idx);
     end

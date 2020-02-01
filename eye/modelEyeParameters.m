@@ -9,7 +9,7 @@ function eye = modelEyeParameters( varargin )
 %   sceneGeometry routines.
 %
 %   The parameters returned by this routine correspond to the eyeWorld
-%   coordinate space used in pupilProjection_fwd, which is relative to the
+%   coordinate space used in projectModelEye, which is relative to the
 %   optical axis, with the apex of the cornea set as zero in depth. The
 %   space has the dimensions [depth, horizontal, vertical]; negative values
 %   of depth are towards the back of the eye.

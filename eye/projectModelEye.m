@@ -1,8 +1,8 @@
-function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry, varargin)
+function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = projectModelEye(eyePose, sceneGeometry, varargin)
 % Obtain the parameters of the entrance pupil ellipse on the image plane
 %
 % Syntax:
-%  [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = pupilProjection_fwd(eyePose, sceneGeometry)
+%  [pupilEllipseOnImagePlane, imagePoints, worldPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = projectModelEye(eyePose, sceneGeometry)
 %
 % Description:
 %   Given the sceneGeometry, this routine simulates the aperture stop in a
@@ -13,6 +13,8 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 %   accurate eye, with points positioned behind the cornea subject to
 %   refractive displacement. The projection incorporates the intrinsic
 %   properties of the camera, including any radial lens distortion.
+%
+%   The 'fullEyeModelFlag' will render the entire eye, not just the pupil.
 %
 % Notes:
 %   Rotations - Eye rotation is given as azimuth, elevation, and torsion in
@@ -41,11 +43,6 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 % Optional key/value pairs:
 %  'fullEyeModelFlag'     - Logical. Determines if the full eye model will
 %                           be created.
-%  'calcGlint'            - Logical Calculates the location of a glint in
-%                           the image. The glint is the reflection of a
-%                           light source from the tear film of the eye. The
-%                           location of the glint in the image is subject
-%                           to refraction by artificial lenses.
 %  'nStopPerimPoints'     - Scalar. The number of points that are
 %                           distributed around the stop ellipse. A minimum
 %                           of 5 is required to uniquely specify the image
@@ -127,7 +124,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     eyePose = [-10 5 0 3];
     % Obtain the pupil ellipse parameters in transparent format for the
     % default sceneGeometry
-    pupilEllipseOnImagePlane = pupilProjection_fwd(eyePose,sceneGeometry);
+    pupilEllipseOnImagePlane = projectModelEye(eyePose,sceneGeometry);
     % Test against cached result
     pupilEllipseOnImagePlaneCached = [ 0.027832036523202   0.022396190713864   1.552632974343349   0.000023070663658   0.000192063110130 ].*1e4;
     assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-4)
@@ -139,7 +136,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     pupilFitError = [];
     for aa = 1:length(aziVals)
         eyePose = [aziVals(aa) -3 0 3];
-        [pupilEllipseOnImagePlane, ~, ~, ~, ~, ~, ~, pupilFitError(aa)] = pupilProjection_fwd(eyePose, sceneGeometry,'nStopPerimPoints',16);
+        [pupilEllipseOnImagePlane, ~, ~, ~, ~, ~, ~, pupilFitError(aa)] = projectModelEye(eyePose, sceneGeometry,'nStopPerimPoints',16);
     end
     figure
     plot(aziVals,pupilFitError,'.r');
@@ -149,7 +146,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     sceneGeometry=createSceneGeometry();
     eyePose = [-65 0 0 3];
     [pupilEllipseOnImagePlane, imagePoints, ~, ~, ~, pointLabels] = ...
-        pupilProjection_fwd(eyePose, sceneGeometry,'nStopPerimPoints',16, ...
+        projectModelEye(eyePose, sceneGeometry,'nStopPerimPoints',16, ...
         'replaceReflectedPoints',true, ...
         'nIrisPerimPoints',16,'fullEyeModelFlag', true);
     figure
@@ -160,7 +157,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     idx = strcmp(pointLabels,'irisPerimeter');
     plot(imagePoints(idx,1),imagePoints(idx,2),'.b');
     [pupilEllipseOnImagePlane, imagePoints, ~, ~, ~, pointLabels] = ...
-        pupilProjection_fwd(eyePose, sceneGeometry,'nStopPerimPoints',16, ...
+        projectModelEye(eyePose, sceneGeometry,'nStopPerimPoints',16, ...
         'replaceReflectedPoints',false, ...
         'nIrisPerimPoints',16,'fullEyeModelFlag', true);
     idx = strcmp(pointLabels,'pupilPerimeter');
@@ -180,13 +177,13 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     fprintf('\nTime to compute forward projection model (average over %d projections):\n',nPoses);
     tic
     for pp = 1:nPoses
-    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry);
+    	projectModelEye(eyePoses(pp,:),sceneGeometry);
     end
     msecPerModel = toc / nPoses * 1000;
     fprintf('\tUsing compiled ray tracing: %4.2f msecs.\n',msecPerModel);
     tic
     for pp = 1:nPoses
-    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,'pupilRayFunc',@findPupilRay);
+    	projectModelEye(eyePoses(pp,:),sceneGeometry,'pupilRayFunc',@findPupilRay);
     end
     msecPerModel = toc / nPoses * 1000;
     fprintf('\tUsing MATLAB ray tracing: %4.2f msecs.\n',msecPerModel);
@@ -390,7 +387,7 @@ if p.Results.fullEyeModelFlag
         (retinaPoints(:,1) < sceneGeometry.eye.iris.center(1)) .* ...
         sqrt(retinaPoints(:,2).^2+retinaPoints(:,3).^2) > sceneGeometry.eye.iris.radius );
     if all(~retainIdx)
-        error('pupilProjection_fwd:irisCenterPosition','The iris center is behind the center of the retina');
+        error('projectModelEye:irisCenterPosition','The iris center is behind the center of the retina');
     end
     retinaPoints = retinaPoints(retainIdx,:);
     
@@ -563,8 +560,10 @@ end
 
 %% Calc glint
 % If instructed to do so, find the location of the glint in the eye world
-% coordinate frame
-if p.Results.calcGlint && isfield(sceneGeometry.refraction,'glint')
+% coordinate frame. The glint is the reflection of a light source from the
+% tear film of the eye. The location of the glint in the image is subject
+% to refraction by artificial lenses.
+if fullEyeModelFlag && isfield(sceneGeometry.refraction,'glint')
     
     % The position of the light source in the world coordinate frame that
     % is the source of the glint
@@ -812,4 +811,4 @@ else
 end
 
 
-end % pupilProjection_fwd
+end % projectModelEye

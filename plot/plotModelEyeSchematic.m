@@ -126,7 +126,7 @@ plot(eye.iris.center(PdimA),eye.iris.center(PdimB)-eye.iris.radius,['x' p.Result
 
 %% Plot the cornealApex
 sg.eye = eye;
-[~, ~, ~, ~, eyeWorldPoints, pointLabels] = pupilProjection_fwd([0 0 0 1], sg, 'fullEyeModelFlag',true);
+[~, ~, ~, ~, eyeWorldPoints, pointLabels] = projectModelEye([0 0 0 1], sg, 'fullEyeModelFlag',true);
 idx = find(strcmp(pointLabels,'cornealApex'));
 plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColor]);
 

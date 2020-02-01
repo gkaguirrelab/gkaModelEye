@@ -40,7 +40,7 @@ for dd = 1:length(lensRefractionDiopters)
     
     for pose = 1:size(eyePoses,1)
         % Perform the projection and request the full eye model
-        [pupilEllipseOnImagePlane, imagePoints, ~, ~, ~, pointLabels] = pupilProjection_fwd(eyePoses(pose,:),sceneGeometry);
+        [pupilEllipseOnImagePlane, imagePoints, ~, ~, ~, pointLabels] = projectModelEye(eyePoses(pose,:),sceneGeometry);
         % plot the pupil ellipse
         subplot(1,3,pose);
         if dd==1

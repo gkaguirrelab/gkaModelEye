@@ -62,7 +62,7 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %{
     sceneGeometry=createSceneGeometry();
     eyePose = [-15 10 0 2.5];
-    targetEllipse = pupilProjection_fwd(eyePose,sceneGeometry);
+    targetEllipse = projectModelEye(eyePose,sceneGeometry);
     [ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 5, 0 );
     [recoveredEyePose,RMSE,recoveredEllipse,fitAtBound,nSearches] = eyePoseEllipseFit(Xp, Yp, sceneGeometry);
     % Test that the recovered eye pose has no more than 0.01% error
@@ -164,7 +164,7 @@ if isempty(p.Results.x0)
     
     % Construct an x0 guess by probing the forward model. First identify
     % the center of projection
-    rotationCenterEllipse = pupilProjection_fwd([0 0 0 2], sceneGeometry);
+    rotationCenterEllipse = projectModelEye([0 0 0 2], sceneGeometry);
     CoP = [rotationCenterEllipse(1),rotationCenterEllipse(2)];
     
     % Now the number of pixels that the pupil center is displaced from the
@@ -175,7 +175,7 @@ if isempty(p.Results.x0)
     
     % Probe the forward model to determine how many pixels of change in the
     % location of the pupil ellipse correspond to one degree of rotation.
-    probeEllipse = pupilProjection_fwd([displaceScaled 0 2],sceneGeometry);
+    probeEllipse = projectModelEye([displaceScaled 0 2],sceneGeometry);
     pixelsPerDeg = abs(probeEllipse(1:2)-CoP)./abs(displaceScaled);
     
     % Estimate the eye azimuth and elevation by the X and Y displacement of
@@ -194,7 +194,7 @@ if isempty(p.Results.x0)
     
     % Probe the forward model at the estimated pose angles to estimate the
     % pupil radius.
-    probeEllipse=pupilProjection_fwd([x0(1) x0(2) x0(3) 2], sceneGeometry);
+    probeEllipse=projectModelEye([x0(1) x0(2) x0(3) 2], sceneGeometry);
     pixelsPerMM = sqrt(probeEllipse(3)/pi)/2;
     
     % Set the initial value for pupil radius in mm
@@ -227,7 +227,7 @@ options.MaxFunEvals = 50; % I think this value is a good speed-accuracy trade of
 
 % Turn off warnings that can arise during the search
 warningState = warning;
-warning('off','pupilProjection_fwd:ellipseFitFailed');
+warning('off','projectModelEye:ellipseFitFailed');
 warning('off','MATLAB:nearlySingularMatrix');
 warning('off','MATLAB:singularMatrix');
 
@@ -275,7 +275,7 @@ while searchingFlag
 end % while
     function fVal = objfun(x)
         % Obtain the entrance pupil ellipse for this eyePose
-        fittedEllipse = pupilProjection_fwd(x, sceneGeometry);
+        fittedEllipse = projectModelEye(x, sceneGeometry);
         % Check for the case in which the transparentEllipse contains nan
         % values, which can arise if there were an insufficient number of
         % pupil border points remaining after refraction to define an

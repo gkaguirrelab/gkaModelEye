@@ -73,12 +73,12 @@ end
     sceneGeometry.refraction = [];
     % Get the area in pixels of a "pupil" that is the same radius
     % as the HVID when there is no ray tracing
-    hvidP=pupilProjection_fwd([0 0 0 hvidRadiusMean],sceneGeometry);
+    hvidP=projectModelEye([0 0 0 hvidRadiusMean],sceneGeometry);
     % Restore ray tracing
     sceneGeometry = createSceneGeometry();
     % Set up the objective function
     myArea = @(p) p(3);
-    myObj = @(r) (hvidP(3) - myArea(pupilProjection_fwd([0 0 0 r],sceneGeometry)))^2;
+    myObj = @(r) (hvidP(3) - myArea(projectModelEye([0 0 0 r],sceneGeometry)))^2;
     [r,pixelError] = fminsearch(myObj,5.5);
     fprintf('An unrefracted iris radius of %4.2f yields a refracted HVID of %4.2f \n',r,hvidRadiusMean)
 %}
