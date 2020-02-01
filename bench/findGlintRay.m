@@ -52,14 +52,12 @@ function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldPoi
 %{
     % Glint location in a rotated eye
     sceneGeometry = createSceneGeometry();
-    eyePose = [0, 0, 0, 2];
+    eyePose = [-5, 3, 0, 2];
     cameraNodalPoint = sceneGeometry.cameraPosition.translation;
     irSourceLocation = cameraNodalPoint - [14; 0; 0];
     rotationCenters = sceneGeometry.eye.rotationCenters;
     opticalSystem = sceneGeometry.refraction.glint.opticalSystem;
     [outputRay, initialRay, targetIntersectError ] = findGlintRay( irSourceLocation, eyePose, cameraNodalPoint, rotationCenters, opticalSystem )
-%}
-%{
 %}
 
 
@@ -203,6 +201,21 @@ end % findPupilRay -- MAIN
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% LOCAL FUNCTIONS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%% Angle wrap functions
+% Shadowing the Mathworks code to allow code generation
+function lon = wrapTo180(lon)
+q = (lon < -180) | (180 < lon);
+lon(q) = wrapTo360(lon(q) + 180) - 180;
+end
+
+function lon = wrapTo360(lon)
+positiveInput = (lon > 0);
+lon = mod(lon, 360);
+lon((lon == 0) & positiveInput) = 360;
+end
 
 
 %% calcTargetIntersectError
