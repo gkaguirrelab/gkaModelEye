@@ -563,7 +563,7 @@ end
 % coordinate frame. The glint is the reflection of a light source from the
 % tear film of the eye. The location of the glint in the image is subject
 % to refraction by artificial lenses.
-if fullEyeModelFlag && isfield(sceneGeometry.refraction,'glint')
+if p.Results.fullEyeModelFlag && isfield(sceneGeometry.refraction,'glint')
     
     % The position of the light source in the world coordinate frame that
     % is the source of the glint
