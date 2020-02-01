@@ -72,11 +72,10 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 %  'retinaMeshDensity'    - Scalar. The number of geodetic lines used to
 %                           render the retina ellipsoid. About 24 makes a
 %                           nice image.
-%  'refractionHandle'     - Function handle. By default, this is set to the
-%                           'findPupilRayMex'. This option is provided
-%                           so that the pupilProjection can be conducted
-%                           with the native MATLAB code for testing
-%                           purposes.
+%  'pupilRayFunc','glintRayFunc' - Function handle. By default, these are 
+%                           set to 'findPupilRayMex' and 'findGlintRayMex'.
+%                           This option is provided so that the routine can
+%                           be tested with the native MATLAB code.
 %
 % Outputs:
 %   pupilEllipseOnImagePlane - A 1x5 vector with the parameters of the
@@ -182,7 +181,7 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
     fprintf('\tUsing compiled ray tracing: %4.2f msecs.\n',msecPerModel);
     tic
     for pp = 1:nPoses
-    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,'refractionHandle',@findPupilRay);
+    	pupilProjection_fwd(eyePoses(pp,:),sceneGeometry,'pupilRayFunc',@findPupilRay);
     end
     msecPerModel = toc / nPoses * 1000;
     fprintf('\tUsing MATLAB ray tracing: %4.2f msecs.\n',msecPerModel);
@@ -198,6 +197,7 @@ p.addRequired('sceneGeometry',@isstruct);
 
 % Optional
 p.addParameter('fullEyeModelFlag',false,@islogical);
+p.addParameter('calcGlint',false,@islogical);
 p.addParameter('nStopPerimPoints',6,@(x)(isscalar(x) && x>4));
 p.addParameter('stopPerimPhase',0,@isscalar);
 p.addParameter('replaceReflectedPoints',false,@islogical);
@@ -206,7 +206,8 @@ p.addParameter('rayTraceErrorThreshold',0.01,@isscalar);
 p.addParameter('nIrisPerimPoints',5,@isscalar);
 p.addParameter('corneaMeshDensity',23,@isscalar);
 p.addParameter('retinaMeshDensity',30,@isscalar);
-p.addParameter('refractionHandle',@findPupilRayMex,@(x)(isa(x,'function_handle')));
+p.addParameter('pupilRayFunc',@findPupilRayMex,@(x)(isa(x,'function_handle')));
+p.addParameter('glintRayFunc',@findGlintRay,@(x)(isa(x,'function_handle')));
 
 % parse
 p.parse(eyePose, sceneGeometry, varargin{:})
@@ -215,7 +216,8 @@ p.parse(eyePose, sceneGeometry, varargin{:})
 %% Extract fields from Results struct
 % Accessing struct elements is relatively slow. Do this hear so it is not
 % done in a loop.
-refractionHandle = p.Results.refractionHandle;
+pupilRayFunc = p.Results.pupilRayFunc;
+glintRayFunc = p.Results.glintRayFunc;
 replaceReflectedPoints = p.Results.replaceReflectedPoints;
 rayTraceErrorThreshold = p.Results.rayTraceErrorThreshold;
 borderSearchPrecision = p.Results.borderSearchPrecision;
@@ -439,7 +441,7 @@ if refractFlag
         
         % Perform the computation using the passed function handle.
         [virtualImageRay, ~, intersectError] = ...
-            refractionHandle(eyePoint, eyePose, args{:});
+            pupilRayFunc(eyePoint, eyePose, args{:});
         virtualPoint = virtualImageRay(1,:);
         
         % Optionally check if the point has encountered total internal
@@ -478,7 +480,7 @@ if refractFlag
                     shiftedEyePoint = eyePoint - (eyePoint - centerTarget).*(1 - searchScalar);
                     % Subject the shifted point to refraction
                     [virtualImageRay, ~, intersectError] = ...
-                        refractionHandle(shiftedEyePoint, eyePose, args{:});
+                        pupilRayFunc(shiftedEyePoint, eyePose, args{:});
                     virtualPoint = virtualImageRay(1,:);
                     % Update the search scalar
                     searchScalar = searchScalar - borderSearchPrecision;
@@ -551,6 +553,33 @@ else
         pointLabels = [pointLabels; {newPointLabel}];
     end
     
+end
+
+
+%% Calc glint
+% If instructed to do so, find the location of the glint in the eye world
+% coordinate frame
+if p.Results.calcGlint && isfield(sceneGeometry.refraction,'glint')
+    
+    % The position of the light source in the world coordinate frame that
+    % is the source of the glint
+    glintSourceWorld = sceneGeometry.cameraPosition.translation + ...
+        sceneGeometry.cameraPosition.glintSourceRelative;
+    
+    % Assemble the args
+    args = {sceneGeometry.cameraPosition.translation, ...
+        sceneGeometry.eye.rotationCenters, ...
+        sceneGeometry.refraction.glint.opticalSystem};
+    
+    % Perform the computation using the passed function handle.
+    [virtualImageRay, ~, intersectError] = ...
+        glintRayFunc(glintSourceWorld, eyePose, args{:});
+    
+    % If we have a good trace, add the glint point and label
+    if intersectError < rayTraceErrorThreshold
+        eyePoints = [eyePoints; virtualImageRay(1,:)];
+        pointLabels = [pointLabels; {'glint'}];
+    end
 end
 
 
