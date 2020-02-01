@@ -89,6 +89,10 @@ if ~p.Results.replaceExistingFunc
         warning('compileInverseRayTrace:functionExists','findPupilRayMex already exists; set replaceExistingFunc to true to over-write.')
         return
     end
+    if exist('findGlintRayMex')==3
+        warning('compileInverseRayTrace:functionExists','findGlintRayMex already exists; set replaceExistingFunc to true to over-write.')
+        return
+    end
 end
 
 
@@ -105,8 +109,11 @@ end
 if strcmp(pwd(),fileparts(which('findPupilRayMex')))
     error('compileInverseRayTrace:dirConflict','The current folder itself contains a compiled findPupilRay. Change directories to avoid function shadowing.')
 end
+if strcmp(pwd(),fileparts(which('findGlintRayMex')))
+    error('compileInverseRayTrace:dirConflict','The current folder itself contains a compiled findGlintRay. Change directories to avoid function shadowing.')
+end
 
-% Remove any existing versions of the findPupilRayMex from the path.
+% Remove any existing versions of the compiled code from the path.
 notDoneFlag = true;
 removalsCounter = 0;
 tooManyRemovals = 4;
@@ -115,14 +122,15 @@ while notDoneFlag
     if isempty(funcPath)
         notDoneFlag = false;
     else
-        warning('compileInverseRayTrace:previousFunc','Removing a previous findPupilRayMex from the path');
+        warning('compileInverseRayTrace:previousFunc','Removing previous findPupilRayMex and findGlintRayMex from the path');
         rmpath(fileparts(funcPath));
         removalsCounter = removalsCounter+1;
     end
     if removalsCounter == tooManyRemovals
-        error('compileInverseRayTrace:tooManyRemovals','Potentially stuck in a loop trying to remove previous findPupilRayMex functions from the path.')
+        error('compileInverseRayTrace:tooManyRemovals','Potentially stuck in a loop trying to remove previous compiled functions from the path.')
     end
 end
+
 
 
 %% Define argument variables
@@ -131,20 +139,23 @@ end
 % Create a sceneGeometry.
 sceneGeometry = createSceneGeometry();
 % Define the form of the dynamicArgs (the eyePoint and the eyePose)
-dynamicArgs = {[0,0,0], [0,0,0,0]};
+dynamicArgsPupil = {[0,0,0], [0,0,0,0]};
+dynamicArgsGlint = {[0;0;0], [0,0,0,0]};
 % Define the form of the staticArgs (which are sceneGeometry components)
 staticArgs = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
     	sceneGeometry.refraction.stopToCamera.opticalSystem};
 % Assemble the full args
-args = [dynamicArgs, staticArgs{:}];
+argsPupil = [dynamicArgsPupil, staticArgs{:}];
+argsGlint = [dynamicArgsGlint, staticArgs{:}];
 
 
 %% Compile and clean up
 % Change to the compile directory
 initialDir = cd(functionDirPath);
 % Compile the mex file
-codegen -o findPupilRayMex findPupilRay -args args
+codegen -o findPupilRayMex findPupilRay -args argsPupil
+codegen -o findGlintRayMex findGlintRay -args argsGlint
 % Clean up the compile dir. Turn off warnings regarding the removal of
 % these files
 warnState = warning();
