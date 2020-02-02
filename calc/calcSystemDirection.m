@@ -52,7 +52,7 @@ function systemDirection = calcSystemDirection(opticalSystem, rayStartDepth)
 
 % Handle nargin
 if nargin==1
-    rayStartDepth = [100, -100];
+    rayStartDepth = [1e5, -1e5];
 end
 
 % Strip the optical system of any rows which are all nans
