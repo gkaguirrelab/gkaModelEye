@@ -12,8 +12,8 @@
 %
 
 % Housekeeping
-clear all
 close all
+clear
 clc
 
 
@@ -30,15 +30,17 @@ lensCenters = [50, 150];
 % direction with an emmetropic right eye focused at 1.5 meters, with the
 % refractive indices for the visible spectrum.
 sceneGeometry = createSceneGeometry('spectralDomain','vis');
+
+% Grab the opticalSystem struct variable for retinaToCamera
 opticalSystemStruct = sceneGeometry.refraction.retinaToCamera;
 
-% Insert an iris stop into the system
+
+%% Insert an iris stop into the system
 irisApertureRadius = 2;
 opticalSystemStruct = addStopAfter(opticalSystemStruct,irisApertureRadius);
 
 
-
-%% Add the lenses to the optical system at desired locations
+%% Add lenses to the optical system at desired locations
 for ll = 1:length(lensCenters)
     opticalSystemStruct = addBiconvexLens( opticalSystemStruct, lensCenters(ll), diopters, radius);
 end
@@ -48,12 +50,11 @@ end
 % The optical system is assembled for ray tracing from left-to-right (away
 % from the eye), but we want to do ray tracing from right-to-left (towards
 % the eye)
-opticalSystem = opticalSystemStruct.opticalSystem;
-opticalSystem = reverseSystemDirection(opticalSystem);
+opticalSystemStruct = reverseSystemDirection(opticalSystemStruct);
 
 
 %% Display the optical system
-plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'viewAngle',[0 90]);
+plotOpticalSystem('surfaceSet',opticalSystemStruct,'addLighting',true,'viewAngle',[0 90]);
 
 
 %% Add some rays
@@ -74,7 +75,7 @@ for hh = 1:length(horizPos)
         inputRay = quadric.normalizeRay(quadric.anglesToRay([DLPpostion;horizPos(hh);0],-180+angles(aa),0));
         
         % Trace it
-        [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem);
+        [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystemStruct.opticalSystem);
         
         % Add it to the plot
         plotOpticalSystem('newFigure',false,'rayPath',rayPath,'rayColor',colors{hh,aa},'viewAngle',[0 90]);
