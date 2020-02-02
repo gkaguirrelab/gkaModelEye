@@ -12,42 +12,17 @@ function opticalSystemOut = reverseSystemDirection( opticalSystemIn )
 %   vice-a-vera.
 %
 % Inputs:
-%   opticalSystemIn       - An mx19 matrix, where m is set by the key value
-%                           opticalSystemNumRows. Each row contains the 
-%                           values:
-%                               [S side bb must n]
-%                           where:
-%                               S     - 1x10 quadric surface vector
-%                               side  - Scalar taking the value -1 or 1
-%                                       that defines which of the two
-%                                       points of intersection on the
-%                                       quadric should be used as the
-%                                       refractive surface.
-%                               bb    - 1x6 vector defining the bounding
-%                                       box within which the refractive
-%                                       surface is present.
-%                               must  - Scalar taking the value of 0 or 1,
-%                                       where 1 indicates that the ray must
-%                                       intersect the surface. If the ray
-%                                       misses a required surface, the
-%                                       routine exits with nans for the
-%                                       outputRay.
-%                               n     - Refractive index of the surface.
-%                           The first row corresponds to the initial
-%                           conditions of the ray. Thus, the refractive
-%                           index value given in the first row specifies
-%                           the index of the medium in which the ray
-%                           arises. The other values for the first row are
-%                           ignored. The matrix may have rows of all nans.
-%                           These are used to define a fixed sized input
-%                           variable for compiled code. They are removed
-%                           from the matrix and have no effect.%
+%   opticalSystemIn       - Struct or matrix. If struct, must have the
+%                           fields {opticalSystem, surfaceLabels,
+%                           surfaceColors}. The matrix form is mx19. See
+%                           "assembleOpticalSystem.m" for details. 
+%
 % Optional key/values pairs:
 %   none
 %
 % Outputs:
-%   opticalSystemOut        An mx19 matrix. This is the opticalSystemIn,
-%                           now reversed in direction.
+%   opticalSystemOut      - Struct or matrix. Will match the type of
+%                           opticalSystemIn
 %
 % Examples:
 %{
@@ -57,44 +32,56 @@ function opticalSystemOut = reverseSystemDirection( opticalSystemIn )
     calcSystemDirection(opticalSystemOut)
 %}
 
+
 %% input parser
 p = inputParser; p.KeepUnmatched = true;
 
 % Required inputs
-p.addRequired('opticalSystemIn',@isnumeric);
+p.addRequired('opticalSystemIn',@(x)(isstruct(x) | isnumeric(x)));
 
 % parse
 p.parse(opticalSystemIn)
 
+
+%% Prepeare the optical system
+% If we were supplied a struct, extract the system components
+if isstruct(opticalSystemIn)
+    opticalSystemMatrix = opticalSystemIn.opticalSystem;
+    surfaceLabels = opticalSystemIn.surfaceLabels;
+    surfaceColors = opticalSystemIn.surfaceColors;
+else
+    opticalSystemMatrix = opticalSystemIn;
+end
+
 % Strip the optical system of nan rows. We will add these back before
 % returning
-numRows = size(opticalSystemIn,1);
-opticalSystemIn = opticalSystemIn(sum(isnan(opticalSystemIn),2)~=size(opticalSystemIn,2),:);
+numRows = size(opticalSystemMatrix,1);
+opticalSystemMatrix = opticalSystemMatrix(sum(isnan(opticalSystemMatrix),2)~=size(opticalSystemMatrix,2),:);
 
 % Check that the optical system is valid
-systemDirection = calcSystemDirection(opticalSystemIn);
+systemDirection = calcSystemDirection(opticalSystemMatrix);
 if ~any(strcmp(systemDirection,{'eyeToCamera','cameraToEye'}))
     errorString = ['Not a valid opticalSystem: ' systemDirection];
     error('reverseSystemDirection:invalidSystemMatrix',errorString);
 end
 
 % Copy the input to output
-opticalSystemOut = opticalSystemIn;
+opticalSystemMatrixOut = opticalSystemMatrix;
 
 % Add a nan row to the end of the matrix
-opticalSystemOut = [opticalSystemOut; nan(1,19)];
+opticalSystemMatrixOut = [opticalSystemMatrixOut; nan(1,19)];
 
 % Shift the refractive index column down one position
-opticalSystemOut(2:end,19) = opticalSystemOut(1:end-1,19);
+opticalSystemMatrixOut(2:end,19) = opticalSystemMatrixOut(1:end-1,19);
 
 % Remove the initial "nan" row
-opticalSystemOut = opticalSystemOut(2:end,:);
+opticalSystemMatrixOut = opticalSystemMatrixOut(2:end,:);
 
 % Flip the sign of the "side" column
-opticalSystemOut(:,11) = opticalSystemOut(:,11) * (-1);
+opticalSystemMatrixOut(:,11) = opticalSystemMatrixOut(:,11) * (-1);
 
 % Reverse the matrix along the column direction
-opticalSystemOut = flipud(opticalSystemOut);
+opticalSystemMatrixOut = flipud(opticalSystemMatrixOut);
 
 
 %% Pad the optical system matrix
@@ -102,9 +89,20 @@ opticalSystemOut = flipud(opticalSystemOut);
 % so that the compiled ray-tracing routines can expect a constant size for
 % the input variables. The nan rows are stripped out at the time of ray
 % tracing.
-if numRows > size(opticalSystemOut,1)
-    opticalSystemOut = [opticalSystemOut; ...
-        nan(numRows-size(opticalSystemOut,1),19)];
+if numRows > size(opticalSystemMatrixOut,1)
+    opticalSystemMatrixOut = [opticalSystemMatrixOut; ...
+        nan(numRows-size(opticalSystemMatrixOut,1),19)];
 end
 
+
+%% Handle the opticalSystem structure on output
+if isstruct(opticalSystemIn)
+    opticalSystemOut.opticalSystem = opticalSystemMatrixOut;
+    opticalSystemOut.surfaceColors = flipud([surfaceColors(2:end); {[nan nan nan]}]);
+    opticalSystemOut.surfaceLabels = flipud([surfaceLabels(2:end); {'start'}]);
+else
+    opticalSystemOut = opticalSystemMatrixOut;
+end
+        
+        
 end % assembleOpticalSystem
