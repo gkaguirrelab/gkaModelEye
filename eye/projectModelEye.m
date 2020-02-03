@@ -14,7 +14,9 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 %   refractive displacement. The projection incorporates the intrinsic
 %   properties of the camera, including any radial lens distortion.
 %
-%   The 'fullEyeModelFlag' will render the entire eye, not just the pupil.
+%   The 'fullEyeModelFlag' key will render the entire eye, not just the
+%   pupil. The 'calcGlint' flag determines if the routine returns the
+%   glint location.
 %
 % Notes:
 %   Rotations - Eye rotation is given as azimuth, elevation, and torsion in
@@ -43,6 +45,8 @@ function [pupilEllipseOnImagePlane, imagePoints, worldPoints, headPoints, eyePoi
 % Optional key/value pairs:
 %  'fullEyeModelFlag'     - Logical. Determines if the full eye model will
 %                           be created.
+%  'calcGlint'            - Logical. Determines if the ray-traced glint is
+%                           calculated.
 %  'nStopPerimPoints'     - Scalar. The number of points that are
 %                           distributed around the stop ellipse. A minimum
 %                           of 5 is required to uniquely specify the image
@@ -199,6 +203,7 @@ p.addRequired('sceneGeometry',@isstruct);
 
 % Optional
 p.addParameter('fullEyeModelFlag',false,@islogical);
+p.addParameter('calcGlint',false,@islogical);
 p.addParameter('nStopPerimPoints',6,@(x)(isscalar(x) && x>4));
 p.addParameter('stopPerimPhase',0,@isscalar);
 p.addParameter('replaceReflectedPoints',false,@islogical);
@@ -562,7 +567,7 @@ end
 % coordinate frame. The glint is the reflection of a light source from the
 % tear film of the eye. The location of the glint in the image is subject
 % to refraction by artificial lenses.
-if p.Results.fullEyeModelFlag && isfield(sceneGeometry,'refraction')
+if p.Results.calcGlint && isfield(sceneGeometry,'refraction')
     if isfield(sceneGeometry.refraction,'glint')
         
         % The position of the light source in the world coordinate frame that
