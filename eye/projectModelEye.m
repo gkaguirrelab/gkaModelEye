@@ -212,8 +212,8 @@ p.addParameter('rayTraceErrorThreshold',0.01,@isscalar);
 p.addParameter('nIrisPerimPoints',5,@isscalar);
 p.addParameter('corneaMeshDensity',23,@isscalar);
 p.addParameter('retinaMeshDensity',30,@isscalar);
-p.addParameter('pupilRayFunc',@findPupilRayMex,@(x)(isa(x,'function_handle')));
-p.addParameter('glintRayFunc',@findGlintRayMex,@(x)(isa(x,'function_handle')));
+p.addParameter('pupilRayFunc',@findPupilRayMex,@(x)(isa(x,'function_handle') || isempty(x)));
+p.addParameter('glintRayFunc',@findGlintRayMex,@(x)(isa(x,'function_handle') || isempty(x)));
 
 % parse
 p.parse(eyePose, sceneGeometry, varargin{:})
@@ -420,7 +420,7 @@ refractPointsIdx = find(...
 
 % Check if we have a refraction field and it is not empty
 refractFlag = false;
-if isfield(sceneGeometry,'refraction')
+if isfield(sceneGeometry,'refraction') && ~isempty(pupilRayFunc)
     if ~isempty(sceneGeometry.refraction)
         refractFlag = true;
     end
@@ -567,7 +567,7 @@ end
 % coordinate frame. The glint is the reflection of a light source from the
 % tear film of the eye. The location of the glint in the image is subject
 % to refraction by artificial lenses.
-if p.Results.calcGlint && isfield(sceneGeometry,'refraction')
+if p.Results.calcGlint && isfield(sceneGeometry,'refraction') && ~isempty(glintRayFunc)
     if isfield(sceneGeometry.refraction,'glint')
         
         % The position of the light source in the world coordinate frame that
