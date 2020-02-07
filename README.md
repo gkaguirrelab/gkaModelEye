@@ -35,7 +35,9 @@ createSceneGeometry('eyeLaterality','left','sphericalAmetropia',-3,'spectacleLen
 
 The function `eyePoseEllipseFit` implements a search over eyePose parameters and executions of the forward model to find the eyePose values that best describe an observed pupil perimeter. This is used to support model-based eye tracking with [transparentTrack](https://github.com/gkaguirrelab/transparentTrack)
 
-To install and configure the repository, first install [toolboxToolbox (tBtB)](https://github.com/ToolboxHub/ToolboxToolbox), which provides for declarative dependency management for Matlab. Once tBtB is installed, the code will be installed and readied for use with the command `tbUse('gkaModelEye');`. The code requires the optimization, robotics, and statistics Matlab toolboxes. The code has no required dependencies external to Matlab, although the optional ExampleTest toolbox is installed by the tbUse command.
+To install and configure the repository, first install [toolboxToolbox (tBtB)](https://github.com/ToolboxHub/ToolboxToolbox), which provides for declarative dependency management for Matlab. Once tBtB is installed, the code will be installed and readied for use with the command `tbUse('gkaModelEye');`. Alternatively, you can simply add the repository (and its subdirectories) to the Matlab path using `addpath(genpath('myLocalPath/gkaModelEye'))`
+
+This repository requires the optimization, robotics, and statistics Matlab toolboxes. The code has no required dependencies external to Matlab, although the optional ExampleTest toolbox is installed by the tbUse command.
 
 A good place to start is to render the model eye for different poses and examine the parameters of the pupil ellipse. This example renders an emmetropic right eye, observed in the near infra-red range, that is rotated to -30 degrees in azimuth, -5 degrees elevation, 0 degrees torsion, and has an aperture stop 2 mm in radius.
 ```
