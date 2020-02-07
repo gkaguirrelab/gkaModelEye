@@ -7,7 +7,7 @@
 </p>
 
 
-These routines implement a ray-traced model eye in MATLAB. The software is designed specifically to support calculation of the:
+These routines implement a ray-traced model eye in MATLAB. The software calculates:
 - appearance of the entrance pupil in the image plane for a rotated eye
 - location of the glint in an image from a light source for a rotated eye
 - location of retinal landmarks (fovea, optic disc)
