@@ -588,7 +588,7 @@ if isfield(sceneGeometry,'refraction') && ~isempty(glintRayFunc)
             
             % Perform the computation using the passed function handle
             [virtualImageRay, ~, intersectError] = ...
-                glintRayFunc(glintSourceWorld, eyePose, args{:});
+                glintRayFunc(glintSourceWorld(:, gg), eyePose, args{:});
             
             % If we have a good trace, add the glint point and label
             if intersectError < rayTraceErrorThreshold
