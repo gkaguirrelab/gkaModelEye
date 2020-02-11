@@ -235,7 +235,7 @@ end
 
 %% meta
 sceneGeometry.meta.createSceneGeometry = p.Results;
-
+sceneGeometry.meta.createSceneGeometry.varargin = varargin;
 
 %% Save the sceneGeometry file
 if ~isempty(p.Results.sceneGeometryFileName)
