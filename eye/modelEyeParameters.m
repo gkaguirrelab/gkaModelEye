@@ -100,6 +100,7 @@ p.addParameter('ageYears',18,@isscalar);
 p.addParameter('derivedParams',[],@(x)(isstruct(x) || isempty(x)));
 p.addParameter('navarroD',0.6240,@(x)(isempty(x) || isscalar(x)));
 p.addParameter('measuredCornealCurvature',[],@(x)(isempty(x) || isnumeric(x)));
+p.addParameter('rotationCenters',[],@(x)(isempty(x) || isstruct(x)));
 p.addParameter('spectralDomain','nir',@ischar);
 p.addParameter('calcLandmarkFovea',false,@islogical);
 p.addParameter('calcLandmarkOpticDisc',false,@islogical);
@@ -194,7 +195,11 @@ switch eye.meta.species
         end
 
         % Rotation centers
-        eye.rotationCenters = human.rotationCenters(eye);
+        if isempty(p.Results.rotationCenters)
+            eye.rotationCenters = human.rotationCenters(eye);
+        else
+            eye.rotationCenters = p.Results.rotationCenters;
+        end
         
         % Refractive indices
         eye.index.vitreous = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );
