@@ -165,7 +165,7 @@ function [retinaCoords,outputRay] = evalCandidateLineOfSight(sceneGeometry,stopR
 sceneGeometry.cameraPosition.translation = fixEyeWorldTarget([2 3 1]);
 
 % Obtain the center of the entrance pupil for this eye pose
-[~, ~, ~, ~, eyePoints, pointLabels] = projectModelEye([0 0 0 stopRadius], sceneGeometry, 'nStopPerimPoints', 16);
+[~, ~, ~, ~, ~, eyePoints, pointLabels] = projectModelEye([0 0 0 stopRadius], sceneGeometry, 'nStopPerimPoints', 16);
 entrancePupilCenter = mean(eyePoints(strcmp(pointLabels,'pupilPerimeter'),:));
 
 % Find the ray that leaves the camera and strikes the center of the

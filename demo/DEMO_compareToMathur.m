@@ -119,7 +119,7 @@ eyePose=[azimuthDeg elevationDeg 0 stopDiam/2];
 % First, perform the forward projection to determine where the center of
 % the entrance pupil is located in the sceneWorld coordinates
 % Obtain the center of the entrance pupil for this eye pose.
-[~, ~, worldPoints, ~, ~, pointLabels] = projectModelEye(eyePose, sceneGeometry, 'nStopPerimPoints', 16);
+[~, ~, ~, worldPoints, ~, ~, pointLabels] = projectModelEye(eyePose, sceneGeometry, 'nStopPerimPoints', 16);
 pupilCenter = nanmean(worldPoints(strcmp(pointLabels,'pupilPerimeter'),:));
 
 % Adjust the sceneGeometry to translate the camera to be centered on the

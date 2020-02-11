@@ -74,7 +74,7 @@ for laterality = 1:2
     
     % Add a point that corresponds to the visual axis at the pupil
     % plane
-    [~, imagePointsFixationAxis, ~, ~, pointLabelsFixationAxis] = ...
+    [~, ~, imagePointsFixationAxis, ~, ~, pointLabelsFixationAxis] = ...
         projectModelEye([sceneGeometry.eye.landmarks.fovea.degField(1) sceneGeometry.eye.landmarks.fovea.degField(2) 0 3],sceneGeometry,'fullEyeModelFlag',true);
     
     idx = strcmp(pointLabelsFixationAxis,'pupilCenter');
