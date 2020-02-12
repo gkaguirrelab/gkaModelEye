@@ -125,7 +125,7 @@ if isempty(eye.meta.measuredCornealCurvature)
     %}
     radii = [14.26   10.43   10.27] .* ...
         ((eye.meta.sphericalAmetropia .* -0.0028)+1);
-    S = quadric.scale(quadric.unitSphere,radii);    
+    S = quadric.scale(quadric.unitSphere,radii);
 else
     % If a measured value is provided, use it here to calculate the
     % parameters of the ellipsoidal surface. We set the axial length of the
@@ -158,9 +158,19 @@ switch eye.meta.eyeLaterality
         error('eye laterality not defined')
 end
 
+% Obtain the kvals for these front surface radii
+D = @(radius) (radii(1) * 337.5) ./ radius.^2;
+kvals = D(radii(2:3));
+
+
 % We set the center of the cornea front surface ellipsoid so that the axial
 % apex (prior to rotation) is at position [0, 0, 0]
 S = quadric.translate(S,[-radii(1) 0 0]);
+
+
+% Store the kvals
+cornea.kvals = kvals;
+
 
 % Store these values
 cornea.front.S = quadric.matrixToVec(S);
