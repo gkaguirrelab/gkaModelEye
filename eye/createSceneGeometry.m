@@ -178,7 +178,7 @@ p.addParameter('radialDistortionVector',[0 0],@isnumeric);
 p.addParameter('cameraTranslation',[0; 0; 120],@isnumeric);
 p.addParameter('cameraGlintSourceRelative',[-14; 0; 0],@isnumeric);
 p.addParameter('cameraTorsion',0,@isnumeric);
-p.addParameter('screenTranslation',1065,@isnumeric);
+p.addParameter('screenTranslation',[0; 0; 1065],@isnumeric);
 p.addParameter('screenDimensions',[697.347,392.257],@isnumeric);
 p.addParameter('screenResolutions',[1920,1080],@isnumeric);
 p.addParameter('surfaceSetName',{'retinaToStop','stopToCamera','retinaToCamera','cameraToRetina','glint'},@ischar);
