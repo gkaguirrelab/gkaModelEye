@@ -128,8 +128,8 @@ p.addParameter('showPupilTextLabels',false,@islogical);
 p.addParameter('showAzimuthPlane',false,@islogical);
 p.addParameter('nStopPerimPoints',8,@isscalar);
 p.addParameter('nIrisPerimPoints',20,@isscalar);
-p.addParameter('modelEyeLabelNames', {'aziRotationCenter' 'eleRotationCenter', 'retina' 'irisPerimeter' 'stopCenter' 'pupilPerimeter' 'pupilEllipse' 'cornea' 'cornealApex' 'glint'}, @iscell);
-p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '+r' '*g' '-g' '.y' '*y' '*w'}, @iscell);
+p.addParameter('modelEyeLabelNames', {'aziRotationCenter' 'eleRotationCenter', 'retina' 'irisPerimeter' 'stopCenter' 'pupilPerimeter' 'pupilEllipse' 'cornea' 'cornealApex' 'glint_01' 'glint_02'}, @iscell);
+p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '+r' '*g' '-g' '.y' '*y' 'xr' 'xr'}, @iscell);
 p.addParameter('modelEyeAlpha',1,@isnumeric);
 p.addParameter('modelEyeSymbolSizeScaler',1,@isnumeric);
 p.addParameter('fImplicitPresent',[],@islogical);
@@ -215,7 +215,7 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
         % Add the pupil fit ellipse
         plotObjectHandles(end+1) = addTransparentEllipseToFigure(...
             pupilEllipseParams,imageSizeX,imageSizeY, ...
-            p.Results.modelEyePlotColors{pp}(2),1,fImplicitPresent);
+            p.Results.modelEyePlotColors{pp}(2),1,gca,fImplicitPresent);
     else
         % Plot this label
         idx = strcmp(pointLabels,p.Results.modelEyeLabelNames{pp});
