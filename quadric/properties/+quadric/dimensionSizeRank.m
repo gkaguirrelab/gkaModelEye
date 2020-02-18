@@ -50,7 +50,7 @@ thisOrientation = mod(fix((abs(EulerAngles)+45)./90),2);
 
 % Define a mapping of orientations to radii order
 orientations = {[0 0 0],[0 0 1],[0 1 0],[1 0 0],[0 1 1],[1 0 1],[1 1 1]};
-orders = {[1 2 3],[1 3 2],[3 2 1],[2 1 3],[2 3 1],[3 1 2],[1 2 3]};
+orders = {[1 2 3],[1 3 2],[3 2 1],[2 1 3],[2 3 1],[3 1 2],[3 2 1]};
 
 % Return the rank ordering of the dimensions
 dimensionRank = orders{cellfun(@(x) isequal(x,thisOrientation),orientations)};
