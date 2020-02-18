@@ -69,10 +69,11 @@ function cornea = cornea( eye )
 
 
 %% Corneal ellipsoid rotation
-% The corneal ellipsoid is modeled as aligned with the optical axis. The
-% code below retains the ability to model a rotation if desired. The
-% cornealRotation vector specifies the rotation (in degrees) about each of
-% the axes.
+% The corneal ellipsoid is modeled as aligned with the optical axis, with
+% an axis of astigmatism of zero degrees. A passed value for the key
+% measuredCornealRotation could implement a non-zero cylinder axis, which
+% is placed in the first entry of the vector to produce a rotation of the
+% corneal ellipsoid about the optical axis of the eye.
 cornealRotation = [0 0 0];
 
 %% Front corneal surface
@@ -141,14 +142,14 @@ else
     % However, the quadric rotation is not working properly so this is not
     % implemented currently.
     if length(eye.meta.measuredCornealCurvature)==3
-%         cornealRotation = [eye.meta.measuredCornealCurvature(3) 0 0];
+         cornealRotation = [eye.meta.measuredCornealCurvature(3) 0 0];
     end
 end
 
 % Saving this for use in constructing the tear film below
 S_front = S;
 
-% Rotate the quadric surface
+% Rotate the quadric surface, and handle laterality in the final dimension.
 switch eye.meta.eyeLaterality
     case 'Right'
         S = quadric.rotate(S,cornealRotation);
@@ -158,19 +159,13 @@ switch eye.meta.eyeLaterality
         error('eye laterality not defined')
 end
 
-% Obtain the kvals for these front surface radii
-D = @(radius) (radii(1) * 337.5) ./ radius.^2;
-kvals = D(radii(2:3));
-
-
 % We set the center of the cornea front surface ellipsoid so that the axial
 % apex (prior to rotation) is at position [0, 0, 0]
 S = quadric.translate(S,[-radii(1) 0 0]);
 
-
-% Store the kvals
-cornea.kvals = kvals;
-
+% Store the kvals for these front surface radii
+D = @(radius) (radii(1) * 337.5) ./ radius.^2;
+cornea.kvals = [D(radii(2:3)) cornealRotation(1)];
 
 % Store these values
 cornea.front.S = quadric.matrixToVec(S);
