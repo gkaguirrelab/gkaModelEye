@@ -1,4 +1,4 @@
-function objectHandle = addTransparentEllipseToFigure(pupilEllipseParams,imageSizeX,imageSizeY,Color,LineWidth,fImplicitPresent)
+function objectHandle = addTransparentEllipseToFigure(pupilEllipseParams,imageSizeX,imageSizeY,Color,LineWidth,hAxes,fImplicitPresent)
 % Adds an ellipse in transparent params to the current figure
 %
 % Syntax:
@@ -15,6 +15,7 @@ function objectHandle = addTransparentEllipseToFigure(pupilEllipseParams,imageSi
 %   imageSizeX,imageSizeY - Scalar. Defines the image dimensions.
 %   Color                 - Char vector. The color of the ellipse.
 %   LineWidth             - Scalar. The line width.
+%   hAxes                 - Axis handle in which to plot.
 %   fImplicitPresent      - Logical. Is the fimplicit function available?
 %
 % Outputs:
@@ -34,22 +35,29 @@ switch nargin
         imageSizeY = 400;
         Color = 'green';
         LineWidth = 1;
+        hAxes = gca();
         fImplicitPresent = (exist('fimplicit','file')==2);
     case 2
         imageSizeY = imageSizeX;
         Color = 'green';
         LineWidth = 1;
+        hAxes = gca();
         fImplicitPresent = (exist('fimplicit','file')==2);
     case 3
         Color = 'green';
         LineWidth = 1;
+        hAxes = gca();
         fImplicitPresent = (exist('fimplicit','file')==2);
     case 4
         LineWidth = 1;
+        hAxes = gca();
         fImplicitPresent = (exist('fimplicit','file')==2);
     case 5
+        hAxes = gca();
         fImplicitPresent = (exist('fimplicit','file')==2);
     case 6
+        fImplicitPresent = (exist('fimplicit','file')==2);
+    case 7
         % We have everything
     otherwise
         error('Not the right number of arguments for this function')
@@ -64,9 +72,9 @@ fh=@(x,y) pFitImplicit(1).*x.^2 +pFitImplicit(2).*x.*y +pFitImplicit(3).*y.^2 +p
 % Superimpose the ellipse using fimplicit or ezplot (ezplot is the
 % fallback option for older Matlab versions)
 if fImplicitPresent
-    objectHandle = fimplicit(fh,[1, imageSizeX, 1, imageSizeY],'Color', Color,'LineWidth',LineWidth);
+    objectHandle = fimplicit(hAxes,fh,[1, imageSizeX, 1, imageSizeY],'Color', Color,'LineWidth',LineWidth);
 else
-    objectHandle = ezplot(fh,[1, imageSizeX, 1, imageSizeY]);
+    objectHandle = ezplot(hAxes,fh,[1, imageSizeX, 1, imageSizeY]);
     set(objectHandle, 'Color', Color)
     set(objectHandle,'LineWidth',LineWidth);
 end

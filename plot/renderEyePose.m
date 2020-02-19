@@ -128,8 +128,8 @@ p.addParameter('showPupilTextLabels',false,@islogical);
 p.addParameter('showAzimuthPlane',false,@islogical);
 p.addParameter('nStopPerimPoints',8,@isscalar);
 p.addParameter('nIrisPerimPoints',20,@isscalar);
-p.addParameter('modelEyeLabelNames', {'aziRotationCenter' 'eleRotationCenter', 'retina' 'irisPerimeter' 'stopCenter' 'pupilPerimeter' 'pupilEllipse' 'cornea' 'cornealApex' 'glint'}, @iscell);
-p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '+r' '*g' '-g' '.y' '*y' '*w'}, @iscell);
+p.addParameter('modelEyeLabelNames', {'aziRotationCenter' 'eleRotationCenter', 'retina' 'irisPerimeter' 'stopCenter' 'pupilPerimeter' 'pupilEllipse' 'cornea' 'cornealApex' 'glint_01' 'glint_02'}, @iscell);
+p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '+r' '*g' '-g' '.y' '*y' 'xr' 'xr'}, @iscell);
 p.addParameter('modelEyeAlpha',1,@isnumeric);
 p.addParameter('modelEyeSymbolSizeScaler',1,@isnumeric);
 p.addParameter('fImplicitPresent',[],@islogical);
@@ -199,9 +199,8 @@ xlim([0 imageSizeX]);
 ylim([0 imageSizeY]);
 
 % Obtain the pupilProjection of the model eye to the image plane
-[pupilEllipseParams, imagePoints, ~, ~, ~, pointLabels] = ...
+[pupilEllipseParams, ~, imagePoints, ~, ~, ~, pointLabels] = ...
     projectModelEye(eyePose, sceneGeometry, ...
-    'calcGlint', true, ...
     'fullEyeModelFlag', true, 'replaceReflectedPoints', true, ...
     'nStopPerimPoints',p.Results.nStopPerimPoints, ...
     'nIrisPerimPoints',p.Results.nIrisPerimPoints);
@@ -216,7 +215,7 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
         % Add the pupil fit ellipse
         plotObjectHandles(end+1) = addTransparentEllipseToFigure(...
             pupilEllipseParams,imageSizeX,imageSizeY, ...
-            p.Results.modelEyePlotColors{pp}(2),1,fImplicitPresent);
+            p.Results.modelEyePlotColors{pp}(2),1,gca,fImplicitPresent);
     else
         % Plot this label
         idx = strcmp(pointLabels,p.Results.modelEyeLabelNames{pp});
@@ -253,9 +252,9 @@ end % loop over label names
 % Add a line that shows the azimuthal plane of rotation. This reflects
 % camera torsion
 if p.Results.showAzimuthPlane
-    [~, imagePoints] = projectModelEye([-50 0 0 1], sceneGeometry);
+    [~, ~, imagePoints] = projectModelEye([-50 0 0 1], sceneGeometry);
     A = nanmean(imagePoints);
-    [~, imagePoints] = projectModelEye([50 0 0 1], sceneGeometry);
+    [~, ~, imagePoints] = projectModelEye([50 0 0 1], sceneGeometry);
     B = nanmean(imagePoints);
     plot([A(1) B(1)],[A(2) B(2)],'-r')
 end

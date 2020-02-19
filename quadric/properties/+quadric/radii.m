@@ -25,7 +25,7 @@ function r = radii(S)
 % Examples:
 %{
     % Test that the routine returns the radii in the correct order
-    p = perms([3 4 5]);
+    p = perms([1 2 3]);
     for ii = 1:size(p,1)
         S = quadric.scale(quadric.unitSphere,p(ii,:));
         assert( isequal(quadric.radii(S),p(ii,:)'));

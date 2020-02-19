@@ -9,6 +9,10 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %   upon the eye parameters (azimuth, elevation, torsion, stop radius) that
 %   produce the best fitting ellipse projected according to sceneGeometry.
 %
+%   If one or more glint coordinates are supplied, the eyePose used to fit
+%   the pupil perimeter is constrained to also produce a modeled location
+%   of the glint(s) that matches the supplied coordinates.
+%
 %   The search is constrained by the upper and lower bounds of the eyePose.
 %   The default values specified here represent the physical boundaries of
 %   the rotation model. Tighter, biologically informed constraints may be
@@ -19,6 +23,8 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
 %
 % Optional key/value pairs:
+%   glintCoord            - A nx2 vector with the image coordinates of the
+%                           n glints.
 %  'x0'                   - A 1x4 vector that provides starting points for
 %                           the search for the eyePose. If not defined, the
 %                           starting point will be estimated.
@@ -60,11 +66,12 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %
 % Examples:
 %{
-    sceneGeometry=createSceneGeometry();
+    cameraGlintSourceRelative = [-14 -14; -5 5; 0 0];
+    sceneGeometry=createSceneGeometry('cameraGlintSourceRelative',cameraGlintSourceRelative);
     eyePose = [-15 10 0 2.5];
-    targetEllipse = projectModelEye(eyePose,sceneGeometry);
+    [targetEllipse, glintCoord, imagePoints, ~, ~, ~, pointLabels] = projectModelEye(eyePose,sceneGeometry,'calcGlint',true);
     [ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 5, 0 );
-    [recoveredEyePose,RMSE,recoveredEllipse,fitAtBound,nSearches] = eyePoseEllipseFit(Xp, Yp, sceneGeometry);
+    [recoveredEyePose,RMSE,recoveredEllipse,fitAtBound,nSearches] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, 'glintCoord', glintCoord);
     % Test that the recovered eye pose has no more than 0.01% error
     assert(max(abs((eyePose - recoveredEyePose)./eyePose)) < 1e-4)
 %}
@@ -79,6 +86,7 @@ p.addRequired('Yp',@isnumeric);
 p.addRequired('sceneGeometry',@isstruct);
 
 % Optional
+p.addParameter('glintCoord',[],@(x)(isempty(x) | isnumeric(x)));
 p.addParameter('x0',[],@(x)(isempty(x) | isnumeric(x)));
 p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
 p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
@@ -106,6 +114,14 @@ nSearches = nan;
 % zero, reflecting Listing's Law.
 if sum((p.Results.eyePoseUB(1:3) - p.Results.eyePoseLB(1:3))==0) < 1
     warning('eyePoseEllipseFit:underconstrainedSearch','The eye pose search across possible eye rotations is underconstrained');
+end
+
+% If we have a glintCoord, make sure it is the right vector orientation
+glintCoord = p.Results.glintCoord;
+if ~isempty(glintCoord)
+    if size(glintCoord,2)~=2
+        error('eyePoseEllipseFit:glintCoordFormat','The optional glintCoord must be an nx2 vector');
+    end
 end
 
 
@@ -275,7 +291,7 @@ while searchingFlag
 end % while
     function fVal = objfun(x)
         % Obtain the entrance pupil ellipse for this eyePose
-        fittedEllipse = projectModelEye(x, sceneGeometry);
+        [fittedEllipse, fittedGlint] = projectModelEye(x, sceneGeometry, 'calcGlint',true);
         % Check for the case in which the transparentEllipse contains nan
         % values, which can arise if there were an insufficient number of
         % pupil border points remaining after refraction to define an
@@ -295,6 +311,16 @@ end % while
                 else
                     fVal = sqrt(nanmean(ellipsefit_distance(Xp,Yp,explicitEllipse).^2));
                 end
+            end
+        end
+        % Check the match to the glint. The fit error is inflated by the
+        % normed mismatch in pixels between the modeled and observed
+        % glint(s).
+        if ~isempty(glintCoord)
+            if isempty(fittedGlint)
+                fVal = 1e6;
+            else
+                fVal = fVal * (1+norm(glintCoord - fittedGlint));
             end
         end
     end % local objective function

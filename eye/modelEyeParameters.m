@@ -52,13 +52,19 @@ function eye = modelEyeParameters( varargin )
 %                           calcAccommodation.
 %  'measuredCornealCurvature' - 1x2 or 1x3 vector. Provides the horizontal 
 %                           and vertical curvature of the cornea (diopters;
-%                           K1 and K2). The third value is the rotation of
-%                           the "horizontal" axis away from horizontal in
-%                           degrees to allow specification of oblique
-%                           asigmatism. Only the modeling of regular
-%                           corneal astigmatism is supported. In subsequent
-%                           routines the curvature in diopters is converted
-%                           to a radius of curvature in mm using:
+%                           K1 and K2). The first value is always the
+%                           smaller, and thus describes the "flatter"
+%                           surface of the retina. The second value is
+%                           always larger, and describes the curvature of
+%                           the surface of the retina oriented 90 degrees
+%                           away from the flatest surface. The third value
+%                           is the rotation of the "horizontal" axis away
+%                           from horizontal in degrees to allow
+%                           specification of oblique asigmatism. Only the
+%                           modeling of regular corneal astigmatism is
+%                           supported. In subsequent routines the curvature
+%                           in diopters is converted to a radius of
+%                           curvature in mm using:
 %                               r = 1000*(1.3375-1)/K
 %                           If left undefined, the "canonical" Navarro 2006
 %                           corneal parameters will be used.
@@ -100,6 +106,7 @@ p.addParameter('ageYears',18,@isscalar);
 p.addParameter('derivedParams',[],@(x)(isstruct(x) || isempty(x)));
 p.addParameter('navarroD',0.6240,@(x)(isempty(x) || isscalar(x)));
 p.addParameter('measuredCornealCurvature',[],@(x)(isempty(x) || isnumeric(x)));
+p.addParameter('rotationCenters',[],@(x)(isempty(x) || isstruct(x)));
 p.addParameter('spectralDomain','nir',@ischar);
 p.addParameter('calcLandmarkFovea',false,@islogical);
 p.addParameter('calcLandmarkOpticDisc',false,@islogical);
@@ -194,7 +201,11 @@ switch eye.meta.species
         end
 
         % Rotation centers
-        eye.rotationCenters = human.rotationCenters(eye);
+        if isempty(p.Results.rotationCenters)
+            eye.rotationCenters = human.rotationCenters(eye);
+        else
+            eye.rotationCenters = p.Results.rotationCenters;
+        end
         
         % Refractive indices
         eye.index.vitreous = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );
