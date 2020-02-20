@@ -143,6 +143,11 @@ switch nargin
         error('gkaModelEye:addStopAfter','Invalid number of arguments.');
 end
 
+% Check if the stopCenter is a scaler, in which case make it a coordinate
+if isscalar(stopCenter)
+    stopCenter = [stopCenter 0 0];
+end
+
 
 %% Prepeare the optical system
 
