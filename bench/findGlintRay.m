@@ -126,6 +126,14 @@ lb_p1p3 = min(min(boundAngles_p1p3));
 % Create an anonymous function for ray tracing
 intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyePoint, wrapTo180(p1p2+p1p2Adjust), wrapTo180(p1p3+p1p3Adjust), eyePose, worldTarget, rotationCenters, opticalSystem);
 
+% Shrink the bounds to restrict to the domain of valid ray trace solutions
+errorFunc = @(x) intersectErrorFunc(x,angle_p1p3);
+ub_p1p2 = shrinkBound(angle_p1p2,ub_p1p2,TolX,errorFunc);
+lb_p1p2 = shrinkBound(angle_p1p2,lb_p1p2,TolX,errorFunc);
+errorFunc = @(x) intersectErrorFunc(angle_p1p2,x);
+ub_p1p3 = shrinkBound(angle_p1p3,ub_p1p3,TolX,errorFunc);
+lb_p1p3 = shrinkBound(angle_p1p3,lb_p1p3,TolX,errorFunc);
+
 % Get the intial target error
 targetIntersectError = intersectErrorFunc(angle_p1p2, angle_p1p3);
 
@@ -232,6 +240,57 @@ function lon = wrapTo360(lon)
 positiveInput = (lon > 0);
 lon = mod(lon, 360);
 lon((lon == 0) & positiveInput) = 360;
+end
+
+%% shrinkBound
+% Use divide approach to find a bound that returns a value for the passed
+% function that is less than 1e6
+function boundOut = shrinkBound(x0,boundIn,TolX,errorFunc)
+
+% Check if we already have a valid bound, in which case return
+if errorFunc(boundIn) < 1e6
+    boundOut = boundIn;
+    return
+end
+
+% Set up our vars
+step = -(boundIn-x0)/2;
+boundOut = boundIn + step;
+stillSearching = true;
+lastValidVal = x0;
+lastBound = boundIn;
+
+% Let's go searching
+while stillSearching
+    if errorFunc(boundOut) < 1e6
+        % We have a valid trace.
+        if abs(step) < TolX
+            % If our step is below the TolX, then we are
+            % done.
+            stillSearching = false;
+        else
+            % We are valid, but still too coarse, so move half-way back
+            % towards the lastBound
+            lastValidVal = boundOut;
+            step = +(lastBound-boundOut)/2;
+            lastBound = boundOut;
+            boundOut = boundOut + step;
+        end
+    else
+        % Not a valid trace
+        if abs(step) < TolX
+            % We are below the search tol, so report the last valid bound
+            % we found
+            boundOut = lastValidVal;
+            stillSearching = false;
+        else
+            % Move half-way towards the x0
+            step = -(boundOut-x0)/2;
+            lastBound = boundOut;
+            boundOut = boundOut + step;
+        end
+    end
+end
 end
 
 
