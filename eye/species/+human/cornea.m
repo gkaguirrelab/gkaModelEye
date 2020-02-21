@@ -69,12 +69,13 @@ function cornea = cornea( eye )
 
 
 %% Corneal ellipsoid rotation
-% The corneal ellipsoid is modeled as aligned with the optical axis, with
-% an axis of astigmatism of zero degrees. A passed value for the key
-% measuredCornealRotation could implement a non-zero cylinder axis, which
-% is placed in the first entry of the vector to produce a rotation of the
-% corneal ellipsoid about the optical axis of the eye.
-cornealRotation = [0 0 0];
+% Following Navarro 2006, the apex of the corneal ellipsoid is rotated
+% towards the visual axis of the eye, but not completely. We adopt 2.5 
+% degrees of rotation about the vertical axis towards the nose as a
+% default. The measuredCornealCurvature vector can include rotations. These
+% are in the order of [torsion, tilt (rotation about vertical), and tip
+% (rotatio about the horizontal axis).
+cornealRotation = [0 0 2.5];
 
 %% Front corneal surface
 if isempty(eye.meta.measuredCornealCurvature)
@@ -139,8 +140,14 @@ else
     % Create the quadric
     S = quadric.scale(quadric.unitSphere,radii);
     % Apply any measured torsional rotation to the ellipsoid.
-    if length(eye.meta.measuredCornealCurvature)==3
-         cornealRotation = [eye.meta.measuredCornealCurvature(3) 0 0];
+    if length(eye.meta.measuredCornealCurvature)>=3
+        cornealRotation(1) = eye.meta.measuredCornealCurvature(3);
+    end
+    if length(eye.meta.measuredCornealCurvature)>=4
+        cornealRotation(3) = eye.meta.measuredCornealCurvature(4);
+    end
+    if length(eye.meta.measuredCornealCurvature)==5
+        cornealRotation(2) = eye.meta.measuredCornealCurvature(5);
     end
 end
 
