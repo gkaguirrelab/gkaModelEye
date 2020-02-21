@@ -291,7 +291,7 @@ while searchingFlag
 end % while
     function fVal = objfun(x)
         % Obtain the entrance pupil ellipse for this eyePose
-        [fittedEllipse, fittedGlint] = projectModelEye(x, sceneGeometry, 'calcGlint',true);
+        [fittedEllipse, fittedGlint] = projectModelEye(x, sceneGeometry);
         % Check for the case in which the transparentEllipse contains nan
         % values, which can arise if there were an insufficient number of
         % pupil border points remaining after refraction to define an
