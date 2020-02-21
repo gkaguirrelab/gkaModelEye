@@ -140,7 +140,7 @@ else
     S = quadric.scale(quadric.unitSphere,radii);
     % Apply any measured torsional rotation to the ellipsoid.
     if length(eye.meta.measuredCornealCurvature)==3
-         cornealRotation = [-eye.meta.measuredCornealCurvature(3) 0 0];
+         cornealRotation = [eye.meta.measuredCornealCurvature(3) 0 0];
     end
 end
 
