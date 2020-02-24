@@ -1,4 +1,4 @@
-function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
+function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystemRot, opticalSystemFix )
 % Returns the virtual image ray of a point in eyeWorld coordinates
 %
 % Syntax:
@@ -29,8 +29,14 @@ function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyePoint
 %                           camera, which is found in:
 %                           	sceneGeometry.cameraPosition.translation
 %   rotationCenters       - Equal to sceneGeometry.eye.rotationCenters
-%   opticalSystem         - Typically set equal to: sceneGeometry.
-%                               refraction.stopToCamera.opticalSystem
+%   opticalSystemRot      - Struct. This is the component of the optical
+%                           system that is subject to rotation with eye
+%                           movements. Typically set to: sceneGeometry.
+%                               refraction.stopToMedium.opticalSystem
+%   opticalSystemFix      - Struct. This is the component of the optical
+%                           system that is invariant with eye
+%                           movements. Typically set to: sceneGeometry.
+%                               refraction.mediumToCamera.opticalSystem
 %
 % Outputs:
 %   outputRay             - 2x3 matrix that specifies the ray as a unit 
@@ -114,7 +120,7 @@ options = optimset('TolFun',TolFun,'TolX',TolX,'Display','off');
 % Set the inital guess for the angles by finding (w.r.t. the optical axis)
 % the angle of the ray that connects the eye point to the worldTarget
 % (after re-arranging the dimensions of the worldTarget variable).
-eyeCoordTarget = relativeCameraPosition(eyePose, worldTarget, rotationCenters);
+eyeCoordTarget = convertWorldToEyeCoord(eyePose, worldTarget, rotationCenters);
 [angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; eyeCoordTarget-eyePoint]'));
 
 % Set bounds on the search
@@ -130,7 +136,7 @@ angle_p1p3 = max([angle_p1p3 lb_p1p3]);
 angle_p1p3 = min([angle_p1p3 ub_p1p3]);
 
 % Create an anonymous function for ray tracing
-intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyePoint, p1p2, p1p3, eyePose, worldTarget, rotationCenters, opticalSystem);
+intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyePoint, p1p2, p1p3, eyePose, worldTarget, rotationCenters, opticalSystemRot, opticalSystemFix);
 
 % Get the intial target error
 targetIntersectError = intersectErrorFunc(angle_p1p2, angle_p1p3);
@@ -222,7 +228,7 @@ end % findPupilRay -- MAIN
 
 
 %% calcTargetIntersectError
-function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystem)
+function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystemRot, opticalSystemFix)
 % Smallest distance of the exit ray from worldTarget
 %
 % Syntax:
@@ -283,7 +289,7 @@ end
 % conversion to eye coordinates. Then, the point is counter-rotated by the
 % eye pose, so that the eyeCoordTarget is in a position equivalent to if
 % the eye had rotated.
-eyeCoordTarget = relativeCameraPosition(eyePose, worldTarget, rotationCenters);
+eyeCoordTarget = convertWorldToEyeCoord(eyePose, worldTarget, rotationCenters);
 
 % Calculate the distance between the closest approach of the outputRay to
 % the target.
@@ -293,7 +299,7 @@ end % calcTargetIntersectError
 
 
 
-function eyeCoordTarget = relativeCameraPosition(eyePose, worldTarget, rotationCenters)
+function eyeCoord = convertWorldToEyeCoord(eyePose, worldCoord, rotationCenters)
 
 % We assign the variable eyeCoordTarget the coordinates of the target after
 % conversion to eye coordinates. Then, the point is counter-rotated by the
@@ -306,18 +312,18 @@ RotTor = [1 0 0; 0 cosd(cameraRot(3)) -sind(cameraRot(3)); 0 sind(cameraRot(3)) 
 
 % Rearrange the worldTarget dimensions to switch from world to eye
 % coordinate space. This is now the eyeTarget or ET
-eyeCoordTarget = worldTarget([3 1 2])';
+eyeCoord = worldCoord([3 1 2])';
 
 % Torsion
-eyeCoordTarget=eyeCoordTarget-rotationCenters.tor;
-eyeCoordTarget = (RotTor*eyeCoordTarget')';
-eyeCoordTarget=eyeCoordTarget+rotationCenters.tor;
+eyeCoord=eyeCoord-rotationCenters.tor;
+eyeCoord = (RotTor*eyeCoord')';
+eyeCoord=eyeCoord+rotationCenters.tor;
 % Elevation
-eyeCoordTarget=eyeCoordTarget-rotationCenters.ele;
-eyeCoordTarget = (RotEle*eyeCoordTarget')';
-eyeCoordTarget=eyeCoordTarget+rotationCenters.ele;
+eyeCoord=eyeCoord-rotationCenters.ele;
+eyeCoord = (RotEle*eyeCoord')';
+eyeCoord=eyeCoord+rotationCenters.ele;
 % Azimuth
-eyeCoordTarget=eyeCoordTarget-rotationCenters.azi;
-eyeCoordTarget = (RotAzi*eyeCoordTarget')';
-eyeCoordTarget=eyeCoordTarget+rotationCenters.azi;
+eyeCoord=eyeCoord-rotationCenters.azi;
+eyeCoord = (RotAzi*eyeCoord')';
+eyeCoord=eyeCoord+rotationCenters.azi;
 end

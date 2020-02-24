@@ -431,7 +431,8 @@ if refractFlag
     % Assemble the static args for the findPupilRay
     args = {sceneGeometry.cameraPosition.translation, ...
         sceneGeometry.eye.rotationCenters, ...
-        sceneGeometry.refraction.stopToCamera.opticalSystem};
+        sceneGeometry.refraction.stopToMedium.opticalSystem, ...
+        sceneGeometry.refraction.mediumToCamera.opticalSystem};
     
     % Pre-allocate the variables to hold the results
     virtualPoints = nan(length(refractPointsIdx),3);
@@ -581,7 +582,8 @@ if isfield(sceneGeometry,'refraction') && ~isempty(glintRayFunc)
         % Assemble the args
         args = {sceneGeometry.cameraPosition.translation, ...
             sceneGeometry.eye.rotationCenters, ...
-            sceneGeometry.refraction.glint.opticalSystem};
+            sceneGeometry.refraction.glint.opticalSystem, ...
+            sceneGeometry.refraction.mediumToCamera.opticalSystem};
         
         % Loop through the glints
         for gg = 1:nGlints
