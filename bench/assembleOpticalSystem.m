@@ -251,7 +251,13 @@ switch p.Results.surfaceSetName
         
         % We start in the medium. Assign this refractive index
         opticalSystem(1,19) = returnRefractiveIndex( p.Results.cameraMedium, eye.meta.spectralDomain );
-                
+
+        % Assemble the labels
+        surfaceLabels = [{'cameraMedium'}];
+        
+        % Assemble the surface plot colors
+        surfaceColors = [{[nan nan nan]}];
+
         % Add a spectacle lens if requested
         if ~isempty(p.Results.spectacleLens)
             switch length(p.Results.spectacleLens)

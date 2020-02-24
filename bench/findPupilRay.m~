@@ -216,8 +216,8 @@ end % Test x0 guess
 initialRay = quadric.anglesToRay(eyePoint', angle_p1p2, angle_p1p3);
 
 % Ray trace
-%outputRay = twoSystemTrace(initialRay, eyePose, rotationCenters, opticalSystemRot, opticalSystemFix);
-outputRay = rayTraceQuadrics(initialRay, opticalSystemRot)';
+outputRay = twoSystemTrace(initialRay, eyePose, rotationCenters, opticalSystemRot, opticalSystemFix);
+
 
 end % findPupilRay -- MAIN
 
@@ -277,9 +277,7 @@ end
 inputRayEyeWorld = quadric.anglesToRay(eyePoint',angle_p1p2,angle_p1p3);
 
 % Conduct the ray trace through the rotating and fixed optical systems
-%outputRayEyeWorld = twoSystemTrace(inputRayEyeWorld, eyePose, rotationCenters, opticalSystemRot, opticalSystemFix);
-outputRayEyeWorld = rayTraceQuadrics(inputRayEyeWorld, opticalSystemRot)';
-
+outputRayEyeWorld = twoSystemTrace(inputRayEyeWorld, eyePose, rotationCenters, opticalSystemRot, opticalSystemFix);
 
 % If any must intersect surfaces were missed, the output ray will contain
 % nans. In this case, return Inf for the distance
@@ -292,7 +290,7 @@ end
 eyeCoordTarget = convertWorldToEyeCoord(worldTarget);
 
 % Counter rotate the eye coordinate target to be relative to eye position
-eyeCoordTarget = rotateEyeCoord(eyeCoordTarget, -eyePose, rotationCenters, 'forward');
+eyeCoordTarget = rotateEyeCoord(eyeCoordTarget, eyePose, rotationCenters);
 
 % Calculate the distance between the closest approach of the outputRay to
 % the target.
@@ -309,14 +307,14 @@ outputRayEyeWorld = rayTraceQuadrics(inputRayEyeWorld, opticalSystemRot)';
 % Counter-rotate the outputRayEyeWorld by the eye pose. This places the
 % outputRayEyeWorld so that the eyeCoordTarget is in a position equivalent
 % to if the eye had rotated.
-% outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, -eyePose, rotationCenters, 'forward');
+outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, -eyePose, rotationCenters, 'forward');
 
 % Ray trace through the fixed system that is not subject to rotation
-%outputRayEyeWorld = rayTraceQuadrics(outputRayEyeWorld', opticalSystemFix)';
+outputRayEyeWorld = rayTraceQuadrics(outputRayEyeWorld', opticalSystemFix)';
 
 % Return the ray to the original eyeWorld coordinate frame, in which is
 % aligned with the optical axis of the eye
-%outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, -eyePose, rotationCenters, 'inverse');
+%outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, eyePose, rotationCenters);
 
 end
 
