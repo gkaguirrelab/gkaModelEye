@@ -65,8 +65,8 @@ function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldPoi
     opticalSystemFixRL = sceneGeometry.refraction.cameraToMedium.opticalSystem;
     opticalSystemRot = sceneGeometry.refraction.glint.opticalSystem;
     opticalSystemFixLR = sceneGeometry.refraction.mediumToCamera.opticalSystem;
-    [outputRay, initialRay, targetIntersectError ] = findGlintRay( irSourceLocation, eyePose, cameraNodalPoint, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR )
-    cachedOutputRay = [ -0.016862082491315   0.556759399662381    -0.400596384691390;   0.994188554184670   0.093016724563194    -0.054194166473237];
+    [outputRay, initialRay, targetIntersectError ] = findGlintRay( irSourceLocation, eyePose, cameraNodalPoint, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR );
+    outputRayCached = [ -0.016862078207112   0.556759177431708  -0.400596449698838;   0.994188558788728   0.093016664734839  -0.054194184698516];
     assert(max(max(abs(outputRay - outputRayCached))) < 1e-6)
 %}
 
@@ -114,6 +114,10 @@ angle_p1p3 = wrapTo180(angle_p1p3-p1p3Adjust);
 % Find the angular extent of the bounding box for the first surface to set
 % the upper and lower bounds on the search angles
 bb = opticalSystemRot(2,12:17);
+% Rotate the bounding box with the eye pose
+bb([1 3 5])=rotateEyeCoord([bb(1) bb(3) bb(5)],eyePose, rotationCenters);
+bb([2 4 6])=rotateEyeCoord([bb(2) bb(4) bb(6)],eyePose, rotationCenters);
+% Find the bound angles
 [~,p1Idx]=min(eyePoint(1)-bb(1:2));
 boundAngles_p1p2 = nan(2,2);
 boundAngles_p1p3 = nan(2,2);
@@ -226,6 +230,10 @@ initialRay = quadric.anglesToRay(eyePoint', angle_p1p2, angle_p1p3)';
 
 % Ray trace
 outputRay = threeSystemTrace(initialRay', eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR);
+
+% Apply the eye rotation
+outputRay = rotateEyeRay(outputRay, -eyePose, rotationCenters, 'forward'); 
+
 
 end % findPupilRay -- MAIN
 

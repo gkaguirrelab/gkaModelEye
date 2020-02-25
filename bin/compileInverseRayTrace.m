@@ -18,7 +18,7 @@ function compileInverseRayTrace( varargin )
 %   none
 %
 % Optional key/value pairs:
-%  'functionDirPath'      - Character vector. Specifies the location in 
+%  'functionDirPath'      - Character vector. Specifies the location in
 %                           which the compiled function is writen.
 %  'replaceExistingFunc'  - Logical, default false. If set to true, any
 %                           existing versions of findPupilRayMex will
@@ -142,12 +142,18 @@ sceneGeometry = createSceneGeometry();
 dynamicArgsPupil = {[0,0,0], [0,0,0,0]};
 dynamicArgsGlint = {[0;0;0], [0,0,0,0]};
 % Define the form of the staticArgs (which are sceneGeometry components)
-staticArgs = {sceneGeometry.cameraPosition.translation, ...
-    	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.stopToCamera.opticalSystem};
+staticArgsPupil = {sceneGeometry.cameraPosition.translation, ...
+    sceneGeometry.eye.rotationCenters, ...
+    sceneGeometry.refraction.stopToMedium.opticalSystem, ...
+    sceneGeometry.refraction.mediumToCamera.opticalSystem};
+staticArgsGlint = {sceneGeometry.cameraPosition.translation, ...
+    sceneGeometry.eye.rotationCenters, ...
+    sceneGeometry.refraction.cameraToMedium.opticalSystem, ...
+    sceneGeometry.refraction.glint.opticalSystem, ...
+    sceneGeometry.refraction.mediumToCamera.opticalSystem};
 % Assemble the full args
-argsPupil = [dynamicArgsPupil, staticArgs{:}];
-argsGlint = [dynamicArgsGlint, staticArgs{:}];
+argsPupil = [dynamicArgsPupil, staticArgsPupil{:}];
+argsGlint = [dynamicArgsGlint, staticArgsGlint{:}];
 
 
 %% Compile and clean up
