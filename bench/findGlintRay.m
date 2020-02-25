@@ -66,6 +66,8 @@ function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldPoi
     opticalSystemRot = sceneGeometry.refraction.glint.opticalSystem;
     opticalSystemFixLR = sceneGeometry.refraction.mediumToCamera.opticalSystem;
     [outputRay, initialRay, targetIntersectError ] = findGlintRay( irSourceLocation, eyePose, cameraNodalPoint, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR )
+    cachedOutputRay = [ -0.016862082491315   0.556759399662381    -0.400596384691390;   0.994188554184670   0.093016724563194    -0.054194166473237];
+    assert(max(max(abs(outputRay - outputRayCached))) < 1e-6)
 %}
 
 
@@ -344,7 +346,8 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 % Tranpose operations ahead.
 inputRayEyeWorld = quadric.anglesToRay(eyePoint',angle_p1p2,angle_p1p3);
 
-% Conduct the ray trace through the fixed, rotating, and fixed optical systems
+% Conduct the ray trace through the fixed, rotating, and back through the
+% fixed optical systems
 outputRayEyeWorld = threeSystemTrace(inputRayEyeWorld, eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR);
 
 % If any must intersect surfaces were missed, the output ray will contain
