@@ -78,8 +78,7 @@ else
 end
 
 % Test that we have a matrix with a valid system direction
-systemDirection = calcSystemDirection(opticalSystemMatrix);
-if ~isempty(opticalSystemMatrix) && ~strcmp(systemDirection,'eyeToCamera')
+if ~contains(calcSystemDirection(opticalSystemMatrix),'eyeToCamera')
     error('addBiconvexLens:invalidSystemDirection','Lenses are only added to an optical system in the eyeToCamera direction')
 end
 

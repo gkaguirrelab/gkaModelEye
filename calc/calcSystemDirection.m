@@ -42,10 +42,10 @@ function systemDirection = calcSystemDirection(opticalSystem, rayStartDepth)
 %
 % Examples:
 %{
-    % Test if a lens created for one system direction is correctly classed
+    % Test if a system created in a particular direction is correctly classed
     sceneGeometry = createSceneGeometry();
     systemDirectionIn = 'eyeToCamera';
-    opticalSystem = sceneGeometry.refraction.stopToCamera.opticalSystem;
+    opticalSystem = sceneGeometry.refraction.stopToMedium.opticalSystem;
     systemDirectionOut = calcSystemDirection(opticalSystem);
     assert(strcmp(systemDirectionIn,systemDirectionOut));
 %}
@@ -71,7 +71,10 @@ if any(any(isnan(opticalSystem(2:end,:))))
     systemDirection = 'Invalid nan in matrix';
     return
 end
-
+if size(opticalSystem,1)==1
+    systemDirection = 'cameraToEye; eyeToCamera';
+    return
+end
 
 % Trace an axial ray from the right (cameraToEye)
 R1 = quadric.normalizeRay(quadric.anglesToRay([rayStartDepth(1);0;0],180,0));

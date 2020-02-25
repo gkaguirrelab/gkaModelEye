@@ -79,8 +79,7 @@ function figHandle = plotOpticalSystem(varargin)
     %% Rays from the retina through the eye and a spectacle lens
     sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2,'calcLandmarkFovea',true);
     % Plot the optical system
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToMedium,'addLighting',true);
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.mediumToCamera,'newFigure',false,);
+    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
     % Define an initial ray arising at the fovea
     p = sceneGeometry.eye.landmarks.fovea.coords';
     % Loop over horizontal angles relative to the visual axis
@@ -91,8 +90,7 @@ function figHandle = plotOpticalSystem(varargin)
                 sceneGeometry.eye.landmarks.fovea.degField(1)+ii, ...
                 sceneGeometry.eye.landmarks.fovea.degField(2)));
         % Perform the ray trace
-        [outputRay, rayPath] = rayTraceQuadrics(R, sceneGeometry.refraction.retinaToMedium.opticalSystem);
-        [outputRay, rayPath] = rayTraceQuadrics(outputRay, sceneGeometry.refraction.mediumToCamera.opticalSystem);
+        [outputRay, rayPath] = rayTraceQuadrics(R, sceneGeometry.refraction.retinaToCamera.opticalSystem);
         % Add this ray to the optical system plot
         plotOpticalSystem('newFigure',false,'outputRay',outputRay,'rayPath',rayPath);
     end

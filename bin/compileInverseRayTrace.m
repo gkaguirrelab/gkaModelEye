@@ -35,7 +35,8 @@ function compileInverseRayTrace( varargin )
     % Assemble the args for the findPupilRay
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.stopToCamera.opticalSystem};
+    	sceneGeometry.refraction.stopToMedium.opticalSystem, ...
+        sceneGeometry.refraction.mediumToCamera.opticalSystem};
     inverseRayNative = findPupilRay( [sceneGeometry.eye.stop.center(1) 2 0], [-5 10 0 2], args{:} );
     inverseRayCompiled = findPupilRayMex( [sceneGeometry.eye.stop.center(1) 2 0], [-5 10 0 2], args{:} );
     % Test if the outputs agree
@@ -50,7 +51,8 @@ function compileInverseRayTrace( varargin )
     % Assemble the args for the findPupilRay
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.stopToCamera.opticalSystem};
+    	sceneGeometry.refraction.stopToMedium.opticalSystem, ...
+        sceneGeometry.refraction.mediumToCamera.opticalSystem};
     % Native matlab function
     tic
     for ii=1:nComputes
