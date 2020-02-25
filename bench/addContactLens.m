@@ -78,7 +78,7 @@ p.parse(opticalSystemIn, lensRefractionDiopters, varargin{:})
 
 
 % Obtain the systemDirection for the passed optical system
-if ~contains(calcSystemDirection(opticalSystemMatrix),'eyeToCamera')
+if ~isempty(opticalSystemIn) && ~contains(calcSystemDirection(opticalSystemIn),'eyeToCamera')
     error('addContactLens:invalidSystemDirection','Lenses are only added to an optical system in the eyeToCamera direction')
 end
 

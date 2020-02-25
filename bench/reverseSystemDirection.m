@@ -50,7 +50,7 @@ opticalSystemMatrix = opticalSystemMatrix(sum(isnan(opticalSystemMatrix),2)~=siz
 
 % Check that the optical system is valid
 systemDirection = calcSystemDirection(opticalSystemMatrix);
-if ~any(strcmp(systemDirection,{'eyeToCamera','cameraToEye'}))
+if ~contains(systemDirection,{'eyeToCamera','cameraToEye'})
     errorString = ['Not a valid opticalSystem: ' systemDirection];
     error('reverseSystemDirection:invalidSystemMatrix',errorString);
 end
