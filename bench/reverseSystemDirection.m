@@ -33,16 +33,6 @@ function opticalSystemOut = reverseSystemDirection( opticalSystemIn )
 %}
 
 
-%% input parser
-p = inputParser; p.KeepUnmatched = true;
-
-% Required inputs
-p.addRequired('opticalSystemIn',@(x)(isstruct(x) | isnumeric(x)));
-
-% parse
-p.parse(opticalSystemIn)
-
-
 %% Prepeare the optical system
 % If we were supplied a struct, extract the system components
 if isstruct(opticalSystemIn)
