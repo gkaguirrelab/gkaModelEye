@@ -98,11 +98,10 @@ options = optimset('TolFun',TolFun,'TolX',TolX,'Display','off');
 
 % Set the inital guess for the angles by finding (w.r.t. the optical axis)
 % the angle of the ray that connects the worldPoint to the corneal apex
-% (which is at [0 0 0]), after re-arranging the dimensions of the
-% worldPoint variable.
+% (which is at [0 0 0]), after subjecting the corneal apex to rotation
 eyePoint = convertWorldToEyeCoord(worldPoint);
-eyePoint = rotateEyeCoord(eyePoint, eyePose, rotationCenters);
-[angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; -eyePoint]'));
+cornealApex = rotateEyeCoord([0 0 0], eyePose, rotationCenters);
+[angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; cornealApex - eyePoint]'));
 
 % If the absolute value of an initial search angle is greater than 90, we
 % flip the direction in the search so that we don't get stuck at the
