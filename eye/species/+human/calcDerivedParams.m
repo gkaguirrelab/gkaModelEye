@@ -60,9 +60,24 @@ p.parse(varargin{:})
 if isempty(p.Results.derivedParams)
     derivedParams = struct();
     derivedParams.stopEccenParams = [-1.7523 4.7609 0.1800 0.0973];
+    derivedParams.defaultRestingNavarroD = 0.842407226562500;
 else
     derivedParams = p.Results.derivedParams;
 end
+
+
+%% Resting accommodation
+% The accommodative state of the lens of the eye is set by the navarroD
+% parameter. We calculate here the navarroD parameter value that places the
+% default model eye at resting accommodation, which is typically assumed to
+% be 1.5 diopters.
+
+% Alert the user
+if p.Results.verbose
+    fprintf('Calculating resting accommodation.\n');
+end
+
+derivedParams.defaultRestingNavarroD = calcAccommodation(1.5);
 
 
 %% Aperture stop ellipticity

@@ -19,14 +19,16 @@ function [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopter
 %   modified by providing key-value pairs as varargin, which are then
 %   passed to the createSceneGeometry fucnction.
 %
+%   The routine searches over navarroD parameter values until a pair of
+%   parallel rays intersect each other on the surface of retina.
+%
 % Inputs:
 %  'accommodationDiopters' - Scalar that supplies the accommodation state
 %                           of the eye. Valid values range from zero
 %                           (unaccommodated) to +10. The value sets the
 %                           distance from the princpal point of the eye to
 %                           the focal point on the right, where diopters =
-%                           1000 / distance(mm). The default value is the
-%                           resting accommodation value of 1.5.
+%                           1000 / distance(mm).
 %
 % Optional key/value pairs:
 %   None, although varargin are passed to createSceneGeometry
@@ -40,11 +42,21 @@ function [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopter
 %{
     navarroD = calcAccommodation(1.5)
 %}
+%{
+    % Plot the eye and the rays
+    [navarroD, fVal, path1, path2] = calcAccommodation(1.5);
+    sceneGeometry = createSceneGeometry('navarroD',navarroD);
+    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
+    plotOpticalSystem('newFigure',false,'rayPath',path1);
+    plotOpticalSystem('newFigure',false,'rayPath',path2);
+    xlim([-25 5]);
+%}
 
 
-% force the varargin to include skipping the calculation of angular
+% Force the varargin to include skipping the calculation of angular
 % magnification effects from lenses
 varargin = [varargin,'skipMagCalc',true];
+
 
 %% Anonymous functions for the eye
 % Define these here to use in a subsequent nonlinear search. Each function
@@ -92,12 +104,12 @@ end
 % The point of intersection of the rays within the eye
 myInternalFocalPoint = @(x) quadric.distanceRays(rayTraceQuadrics(myR1(x), mySystem(x)),rayTraceQuadrics(myR2(x), mySystem(x)));
 
-% The vertex of the vitreous chamber of the eye along the optical axis
-myVertex = @(x) getfield(myScene(x),'eye','landmarks','vertex','coords')';
+% A function to return the quadric vector for the retinal surface
+myRetina = @(x) getfield(myScene(x),'eye','retina','S')';
 
 % The objective function is the distance by which the focal point within
-% the eye misses the vertex of the retina
-myObj = @(x) sqrt(sum((myInternalFocalPoint(x) - myVertex(x)).^2));
+% the eye misses the retinal surface
+myObj = @(x) surfaceDistance(myRetina(x),myInternalFocalPoint(x))^2;
 
 
 %% Perform the search
@@ -105,7 +117,7 @@ myObj = @(x) sqrt(sum((myInternalFocalPoint(x) - myVertex(x)).^2));
 
 % Detect and warn if no accurate solution could be found, which is the
 % case for some combinations of model eyes and accommodation states.
-if fVal > 0.1
+if fVal > 1e-6
     warnString = ['Cannot accurately accommodate the eye to ' num2str(accommodationDiopters) ' diopters'];
     warning('calcAccommodation:cannotFocus',warnString);
 end
@@ -116,3 +128,10 @@ end
 
 end
 
+
+%% LOCAL FUNCTIONS
+
+function fVal = surfaceDistance(myRetina,coord)
+funcS = quadric.vecToFunc(myRetina);
+fVal = funcS(coord(1),coord(2),coord(3));
+end

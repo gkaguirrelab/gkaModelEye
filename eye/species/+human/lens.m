@@ -52,6 +52,12 @@ age = eye.meta.ageYears;
 % Obtain the D parameter of the model
 D = eye.meta.navarroD;
 
+% If the navarroD has not been provided, use the default value in the
+% derived parameters
+if isempty(D)
+    D = eye.derivedParams.defaultRestingNavarroD;
+end
+
 % Initialize the components of the optical system
 lens.S = [];
 lens.boundingBox = [];
