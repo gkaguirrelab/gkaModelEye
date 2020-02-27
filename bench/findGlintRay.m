@@ -66,7 +66,7 @@ function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldPoi
     opticalSystemRot = sceneGeometry.refraction.glint.opticalSystem;
     opticalSystemFixLR = sceneGeometry.refraction.mediumToCamera.opticalSystem;
     [outputRay, initialRay, targetIntersectError ] = findGlintRay( irSourceLocation, eyePose, cameraNodalPoint, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR );
-    outputRayCached = [ -0.016862078207112   0.556759177431708  -0.400596449698838;   0.994188558788728   0.093016664734839  -0.054194184698516];
+    outputRayCached = [ -0.016925517921237   0.557790549167980  -0.401096261331888;   0.994186638572451   0.093151972449674  -0.053996645384183];
     assert(max(max(abs(outputRay - outputRayCached))) < 1e-6)
 %}
 
@@ -100,7 +100,7 @@ options = optimset('TolFun',TolFun,'TolX',TolX,'Display','off');
 % the angle of the ray that connects the worldPoint to the corneal apex
 % (which is at [0 0 0]), after subjecting the corneal apex to rotation
 eyePoint = convertWorldToEyeCoord(worldPoint);
-cornealApex = rotateEyeCoord([0 0 0], eyePose, rotationCenters);
+cornealApex = rotateEyeCoord([0 0 0], eyePose, rotationCenters, 'forward');
 [angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; cornealApex - eyePoint]'));
 
 % If the absolute value of an initial search angle is greater than 90, we
@@ -231,8 +231,8 @@ initialRay = quadric.anglesToRay(eyePoint', angle_p1p2, angle_p1p3)';
 % Ray trace
 outputRay = threeSystemTrace(initialRay', eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR);
 
-% Apply the eye rotation
-outputRay = rotateEyeRay(outputRay, -eyePose, rotationCenters, 'forward'); 
+% Counter-rotate the output ray to account for eye rotation
+outputRay = rotateEyeRay(outputRay, eyePose, rotationCenters, 'inverse');
 
 
 end % findPupilRay -- MAIN
@@ -384,14 +384,14 @@ outputRayEyeWorld = rayTraceQuadrics(inputRayEyeWorld, opticalSystemFixRL)';
 % Counter-rotate the outputRayEyeWorld by the eye pose. This places the
 % outputRayEyeWorld so that the eyeCoordTarget is in a position equivalent
 % to if the eye had rotated.
-outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, -eyePose, rotationCenters, 'forward');
+outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, eyePose, rotationCenters, 'inverse');
 
 % Ray trace through the eye system that is subject to rotation
 outputRayEyeWorld = rayTraceQuadrics(outputRayEyeWorld', opticalSystemRot)';
 
 % Return the ray to the original eyeWorld coordinate frame, which is
 % aligned with the optical axis of the eye
-outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, -eyePose, rotationCenters, 'inverse');
+outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, eyePose, rotationCenters, 'forward');
 
 % Ray trace back through the fixed system that is not subject to rotation
 outputRayEyeWorld = rayTraceQuadrics(outputRayEyeWorld', opticalSystemFixLR)';

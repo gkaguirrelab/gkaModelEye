@@ -65,7 +65,7 @@ function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyePoint
         sceneGeometry.refraction.mediumToCamera.opticalSystem};
     outputRay = findPupilRay( sceneGeometry.eye.stop.center, [-5 10 0 2], args{:} );
     % Test output against cached value
-    outputRayCached = [ -0.028193882594984, 0.275901415357946, -0.630345289394790;  0.978147913824989, 0.093938544770392, -0.185478323494265];
+    outputRayCached = [ -0.028009565218721   0.280832365139287  -0.628259392870332;  0.978125707829540   0.095392579294775  -0.184852253160330 ];
     assert(max(max(abs(outputRay - outputRayCached))) < 1e-6)
 %}
 %{
@@ -122,7 +122,7 @@ options = optimset('TolFun',TolFun,'TolX',TolX,'Display','off');
 % the angle of the ray that connects the eye point to the worldTarget
 % (after re-arranging the dimensions of the worldTarget variable).
 eyeCoordTarget = convertWorldToEyeCoord(worldTarget);
-eyeCoordTarget = rotateEyeCoord(eyeCoordTarget, -eyePose, rotationCenters);
+eyeCoordTarget = rotateEyeCoord(eyeCoordTarget, eyePose, rotationCenters, 'inverse');
 [angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; eyeCoordTarget-eyePoint]'));
 
 % Set bounds on the search
@@ -131,14 +131,22 @@ ub_p1p3 = 90;
 lb_p1p2 = -90;
 lb_p1p3 = -90;
 
+% Create an anonymous function for ray tracing
+intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyePoint, p1p2, p1p3, eyePose, worldTarget, rotationCenters, opticalSystemRot, opticalSystemFix);
+
+% Shrink the bounds to restrict to the domain of valid ray trace solutions
+errorFunc = @(x) intersectErrorFunc(x,angle_p1p3);
+ub_p1p2 = shrinkBound(angle_p1p2,ub_p1p2,TolX,errorFunc);
+lb_p1p2 = shrinkBound(angle_p1p2,lb_p1p2,TolX,errorFunc);
+errorFunc = @(x) intersectErrorFunc(angle_p1p2,x);
+ub_p1p3 = shrinkBound(angle_p1p3,ub_p1p3,TolX,errorFunc);
+lb_p1p3 = shrinkBound(angle_p1p3,lb_p1p3,TolX,errorFunc);
+
 % Ensure that the initial guess is in bounds
 angle_p1p2 = max([angle_p1p2 lb_p1p2]);
 angle_p1p2 = min([angle_p1p2 ub_p1p2]);
 angle_p1p3 = max([angle_p1p3 lb_p1p3]);
 angle_p1p3 = min([angle_p1p3 ub_p1p3]);
-
-% Create an anonymous function for ray tracing
-intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyePoint, p1p2, p1p3, eyePose, worldTarget, rotationCenters, opticalSystemRot, opticalSystemFix);
 
 % Get the intial target error
 targetIntersectError = intersectErrorFunc(angle_p1p2, angle_p1p3);
@@ -218,6 +226,11 @@ initialRay = quadric.anglesToRay(eyePoint', angle_p1p2, angle_p1p3);
 % Ray trace
 outputRay = twoSystemTrace(initialRay, eyePose, rotationCenters, opticalSystemRot, opticalSystemFix);
 
+% Undo the effect of eye rotation to obtain the outputRay in the coordinate
+% space of the eye prior to rotation
+outputRay = rotateEyeRay(outputRay, eyePose, rotationCenters, 'inverse');
+
+
 end % findPupilRay -- MAIN
 
 
@@ -226,6 +239,58 @@ end % findPupilRay -- MAIN
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% LOCAL FUNCTIONS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%% shrinkBound
+% Use divide approach to find a bound that returns a value for the passed
+% function that is less than 1e6
+function boundOut = shrinkBound(x0,boundIn,TolX,errorFunc)
+
+% Check if we already have a valid bound, in which case return
+if errorFunc(boundIn) < 1e6
+    boundOut = boundIn;
+    return
+end
+
+% Set up our vars
+step = -(boundIn-x0)/2;
+boundOut = boundIn + step;
+stillSearching = true;
+lastValidVal = x0;
+lastBound = boundIn;
+
+% Let's go searching
+while stillSearching
+    if errorFunc(boundOut) < 1e6
+        % We have a valid trace.
+        if abs(step) < TolX
+            % If our step is below the TolX, then we are
+            % done.
+            stillSearching = false;
+        else
+            % We are valid, but still too coarse, so move half-way back
+            % towards the lastBound
+            lastValidVal = boundOut;
+            step = +(lastBound-boundOut)/2;
+            lastBound = boundOut;
+            boundOut = boundOut + step;
+        end
+    else
+        % Not a valid trace
+        if abs(step) < TolX
+            % We are below the search tol, so report the last valid bound
+            % we found
+            boundOut = lastValidVal;
+            stillSearching = false;
+        else
+            % Move half-way towards the x0
+            step = -(boundOut-x0)/2;
+            lastBound = boundOut;
+            boundOut = boundOut + step;
+        end
+    end
+end
+end
 
 
 %% calcTargetIntersectError
@@ -288,9 +353,6 @@ end
 % Move the worldTarget into the eye coordinate space
 eyeCoordTarget = convertWorldToEyeCoord(worldTarget);
 
-% Counter rotate the eye coordinate target to be relative to eye position
-eyeCoordTarget = rotateEyeCoord(eyeCoordTarget, -eyePose, rotationCenters, 'forward');
-
 % Calculate the distance between the closest approach of the outputRay to
 % the target.
 distance = quadric.distancePointRay(eyeCoordTarget',outputRayEyeWorld');
@@ -303,17 +365,12 @@ function outputRayEyeWorld = twoSystemTrace(inputRayEyeWorld, eyePose, rotationC
 % Ray trace through the eye system that is subject to rotation
 outputRayEyeWorld = rayTraceQuadrics(inputRayEyeWorld, opticalSystemRot)';
 
-% Counter-rotate the outputRayEyeWorld by the eye pose. This places the
-% outputRayEyeWorld so that the eyeCoordTarget is in a position equivalent
-% to if the eye had rotated.
-outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, -eyePose, rotationCenters, 'forward');
+% Apply the eye rotation.
+outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, eyePose, rotationCenters, 'forward');
 
 % Ray trace through the fixed system that is not subject to rotation
 outputRayEyeWorld = rayTraceQuadrics(outputRayEyeWorld', opticalSystemFix)';
 
-% Return the ray to the original eyeWorld coordinate frame, in which is
-% aligned with the optical axis of the eye
-outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, -eyePose, rotationCenters, 'inverse');
 
 end
 

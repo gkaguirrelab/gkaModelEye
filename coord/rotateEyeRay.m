@@ -85,6 +85,6 @@ else
 end
 
 % Re-asemble the ray
-eyeRay = [p;u-p];
+eyeRay = quadric.normalizeRay([p;u-p]')';
 
 end
