@@ -15,14 +15,14 @@ for ii = 1:length(rotationValues)
     eyePose = [rotationValues(ii) 0 0 3];
     if ii == 1
         [~, plotHandles] = renderEyePose(eyePose, sg, 'newFigure', true, ...
-            'modelEyeLabelNames', {'aziRotationCenter', 'retina' 'irisPerimeter' 'stopCenter' 'pupilPerimeter' 'pupilEllipse' 'cornea'}, ...
-            'modelEyePlotColors', {'>r' '.w' 'ob' '+r' '*g' '-g' '.y'});
+            'modelEyeLabelNames', {'aziRotationCenter', 'retina' 'irisPerimeter' 'pupilEllipse' 'cornea' 'glint_01'}, ...
+            'modelEyePlotColors', {'>r' '.w' 'ob' '-g' '.y' '*r'});
         gif(outputFile);
     else
         delete(plotHandles(2:end))
         [~, plotHandles] = renderEyePose(eyePose, sg, 'newFigure', false, ...
-            'modelEyeLabelNames', {'aziRotationCenter', 'retina' 'irisPerimeter' 'stopCenter' 'pupilPerimeter' 'pupilEllipse' 'cornea'}, ...
-            'modelEyePlotColors', {'>r' '.w' 'ob' '+r' '*g' '-g' '.y'});
+            'modelEyeLabelNames', {'aziRotationCenter', 'retina' 'irisPerimeter' 'pupilEllipse' 'cornea' 'glint_01'}, ...
+            'modelEyePlotColors', {'>r' '.w' 'ob' '-g' '.y' '*r'});
     end
     gif
 end
@@ -34,15 +34,16 @@ for ii = 1:length(rotationValues)
     eyePose = [0 rotationValues(ii) 0 3];
     if ii == 1
         [~, plotHandles] = renderEyePose(eyePose, sg, 'newFigure', true, ...
-            'modelEyeLabelNames', {'eleRotationCenter', 'retina' 'irisPerimeter' 'stopCenter' 'pupilPerimeter' 'pupilEllipse' 'cornea'}, ...
-            'modelEyePlotColors', {'^m' '.w' 'ob' '+r' '*g' '-g' '.y'});
+            'modelEyeLabelNames', {'eleRotationCenter', 'retina' 'irisPerimeter' 'pupilEllipse' 'cornea' 'glint_01'}, ...
+            'modelEyePlotColors', {'^m' '.w' 'ob' '-g' '.y' '*r'});
         gif(outputFile);
     else
         delete(plotHandles(2:end))
         [~, plotHandles] = renderEyePose(eyePose, sg, 'newFigure', false, ...
-            'modelEyeLabelNames', {'eleRotationCenter', 'retina' 'irisPerimeter' 'stopCenter' 'pupilPerimeter' 'pupilEllipse' 'cornea'}, ...
-            'modelEyePlotColors', {'^m' '.w' 'ob' '+r' '*g' '-g' '.y'});
+            'modelEyeLabelNames', {'eleRotationCenter', 'retina' 'irisPerimeter' 'pupilEllipse' 'cornea' 'glint_01'}, ...
+            'modelEyePlotColors', {'^m' '.w' 'ob' '-g' '.y' '*r'});
     end
     gif
 end
 
+close all
