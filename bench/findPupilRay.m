@@ -21,7 +21,7 @@ function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyePoint
 %                           Azimuth, elevation, and torsion are in units of
 %                           head-centered (extrinsic) degrees. The stop
 %                           radius value is unused by this routine.
-%   worldTarget     -       A 3x1 vector that specifies the point in world 
+%   worldTarget           - A 3x1 vector that specifies the point in world 
 %                           coordinates (x, y, z) that the ray should
 %                           intersect after exiting the optical system. A
 %                           common application is to set worldTarget equal
