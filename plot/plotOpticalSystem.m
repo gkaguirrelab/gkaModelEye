@@ -22,8 +22,8 @@ function figHandle = plotOpticalSystem(varargin)
 %                           sceneGeometry struct, then this key value
 %                           should be one of the fields within
 %                               sceneGeometry.refraction
-%                           with typical options being 'cameraToRetina' or
-%                           'stopToCamera'. In this circumstance, the
+%                           with typical options being 'mediumToRetina' or
+%                           'stopToMedium'. In this circumstance, the
 %                           passed structure contains the fields
 %                               opticalSystem, surfaceLabels,surfaceColors
 %                           with the last two fields defining the plotted

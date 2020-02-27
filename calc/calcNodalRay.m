@@ -93,7 +93,7 @@ if all(size(X)==[1 3])
 end
 
 % Assemble the optical system
-opticalSystem = assembleOpticalSystem( eye, 'surfaceSetName','retinaToCamera', 'cameraMedium', cameraMedium );
+opticalSystem = assembleOpticalSystem( eye, 'surfaceSetName','retinaToMedium', 'cameraMedium', cameraMedium );
 
 % Define an error function that reflects the difference in angles from the
 % initial ray and the output ray from the optical system

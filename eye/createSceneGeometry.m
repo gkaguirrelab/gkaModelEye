@@ -101,7 +101,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %
 %  'refraction' - A structure with sub-fields for ray-tracing through sets
 %       of optical surfaces. Standard fields are 'retinaToStop',
-%       'stopToCamera', and 'retinaToCamera'. Each subset has the fields:
+%       'stopToMedium', and 'retinaToMedium'. Each subset has the fields:
 %
 %         'opticalSystem' - An mx19 matrix, where m is the number of
 %                           surfaces in the model, including the initial
@@ -184,7 +184,7 @@ p.addParameter('screenRotMat',[1 0; 0 1],@isnumeric);
 p.addParameter('screenDimensions',[697.347,392.257],@isnumeric);
 p.addParameter('screenResolutions',[1920,1080],@isnumeric);
 p.addParameter('fixationEyePose',[0,0],@isnumeric);
-p.addParameter('surfaceSetName',{'retinaToStop','stopToCamera','retinaToCamera','cameraToRetina','glint'},@ischar);
+p.addParameter('surfaceSetName',{'retinaToCamera','cameraToRetina','retinaToStop','stopToMedium','retinaToMedium','mediumToRetina','mediumToCamera','cameraToMedium','glint'},@ischar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('cameraMedium','air',@ischar);

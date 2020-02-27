@@ -33,16 +33,6 @@ function opticalSystemOut = reverseSystemDirection( opticalSystemIn )
 %}
 
 
-%% input parser
-p = inputParser; p.KeepUnmatched = true;
-
-% Required inputs
-p.addRequired('opticalSystemIn',@(x)(isstruct(x) | isnumeric(x)));
-
-% parse
-p.parse(opticalSystemIn)
-
-
 %% Prepeare the optical system
 % If we were supplied a struct, extract the system components
 if isstruct(opticalSystemIn)
@@ -60,7 +50,7 @@ opticalSystemMatrix = opticalSystemMatrix(sum(isnan(opticalSystemMatrix),2)~=siz
 
 % Check that the optical system is valid
 systemDirection = calcSystemDirection(opticalSystemMatrix);
-if ~any(strcmp(systemDirection,{'eyeToCamera','cameraToEye'}))
+if ~contains(systemDirection,{'eyeToCamera','cameraToEye'})
     errorString = ['Not a valid opticalSystem: ' systemDirection];
     error('reverseSystemDirection:invalidSystemMatrix',errorString);
 end

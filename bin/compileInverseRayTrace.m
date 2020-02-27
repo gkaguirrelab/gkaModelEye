@@ -18,7 +18,7 @@ function compileInverseRayTrace( varargin )
 %   none
 %
 % Optional key/value pairs:
-%  'functionDirPath'      - Character vector. Specifies the location in 
+%  'functionDirPath'      - Character vector. Specifies the location in
 %                           which the compiled function is writen.
 %  'replaceExistingFunc'  - Logical, default false. If set to true, any
 %                           existing versions of findPupilRayMex will
@@ -35,7 +35,8 @@ function compileInverseRayTrace( varargin )
     % Assemble the args for the findPupilRay
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.stopToCamera.opticalSystem};
+    	sceneGeometry.refraction.stopToMedium.opticalSystem, ...
+        sceneGeometry.refraction.mediumToCamera.opticalSystem};
     inverseRayNative = findPupilRay( [sceneGeometry.eye.stop.center(1) 2 0], [-5 10 0 2], args{:} );
     inverseRayCompiled = findPupilRayMex( [sceneGeometry.eye.stop.center(1) 2 0], [-5 10 0 2], args{:} );
     % Test if the outputs agree
@@ -50,7 +51,8 @@ function compileInverseRayTrace( varargin )
     % Assemble the args for the findPupilRay
     args = {sceneGeometry.cameraPosition.translation, ...
     	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.stopToCamera.opticalSystem};
+    	sceneGeometry.refraction.stopToMedium.opticalSystem, ...
+        sceneGeometry.refraction.mediumToCamera.opticalSystem};
     % Native matlab function
     tic
     for ii=1:nComputes
@@ -142,12 +144,18 @@ sceneGeometry = createSceneGeometry();
 dynamicArgsPupil = {[0,0,0], [0,0,0,0]};
 dynamicArgsGlint = {[0;0;0], [0,0,0,0]};
 % Define the form of the staticArgs (which are sceneGeometry components)
-staticArgs = {sceneGeometry.cameraPosition.translation, ...
-    	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.stopToCamera.opticalSystem};
+staticArgsPupil = {sceneGeometry.cameraPosition.translation, ...
+    sceneGeometry.eye.rotationCenters, ...
+    sceneGeometry.refraction.stopToMedium.opticalSystem, ...
+    sceneGeometry.refraction.mediumToCamera.opticalSystem};
+staticArgsGlint = {sceneGeometry.cameraPosition.translation, ...
+    sceneGeometry.eye.rotationCenters, ...
+    sceneGeometry.refraction.cameraToMedium.opticalSystem, ...
+    sceneGeometry.refraction.glint.opticalSystem, ...
+    sceneGeometry.refraction.mediumToCamera.opticalSystem};
 % Assemble the full args
-argsPupil = [dynamicArgsPupil, staticArgs{:}];
-argsGlint = [dynamicArgsGlint, staticArgs{:}];
+argsPupil = [dynamicArgsPupil, staticArgsPupil{:}];
+argsGlint = [dynamicArgsGlint, staticArgsGlint{:}];
 
 
 %% Compile and clean up

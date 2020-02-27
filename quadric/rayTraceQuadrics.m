@@ -128,9 +128,9 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
     u = u./sqrt(sum(u.^2));
     inputRay = [p, u];
     % Perform the ray trace
-    [outputRay, rayPath] = rayTraceQuadrics(inputRay, sceneGeometry.refraction.stopToCamera.opticalSystem);
+    [outputRay, rayPath] = rayTraceQuadrics(inputRay, sceneGeometry.refraction.stopToMedium.opticalSystem);
     % Plot the optical system
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.stopToCamera,...
+    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.stopToMedium,...
         'outputRay',outputRay,'rayPath',rayPath, ...
         'addLighting',true);
 %}

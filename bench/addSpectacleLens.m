@@ -120,8 +120,7 @@ p.parse(opticalSystemIn, lensRefractionDiopters, varargin{:})
 
 
 % Test that we have a matrix with a valid system direction
-systemDirection = calcSystemDirection(opticalSystemIn);
-if ~isempty(opticalSystemIn) && ~strcmp(systemDirection,'eyeToCamera')
+if ~isempty(opticalSystemIn) && ~contains(calcSystemDirection(opticalSystemIn),'eyeToCamera')
     error('addSpectacleLens:invalidSystemDirection','Lenses are only added to an optical system in the eyeToCamera direction')
 end
 

@@ -130,7 +130,7 @@ function [pupilEllipseOnImagePlane, glintCoord, imagePoints, worldPoints, headPo
     % default sceneGeometry
     pupilEllipseOnImagePlane = projectModelEye(eyePose,sceneGeometry);
     % Test against cached result
-    pupilEllipseOnImagePlaneCached = [ 0.027832036523202   0.022396190713864   1.552632974343349   0.000023070663658   0.000192063110130 ].*1e4;
+    pupilEllipseOnImagePlaneCached = [ 0.027801112018072   0.022387973426570   1.554201447325573   0.000023117837874   0.000191404712119 ].*1e4;
     assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-4)
 %}
 %{
@@ -431,7 +431,8 @@ if refractFlag
     % Assemble the static args for the findPupilRay
     args = {sceneGeometry.cameraPosition.translation, ...
         sceneGeometry.eye.rotationCenters, ...
-        sceneGeometry.refraction.stopToCamera.opticalSystem};
+        sceneGeometry.refraction.stopToMedium.opticalSystem, ...
+        sceneGeometry.refraction.mediumToCamera.opticalSystem};
     
     % Pre-allocate the variables to hold the results
     virtualPoints = nan(length(refractPointsIdx),3);
@@ -581,7 +582,9 @@ if isfield(sceneGeometry,'refraction') && ~isempty(glintRayFunc)
         % Assemble the args
         args = {sceneGeometry.cameraPosition.translation, ...
             sceneGeometry.eye.rotationCenters, ...
-            sceneGeometry.refraction.glint.opticalSystem};
+            sceneGeometry.refraction.cameraToMedium.opticalSystem, ...
+            sceneGeometry.refraction.glint.opticalSystem, ...
+            sceneGeometry.refraction.mediumToCamera.opticalSystem};
         
         % Loop through the glints
         for gg = 1:nGlints

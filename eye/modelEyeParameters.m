@@ -44,12 +44,13 @@ function eye = modelEyeParameters( varargin )
 %                           stored set of values.
 %  'navarroD'             - Scalar. The parameter D of the Navarro 2014
 %                           lens model. This value is used to adjust the
-%                           accommodative state of the eye. In the
-%                           emmetropic eye, the default value of 0.6240
-%                           provides a "resting" accomodation that is
-%                           1.5 D. To calculate a navarroD parameter for
-%                           other states of accommodation, use the function
-%                           calcAccommodation.
+%                           accommodative state of the eye. To calculate a
+%                           navarroD parameter for a particular model eye
+%                           in a particular state of accommodation, use the
+%                           function calcAccommodation. If left empty, the
+%                           resting accommodation value for an emmetropic
+%                           eye is used, which is stored in the
+%                           derivedParams.
 %  'measuredCornealCurvature' - 1x2 or 1x3 vector. Provides the horizontal 
 %                           and vertical curvature of the cornea (diopters;
 %                           K1 and K2). The first value is always the
@@ -104,7 +105,7 @@ p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
 p.addParameter('ageYears',18,@isscalar);
 p.addParameter('derivedParams',[],@(x)(isstruct(x) || isempty(x)));
-p.addParameter('navarroD',0.6240,@(x)(isempty(x) || isscalar(x)));
+p.addParameter('navarroD',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('measuredCornealCurvature',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('rotationCenters',[],@(x)(isempty(x) || isstruct(x)));
 p.addParameter('spectralDomain','nir',@ischar);
