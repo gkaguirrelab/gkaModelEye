@@ -7,7 +7,8 @@ function [pupilEllipseOnImagePlane, glintCoord, imagePoints, worldPoints, headPo
 % Description:
 %   Given the sceneGeometry, this routine simulates the aperture stop in a
 %   rotated eye and returns the parameters of the ellipse (in transparent
-%   format) fit to the entrance pupil in the image plane.
+%   format) fit to the entrance pupil in the image plane. The location of
+%   any glint(s) are also provided.
 %
 %   The forward model is a perspective projection of an anatomically
 %   accurate eye, with points positioned behind the cornea subject to
@@ -15,8 +16,7 @@ function [pupilEllipseOnImagePlane, glintCoord, imagePoints, worldPoints, headPo
 %   properties of the camera, including any radial lens distortion.
 %
 %   The 'fullEyeModelFlag' key will render the entire eye, not just the
-%   pupil. The 'calcGlint' flag determines if the routine returns the
-%   glint location.
+%   pupil.
 %
 % Notes:
 %   Rotations - Eye rotation is given as azimuth, elevation, and torsion in
@@ -117,7 +117,9 @@ function [pupilEllipseOnImagePlane, glintCoord, imagePoints, worldPoints, headPo
 %                           refraction by the cornea. All values will be
 %                           nan if sceneGeometry.refraction is empty.
 %   pupilFitError         - The RMSE distance (in pixels) of the pupil
-%                           perimeter points to the pupil ellipse.
+%                           perimeter points to the pupil ellipse. This
+%                           value indicates the degree to which the shape
+%                           of the entrance pupil departs from an ellipse.
 %
 % Examples:
 %{
@@ -219,7 +221,7 @@ p.parse(eyePose, sceneGeometry, varargin{:})
 
 
 %% Extract fields from Results struct
-% Accessing struct elements is relatively slow. Do this hear so it is not
+% Accessing struct elements is relatively slow. Do this here so it is not
 % done in a loop.
 pupilRayFunc = p.Results.pupilRayFunc;
 glintRayFunc = p.Results.glintRayFunc;
@@ -315,7 +317,7 @@ eyePoints = stopPoints;
 if p.Results.fullEyeModelFlag
     
     % Add points for the stop center, iris center, rotation centers,
-    % origin of the optical axis, rear nodal point, and the fovea
+    % and retinal landmarks if present
     eyePoints = [eyePoints; sceneGeometry.eye.stop.center];
     pointLabels = [pointLabels; 'stopCenter'];
     eyePoints = [eyePoints; sceneGeometry.eye.iris.center];
@@ -354,7 +356,7 @@ if p.Results.fullEyeModelFlag
     tmpLabels(:) = {'irisActualPerimeter'};
     pointLabels = [pointLabels; tmpLabels];
     
-    % Create the anterior chamber vertices
+    % Create the corneal surface points
     corneaPoints = quadric.surfaceGrid(...
         sceneGeometry.eye.cornea.front.S,...
         sceneGeometry.eye.cornea.front.boundingBox,...
@@ -377,7 +379,7 @@ if p.Results.fullEyeModelFlag
     eyePoints = [eyePoints; cornealApex];
     pointLabels = [pointLabels; 'cornealApex'];
     
-    % Create the retina vertices
+    % Create the retina surface vertices
     retinaPoints = quadric.surfaceGrid(...
         sceneGeometry.eye.retina.S,...
         sceneGeometry.eye.retina.boundingBox,...
@@ -434,7 +436,7 @@ if refractFlag
         sceneGeometry.refraction.stopToMedium.opticalSystem, ...
         sceneGeometry.refraction.mediumToCamera.opticalSystem};
     
-    % Pre-allocate the variables to hold the results
+    % Pre-allocate variables to hold the results
     virtualPoints = nan(length(refractPointsIdx),3);
     virtualIntersectError = inf(length(refractPointsIdx),1);
     virtualPointLabels = cell(length(refractPointsIdx),1);
@@ -443,7 +445,7 @@ if refractFlag
     % Loop through the eyePoints that are to be refracted
     for ii=1:length(refractPointsIdx)
         
-        % Get this eyeWorld point
+        % Get this eye point
         eyePoint=eyePoints(refractPointsIdx(ii),:);
         
         % Perform the computation using the passed function handle.
@@ -451,10 +453,9 @@ if refractFlag
             pupilRayFunc(eyePoint, eyePose, args{:});
         virtualPoint = virtualImageRay(1,:);
         
-        % Optionally check if the point has encountered total internal
-        % reflection or is a bad ray trace
-        retainPoint = true;
-        
+        % Check if the point has encountered total internal reflection or
+        % is a bad ray trace
+        retainPoint = true;        
         
         if isnan(intersectError) || (intersectError > rayTraceErrorThreshold)
             % The eyePoint did not yield a valid image point. We will
@@ -564,10 +565,10 @@ end
 
 
 %% Calc glint
-% If instructed to do so, find the location of the glint in the eye world
-% coordinate frame. The glint is the reflection of a light source from the
-% tear film of the eye. The location of the glint in the image is subject
-% to refraction by artificial lenses.
+% Find the location of the glint in the eye world coordinate frame. The
+% glint is the reflection of a light source from the tear film of the eye.
+% The location of the glint in the image is subject to refraction by
+% artificial lenses.
 if isfield(sceneGeometry,'refraction') && ~isempty(glintRayFunc)
     if isfield(sceneGeometry.refraction,'glint')
         
@@ -576,7 +577,7 @@ if isfield(sceneGeometry,'refraction') && ~isempty(glintRayFunc)
         glintSourceWorld = sceneGeometry.cameraPosition.translation + ...
             sceneGeometry.cameraPosition.glintSourceRelative;
         
-        % We may have more than one glint
+        % How many light sources do we have?
         nGlints = size(glintSourceWorld,2);
         
         % Assemble the args
@@ -702,8 +703,8 @@ if ~isfield(sceneGeometry,'cameraPosition') || ~isfield(sceneGeometry,'cameraInt
 end
 
 % Create the camera position rotation matrix. This is the rotation matrix
-% for the position of the camera with respect to the world coordinate
-% system. Only camera torsion is supported.
+% for the position of the camera with respect to the world coordinates.
+% Only camera torsion is supported.
 cameraRotationMatrix = ...
     [cosd(sceneGeometry.cameraPosition.torsion)	-sind(sceneGeometry.cameraPosition.torsion)	0; ...
     sind(sceneGeometry.cameraPosition.torsion)     cosd(sceneGeometry.cameraPosition.torsion)     0; ...
