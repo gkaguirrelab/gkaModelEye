@@ -30,7 +30,7 @@ The entrance pupil is described by the parameters of an ellipse fit to the pupil
 
 Most of the functions take key-value pairs that adjust the default behavior of the model. For example, you can generate a -3 diopter, myopic left eye that is wearing glasses with an appropriate corrective lens with the call:
 ```
-createSceneGeometry('eyeLaterality','left','sphericalAmetropia',-3,'spectacleLens',-3)`.
+createSceneGeometry('eyeLaterality','left','sphericalAmetropia',-3,'spectacleLens',-3).
 ```
 
 The function `eyePoseEllipseFit` implements a search over eyePose parameters and executions of the forward model to find the eyePose values that best describe an observed pupil perimeter. This is used to support model-based eye tracking with [transparentTrack](https://github.com/gkaguirrelab/transparentTrack)
