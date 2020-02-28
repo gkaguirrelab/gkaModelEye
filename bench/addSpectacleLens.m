@@ -11,7 +11,7 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %	lens, so both surfaces will have a negative radius of curvature for
 %	rayTraceEllipsoids().
 %
-%   The lenses are created (a virtually grind) through an optimization to
+%   The lenses are created (a virtual grind) through an optimization to
 %   match the desired refractive power. There is a bit of an issue that the
 %   lens that a person would wear would be optically specified for visible
 %   wavelengths, but we may later wish to evaluate the lens under other

@@ -64,15 +64,17 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera, 
 % Examples:
 %{
     % Determine the refractive power of the model eye
-    eye=modelEyeParameters('navarroD',0);
-    opticalSystem=assembleOpticalSystem(eye,'surfaceSetName','retinaToCamera','opticalSystemNumRows',[]);
-    [diopters, focalPoint] = calcDiopters(opticalSystem)
+    sceneGeometry = createSceneGeometry;
+    diopters = calcDiopters(sceneGeometry.refraction.cameraToRetina.opticalSystem);
+    outline = sprintf('The refractive power of the model eye in resting acommodation is %2.2f diopters.\n',diopters);
+    fprintf(outline)
 %}
 %{
     % Determine the refractive power of the lens 
-    eye=modelEyeParameters('accommodationDiopters',0);
-    opticalSystem=assembleOpticalSystem(eye,'surfaceSetName','stopToRetina','opticalSystemNumRows',[]);
-    [diopters, focalPoint] = calcDiopters(opticalSystem)
+    sceneGeometry = createSceneGeometry;
+    diopters = calcDiopters(sceneGeometry.refraction.retinaToStop.opticalSystem);
+    outline = sprintf('The refractive power of the crystaline lens in resting acommodation is %2.2f diopters.\n',diopters);
+    fprintf(outline)
 %}
 
 % Handle nargin

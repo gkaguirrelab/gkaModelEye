@@ -26,7 +26,7 @@ function [angle, angle_xy, angle_xz] = angleRays( R1, R2 )
     p = [0;0;0];
     u = [1;tand(15);tand(-7)];
     R2 = quadric.normalizeRay([p, u]);
-    [angle, angle_xy, angle_xz] = quadric.angleRays( R1, R2 )
+    [angle, angle_xy, angle_xz] = quadric.angleRays( R1, R2 );
 %}
 
 % Calculate the overall angle between the two vectors

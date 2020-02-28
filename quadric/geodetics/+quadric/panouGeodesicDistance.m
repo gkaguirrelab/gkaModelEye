@@ -86,7 +86,9 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
     S = eye.retina.S;
     G0 = eye.axes.visual.geodetic;
     G1 = eye.axes.opticDisc.geodetic;
-    odf_distance = quadric.panouGeodesicDistance(S,G0,G1)
+    odf_distance = quadric.panouGeodesicDistance(S,G0,G1);
+    outline = sprintf('Geodetic distance from the fovea to the optic disc: %2.2f mm\n',odf_distance);
+    fprintf(outline);
 %}
 
 

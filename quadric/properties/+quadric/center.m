@@ -25,7 +25,7 @@ function X = center( S )
 % Examples:
 %{
     S = quadric.scale(quadric.unitSphere,[5 3 4]);
-    quadric.center(S)
+    quadric.center(S);
 %}
 
 % If the quadric surface was passed in vector form, convert to matrix

@@ -40,7 +40,7 @@ function [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopter
 %
 % Examples:
 %{
-    navarroD = calcAccommodation(1.5)
+    navarroD = calcAccommodation(1.5);
 %}
 %{
     % Plot the eye and the rays

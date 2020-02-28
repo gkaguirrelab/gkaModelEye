@@ -29,7 +29,7 @@ function opticalSystemOut = reverseSystemDirection( opticalSystemIn )
     eye = modelEyeParameters();
     opticalSystemIn=assembleOpticalSystem(eye,'surfaceSetName','retinaToCamera','opticalSystemNumRows',[]);
     opticalSystemOut = reverseSystemDirection( opticalSystemIn );
-    calcSystemDirection(opticalSystemOut)
+    calcSystemDirection(opticalSystemOut);
 %}
 
 

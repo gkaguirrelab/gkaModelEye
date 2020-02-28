@@ -54,15 +54,16 @@ function [outputRay,rayPath,fixEyePose,fixTargetCoords,foveaDistanceError] = cal
     [outputRayVis,rayPathVis]=calcNodalRay(sceneGeometry.eye,sceneGeometry.eye.landmarks.fovea.geodetic);
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true,'rayPath',rayPathVis,'outputRay',outputRayVis);
     plotOpticalSystem('newFigure',false,'rayPath',rayPathLoS,'outputRay',outputRayLoS,'rayColor','green');
-    fprintf('Angle of the line-of-sight axis w.r.t. the optical axis:\n')
-    fixationEyePose(1:2)
+    outline = sprintf('Angle of the line-of-sight axis w.r.t. the optical axis: [%2.2f, %2.2f]\n',fixationEyePose(1:2));
+    fprintf(outline);
 %}
 %{
-    % Derive the axial length of the eye along the line-of-sight axis, and
-    % compare this to the length along the optical axis
+    % Derive the axial length of the eye along the line-of-sight axis
     sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
     [~,rayPathLoS]=calcLineOfSightRay(sceneGeometry);
-    sqrt(sum((rayPathLoS(:,1)-rayPathLoS(:,end)).^2))    
+    al = sqrt(sum((rayPathLoS(:,1)-rayPathLoS(:,end)).^2));
+    outline = sprintf('The axial length of the eye along the line-of-sight axis is: %2.2f mm\n',al);
+    fprintf(outline);
 %}
 
 % Code to determine the stop radius that corresponds to a pupil diameter of
@@ -84,7 +85,9 @@ function [outputRay,rayPath,fixEyePose,fixTargetCoords,foveaDistanceError] = cal
     myPupilEllipse = @(radius) projectModelEye([0, 0, 0, radius],sceneGeometry);
     myArea = @(ellipseParams) ellipseParams(3);
     myObj = @(radius) (myArea(myPupilEllipse(radius))-stopArea(1)).^2;
-    stopRadius = fminunc(myObj, entranceRadius)
+    stopRadius = fminunc(myObj, entranceRadius);
+    outline = sprintf('A 2mm entrance pupil corresponds to a %2.2fmm stop radius\n',stopRadius);
+    fprintf(outline);
 %}
     
 % Parse inputs

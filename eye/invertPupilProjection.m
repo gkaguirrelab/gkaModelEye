@@ -96,7 +96,7 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = invertPupilProj
     for pp = 1:nPoses
     	ellipseParams(pp,:) = projectModelEye(eyePoses(pp,:),sceneGeometry);
     end
-    fprintf('\nTime to compute inverse projection model (average over %d projections):\n',nPoses);
+    fprintf('Time to compute inverse projection model (average over %d projections):\n',nPoses);
     recoveredEyePoses = []; RMSEvals = [];
     tic
     for pp = 1:nPoses
@@ -104,10 +104,10 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = invertPupilProj
     end
     msecPerModel = toc / nPoses * 1000;
     fprintf('\tUsing pre-compiled ray tracing: %4.2f msecs.\n',msecPerModel);
-    fprintf('Max errors in azi, ele, torsion, and stop radius:\n');
-    max(eyePoses-recoveredEyePoses)
-    fprintf('median RMSE:\n');
-    median(RMSEvals)
+    outline = sprintf('\tMax errors in azi, ele, torsion, and stop radius: [ %2.2f, %2.2f, %2.2f, %2.2f ]\n',max(eyePoses-recoveredEyePoses));
+    fprintf(outline)
+    outline = sprintf('median RMSE: 2.2f \n',median(RMSEvals));
+    fprtinf(outline)
 %}
 
 

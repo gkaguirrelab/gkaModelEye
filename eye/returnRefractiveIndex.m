@@ -39,7 +39,7 @@ function n = returnRefractiveIndex( material, wavelength, varargin )
 %
 % Examples:
 %{
-    n = returnRefractiveIndex( 'cornea', 'visible' )
+    n = returnRefractiveIndex( 'cornea', 'visible' );
 %}
 
 %% input parser

@@ -31,7 +31,7 @@ function dimensionRank = dimensionSizeRank(S)
 % Examples:
 %{
     S = quadric.scale(quadric.unitSphere,[5 3 4]);
-    quadric.dimensionSizeRank(S)
+    quadric.dimensionSizeRank(S);
 %}
 
 % If the quadric surface was passed in vector form, convert to matrix

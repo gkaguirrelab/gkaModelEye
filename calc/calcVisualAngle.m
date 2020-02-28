@@ -96,6 +96,8 @@ function [visualAngleTotal, visualAngleByPlane, outputRay0, outputRay1, rayPath0
     X1 = quadric.ellipsoidalGeoToCart(G1,S);
     d = sqrt(sum((X0-X1).^2));
     mmPerDeg = d/visualAngleTotal;
+    outline = sprintf('%2.2f mm/deg at the fovea for an emmetropic eye.\n',mmPerDeg);
+    fprintf(outline);
 %}
 %{
     % Calculate deg/mm at the fovea as a function of ametropia and axial

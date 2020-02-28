@@ -37,7 +37,10 @@ function M = calcAngularMagnification(eye, varargin)
 % Examples:
 %{
     eye = modelEyeParameters;
-    calcAngularMagnification(eye,'spectacleLens',-4)
+    diopters = -4;
+    m = calcAngularMagnification(eye,'spectacleLens',diopters);
+    outline = sprintf('The angular magnfication on the retina produced by a %d diopter spectacle lens is x%2.2f \n',diopters,m);
+    fprintf(outline)
 %}
 
 % A point on the retina, just offset from the vertex

@@ -45,7 +45,7 @@ function compileInverseRayTrace( varargin )
 %{
     % Compare computation time for MATLAB and compiled code
     nComputes = 100;
-    fprintf('\nTime to execute findPupilRay (average over %d projections):\n',nComputes);
+    fprintf('Time to execute findPupilRay (average over %d projections):\n',nComputes);
     % Native function
     sceneGeometry = createSceneGeometry();
     % Assemble the args for the findPupilRay

@@ -26,7 +26,7 @@ function [angle_xy, angle_xz, p] = rayToAngles( R )
     p = [0;0;0];
     u = [1;tand(15);tand(-7)];
     R2 = quadric.normalizeRay([p, u]);
-    [angle, angle_xy, angle_xz] = quadric.angleRays( R1, R2 )
+    [angle, angle_xy, angle_xz] = quadric.angleRays( R1, R2 );
 %}
 
 R = quadric.normalizeRay(R);

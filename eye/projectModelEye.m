@@ -178,7 +178,7 @@ function [pupilEllipseOnImagePlane, glintCoord, imagePoints, worldPoints, headPo
     % Generate some randomly selected eye poses
     nPoses = 100;
     eyePoses=[(rand(nPoses,1)-0.5)*20, (rand(nPoses,1)-0.5)*10, zeros(nPoses,1), 2+(rand(nPoses,1)-0.5)*1];
-    fprintf('\nTime to compute forward projection model (average over %d projections):\n',nPoses);
+    fprintf('Time to compute forward projection model (average over %d projections):\n',nPoses);
     tic
     for pp = 1:nPoses
     	projectModelEye(eyePoses(pp,:),sceneGeometry);

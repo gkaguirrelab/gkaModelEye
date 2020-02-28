@@ -27,7 +27,7 @@ function Sm = scale( S, s)
     S = quadric.unitSphere();
     S = quadric.scale(S,[3 4 5]);
     % Report the radii
-    quadric.radii(S)
+    quadric.radii(S);
 %}
 
 

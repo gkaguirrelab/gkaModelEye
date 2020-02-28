@@ -22,7 +22,7 @@ function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldPoi
 %                           Azimuth, elevation, and torsion are in units of
 %                           head-centered (extrinsic) degrees. The stop
 %                           radius value is unused by this routine.
-%   worldTarget     -       A 3x1 vector that specifies the point in world 
+%   worldTarget           - A 3x1 vector that specifies the point in world 
 %                           coordinates (x, y, z) that the ray should
 %                           intersect after exiting the optical system. A
 %                           common application is to set worldTarget equal
@@ -30,11 +30,15 @@ function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldPoi
 %                           camera, which is found in:
 %                           	sceneGeometry.cameraPosition.translation
 %   rotationCenters       - Equal to sceneGeometry.eye.rotationCenters
+%   opticalSystemFixRL    - Struct. This is the component of the optical
+%                           system that is invariant with eye
+%                           movements. Typically set to: sceneGeometry.
+%                               refraction.cameraToMedium.opticalSystem
 %   opticalSystemRot      - Struct. This is the component of the optical
 %                           system that is subject to rotation with eye
 %                           movements. Typically set to: sceneGeometry.
 %                               refraction.stopToMedium.opticalSystem
-%   opticalSystemFix      - Struct. This is the component of the optical
+%   opticalSystemFixLR    - Struct. This is the component of the optical
 %                           system that is invariant with eye
 %                           movements. Typically set to: sceneGeometry.
 %                               refraction.mediumToCamera.opticalSystem

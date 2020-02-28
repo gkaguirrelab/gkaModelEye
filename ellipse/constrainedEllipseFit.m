@@ -52,10 +52,11 @@ function [transparentEllipseParams, RMSE, constraintError, fitAtBound] = constra
         fitParams(ii,:) = constrainedEllipseFit(xPoints(ii,:)', yPoints(ii,:)', [-500 -500 100 0 0], [500 500 1100 1 pi], [] );
     end
     timePerFitMsecs = toc / nEllipses * 1000;
-    fprintf('Ellipse fitting time is %4.2f msecs.\n',timePerFitMsecs);
+    fprintf('Performing constrained ellipse fit.\n');
+    fprintf('\tEllipse fitting time is %4.2f msecs.\n',timePerFitMsecs);
     e = max(abs(params-fitParams));
-    fprintf('The maximum absolute fitting errors were [%4.3f %4.3f %4.3f %4.3f %4.3f].\n',e(1),e(2),e(3),e(4),e(5));
-    fprintf('Note that elevated errors in theta fitting result from theta being unconstrained at low eccentricities.\n');
+    fprintf('\tThe maximum absolute fitting errors were [%4.3f %4.3f %4.3f %4.3f %4.3f].\n',e(1),e(2),e(3),e(4),e(5));
+    fprintf('\tNote that elevated errors in theta fitting result from theta being unconstrained at low eccentricities.\n');
 %}
 
 
