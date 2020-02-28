@@ -107,7 +107,7 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = invertPupilProj
     outline = sprintf('\tMax errors in azi, ele, torsion, and stop radius: [ %2.2f, %2.2f, %2.2f, %2.2f ]\n',max(eyePoses-recoveredEyePoses));
     fprintf(outline)
     outline = sprintf('median RMSE: 2.2f \n',median(RMSEvals));
-    fprtinf(outline)
+    fprintf(outline)
 %}
 
 
