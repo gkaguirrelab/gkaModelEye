@@ -1,5 +1,5 @@
 function n = returnRefractiveIndex( material, wavelength, varargin )
-% Refractice index for a specified material at a specified wavelength
+% Refractive index for a specified material at a specified wavelength
 %
 % Syntax:
 %  n = returnRefractiveIndex( material, wavelength )
@@ -72,6 +72,8 @@ if ischar(p.Results.wavelength)
         otherwise
             error(['I do not have values for the spectral domain of ' spectralDomain]);
     end
+else
+    wavelength = p.Results.wavelength;
 end
 
 % Assign the coefficients of the Cauchy equation
