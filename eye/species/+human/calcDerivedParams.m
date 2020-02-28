@@ -19,8 +19,8 @@ function derivedParams = calcDerivedParams(varargin)
 %   none
 %
 % Outputs:
-%   derivedParams         - Structure, with the fields cornealRotation,
-%                           accommodationPolyCoef, and stopEccenParams.0
+%   derivedParams         - Structure, with fields for each of the derived
+%                           parameter values.
 %
 % Examples:
 %{
