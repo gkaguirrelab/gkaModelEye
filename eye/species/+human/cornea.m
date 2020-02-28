@@ -170,7 +170,7 @@ S = quadric.translate(S,[-radii(1) 0 0]);
 
 % Store the kvals for these front surface radii
 D = @(radius) (radii(1) * 337.5) ./ radius.^2;
-cornea.kvals = [D(radii(2:3)) cornealRotation(1)];
+cornea.kvals = [D(radii(2:3)) cornealRotation(1) cornealRotation(3) cornealRotation(2)];
 
 % Store these values
 cornea.front.S = quadric.matrixToVec(S);
