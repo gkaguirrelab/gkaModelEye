@@ -51,22 +51,28 @@ function eye = modelEyeParameters( varargin )
 %                           resting accommodation value for an emmetropic
 %                           eye is used, which is stored in the
 %                           derivedParams.
-%  'measuredCornealCurvature' - 1x2 or 1x3 vector. Provides the horizontal 
+%  'measuredCornealCurvature' - 1x2 to 1x5 vector. Provides the horizontal 
 %                           and vertical curvature of the cornea (diopters;
 %                           K1 and K2). The first value is always the
 %                           smaller, and thus describes the "flatter"
 %                           surface of the retina. The second value is
 %                           always larger, and describes the curvature of
 %                           the surface of the retina oriented 90 degrees
-%                           away from the flatest surface. The third value
-%                           is the rotation of the "horizontal" axis away
-%                           from horizontal in degrees to allow
-%                           specification of oblique asigmatism. Only the
-%                           modeling of regular corneal astigmatism is
-%                           supported. In subsequent routines the curvature
-%                           in diopters is converted to a radius of
-%                           curvature in mm using:
+%                           away from the flatest surface. In subsequent
+%                           routines the curvature in diopters is converted
+%                           to a radius of curvature in mm using:
 %                               r = 1000*(1.3375-1)/K
+%                           The additional parameter values give the
+%                           rotation of the corneal ellipsoid. In the order
+%                           of:
+%                               [torsion, tilt, tip]             
+%                           which are (respectively), the rotation of the
+%                           "horizontal" axis away from horizontal in
+%                           degrees (a.k.a., oblique asigmatism; only the
+%                           modeling of regular corneal astigmatism is
+%                           supported), then the rotation of the cornea
+%                           around the vertical axis (tilt) and around the
+%                           horizontal axis (tip).
 %                           If left undefined, the "canonical" Navarro 2006
 %                           corneal parameters will be used.
 %  'spectralDomain'       - String, options include {'vis','nir'}.
