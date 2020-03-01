@@ -1,5 +1,5 @@
 function Rr = refractRay(R,N,nRel)
-% Returns the refracted ray given incident ray, surface normal, and index 
+% Returns a refracted ray given an incident ray, surface normal, and index 
 %
 % Syntax:
 %  Rr = quadric.refractRay(R,N,nRel)
@@ -15,7 +15,7 @@ function Rr = refractRay(R,N,nRel)
 %   This approach to optical systems is described in:
 %
 %       Langenbucher, Achim, et al. "Ray tracing through a schematic eye
-%       containing second?order (quadric) surfaces using 4× 4 matrix
+%       containing second-order (quadric) surfaces using 4x4 matrix
 %       notation." Ophthalmic and Physiological Optics 26.2 (2006):
 %       180-188.
 %
