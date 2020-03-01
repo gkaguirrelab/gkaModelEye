@@ -48,10 +48,11 @@ function cornea = cornea( eye )
 
 	fixTargetDistance = 500;
 	stopRadius = 0.8693;
+    keyVals = {'sphericalAmetropia',0,'spectralDomain','vis'};
+    navarroD = calcAccommodation(1000/fixTargetDistance,keyVals{:});
     sceneGeometry = createSceneGeometry(...
-        'sphericalAmetropia',0,...
-        'accommodationDiopters',1000/fixTargetDistance,...
-        'spectralDomain','vis',...
+        keyVals{:}, ...
+        'navarroD',navarroD, ...
         'calcLandmarkFovea',true);
 
     % Obtain the fixation angles and fixation target location
@@ -74,7 +75,7 @@ function cornea = cornea( eye )
 % degrees of rotation about the vertical axis towards the nose as a
 % default. The measuredCornealCurvature vector can include rotations. These
 % are in the order of [torsion, tilt (rotation about vertical), and tip
-% (rotatio about the horizontal axis).
+% (rotation about the horizontal axis).
 cornealRotation = [0 0 2.5];
 
 %% Front corneal surface
