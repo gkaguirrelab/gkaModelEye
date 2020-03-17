@@ -44,72 +44,13 @@ end
 p = eyeRay(1,:);
 u = p + eyeRay(2,:);
 
-% Generate the rotation matrix
-RotAzi = [cosd(eyePose(1)) -sind(eyePose(1)) 0; sind(eyePose(1)) cosd(eyePose(1)) 0; 0 0 1];
-RotEle = [cosd(-eyePose(2)) 0 sind(-eyePose(2)); 0 1 0; -sind(-eyePose(2)) 0 cosd(-eyePose(2))];
-RotTor = [1 0 0; 0 cosd(eyePose(3)) -sind(eyePose(3)); 0 sind(eyePose(3)) cosd(eyePose(3))];
+% Rotate each coordinate. Save the rotation matrix from the first
+% coordinate to save computation time for the second coordinate
+[pR, R] = rotateEyeCoord(p, eyePose, rotationCenters, directionFlag);
+uR = rotateEyeCoord(u, eyePose, rotationCenters, directionFlag);
 
-% Apply the rotation (or inverse rotation if requested), making use of the
-% rotationCenters of the eye
-
-if strcmp(directionFlag,'inverse')
-    
-    % Azimuth
-    p=p-rotationCenters.azi;
-    p = (RotAzi'*p')';
-    p=p+rotationCenters.azi;
-    % Elevation
-    p=p-rotationCenters.ele;
-    p = (RotEle'*p')';
-    p=p+rotationCenters.ele;
-    % Torsion
-    p=p-rotationCenters.tor;
-    p = (RotTor'*p')';
-    p=p+rotationCenters.tor;
-    
-    % Azimuth
-    u=u-rotationCenters.azi;
-    u = (RotAzi'*u')';
-    u=u+rotationCenters.azi;
-    % Elevation
-    u=u-rotationCenters.ele;
-    u = (RotEle'*u')';
-    u=u+rotationCenters.ele;
-    % Torsion
-    u=u-rotationCenters.tor;
-    u = (RotTor'*u')';
-    u=u+rotationCenters.tor;
-    
-else
-    
-    % Torsion
-    p=p-rotationCenters.tor;
-    p = (RotTor*p')';
-    p=p+rotationCenters.tor;
-    % Elevation
-    p=p-rotationCenters.ele;
-    p = (RotEle*p')';
-    p=p+rotationCenters.ele;
-    % Azimuth
-    p=p-rotationCenters.azi;
-    p = (RotAzi*p')';
-    p=p+rotationCenters.azi;
-    
-    % Torsion
-    u=u-rotationCenters.tor;
-    u = (RotTor*u')';
-    u=u+rotationCenters.tor;
-    % Elevation
-    u=u-rotationCenters.ele;
-    u = (RotEle*u')';
-    u=u+rotationCenters.ele;
-    % Azimuth
-    u=u-rotationCenters.azi;
-    u = (RotAzi*u')';
-    u=u+rotationCenters.azi;
-end
 
 % Re-asemble the ray
-eyeRay = quadric.normalizeRay([p;u-p]')';
+eyeRay = quadric.normalizeRay([pR;uR-pR]')';
 
 end

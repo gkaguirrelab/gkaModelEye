@@ -230,10 +230,6 @@ rayTraceErrorThreshold = p.Results.rayTraceErrorThreshold;
 borderSearchPrecision = p.Results.borderSearchPrecision;
 
 %% Prepare variables
-% Separate the eyePoses into individual variables
-eyeAzimuth = eyePose(1);
-eyeElevation = eyePose(2);
-eyeTorsion = eyePose(3);
 stopRadius = eyePose(4);
 glintCoord = [];
 
@@ -606,37 +602,23 @@ if isfield(sceneGeometry,'refraction') && ~isempty(glintRayFunc)
 end
 
 
-%% Define the eye rotation matrix
-% Assemble a rotation matrix from the head-fixed Euler angle rotations. In
-% the head-centered world coordinate frame, positive azimuth, elevation and
-% torsion values correspond to rightward, upward and clockwise (as seen
-% from the perspective of the subject) eye movements
-R.azi = [cosd(eyeAzimuth) -sind(eyeAzimuth) 0; sind(eyeAzimuth) cosd(eyeAzimuth) 0; 0 0 1];
-R.ele = [cosd(-eyeElevation) 0 sind(-eyeElevation); 0 1 0; -sind(-eyeElevation) 0 cosd(-eyeElevation)];
-R.tor = [1 0 0; 0 cosd(eyeTorsion) -sind(eyeTorsion); 0 sind(eyeTorsion) cosd(eyeTorsion)];
+%% Apply eye rotation
 
-% This order (tor-ele-azi) corresponds to a head-fixed, extrinsic, rotation
-% matrix. The reverse order (azi-ele-tor) would be an eye-fixed, intrinsic
-% rotation matrix and would corresponds to the "Fick coordinate" scheme.
-rotOrder = {'tor','ele','azi'};
-
-
-%% Apply the eye rotation
-headPoints = eyePoints;
-
-% We shift the points to each rotation center, rotate, shift back, and
-% repeat. Omit the eye rotation centers from this process. We must perform
-% the rotation independently for each Euler angle to accomodate having
-% rotation centers that differ by Euler angle.
+% Omit the eye rotation centers themselves from rotation.
 rotatePointsIdx = ~contains(pointLabels,{'Rotation'});
 
-for rr=1:3
-    % bsxfun used to avoid implicit expansion
-    headPoints(rotatePointsIdx,:) = bsxfun(@plus,...
-        (R.(rotOrder{rr})*bsxfun(@minus,...
-        headPoints(rotatePointsIdx,:),...
-        sceneGeometry.eye.rotationCenters.(rotOrder{rr}))')',...
-        sceneGeometry.eye.rotationCenters.(rotOrder{rr}));
+% Copy the eyePoints to the headPoints
+headPoints = eyePoints;
+
+% Loop through the points to be rotated. We pass the rotation matrix to
+% avoid having to re-calculate this for the rotation of each point.
+R = [];
+for pp = 1:length(rotatePointsIdx)
+    headPoints(rotatePointsIdx(pp),:) = rotateEyeCoord(...
+        eyePoints(rotatePointsIdx(pp),:), ...
+        eyePose, ...
+        sceneGeometry.eye.rotationCenters, ...
+        'forward');
 end
 
 % If we are projecting a full eye model, label as hidden those posterior
