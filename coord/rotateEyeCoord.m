@@ -46,12 +46,13 @@ function [eyeCoord, R] = rotateEyeCoord(eyeCoord, eyePose, rotationCenters, dire
 % Handle incomplete input arguments
 if nargin==3
     directionFlag = 'forward';
-    R = [];
+    R = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3));
 end
 
 if nargin==4
-    R = [];
+    R = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3));
 end
+
 
 %% Define the eye rotation matrix
 % Assemble a rotation matrix from the head-fixed Euler angle rotations. In
@@ -64,31 +65,44 @@ if isempty(R)
     R.tor = [1 0 0; 0 cosd(eyePose(3)) -sind(eyePose(3)); 0 sind(eyePose(3)) cosd(eyePose(3))];
 end
 
+% We shift the points to each rotation center, rotate, shift back, and
+% repeat. We must perform the rotation independently for each Euler angle
+% to accomodate having rotation centers that differ by Euler angle.
 switch directionFlag
     case 'forward'
-        % This order (tor-ele-azi) corresponds to a head-fixed, extrinsic,
-        % rotation matrix. The reverse order (azi-ele-tor) would be an
-        % eye-fixed, intrinsic rotation matrix and would corresponds to the
-        % "Fick coordinate" scheme.
-        rotOrder = {'tor','ele','azi'};
-        for rr = 1:3
-            % We shift the points to each rotation center, rotate, shift
-            % back, and repeat. We must perform the rotation independently
-            % for each Euler angle to accomodate having rotation centers
-            % that differ by Euler angle.
-            eyeCoord = eyeCoord - rotationCenters.(rotOrder{rr});
-            eyeCoord = (R.(rotOrder{rr})*eyeCoord')';
-            eyeCoord = eyeCoord + rotationCenters.(rotOrder{rr});
-            
-        end
+        
+        % Torsion
+        eyeCoord = eyeCoord - rotationCenters.tor;
+        eyeCoord = (R.tor*eyeCoord')';
+        eyeCoord = eyeCoord + rotationCenters.tor;
+        
+        % Azimuth
+        eyeCoord = eyeCoord - rotationCenters.azi;
+        eyeCoord = (R.azi*eyeCoord')';
+        eyeCoord = eyeCoord + rotationCenters.azi;
+        
+        % Elevation
+        eyeCoord = eyeCoord - rotationCenters.ele;
+        eyeCoord = (R.ele*eyeCoord')';
+        eyeCoord = eyeCoord + rotationCenters.ele;
+        
     case 'inverse'
-        % Conduct the inverse rotation
-        rotOrder = {'azi','ele','tor'};
-        for rr = 1:3
-            eyeCoord = eyeCoord - rotationCenters.(rotOrder{rr});
-            eyeCoord = (R.(rotOrder{rr})'*eyeCoord')';
-            eyeCoord = eyeCoord + rotationCenters.(rotOrder{rr});
-        end
+        
+        % Elevation
+        eyeCoord = eyeCoord - rotationCenters.ele;
+        eyeCoord = (R.ele'*eyeCoord')';
+        eyeCoord = eyeCoord + rotationCenters.ele;
+        
+        % Azimuth
+        eyeCoord = eyeCoord - rotationCenters.azi;
+        eyeCoord = (R.azi'*eyeCoord')';
+        eyeCoord = eyeCoord + rotationCenters.azi;
+        
+        % Torsion
+        eyeCoord = eyeCoord - rotationCenters.tor;
+        eyeCoord = (R.tor'*eyeCoord')';
+        eyeCoord = eyeCoord + rotationCenters.tor;
+        
 end
 
 
