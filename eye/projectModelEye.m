@@ -605,7 +605,7 @@ end
 %% Apply eye rotation
 
 % Omit the eye rotation centers themselves from rotation.
-rotatePointsIdx = ~contains(pointLabels,{'Rotation'});
+rotatePointsIdx = find(~contains(pointLabels,{'Rotation'}));
 
 % Copy the eyePoints to the headPoints
 headPoints = eyePoints;
@@ -618,7 +618,8 @@ for pp = 1:length(rotatePointsIdx)
         eyePoints(rotatePointsIdx(pp),:), ...
         eyePose, ...
         sceneGeometry.eye.rotationCenters, ...
-        'forward');
+        'forward', ...
+        R);
 end
 
 % If we are projecting a full eye model, label as hidden those posterior

@@ -1,4 +1,4 @@
-function [eyeCoord, R] = rotateEyeCoord(eyeCoord, eyePose, rotationCenters, directionFlag)
+function [eyeCoord, R] = rotateEyeCoord(eyeCoord, eyePose, rotationCenters, directionFlag, R)
 % Apply an eye rotation to an eye coordinate
 %
 % Syntax:
@@ -46,6 +46,11 @@ function [eyeCoord, R] = rotateEyeCoord(eyeCoord, eyePose, rotationCenters, dire
 % Handle incomplete input arguments
 if nargin==3
     directionFlag = 'forward';
+    R = [];
+end
+
+if nargin==4
+    R = [];
 end
 
 %% Define the eye rotation matrix
@@ -53,9 +58,11 @@ end
 % the head-centered world coordinate frame, positive azimuth, elevation and
 % torsion values correspond to rightward, upward and clockwise (as seen
 % from the perspective of the subject) eye movements
-R.azi = [cosd(eyePose(1)) -sind(eyePose(1)) 0; sind(eyePose(1)) cosd(eyePose(1)) 0; 0 0 1];
-R.ele = [cosd(-eyePose(2)) 0 sind(-eyePose(2)); 0 1 0; -sind(-eyePose(2)) 0 cosd(-eyePose(2))];
-R.tor = [1 0 0; 0 cosd(eyePose(3)) -sind(eyePose(3)); 0 sind(eyePose(3)) cosd(eyePose(3))];
+if isempty(R)
+    R.azi = [cosd(eyePose(1)) -sind(eyePose(1)) 0; sind(eyePose(1)) cosd(eyePose(1)) 0; 0 0 1];
+    R.ele = [cosd(-eyePose(2)) 0 sind(-eyePose(2)); 0 1 0; -sind(-eyePose(2)) 0 cosd(-eyePose(2))];
+    R.tor = [1 0 0; 0 cosd(eyePose(3)) -sind(eyePose(3)); 0 sind(eyePose(3)) cosd(eyePose(3))];
+end
 
 switch directionFlag
     case 'forward'

@@ -47,7 +47,7 @@ u = p + eyeRay(2,:);
 % Rotate each coordinate. Save the rotation matrix from the first
 % coordinate to save computation time for the second coordinate
 [pR, R] = rotateEyeCoord(p, eyePose, rotationCenters, directionFlag);
-uR = rotateEyeCoord(u, eyePose, rotationCenters, directionFlag);
+uR = rotateEyeCoord(u, eyePose, rotationCenters, directionFlag, R);
 
 
 % Re-asemble the ray
