@@ -43,6 +43,10 @@ function [pupilEllipseOnImagePlane, glintCoord, imagePoints, worldPoints, headPo
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
 %
 % Optional key/value pairs:
+%  'addPseudoTorsion'     - Logical. If set to true, the eyePose is
+%                           adjusted to add "pseudo" torsion so that the
+%                           eye movement obeys Listing's Law. More details
+%                           here:   addPseudoTorsion.m
 %  'fullEyeModelFlag'     - Logical. Determines if the full eye model will
 %                           be created.
 %  'nStopPerimPoints'     - Scalar. The number of points that are
@@ -204,6 +208,7 @@ p.addRequired('eyePose',@(x)(isnumeric(x) && all(size(x)==[1 4])));
 p.addRequired('sceneGeometry',@isstruct);
 
 % Optional
+p.addParameter('addPseudoTorsion',true,@islogical);
 p.addParameter('fullEyeModelFlag',false,@islogical);
 p.addParameter('nStopPerimPoints',6,@(x)(isscalar(x) && x>4));
 p.addParameter('stopPerimPhase',0,@isscalar);
@@ -228,6 +233,13 @@ glintRayFunc = p.Results.glintRayFunc;
 replaceReflectedPoints = p.Results.replaceReflectedPoints;
 rayTraceErrorThreshold = p.Results.rayTraceErrorThreshold;
 borderSearchPrecision = p.Results.borderSearchPrecision;
+
+
+%% Apply pseudoTorsion if requested
+if p.Results.addPseudoTorsion
+    eyePose = addPseudoTorsion(eyePose,sceneGeometry.eye.rotationCenters.primaryPosition);
+end
+
 
 %% Prepare variables
 stopRadius = eyePose(4);
