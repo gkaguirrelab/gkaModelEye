@@ -120,5 +120,9 @@ rotationCenters.azi = rotationCenters.azi .* (retinaRadii./retinaRadiiEmmetrope)
 rotationCenters.ele = rotationCenters.ele .* (retinaRadii./retinaRadiiEmmetrope);
 rotationCenters.tor = rotationCenters.tor .* (retinaRadii./retinaRadiiEmmetrope);
 
+% Assign the primary position of the eye, which is used for calculation of
+% "pseudo" torsion in creating eye movements that obey Listing's Law
+rotationCenters.primaryPosition = [0 0];
+
 end
 
