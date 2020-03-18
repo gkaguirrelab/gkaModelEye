@@ -88,8 +88,8 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
     %% Show the effect of eye torsion
     % Obtain a default sceneGeometry structure
     sceneGeometry=createSceneGeometry();
-    renderEyePose([0 0 0 3], sceneGeometry,'showPupilTextLabels',true,'nStopPerimPoints',5);
-    renderEyePose([0 0 45 3], sceneGeometry,'showPupilTextLabels',true,'nStopPerimPoints',5);
+    renderEyePose([0 0 0 3], sceneGeometry,'showPupilTextLabels',true);
+    renderEyePose([0 0 45 3], sceneGeometry,'showPupilTextLabels',true);
 %}
 %{
     %% Demonstrate the effect of camera translation
@@ -127,6 +127,7 @@ p.addParameter('visible',true,@islogical);
 p.addParameter('showPupilTextLabels',false,@islogical);
 p.addParameter('showAzimuthPlane',false,@islogical);
 p.addParameter('nStopPerimPoints',8,@isscalar);
+p.addParameter('addPseudoTorsion',true,@islogical);
 p.addParameter('nIrisPerimPoints',20,@isscalar);
 p.addParameter('modelEyeLabelNames', {'aziRotationCenter' 'eleRotationCenter', 'retina' 'irisPerimeter' 'stopCenter' 'pupilPerimeter' 'pupilEllipse' 'cornea' 'cornealApex' 'glint_01' 'glint_02'}, @iscell);
 p.addParameter('modelEyePlotColors', {'>r' '^m' '.w' 'ob' '+r' '*g' '-g' '.y' '*y' 'xr' 'xr'}, @iscell);
@@ -203,6 +204,7 @@ ylim([0 imageSizeY]);
     projectModelEye(eyePose, sceneGeometry, ...
     'fullEyeModelFlag', true, 'replaceReflectedPoints', true, ...
     'nStopPerimPoints',p.Results.nStopPerimPoints, ...
+    'addPseudoTorsion',p.Results.addPseudoTorsion,...
     'nIrisPerimPoints',p.Results.nIrisPerimPoints);
 
 % Set up an empty variable to hold plot object handles
