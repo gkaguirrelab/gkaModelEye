@@ -43,10 +43,6 @@ function eyePoseAdjusted = addPseudoTorsion(sceneGeometry,p,eyePose)
 %                           pseudoTorsion, resulting in an eyePose that
 %                           obeys Listing's Law.
 %
-% Examples:
-%{
-    eyePoseAdjusted = addPseudoTorsion([25 -3 0 3],[0 0]);
-%}
 
 % Return if we shouldn't be hee
 if ~p.Results.addPseudoTorsion
