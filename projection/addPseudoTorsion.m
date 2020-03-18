@@ -1,4 +1,4 @@
-function eyePoseAdjusted = addPseudoTorsion(eyePose,primaryPosition)
+function eyePoseAdjusted = addPseudoTorsion(sceneGeometry,p,eyePose)
 % Add "pseudo" torsion to the eyePose to follow Listing's Law
 %
 % Syntax:
@@ -48,6 +48,14 @@ function eyePoseAdjusted = addPseudoTorsion(eyePose,primaryPosition)
     eyePoseAdjusted = addPseudoTorsion([25 -3 0 3],[0 0]);
 %}
 
+% Return if we shouldn't be hee
+if ~p.Results.addPseudoTorsion
+    eyePoseAdjusted = eyePose;
+    return
+end
+
+primaryPosition = sceneGeometry.eye.rotationCenters.primaryPosition;
+
 % Obtain the horizontal and vertical position of the eye relative to the
 % primary position of the eye
 H = -(eyePose(1)-primaryPosition(1));
@@ -55,13 +63,8 @@ V = -(eyePose(2)-primaryPosition(2));
 
 % Calculate the pseudoTorsion, following eq alpha of Nakayama 1983.
 A = sind(H)*sind(V);
-B = 1+cos(V)*cos(H);
-
-% Need to avoid cases that return complex values
-pseudoTorsion = 0;
-if B~=0 && abs(A/B)<=1
-   pseudoTorsion = -asind(A/B);
-end
+B = 1+cosd(V)*cosd(H);
+pseudoTorsion = -asind(A/B);
 
 % Create the adjusted eyePose
 eyePoseAdjusted = eyePose;
