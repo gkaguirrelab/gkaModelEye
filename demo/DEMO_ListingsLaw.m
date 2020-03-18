@@ -39,7 +39,7 @@ for pp = 1:9
     axis equal
     xlim([0 620]);
     ylim([0 480]);
-    title(num2str(eyePoses(pose,:)));
+    title(num2str(eyePoses(pp,:)));
     hold on
     
     % Super-impose a cross that shows the left-right / top-bottom
