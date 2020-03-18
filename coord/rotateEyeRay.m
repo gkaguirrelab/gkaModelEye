@@ -1,4 +1,4 @@
-function eyeRay = rotateEyeRay(eyeRay, eyePose, rotationCenters, directionFlag)
+function [eyeRay, R] = rotateEyeRay(eyeRay, eyePose, rotationCenters, directionFlag, R)
 % Apply an eye rotation to an eye ray
 %
 % Syntax:
@@ -38,6 +38,15 @@ function eyeRay = rotateEyeRay(eyeRay, eyePose, rotationCenters, directionFlag)
 % Handle incomplete input arguments
 if nargin==3
     directionFlag = 'forward';
+    R = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3),'empty',true);
+end
+
+if nargin==4
+    R = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3),'empty',true);
+end
+
+if isempty(R)
+    R = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3),'empty',true);
 end
 
 % Obtain the two components of the ray as coordinates
@@ -46,9 +55,8 @@ u = p + eyeRay(2,:);
 
 % Rotate each coordinate. Save the rotation matrix from the first
 % coordinate to save computation time for the second coordinate
-[pR, R] = rotateEyeCoord(p, eyePose, rotationCenters, directionFlag);
+[pR, R] = rotateEyeCoord(p, eyePose, rotationCenters, directionFlag, R);
 uR = rotateEyeCoord(u, eyePose, rotationCenters, directionFlag, R);
-
 
 % Re-asemble the ray
 eyeRay = quadric.normalizeRay([pR;uR-pR]')';
