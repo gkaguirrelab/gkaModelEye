@@ -136,7 +136,7 @@ function [pupilEllipseOnImagePlane, glintCoord, imagePoints, worldPoints, headPo
     % default sceneGeometry
     pupilEllipseOnImagePlane = projectModelEye(eyePose,sceneGeometry);
     % Test against cached result
-    pupilEllipseOnImagePlaneCached = [ 0.027801112018072   0.022387973426570   1.554201447325573   0.000023117837874   0.000191404712119 ].*1e4;
+    pupilEllipseOnImagePlaneCached = [ 0.027801131690126   0.022388630995672   1.554160939523381   0.000023049383995   0.000190651931080 ].*1e4;
     assert(max(abs(pupilEllipseOnImagePlane -  pupilEllipseOnImagePlaneCached)) < 1e-4)
 %}
 %{
