@@ -100,11 +100,18 @@ TolFun = 1e-2; % intersection error to tolerate
 TolX = 1e-6; % precision with which theta is estimated
 options = optimset('TolFun',TolFun,'TolX',TolX,'Display','off');
 
+
+% This structure will hold the rotation matrices to apply eye rotation. We
+% define it here and then save the filled version of the variable that is
+% returned by rotateEyeCoord. We then don't need to compute it again,
+% hopefully saving on execution time.
+Rstruc = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3),'empty',true);
+
 % Set the inital guess for the angles by finding (w.r.t. the optical axis)
 % the angle of the ray that connects the worldPoint to the corneal apex
 % (which is at [0 0 0]), after subjecting the corneal apex to rotation
 eyePoint = convertWorldToEyeCoord(worldPoint);
-cornealApex = rotateEyeCoord([0 0 0], eyePose, rotationCenters, 'forward');
+[cornealApex, Rstruc] = rotateEyeCoord([0 0 0], eyePose, rotationCenters, 'forward', Rstruc);
 [angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; cornealApex - eyePoint]'));
 
 % If the absolute value of an initial search angle is greater than 90, we
@@ -142,7 +149,7 @@ lb_p1p2 = min(min(boundAngles_p1p2));
 lb_p1p3 = min(min(boundAngles_p1p3));
 
 % Create an anonymous function for ray tracing
-intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyePoint, wrapTo180(p1p2+p1p2Adjust), wrapTo180(p1p3+p1p3Adjust), eyePose, worldTarget, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR);
+intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyePoint, wrapTo180(p1p2+p1p2Adjust), wrapTo180(p1p3+p1p3Adjust), eyePose, worldTarget, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc);
 
 % Shrink the bounds to restrict to the domain of valid ray trace solutions
 errorFunc = @(x) intersectErrorFunc(x,angle_p1p3);
@@ -233,7 +240,7 @@ angle_p1p3 = wrapTo180(angle_p1p3+p1p3Adjust);
 initialRay = quadric.anglesToRay(eyePoint', angle_p1p2, angle_p1p3)';
 
 % Ray trace
-outputRay = threeSystemTrace(initialRay', eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR);
+outputRay = threeSystemTrace(initialRay', eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc);
 
 % Counter-rotate the output ray to account for eye rotation
 outputRay = rotateEyeRay(outputRay, eyePose, rotationCenters, 'inverse');
@@ -262,6 +269,7 @@ positiveInput = (lon > 0);
 lon = mod(lon, 360);
 lon((lon == 0) & positiveInput) = 360;
 end
+
 
 %% shrinkBound
 % Use divide approach to find a bound that returns a value for the passed
@@ -316,7 +324,7 @@ end
 
 
 %% calcTargetIntersectError
-function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR)
+function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc)
 % Smallest distance of the exit ray from worldTarget
 %
 % Syntax:
@@ -359,7 +367,7 @@ inputRayEyeWorld = quadric.anglesToRay(eyePoint',angle_p1p2,angle_p1p3);
 
 % Conduct the ray trace through the fixed, rotating, and back through the
 % fixed optical systems
-outputRayEyeWorld = threeSystemTrace(inputRayEyeWorld, eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR);
+outputRayEyeWorld = threeSystemTrace(inputRayEyeWorld, eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc);
 
 % If any must intersect surfaces were missed, the output ray will contain
 % nans. In this case, return Inf for the distance
@@ -379,7 +387,7 @@ end % calcTargetIntersectError
 
 
 
-function outputRayEyeWorld = threeSystemTrace(inputRayEyeWorld, eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR)
+function outputRayEyeWorld = threeSystemTrace(inputRayEyeWorld, eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc)
 
 % Ray trace through the fixed system (typically, camera to the medium
 % adjacent to the eye)
@@ -388,14 +396,14 @@ outputRayEyeWorld = rayTraceQuadrics(inputRayEyeWorld, opticalSystemFixRL)';
 % Counter-rotate the outputRayEyeWorld by the eye pose. This places the
 % outputRayEyeWorld so that the eyeCoordTarget is in a position equivalent
 % to if the eye had rotated.
-outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, eyePose, rotationCenters, 'inverse');
+outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, eyePose, rotationCenters, 'inverse', Rstruc);
 
 % Ray trace through the eye system that is subject to rotation
 outputRayEyeWorld = rayTraceQuadrics(outputRayEyeWorld', opticalSystemRot)';
 
 % Return the ray to the original eyeWorld coordinate frame, which is
 % aligned with the optical axis of the eye
-outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, eyePose, rotationCenters, 'forward');
+outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, eyePose, rotationCenters, 'forward', Rstruc);
 
 % Ray trace back through the fixed system that is not subject to rotation
 outputRayEyeWorld = rayTraceQuadrics(outputRayEyeWorld', opticalSystemFixLR)';
