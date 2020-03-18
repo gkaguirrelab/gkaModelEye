@@ -58,7 +58,7 @@ B = 1+cos(V)*cos(H);
 
 % Need to avoid cases that return complex values
 pseudoTorsion = 0;
-if B~=0 && A<B
+if B~=0 && abs(A/B)<=1
    pseudoTorsion = -asind(A/B);
 end
 
