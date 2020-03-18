@@ -45,6 +45,7 @@ function eyePoseAdjusted = addPseudoTorsion(eyePose,primaryPosition)
 %
 % Examples:
 %{
+    eyePoseAdjusted = addPseudoTorsion([25 -3 0 3],[0 0]);
 %}
 
 % Obtain the horizontal and vertical position of the eye relative to the
