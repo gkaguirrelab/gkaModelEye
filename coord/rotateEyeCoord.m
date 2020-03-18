@@ -14,6 +14,15 @@ function [eyeCoord, R] = rotateEyeCoord(eyeCoord, eyePose, rotationCenters, dire
 %   eyePose. If the directionFlag is set to "inverse", then the inverse
 %   rotation is performed.
 %
+%   The eye rotation is defined in the "Fick" coordinate frame. In this
+%   coordinate frame, the eye undergoes azimuthal rotation around a fixed
+%   vertical axies. There is then an elevational rotation around the
+%   rotated horizontal axis, and finally a torsional rotation around the
+%   rotated optical axis of the eye. We implement here these rotations
+%   around a head-fixed, non-rotating set of axes. Therefore, the order of
+%   rotations is reversed (tor-ele-azi), but this is still the Fick
+%   coordinate system.
+%
 % Inputs:
 %   eyeCoord              - A 1x3 vector that gives the coordinates (in mm)
 %                           of a point in eyeWorld space with the
@@ -46,11 +55,15 @@ function [eyeCoord, R] = rotateEyeCoord(eyeCoord, eyePose, rotationCenters, dire
 % Handle incomplete input arguments
 if nargin==3
     directionFlag = 'forward';
-    R = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3));
+    R = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3),'empty',true);
 end
 
 if nargin==4
-    R = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3));
+    R = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3),'empty',true);
+end
+
+if isempty(R)
+    R = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3),'empty',true);
 end
 
 
@@ -59,10 +72,11 @@ end
 % the head-centered world coordinate frame, positive azimuth, elevation and
 % torsion values correspond to rightward, upward and clockwise (as seen
 % from the perspective of the subject) eye movements
-if isempty(R)
+if R.empty
     R.azi = [cosd(eyePose(1)) -sind(eyePose(1)) 0; sind(eyePose(1)) cosd(eyePose(1)) 0; 0 0 1];
     R.ele = [cosd(-eyePose(2)) 0 sind(-eyePose(2)); 0 1 0; -sind(-eyePose(2)) 0 cosd(-eyePose(2))];
     R.tor = [1 0 0; 0 cosd(eyePose(3)) -sind(eyePose(3)); 0 sind(eyePose(3)) cosd(eyePose(3))];
+    R.empty = false;
 end
 
 % We shift the points to each rotation center, rotate, shift back, and
@@ -75,34 +89,34 @@ switch directionFlag
         eyeCoord = eyeCoord - rotationCenters.tor;
         eyeCoord = (R.tor*eyeCoord')';
         eyeCoord = eyeCoord + rotationCenters.tor;
-        
-        % Azimuth
-        eyeCoord = eyeCoord - rotationCenters.azi;
-        eyeCoord = (R.azi*eyeCoord')';
-        eyeCoord = eyeCoord + rotationCenters.azi;
-        
+
         % Elevation
         eyeCoord = eyeCoord - rotationCenters.ele;
         eyeCoord = (R.ele*eyeCoord')';
         eyeCoord = eyeCoord + rotationCenters.ele;
-        
+
+        % Azimuth
+        eyeCoord = eyeCoord - rotationCenters.azi;
+        eyeCoord = (R.azi*eyeCoord')';
+        eyeCoord = eyeCoord + rotationCenters.azi;                
+                
     case 'inverse'
-        
-        % Elevation
-        eyeCoord = eyeCoord - rotationCenters.ele;
-        eyeCoord = (R.ele'*eyeCoord')';
-        eyeCoord = eyeCoord + rotationCenters.ele;
         
         % Azimuth
         eyeCoord = eyeCoord - rotationCenters.azi;
         eyeCoord = (R.azi'*eyeCoord')';
         eyeCoord = eyeCoord + rotationCenters.azi;
+
+        % Elevation
+        eyeCoord = eyeCoord - rotationCenters.ele;
+        eyeCoord = (R.ele'*eyeCoord')';
+        eyeCoord = eyeCoord + rotationCenters.ele;
         
         % Torsion
         eyeCoord = eyeCoord - rotationCenters.tor;
         eyeCoord = (R.tor'*eyeCoord')';
         eyeCoord = eyeCoord + rotationCenters.tor;
-        
+                        
 end
 
 
