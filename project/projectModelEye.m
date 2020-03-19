@@ -261,7 +261,7 @@ eyePose = ...
     applyEyeRotation(eyePoints,pointLabels,sceneGeometry,p,eyePose);
 
 
-%% Switch world coordinates.
+%% Switch to world coordinates.
 worldPoints = ...
     switchCoordinates(headPoints);
 
