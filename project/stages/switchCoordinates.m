@@ -1,31 +1,26 @@
-function worldPoints = convertEyeToWorldCoord(eyePoints)
-%% Switch axes to world coordinates.
-% This coordinate frame is in mm units and has the dimensions (X,Y,Z).
-% The diagram is of a cartoon head (taken from Leszek Swirski), being
-% viewed from above:
+function worldPoints = switchCoordinates(headPoints)
+% Switch from head coordiates to world coordinates
 %
-%    ^
-%    |
-%    |    .-.
-% -Z |   |   | <- Head
-%    +   `^u^'
-% +Z |
-%    |
-%    |      W <- Camera    (As seen from above)
-%    V
+% Syntax:
+%  worldPoints = switchCoordinates(headPoints)
 %
-%     <-----+----->
-%        -X   +X
+% Description:
+%   After being subject to rotation, the eye points are in head coordinates
+%   (which is essentially still the eye coordinate frame, just now defined
+%   relative to the unrotated eye). We switch here to the world coordinate
+%   frame. While the eye and world coordinates differ in their row/column
+%   orientaton, we set the worldPoints matrix to match the orientation of
+%   the headPoints and eyePoints.
 %
-% +X = right
-% +Y = up
-% +Z = front (towards the camera)
+% Inputs:
+%   headPoints            - nx3 vector. Points in head coordinates.
 %
-% The origin [0,0,0] corresponds to the front surface of the eye and the
-% pupil center when the optical axis of the eye and the camera axis are
-% aligned.
+% Outputs:
+%   worldPoints           - nx3 vector. Points in world coordinates.
+%
 
-% Re-arrange the headPoints to transform to the world coordinate frame
-worldPoints = eyePoints(:,[2 3 1]);
+% Note the transpose operation to keep the worldPoints matrix in the same
+% orientation as the source headPoints
+worldPoints = convertEyeToWorldCoord(headPoints)';
 
 end

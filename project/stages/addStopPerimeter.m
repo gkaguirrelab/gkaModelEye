@@ -8,28 +8,6 @@ function [eyePoints, pointLabels] = addStopPerimeter(sceneGeometry,p,eyePose)
 %   Define a set of points in eyeWorld coordinates that describe the
 %   eliptical perimeter of the aperture stop of the iris.
 %
-%	The eyeWorld coordinate frame is in mm and has the dimensions
-%	(p1,p2,p3). The diagram is of a cartoon pupil, viewed directly from the
-%	front (i.e., from the perspective of a camera looking at the eye of a
-%	subject).
-%
-%                 |
-%     ^         __|__
-%  +  |        /     \
-% p3  -  -----(   +   )-----
-%  -  |        \_____/
-%     v           |
-%                 |
-%
-%           - <--p2--> +
-%
-%   Coordinate [0,0,0] corresponds to the apex (front surface) of the
-%   cornea (when the apex of the cornea is aligned with the optical axis).
-%   The first dimension is depth, and has a negative value toward the back
-%   of the eye. For the right eye, negative values on the p2 dimension are
-%   more temporal, and positive values are more nasal. Positive values of
-%   p3 are upward, and negative values are downward
-%
 % Inputs:
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
 %   p                     - Structure. The structure returned by the

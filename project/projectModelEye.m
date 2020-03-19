@@ -263,7 +263,7 @@ eyePose = ...
 
 %% Switch world coordinates.
 worldPoints = ...
-    convertEyeToWorldCoord(headPoints);
+    switchCoordinates(headPoints);
 
 
 %% Check if we can proceed with projection
@@ -284,7 +284,7 @@ imagePoints = ...
 
 %% Obtain the pupilEllipse
 [pupilEllipse,pupilFitError,pointLabels] = ...
-    obtainPupilEllipse(imagePoints,pointLabels,sceneGeometry,p,eyePose);
+    obtainImagePlaneEllipse(imagePoints,pointLabels,sceneGeometry,p,eyePose);
 
 
 %% Obtain the glintCoord
