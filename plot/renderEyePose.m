@@ -185,6 +185,11 @@ if p.Results.newFigure
         figHandle = figure('Visible', 'off');
     end
     imshow(backgroundImage,[], 'Border', 'tight');
+    % Prepare the figure
+    axis off
+    axis equal
+    xlim([0 imageSizeX]);
+    ylim([0 imageSizeY]);
 else
     figHandle = gcf;
     % Only add a background image if one was passed
@@ -193,12 +198,8 @@ else
     end
 end
 
-% Prepare the figure
+% Set hold to on
 hold on
-axis off
-axis equal
-xlim([0 imageSizeX]);
-ylim([0 imageSizeY]);
 
 % Obtain the pupilProjection of the model eye to the image plane
 [pupilEllipseParams, ~, imagePoints, ~, ~, ~, pointLabels] = ...
