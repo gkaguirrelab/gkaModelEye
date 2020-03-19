@@ -1,4 +1,4 @@
-function headPoints = applyEyeRotation(eyePoints,pointLabels,sceneGeometry,p,eyePose)
+function [headPoints, pointLabels] = applyEyeRotation(eyePoints,pointLabels,sceneGeometry,p,eyePose)
 
 
 % Omit the eye rotation centers themselves from rotation.

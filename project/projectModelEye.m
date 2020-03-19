@@ -224,8 +224,7 @@ p.parse(eyePose, sceneGeometry, varargin{:})
 
 
 %% Define some variables
-% We need to set these in case we don't have the sceneGeometry information
-% to perform the projection, and thus need to exit early
+% Set these in case we exit early from the routine
 imagePoints = [];
 pupilEllipse=nan(1,5);
 pupilFitError = nan;
@@ -258,7 +257,7 @@ eyePose = ...
 
 
 %% Apply eye rotation
-headPoints = ...
+[headPoints, pointLabels] = ...
     applyEyeRotation(eyePoints,pointLabels,sceneGeometry,p,eyePose);
 
 
