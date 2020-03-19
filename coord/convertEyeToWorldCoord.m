@@ -1,31 +1,33 @@
-function worldPoints = convertEyeToWorldCoord(eyePoints)
-%% Switch axes to world coordinates.
-% This coordinate frame is in mm units and has the dimensions (X,Y,Z).
-% The diagram is of a cartoon head (taken from Leszek Swirski), being
-% viewed from above:
+function worldCoord = convertEyeToWorldCoord(eyeCoord)
+% Convert a coordinate from world space to eye space
 %
-%    ^
-%    |
-%    |    .-.
-% -Z |   |   | <- Head
-%    +   `^u^'
-% +Z |
-%    |
-%    |      W <- Camera    (As seen from above)
-%    V
+% Syntax:
+%  eyeCoord = convertWorldToEyeCoord(worldCoord)
 %
-%     <-----+----->
-%        -X   +X
+% Description
+%   Separate coordinate systems are used for the "eye" and the "world".
+%   This routine takes a world coordinate and returns the eye coordinate.
 %
-% +X = right
-% +Y = up
-% +Z = front (towards the camera)
+% Inputs:
+%   eyeCoord              - nx3 vector that gives the coordinates (in mm)
+%                           of a point in eyeWorld space with the
+%                           dimensions p1, p2, p3.
 %
-% The origin [0,0,0] corresponds to the front surface of the eye and the
-% pupil center when the optical axis of the eye and the camera axis are
-% aligned.
+% Outputs:
+%   worldCoord            - 3xn vector that specifies points in world 
+%                           coordinates (x, y, z).
+%
+% Examples:
+%{
+    % Confirm invertibility of the transform
+    eyeCoord = rand(10,3);
+    eyeCoordRecovered = convertWorldToEyeCoord(convertEyeToWorldCoord(eyeCoord));
+    assert(max(max(eyeCoord-eyeCoordRecovered)) < eps);
+%}
 
-% Re-arrange the headPoints to transform to the world coordinate frame
-worldPoints = eyePoints(:,[2 3 1]);
+% Rearrange the eyeWorld dimensions to switch from eye to world
+% coordinate space. We also transpose as eye coordinates are row vectors
+% and world coordinates are column vectors
+worldCoord = eyeCoord(:,[2 3 1])';
 
 end
