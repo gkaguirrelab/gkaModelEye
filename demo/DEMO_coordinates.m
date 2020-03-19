@@ -9,17 +9,14 @@
 
 
 % Housekeeping
-close all
 clear
-clc
-
 
 sceneGeometry = createSceneGeometry();
 
 figure
 
 
-subplot(1,2,1)
+subplot(1,3,1)
 
 % Add the eye
 plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'newFigure',false,'surfaceAlpha',0.4);
@@ -46,7 +43,7 @@ axis off
 
 
 
-subplot(1,2,2)
+subplot(1,3,2)
 
 % Add the eye
 plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'newFigure',false,'surfaceAlpha',0.4);
@@ -71,3 +68,37 @@ set(f,'facealpha',0.05)
 title('world coordinates')
 axis off
 
+
+subplot(1,3,3)
+
+% Add the eye
+imageSizeX = sceneGeometry.cameraIntrinsic.sensorResolution(1);
+imageSizeY = sceneGeometry.cameraIntrinsic.sensorResolution(2);
+backgroundImage = zeros(imageSizeX,imageSizeX)+0.75;
+imshow(backgroundImage,[], 'Border', 'tight');
+hold on
+
+% Translate the camera up a bit so that the rendered eye is drawn in the
+% middle of the frame
+sceneGeometry.cameraPosition.translation(2)=4;
+
+backgroundImage = zeros(imageSizeY,imageSizeX)+0.75;
+eyePose = [0 0 0 3];
+renderEyePose(eyePose, sceneGeometry,...
+    'newFigure',false,...
+    'modelEyeLabelNames', {'retina' 'irisPerimeter' 'pupilEllipse' 'cornea'},...
+	'modelEyePlotColors', {'.w' 'ob' '-g' '.y'},...
+	'modelEyeSymbolSizeScaler',0.5);
+
+hold on
+
+% Add some coordinate plots
+text(50,40,'[0 0]','HorizontalAlignment','center');
+text(400,40,'+x','HorizontalAlignment','left');
+text(50,400,'+y','HorizontalAlignment','center');
+plot([150 375],[40 40],'-b')
+plot([50 50],[100 375],'-b')
+
+% Handle title and axis
+ylim([-25 680.5]);
+title('image coordinates')
