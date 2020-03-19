@@ -122,6 +122,7 @@ p.addRequired('sceneGeometry',@isstruct);
 
 % Optional
 p.addParameter('backgroundImage',[],@isnumeric);
+p.addParameter('backgroundGray',0.5,@isscalar);
 p.addParameter('newFigure',true,@islogical);
 p.addParameter('visible',true,@islogical);
 p.addParameter('showPupilTextLabels',false,@islogical);
@@ -173,7 +174,7 @@ if ~isempty(p.Results.backgroundImage)
         end
     end
 else
-    backgroundImage = zeros(imageSizeY,imageSizeX)+0.5;
+    backgroundImage = zeros(imageSizeY,imageSizeX)+p.Results.backgroundGray;
 end
 
 % Open a figure
