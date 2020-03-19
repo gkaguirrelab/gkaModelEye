@@ -1,8 +1,15 @@
 function imagePoints = projectToImagePlane(worldPoints,sceneGeometry)
-
-%% Project the world coordinate points to the image plane
-% This coordinate frame is in units of pixels, and has the dimensions
-% [x, y]:
+% Project the world coordinate points to the image plane
+%
+% Syntax:
+%  imagePoints = projectToImagePlane(worldPoints,sceneGeometry)
+%
+% Description:
+%   Implement the pin-hole camera projection of the set of world 
+%   coordinates.
+%
+%   The image coordinate frame is in units of pixels, and has the
+%   dimensions [x, y]:
 %
 % [0,0]    x
 %      +------->
@@ -11,13 +18,21 @@ function imagePoints = projectToImagePlane(worldPoints,sceneGeometry)
 %      |
 %      v
 %
-% With x being left/right and y being up/down
+% With x being left/right and y being up/down.
+%
+% Inputs:
+%   worldPoints           - nx3 vector. Points in world coordinates.
+%   sceneGeometry         - Structure. SEE: createSceneGeometry
+%
+% Outputs:
+%   imagePoints           - nx2 vector. Points in image coordinates.
 %
 
 
 % Create the camera position rotation matrix. This is the rotation matrix
 % for the position of the camera with respect to the world coordinates.
-% Only camera torsion is supported.
+% Only camera torsion is modeled, as eye pose is defined with respect to
+% the orientation of the optical axes of the camera and the eye.
 cameraRotationMatrix = ...
     [cosd(sceneGeometry.cameraPosition.torsion)	-sind(sceneGeometry.cameraPosition.torsion)	0; ...
     sind(sceneGeometry.cameraPosition.torsion)     cosd(sceneGeometry.cameraPosition.torsion)     0; ...
@@ -55,4 +70,4 @@ imagePoints(:,1) = ...
 imagePoints(:,2) = ...
     cameraPoints(:,2)./cameraPoints(:,3);
 
-end
+end % projectToImagePlane

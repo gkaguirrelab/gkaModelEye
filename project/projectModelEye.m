@@ -224,8 +224,7 @@ p.parse(eyePose, sceneGeometry, varargin{:})
 
 
 %% Define some variables
-% We need to set these in case we don't have the sceneGeometry information
-% to perform the projection, and thus need to exit early
+% Set these in case we exit early from the routine
 imagePoints = [];
 pupilEllipse=nan(1,5);
 pupilFitError = nan;
@@ -258,13 +257,13 @@ eyePose = ...
 
 
 %% Apply eye rotation
-headPoints = ...
+[headPoints, pointLabels] = ...
     applyEyeRotation(eyePoints,pointLabels,sceneGeometry,p,eyePose);
 
 
 %% Switch world coordinates.
 worldPoints = ...
-    convertEyeToWorldCoord(headPoints);
+    switchCoordinates(headPoints);
 
 
 %% Check if we can proceed with projection
@@ -285,7 +284,7 @@ imagePoints = ...
 
 %% Obtain the pupilEllipse
 [pupilEllipse,pupilFitError,pointLabels] = ...
-    obtainPupilEllipse(imagePoints,pointLabels,sceneGeometry,p,eyePose);
+    obtainImagePlaneEllipse(imagePoints,pointLabels,sceneGeometry,p,eyePose);
 
 
 %% Obtain the glintCoord

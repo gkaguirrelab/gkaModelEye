@@ -28,15 +28,14 @@ function eyePoseAdjusted = addPseudoTorsion(sceneGeometry,p,eyePose)
 %   pose can be achieved by rotation of the eye about a single axis.
 %
 % Inputs:
+%   sceneGeometry         - Structure. SEE: createSceneGeometry
+%   p                     - Structure. The structure returned by the
+%                           parameter parser in the calling function.
 %   eyePose               - A 1x4 vector provides values for [eyeAzimuth,
 %                           eyeElevation, eyeTorsion, stopRadius].
 %                           Azimuth, elevation, and torsion are in units of
 %                           head-centered (extrinsic) degrees, and stop
 %                           radius in mm.
-%   primaryPosition       - A 1x2 vector that provides the values for 
-%                           [eyeAzimuth, eyeElevation] that defines the
-%                           eyePose for which the eye is in primary
-%                           position.
 %
 % Outputs:
 %   eyePoseAdjusted       - A 1x4 vector. The eyePose incorporating
@@ -44,12 +43,15 @@ function eyePoseAdjusted = addPseudoTorsion(sceneGeometry,p,eyePose)
 %                           obeys Listing's Law.
 %
 
-% Return if we shouldn't be hee
+% Return if we aren't making this correction
 if ~p.Results.addPseudoTorsion
     eyePoseAdjusted = eyePose;
     return
 end
 
+% Obtain the primaryPosition, which is a 1x2 vector that provides the
+% values for [eyeAzimuth, eyeElevation] that defines the eyePose for which
+% the eye is in primary position.
 primaryPosition = sceneGeometry.eye.rotationCenters.primaryPosition;
 
 % Obtain the horizontal and vertical position of the eye relative to the
@@ -57,7 +59,8 @@ primaryPosition = sceneGeometry.eye.rotationCenters.primaryPosition;
 H = -(eyePose(1)-primaryPosition(1));
 V = -(eyePose(2)-primaryPosition(2));
 
-% Calculate the pseudoTorsion, following eq alpha of Nakayama 1983.
+% Calculate the pseudoTorsion, following eq alpha of Nakayama 1983, which
+% in turn is from David Robinson.
 A = sind(H)*sind(V);
 B = 1+cosd(V)*cosd(H);
 pseudoTorsion = -asind(A/B);

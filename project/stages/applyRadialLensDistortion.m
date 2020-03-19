@@ -1,13 +1,25 @@
 function imagePoints = applyRadialLensDistortion(imagePointsPreDistortion,sceneGeometry)
+% Apply the effects of lens distortion to points in the image plane
+%
+% Syntax:
+%  imagePoints = applyRadialLensDistortion(imagePointsPreDistortion,sceneGeometry)
+%
+% Description:
+%   This step introduces "pincushion" (or "barrel") distortion produced by
+%   the lens. The x and y distortion equations are in the normalized image
+%   coordinates. Thus, the origin is at the sensor optical center (aka
+%   principal point), and the coordinates are in world units. To apply this
+%   distortion to our image coordinate points, we subtract the optical
+%   center, and then divide by fx and fy from the intrinsic matrix.
+%
+% Inputs:
+%   imagePointsPreDistortion - nx2 vector. Points in image coordinates.
+%   sceneGeometry         - Structure. SEE: createSceneGeometry
+%
+% Outputs:
+%   imagePoints           - nx2 vector. Points in image coordinates.
+%
 
-
-%% Apply radial lens distortion
-% This step introduces "pincushion" (or "barrel") distortion produced by
-% the lens. The x and y distortion equations are in the normalized image
-% coordinates. Thus, the origin is at the sensor optical center (aka
-% principal point), and the coordinates are in world units. To apply this
-% distortion to our image coordinate points, we subtract the optical
-% center, and then divide by fx and fy from the intrinsic matrix.
 
 % Implement as bsxfun to avoid implicit expansion
 imagePointsNormalized = bsxfun(@rdivide, ...
@@ -31,4 +43,4 @@ imagePoints = bsxfun(@plus, ...
     bsxfun(@times,imagePointsNormalizedDistorted , [sceneGeometry.cameraIntrinsic.matrix(1,1) sceneGeometry.cameraIntrinsic.matrix(2,2)]) ,...
     [sceneGeometry.cameraIntrinsic.matrix(1,3) sceneGeometry.cameraIntrinsic.matrix(2,3)]);
 
-end
+end % applyRadialLensDistortion
