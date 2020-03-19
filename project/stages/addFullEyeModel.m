@@ -76,13 +76,10 @@ corneaPoints = quadric.surfaceGrid(...
     p.Results.corneaMeshDensity, ...
     'parametricPolar');
 
-% Find the corneal point that is most distant from the corneal center; this
-% is the corneal apex
-corneaCenter = quadric.center(sceneGeometry.eye.cornea.front.S)';
-[~,apexIdx]=max(vecnorm((corneaPoints - corneaCenter)'));
-
-% Save the corneal apex coordinates
-cornealApex = corneaPoints(apexIdx,:);
+% Add the corneal apex, which is the point at ellipsoidal geodetic
+% coordinates [0 0 0] (see: quadric.ellipsoidalGeoToCart)
+S = sceneGeometry.eye.cornea.front.S;
+cornealApex = quadric.ellipsoidalGeoToCart([0 0 0],S)';
 
 % Add the corneal points and labels
 eyePoints = [eyePoints; corneaPoints];
