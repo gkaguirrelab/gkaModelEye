@@ -5,12 +5,10 @@ function M = calcAngularMagnification(eye, varargin)
 %  magnification = calcAngularMagnification(eye)
 %
 % Description
-%   Calculates the angular magnification as perceived by the eye produced
-%   the addition of artificial lenses (contacts or spectacles). Values
+%   Calculates the angular magnification (as seen by the retina) produced
+%   by the addition of artificial lenses (contacts or spectacles). Values
 %   greater than 1 indicate magnification, values less than one reflect
-%   minification.
-%
-%   
+%   minification.   
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
