@@ -1,19 +1,43 @@
 function [eyePoints, pointLabels, targetIntersectError] = refractEyePoints(eyePoints,pointLabels,sceneGeometry,p,eyePose)
+% Subject eyeWorld points to refraction by the cornea and artificial lenses
+%
+% Syntax:
+%  [eyePoints, pointLabels, targetIntersectError] = refractEyePoints(eyePoints,pointLabels,sceneGeometry,p,eyePose)
+%
+% Description:
+%   This step accounts for the effect of corneal and corrective lens
+%   refraction upon the appearance of coordinate points from the eye.
+%
+% Inputs:
+%   eyePoints             - nx3 vector. Points in eye world coordinates.
+%   pointLabels           - nx1 cell array. The name of each eye point.
+%   sceneGeometry         - Structure. SEE: createSceneGeometry
+%   p                     - Structure. The structure returned by the
+%                           parameter parser in the calling function.
+%   eyePose               - A 1x4 vector provides values for [eyeAzimuth,
+%                           eyeElevation, eyeTorsion, stopRadius].
+%                           Azimuth, elevation, and torsion are in units of
+%                           head-centered (extrinsic) degrees, and stop
+%                           radius in mm.
+%
+% Outputs:
+%   eyePoints             - nx3 vector. Points in eye world coordinates.
+%   pointLabels           - nx1 cell array. The name of each eye point.
+%   targetIntersectError -  A nx1 vector that contains the distance (in mm)
+%                           between the pinhole aperture of the camera and
+%                           the intersection of a ray on the camera plane.
+%                           The value is nan for points not subject to
+%                           refraction by the cornea. All values will be
+%                           nan if sceneGeometry.refraction is empty.
+%
 
 
-%% Extract fields from Results struct
-% Accessing struct elements is relatively slow. Do this here so it is not
-% done in a loop.
+% Extract some values for clarity in the code that follows
 pupilRayFunc = p.Results.pupilRayFunc;
 replaceReflectedPoints = p.Results.replaceReflectedPoints;
 rayTraceErrorThreshold = p.Results.rayTraceErrorThreshold;
 borderSearchPrecision = p.Results.borderSearchPrecision;
 
-
-
-%% Refract the eyeWorld points
-% This steps accounts for the effect of corneal and corrective lens
-% refraction upon the appearance of points from the eye.
 
 % Create a nan vector for the ray trace errors
 targetIntersectError = nan(size(eyePoints,1),1);
@@ -25,7 +49,7 @@ refractPointsIdx = find(...
     strcmp(pointLabels,'stopPerimeterBack')+...
     strcmp(pointLabels,'irisActualPerimeter'));
 
-% Check if we have a refraction field and it is not empty
+% Set the refractFlag if we have a valid refraction field
 refractFlag = false;
 if isfield(sceneGeometry,'refraction') && ~isempty(pupilRayFunc)
     if ~isempty(sceneGeometry.refraction)
@@ -35,6 +59,7 @@ end
 
 % Perform refraction
 if refractFlag
+
     % Assemble the static args for the findPupilRay
     args = {sceneGeometry.cameraPosition.translation, ...
         sceneGeometry.eye.rotationCenters, ...
@@ -61,17 +86,17 @@ if refractFlag
         % Check if the point has encountered total internal reflection or
         % is a bad ray trace
         retainPoint = true;
-        
+                
         if isnan(intersectError) || (intersectError > rayTraceErrorThreshold)
-            % The eyePoint did not yield a valid image point. We will
-            % not retain the point unless we find a replacement.
+            % The eyePoint did not yield a valid image point. We will not
+            % retain the point unless we find a replacement.
             retainPoint = false;
             
-            % If this eyePoint is on the stop border, search across
-            % smaller stop radii to find a replacement point on the
-            % boundary of the pupil perimeter that does make it
-            % through.
+            % If this eyePoint is on the stop border, search across smaller
+            % stop radii to find a replacement point on the boundary of the
+            % pupil perimeter that does make it through.
             if replaceReflectedPoints
+
                 % Find the appropriate center target for the search
                 switch pointLabels{refractPointsIdx(ii)}
                     case 'stopPerimeter'
@@ -83,23 +108,29 @@ if refractFlag
                     case 'irisActualPerimeter'
                         centerTarget = sceneGeometry.eye.iris.center;
                 end
+                
                 % Initialize the searchScalar
                 searchScalar = 1.0 - borderSearchPrecision;
+
                 % Perform the search
                 stillSearching = true;
                 while stillSearching
+
                     % Move the eyePoint along the vector connecting the eye
                     % point to the stop or iris center
                     shiftedEyePoint = eyePoint - (eyePoint - centerTarget).*(1 - searchScalar);
+
                     % Subject the shifted point to refraction
                     [virtualImageRay, ~, intersectError] = ...
                         pupilRayFunc(shiftedEyePoint, eyePose, args{:});
                     virtualPoint = virtualImageRay(1,:);
+
                     % Update the search scalar
                     searchScalar = searchScalar - borderSearchPrecision;
                     if searchScalar <= 0
                         stillSearching = false;
                     end
+                    
                     % Test if the newly refracted point meets criterion
                     if intersectError < rayTraceErrorThreshold
                         stillSearching = false;
@@ -132,8 +163,8 @@ if refractFlag
     % find those points that had a bad ray trace
     badTraceIdx = any(isnan(virtualPoints),2);
     
-    % Remove the bad ray trace points from both the original eyePoint
-    % set and the virtual image set
+    % Remove the bad ray trace points from both the original eyePoint set
+    % and the virtual image set
     if any(badTraceIdx)
         virtualPoints(badTraceIdx,:) = [];
         virtualPointLabels(badTraceIdx) = [];
@@ -148,6 +179,7 @@ if refractFlag
     targetIntersectError = [targetIntersectError; virtualIntersectError];
     
 else
+    
     % If there is no refraction, then the pupil is simply the stop. Copy
     % these points over to their new names
     for ii=1:length(refractPointsIdx)
@@ -168,4 +200,4 @@ else
     
 end
 
-end
+end % refractEyePoints
