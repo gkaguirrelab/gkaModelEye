@@ -106,23 +106,23 @@ rotationCenters.tor = [0 0 0];
 % chamber axial and vertical radii relative to the emmetropic size
 
 % Obtain the radii of the retinal surface for the emmetropic eye
-emmetropicEye = eye;
-emmetropicEye.meta.sphericalAmetropia = 0;
-emmetropicEye.meta.axialLength = [];
-emmetropicRetina = human.retina(emmetropicEye);
-retinaRadiiEmmetrope = quadric.radii(emmetropicRetina.S)';
+% emmetropicEye = eye;
+% emmetropicEye.meta.sphericalAmetropia = 0;
+% emmetropicEye.meta.axialLength = [];
+% emmetropicRetina = human.retina(emmetropicEye);
+% retinaRadiiEmmetrope = quadric.radii(emmetropicRetina.S)';
+% 
+% % Obtain the radii of the current eye
+% retinaRadii = quadric.radii(eye.retina.S)';
 
-% Obtain the radii of the current eye
-retinaRadii = quadric.radii(eye.retina.S)';
-
-% Scale the rotation centers
-rotationCenters.azi = rotationCenters.azi .* (retinaRadii./retinaRadiiEmmetrope);
-rotationCenters.ele = rotationCenters.ele .* (retinaRadii./retinaRadiiEmmetrope);
-rotationCenters.tor = rotationCenters.tor .* (retinaRadii./retinaRadiiEmmetrope);
+% Scale the azi and ele rotation centers by the rotationCenterScalers
+x = eye.meta.rotationCenterScalers;
+rotationCenters.azi = rotationCenters.azi .* x(1) .* x(2);
+rotationCenters.ele = rotationCenters.ele .* x(1) ./ x(2);
 
 % Assign the primary position of the eye, which is used for calculation of
 % "pseudo" torsion in creating eye movements that obey Listing's Law
-rotationCenters.primaryPosition = [0 0];
+rotationCenters.primaryPosition = eye.meta.primaryPosition;
 
 end
 

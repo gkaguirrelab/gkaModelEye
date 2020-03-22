@@ -51,7 +51,7 @@ function eye = modelEyeParameters( varargin )
 %                           resting accommodation value for an emmetropic
 %                           eye is used, which is stored in the
 %                           derivedParams.
-%  'measuredCornealCurvature' - 1x2 to 1x5 vector. Provides the horizontal 
+%  'kvals' -                1x2 to 1x5 vector. Provides the horizontal 
 %                           and vertical curvature of the cornea (diopters;
 %                           K1 and K2). The first value is always the
 %                           smaller, and thus describes the "flatter"
@@ -72,9 +72,23 @@ function eye = modelEyeParameters( varargin )
 %                           modeling of regular corneal astigmatism is
 %                           supported), then the rotation of the cornea
 %                           around the vertical axis (tilt) and around the
-%                           horizontal axis (tip).
-%                           If left undefined, the "canonical" Navarro 2006
-%                           corneal parameters will be used.
+%                           horizontal axis (tip). If left undefined, the
+%                           "canonical" Navarro 2006 corneal parameters
+%                           will be used.
+%  'rotationCenterScalers' - 1x2 numeric vector. These values apply joint
+%                           and differential multiplicative scaling on
+%                           the positions of the azimuthal and elevational
+%                           rotation centers of the eye.
+%  'primaryPosition'      - 1x2 numeric vector. This is the [azi ele] pose
+%                           of the eye for which torsion is zero, and for
+%                           which every eye movement consistent with
+%                           Listing's Law will result in an eye pose for
+%                           which torsion is also zero. This parameter has
+%                           the odd property that it is not intrinsic to
+%                           the eye, but is defined within the coordinate
+%                           frame in which the alignment of the camera and
+%                           eye optical systems has eyePose values of
+%                           [0, 0].
 %  'spectralDomain'       - String, options include {'vis','nir'}.
 %                           This is the wavelength domain within which
 %                           imaging is being performed. The refractive
@@ -112,8 +126,9 @@ p.addParameter('species','Human',@ischar);
 p.addParameter('ageYears',18,@isscalar);
 p.addParameter('derivedParams',[],@(x)(isstruct(x) || isempty(x)));
 p.addParameter('navarroD',[],@(x)(isempty(x) || isscalar(x)));
-p.addParameter('measuredCornealCurvature',[],@(x)(isempty(x) || isnumeric(x)));
-p.addParameter('rotationCenters',[],@(x)(isempty(x) || isstruct(x)));
+p.addParameter('kvals',[],@(x)(isempty(x) || isnumeric(x)));
+p.addParameter('rotationCenterScalers',[1 1],@isnumeric);
+p.addParameter('primaryPosition',[0 0],@isnumeric);
 p.addParameter('spectralDomain','nir',@ischar);
 p.addParameter('calcLandmarkFovea',false,@islogical);
 p.addParameter('calcLandmarkOpticDisc',false,@islogical);
@@ -173,7 +188,9 @@ eye.meta.axialLength = p.Results.axialLength;
 eye.meta.species = p.Results.species;
 eye.meta.ageYears = p.Results.ageYears;
 eye.meta.navarroD = p.Results.navarroD;
-eye.meta.measuredCornealCurvature = p.Results.measuredCornealCurvature;
+eye.meta.kvals = p.Results.kvals;
+eye.meta.rotationCenterScalers = p.Results.rotationCenterScalers;
+eye.meta.primaryPosition = p.Results.primaryPosition;
 eye.meta.spectralDomain = p.Results.spectralDomain;
 eye.meta.notes = notes;
 eye.meta.varargin = varargin;
@@ -208,11 +225,7 @@ switch eye.meta.species
         end
 
         % Rotation centers
-        if isempty(p.Results.rotationCenters)
-            eye.rotationCenters = human.rotationCenters(eye);
-        else
-            eye.rotationCenters = p.Results.rotationCenters;
-        end
+        eye.rotationCenters = human.rotationCenters(eye);
         
         % Refractive indices
         eye.index.vitreous = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );

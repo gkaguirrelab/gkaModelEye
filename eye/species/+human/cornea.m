@@ -73,13 +73,13 @@ function cornea = cornea( eye )
 % Following Navarro 2006, the apex of the corneal ellipsoid is rotated
 % towards the visual axis of the eye, but not completely. We adopt 2.5 
 % degrees of rotation about the vertical axis towards the nose as a
-% default. The measuredCornealCurvature vector can include rotations. These
+% default. The kvals vector can include rotations. These
 % are in the order of [torsion, tilt (rotation about vertical), and tip
 % (rotation about the horizontal axis).
 cornealRotation = [0 0 2.5];
 
 %% Front corneal surface
-if isempty(eye.meta.measuredCornealCurvature)
+if isempty(eye.meta.kvals)
     % Atchison provides parameters for a radially symmetric ellipsoid in
     % terms of the radius of curvature (R) at the vertex and its
     % asphericity (Q). R varies with spherical ametropia (D):
@@ -137,18 +137,18 @@ else
     % Formula to convert diopters to radius of curvature in mm
     RoC = @(D) 1000.*(1.3375-1)./D;
     % The horizontal and vertical radii are derived from the passed values
-    radii(2:3) = sqrt(radii(1).*RoC(eye.meta.measuredCornealCurvature(1:2)));
+    radii(2:3) = sqrt(radii(1).*RoC(eye.meta.kvals(1:2)));
     % Create the quadric
     S = quadric.scale(quadric.unitSphere,radii);
     % Apply any measured torsional rotation to the ellipsoid.
-    if length(eye.meta.measuredCornealCurvature)>=3
-        cornealRotation(1) = eye.meta.measuredCornealCurvature(3);
+    if length(eye.meta.kvals)>=3
+        cornealRotation(1) = eye.meta.kvals(3);
     end
-    if length(eye.meta.measuredCornealCurvature)>=4
-        cornealRotation(3) = eye.meta.measuredCornealCurvature(4);
+    if length(eye.meta.kvals)>=4
+        cornealRotation(3) = eye.meta.kvals(4);
     end
-    if length(eye.meta.measuredCornealCurvature)==5
-        cornealRotation(2) = eye.meta.measuredCornealCurvature(5);
+    if length(eye.meta.kvals)==5
+        cornealRotation(2) = eye.meta.kvals(5);
     end
 end
 
