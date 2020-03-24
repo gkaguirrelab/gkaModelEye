@@ -53,6 +53,7 @@ orientations = {[0 0 0],[0 0 1],[0 1 0],[1 0 0],[0 1 1],[1 0 1],[1 1 1]};
 orders = {[1 2 3],[1 3 2],[3 2 1],[2 1 3],[2 3 1],[3 1 2],[3 2 1]};
 
 % Return the rank ordering of the dimensions
-dimensionRank = orders{cellfun(@(x) isequal(x,thisOrientation),orientations)};
+idx = sum(abs(cell2mat(orientations')-thisOrientation),2)==0;
+dimensionRank = orders{idx};
 
 end
