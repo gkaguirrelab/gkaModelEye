@@ -43,6 +43,20 @@ function compileInverseRayTrace( varargin )
     assert(max(max(abs(inverseRayNative - inverseRayCompiled))) < 1e-6)
 %}
 %{
+    % Confirm that compiled and native findGlintRay yield same value
+    eyePose = [-5, 3, 0, 2];
+    cameraNodalPoint = sceneGeometry.cameraPosition.translation;
+    irSourceLocation = cameraNodalPoint - [14; 0; 0];
+    rotationCenters = sceneGeometry.eye.rotationCenters;
+    opticalSystemFixRL = sceneGeometry.refraction.cameraToMedium.opticalSystem;
+    opticalSystemRot = sceneGeometry.refraction.glint.opticalSystem;
+    opticalSystemFixLR = sceneGeometry.refraction.mediumToCamera.opticalSystem;
+    outputRayNative = findGlintRay( irSourceLocation, eyePose, cameraNodalPoint, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR );
+    outputRayCompiled = findGlintRayMex( irSourceLocation, eyePose, cameraNodalPoint, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR );
+    % Test if the outputs agree
+    assert(max(max(abs(outputRayNative - outputRayCompiled))) < 1e-6)
+%}
+%{
     % Compare computation time for MATLAB and compiled code
     nComputes = 100;
     fprintf('Time to execute findPupilRay (average over %d projections):\n',nComputes);
