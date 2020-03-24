@@ -140,7 +140,7 @@ end
 
 
 %% Obtain the unconstrained ellipse fit to the perimeter
-[unconstrainedEllipse, unconstrainedRMSE] = pupilEllipseFit([Xp;Yp]);
+[unconstrainedEllipse, unconstrainedRMSE] = pupilEllipseFit([Xp,Yp]);
 
 % Various degenerate sets of
 % perimeter points can cause the ellipse fit to fail and return nans
