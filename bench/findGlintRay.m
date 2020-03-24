@@ -70,7 +70,7 @@ function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldPoi
     opticalSystemRot = sceneGeometry.refraction.glint.opticalSystem;
     opticalSystemFixLR = sceneGeometry.refraction.mediumToCamera.opticalSystem;
     [outputRay, initialRay, targetIntersectError ] = findGlintRay( irSourceLocation, eyePose, cameraNodalPoint, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR );
-    outputRayCached = [ -0.016925517921237   0.557790549167980  -0.401096261331888;   0.994186638572451   0.093151972449674  -0.053996645384183];
+    outputRayCached = [ -0.016925502358049   0.557790100924268  -0.401096265941778;   0.994186649790770   0.093151851770839  -0.053996647020605];
     assert(max(max(abs(outputRay - outputRayCached))) < 1e-6)
 %}
 
@@ -108,11 +108,17 @@ options = optimset('TolFun',TolFun,'TolX',TolX,'Display','off');
 Rstruc = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3),'empty',true);
 
 % Set the inital guess for the angles by finding (w.r.t. the optical axis)
-% the angle of the ray that connects the worldPoint to the corneal apex
-% (which is at [0 0 0]), after subjecting the corneal apex to rotation
+% the angle of the ray that connects the worldPoint to the corneal apex,
+% after subjecting the corneal apex to rotation. Note that the corneal apex
+% may not be at the origin of the eye coordinate system if the cornea is
+% subject to tilt and tip rotations. To account for this, we find the apex
+% of the reflective surface (index of refraction < 0) in the glint optical
+% system, which is the apex of the cornea.
+S = opticalSystemRot(opticalSystemRot(:,end) < 0,1:10);
+cornealApex = quadric.ellipsoidalGeoToCart([0 0 0],S)';
+[cornealApexRotated, Rstruc] = rotateEyeCoord(cornealApex, eyePose, rotationCenters, 'forward', Rstruc);
 eyePoint = convertWorldToEyeCoord(worldPoint);
-[cornealApex, Rstruc] = rotateEyeCoord([0 0 0], eyePose, rotationCenters, 'forward', Rstruc);
-[angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; cornealApex - eyePoint]'));
+[angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; cornealApexRotated - eyePoint]'));
 
 % If the absolute value of an initial search angle is greater than 90, we
 % flip the direction in the search so that we don't get stuck at the
