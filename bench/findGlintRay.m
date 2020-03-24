@@ -115,7 +115,7 @@ Rstruc = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3),'empty',true);
 % of the reflective surface (index of refraction < 0) in the glint optical
 % system, which is the apex of the cornea.
 reflectSurfaceIdx = find(opticalSystemRot(:,end) < 0,1);
-S = opticalSystemRot(reflectSurfaceIdx,1:10);
+S = quadric.vecToMatrix(opticalSystemRot(reflectSurfaceIdx,1:10));
 cornealApex = quadric.ellipsoidalGeoToCart([0 0 0],S)';
 [cornealApexRotated, Rstruc] = rotateEyeCoord(cornealApex, eyePose, rotationCenters, 'forward', Rstruc);
 eyePoint = convertWorldToEyeCoord(worldPoint);
