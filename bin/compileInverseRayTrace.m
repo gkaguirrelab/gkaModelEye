@@ -44,6 +44,7 @@ function compileInverseRayTrace( varargin )
 %}
 %{
     % Confirm that compiled and native findGlintRay yield same value
+    sceneGeometry = createSceneGeometry();
     eyePose = [-5, 3, 0, 2];
     cameraNodalPoint = sceneGeometry.cameraPosition.translation;
     irSourceLocation = cameraNodalPoint - [14; 0; 0];
