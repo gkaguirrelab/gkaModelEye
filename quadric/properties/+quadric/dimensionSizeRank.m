@@ -53,7 +53,8 @@ orientations = [ 0 0 0; 0 0 1; 0 1 0; 1 0 0; 0 1 1; 1 0 1; 1 1 1 ];
 orders = [ 1 2 3; 1 3 2; 3 2 1; 2 1 3; 2 3 1; 3 1 2; 3 2 1 ];
 
 % Return the rank ordering of the dimensions
-idx = sum(abs(orientations-thisOrientation),2)==0;
+idx = sum(abs(bsxfun(@minus,orientations,thisOrientation)),2)==0;
 dimensionRank = orders(idx,:);
+
 
 end
