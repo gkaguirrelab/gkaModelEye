@@ -186,9 +186,18 @@ if isempty(p.Results.x0)
     % Now the number of pixels that the pupil center is displaced from the
     % CoP. Handle the direction of eye rotation
     displacePix = (unconstrainedEllipse(1:2)-CoP);
-    displaceScaled = displacePix ./ max(displacePix);
-    displaceScaled(2) = -displaceScaled(2);
     
+    % If the ratio of the displacePix is extreme, or one or more of the
+    % displacePix values is small, then then the eye could be close to the
+    % center of projection for one of the rotations. In this case, give the
+    % same, unitary value to the displaceScaled variable
+    if (displacePix(1) / displacePix(2)) > 2 || (displacePix(1) / displacePix(2)) < 0.5 || min(displacePix) < 1
+        displaceScaled(:) = [1 -1];
+    else
+        displaceScaled = displacePix ./ max(displacePix);
+        displaceScaled(2) = -displaceScaled(2);
+    end
+        
     % Probe the forward model to determine how many pixels of change in the
     % location of the pupil ellipse correspond to one degree of rotation.
     probeEllipse = projectModelEye([displaceScaled 0 2],sceneGeometry);
