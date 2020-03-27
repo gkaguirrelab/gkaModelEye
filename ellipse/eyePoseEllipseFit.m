@@ -1,4 +1,4 @@
-function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
+function [eyePose, RMSE, fittedEllipse, fitAtBound] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
 % Fit an image plane ellipse by perspective projection of a pupil circle
 %
 % Syntax:
@@ -34,19 +34,17 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %                           represent the physical limits of the projection
 %                           model for azimuth, elevation, and stop radius.
 %                           Torsion is constrained to zero by default.
-%  'rmseThresh'           - Scalar. The eyePose search will stop when the
-%                           pupil perimeter points are fit with less than
-%                           this error (in units of pixels). The search may
-%                           also terminate with higher error if other
-%                           stopping criteria are met.
-%  'rmseThreshIter'       - Scalar. The eyePose search will stop when 
-%                           sequential searches are producing a change in
-%                           the RMSE of the fit than less than this value.
+%  'eyePoseEllipseFitFunEvals' - Scalar. The maximum number of evals for
+%                           the fminsearch operation. The example below
+%                           examines the trade-off between execution time
+%                           and function accuracy for this parameter. I
+%                           find that 50 evals takes ~1 second per eyePose
+%                           calculation on a laptop, and produces excellent
+%                           accuracy with respect to the imprecision in
+%                           empirical data.
 %  'eyePoseTol'           - Scalar. The eyePose values will be searched to
-%                           within this level of precision.
-%  'nMaxSearches'         - Scalar. The maximum number of searches that the
-%                           routine will conduct as it attempts to avoid
-%                           local minima.
+%                           within this level of precision. Doesn't have
+%                           too much of an effect upon execution time.
 %
 % Outputs:
 %   eyePose               - A 1x4 vector with values for [eyeAzimuth,
@@ -62,18 +60,48 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound, nSearches] = eyePoseEllipseF
 %   fitAtBound            - Logical. Indicates if any of the returned
 %                           eyePose parameters are at the upper or lower
 %                           boundary.
-%   nSearches             - The number of searches conducted.
 %
 % Examples:
 %{
-    cameraGlintSourceRelative = [-14 -14; -5 5; 0 0];
-    sceneGeometry=createSceneGeometry('cameraGlintSourceRelative',cameraGlintSourceRelative);
-    eyePose = [-15 10 0 2.5];
-    [targetEllipse, glintCoord, imagePoints, ~, ~, ~, pointLabels] = projectModelEye(eyePose,sceneGeometry,'calcGlint',true);
-    [ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 5, 0 );
-    [recoveredEyePose,RMSE,recoveredEllipse,fitAtBound,nSearches] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, 'glintCoord', glintCoord);
-    % Test that the recovered eye pose has no more than 0.01% error
-    assert(max(abs((eyePose - recoveredEyePose)./eyePose)) < 1e-4)
+    % Explore the trade-off between accuracy and run time
+    sceneGeometry=createSceneGeometry();
+    executionTime = []; errors = [];
+    poseCount = 0;
+    evalNum = [5 10 20 50 100 200];
+    for azi = [-10 -.5 0.5 10]; for ele = [-10 -.5 0.5 10]
+        eyePose = [azi ele 0 2.5];
+        poseCount = poseCount+1;
+        [ targetEllipse, glintCoord ] = projectModelEye(eyePose,sceneGeometry);
+        [ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 6, 0 );
+        for ee = 1:length(evalNum)
+            tic
+            recoveredEyePose = eyePoseEllipseFit(Xp, Yp, sceneGeometry,'glintCoord', glintCoord, 'eyePoseEllipseFitFunEvals', evalNum(ee));
+            executionTime(poseCount,ee) = toc();
+            % Measure the absolute error in recovering eye pose values
+            errors(poseCount,ee,:) = abs(eyePose - recoveredEyePose);
+        end
+    end; end
+    timeByNumEvals = mean(executionTime);
+    errorByNumEvals = max(squeeze(mean(errors(:,:,1:2)))');
+    figHandle = figure;
+    left_color = [1 0 0]; right_color = [0 0 0];
+    set(figHandle,'defaultAxesColorOrder',[left_color; right_color]);
+    yyaxis right
+    semilogx(evalNum,timeByNumEvals,'-k')
+    ylabel('Execution time per pose [secs]');
+    yyaxis left
+    semilogx(evalNum,errorByNumEvals,'-r')
+    ylabel('Eye pose error [deg]');
+    xlabel('Number of search evaluations');
+    title('Performance of eyePoseEllipseFit across max fun evals');
+%}
+%{
+    % Examine the behavior of the routine at the eyePose bounds
+    sceneGeometry=createSceneGeometry();
+    eyePose = [40 10 0 2.5];
+    [ targetEllipse, glintCoord ] = projectModelEye(eyePose,sceneGeometry);
+    [ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 6, 0 );
+    recoveredEyePose = eyePoseEllipseFit(Xp, Yp, sceneGeometry,'glintCoord', glintCoord, 'eyePoseUB', [30 30 0 4]);
 %}
 
 
@@ -90,10 +118,9 @@ p.addParameter('glintCoord',[],@(x)(isempty(x) | isnumeric(x)));
 p.addParameter('x0',[],@(x)(isempty(x) | isnumeric(x)));
 p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
 p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
-p.addParameter('rmseThresh',[],@isscalar);
-p.addParameter('rmseThreshIter',1e-2,@isscalar);
-p.addParameter('eyePoseTol',1e-4,@isscalar);
-p.addParameter('nMaxSearches',5,@isscalar);
+p.addParameter('eyePoseEllipseFitFunEvals',50,@isscalar);
+p.addParameter('eyePoseTol',1e-3,@isscalar);
+
 
 % Parse and check the parameters
 p.parse(Xp, Yp, sceneGeometry, varargin{:});
@@ -105,7 +132,6 @@ eyePose = [nan nan nan nan];
 RMSE = nan;
 fittedEllipse = [nan nan nan nan nan];
 fitAtBound = false;
-nSearches = nan;
 
 % Issue a warning if the bounds do not fully constrain at least one eye
 % rotation parameter. This is because there are multiple combinations of
@@ -140,7 +166,7 @@ end
 
 
 %% Obtain the unconstrained ellipse fit to the perimeter
-[unconstrainedEllipse, unconstrainedRMSE] = pupilEllipseFit([Xp,Yp]);
+unconstrainedEllipse = pupilEllipseFit([Xp,Yp]);
 
 % Various degenerate sets of
 % perimeter points can cause the ellipse fit to fail and return nans
@@ -149,27 +175,7 @@ if any(isnan(unconstrainedEllipse))
     % the mean of the X and Y positions of the perimeter points.
     unconstrainedEllipse = nan(1,5);
     unconstrainedEllipse(1:2) = [mean(Xp) mean(Yp)];
-    % Set the unconstrainedRMSE to an arbitrary, relatively large number.
-    unconstrainedRMSE = 1.0;
 end
-
-
-%% Determine the search termination parameters
-% Set the rmseThresh
-if isempty(p.Results.rmseThresh)
-    % The best that this routine could do would be to match the fit
-    % provided by an unconstrained ellipse fit.
-    rmseThresh = unconstrainedRMSE;
-else
-    rmseThresh = p.Results.rmseThresh;
-end
-
-% When the search is not improving the RMSE by more than this, it is time
-% to stop.
-rmseThreshIter = p.Results.rmseThreshIter;    
-
-% Set the eyePose search tolerance.
-eyePoseTol = p.Results.eyePoseTol;
 
 
 %% Define x0
@@ -184,19 +190,21 @@ if isempty(p.Results.x0)
     CoP = [rotationCenterEllipse(1),rotationCenterEllipse(2)];
     
     % Now the number of pixels that the pupil center is displaced from the
-    % CoP. Handle the direction of eye rotation
+    % CoP.
     displacePix = (unconstrainedEllipse(1:2)-CoP);
     
     % If the ratio of the displacePix is extreme, or one or more of the
-    % displacePix values is small, then then the eye could be close to the
+    % displacePix values is small, then the eye could be close to the
     % center of projection for one of the rotations. In this case, give the
     % same, unitary value to the displaceScaled variable
     if (displacePix(1) / displacePix(2)) > 2 || (displacePix(1) / displacePix(2)) < 0.5 || min(displacePix) < 1
-        displaceScaled(:) = [1 -1];
+        displaceScaled = sign(displacePix);
     else
-        displaceScaled = displacePix ./ max(displacePix);
-        displaceScaled(2) = -displaceScaled(2);
+        displaceScaled = sign(displacePix) .* (abs(displacePix) ./ max(abs(displacePix)));
     end
+    
+    % Handle the direction of eye rotation
+    displaceScaled(2) = -displaceScaled(2);
         
     % Probe the forward model to determine how many pixels of change in the
     % location of the pupil ellipse correspond to one degree of rotation.
@@ -241,14 +249,12 @@ end
 
 %% Set up variables and functions for the search
 
-% Define variables used in the nested functions
-fittedEllipse = nan(1,5);
-
 % define some search options for fminbnd
-options = optimset('fminbnd');
-options.Display = 'off';
-options.TolX = eyePoseTol; % eyePose search precision
-options.MaxFunEvals = 50; % I think this value is a good speed-accuracy trade off, but have not carefully tested
+options = optimset('fminsearch');
+options.Display = 'off'; % Silencio
+options.FunValCheck = 'off'; % The objective will return nans when the eyepose is not valid
+options.TolX = p.Results.eyePoseTol; % eyePose search precision
+options.MaxFunEvals = p.Results.eyePoseEllipseFitFunEvals; % This has the largest effect on search time
 
 % Turn off warnings that can arise during the search
 warningState = warning;
@@ -259,64 +265,41 @@ warning('off','MATLAB:singularMatrix');
 % Clear the warning buffer
 lastwarn('');
 
-% Set some parameters for the search
-nSearches = 0;
-searchingFlag = true;
+% Initialize the output variable
 eyePose = x0;
-RMSE = realmax;
 
-% Anonymous function to update one element of the eyePose at a time
-subP = @(ii,p,x) [x(1:ii-1) p x(ii+1:end)];
-
-% Enter a while loop that iteratively refines the eyePose until criteria
-% are met. The objfun is nested.
-while searchingFlag
-    % Iterate the search count
-    nSearches = nSearches+1;
-    % Copy over the RMSE and eyePose
-    lastRMSE = RMSE;
-    lastEyePose = eyePose;
-    % Loop over the elements of the eyePose and search
-    for ii = 1:length(eyePose)
-        % Only search over the eyePose parameters that are not fully
-        % constrained by the bounds
-        if notLocked(ii)
-            localObj = @(p) objfun(subP(ii,p,eyePose));
-            [eyePose(ii), RMSE] = fminbnd(localObj, eyePoseLB(ii), eyePoseUB(ii), options);
+% Search with a nested objective function
+[eyePose(notLocked), RMSE] = fminsearch(@objFun, x0(notLocked), options);
+    function fVal = objFun(x)
+        % Combine the locked params with the searched params
+        candidateEyePose = x0;
+        candidateEyePose(notLocked) = x;
+        % This is the value returned if no valid eye pose is found
+        objFailValue = nan;
+        % If any of the params exceed a boundary, return with the failed
+        % objValue
+        if any(candidateEyePose>eyePoseUB) || any(candidateEyePose<eyePoseLB)
+            fVal = objFailValue;
+            return
         end
-    end
-    % Check for termination conditions, which are any of:
-    %   - objective value is within rmseThreshIter of rmseThresh
-    %   - the change in objective val from last loop is less than rmseThreshIter
-    %   - the change in eyePose values are all below eyePoseTol
-    %   - we have used up all of our searches
-    if ...
-            abs(RMSE-rmseThresh) < rmseThreshIter || ...
-            abs(lastRMSE-RMSE) < rmseThreshIter || ...
-            all(abs(lastEyePose-eyePose) < eyePoseTol) || ...
-            nSearches == p.Results.nMaxSearches
-        searchingFlag = false;
-    end
-end % while
-    function fVal = objfun(x)
         % Obtain the entrance pupil ellipse for this eyePose
-        [fittedEllipse, fittedGlint] = projectModelEye(x, sceneGeometry);
+        [candidateEllipse, candidateGlint] = projectModelEye(candidateEyePose, sceneGeometry);
         % Check for the case in which the transparentEllipse contains nan
         % values, which can arise if there were an insufficient number of
         % pupil border points remaining after refraction to define an
         % ellipse.
-        if any(isnan(fittedEllipse))
+        if any(isnan(candidateEllipse))
             % Set fVal to something arbitrarily large
-            fVal = 1e6;
+            fVal = objFailValue;
         else
             % This is the RMSE of the distance values of the boundary
             % points to the ellipse fit.
-            explicitEllipse = ellipse_transparent2ex(fittedEllipse);
+            explicitEllipse = ellipse_transparent2ex(candidateEllipse);
             if isempty(explicitEllipse)
-                fVal = 1e6;
+                fVal = objFailValue;
             else
                 if any(isnan(explicitEllipse))
-                    fVal = 1e6;
+                    fVal = objFailValue;
                 else
                     fVal = sqrt(nanmean(ellipsefit_distance(Xp,Yp,explicitEllipse).^2));
                 end
@@ -326,17 +309,19 @@ end % while
         % normed mismatch in pixels between the modeled and observed
         % glint(s).
         if ~isempty(glintCoord)
-            if isempty(fittedGlint)
-                fVal = 1e6;
+            if isempty(candidateGlint)
+                fVal = objFailValue;
             else
-                fVal = fVal * (1+norm(glintCoord - fittedGlint));
+                fVal = fVal * (1+norm(glintCoord - candidateGlint));
             end
         end
     end % local objective function
 
+% Update the fittedEllipse with the solution parameters
+fittedEllipse = projectModelEye(eyePose, sceneGeometry);
 
 % Check if the fit is at a boundary for any parameter that is not locked
-fitAtBound = any([any(abs(eyePose(notLocked)-eyePoseLB(notLocked)) < eyePoseTol) any(abs(eyePose(notLocked)-eyePoseUB(notLocked)) < eyePoseTol)]);
+fitAtBound = any([any(abs(eyePose(notLocked)-eyePoseLB(notLocked)) < p.Results.eyePoseTol) any(abs(eyePose(notLocked)-eyePoseUB(notLocked)) < p.Results.eyePoseTol)]);
 
 % Restore the warning state
 warning(warningState);
