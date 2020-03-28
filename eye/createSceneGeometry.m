@@ -91,7 +91,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %           be converted to a fixation location f [horizontal, vertical] in
 %           degrees visual angle on the screen using:
 %
-%               f = p*R + fixationEyePose
+%               f = (R*p' + fixationEyePose)'
 %
 %  'eye' - A structure that is returned by the function modelEyeParameters.
 %       The parameters define the anatomical properties of the eye. These
@@ -173,8 +173,8 @@ p = inputParser; p.KeepUnmatched = true;
 % Optional analysis params
 p.addParameter('sceneGeometryFileName','', @(x)(isempty(x) | ischar(x)));
 p.addParameter('intrinsicCameraMatrix',[2600 0 320; 0 2600 240; 0 0 1],@isnumeric);
-p.addParameter('sensorResolution',[640 480],@isnumeric);
-p.addParameter('radialDistortionVector',[0 0],@isnumeric);
+p.addParameter('sensorResolution',[640, 480],@isnumeric);
+p.addParameter('radialDistortionVector',[0, 0],@isnumeric);
 p.addParameter('cameraTranslation',[0; 0; 120],@isnumeric);
 p.addParameter('cameraGlintSourceRelative',[-14; 0; 0],@isnumeric);
 p.addParameter('cameraTorsion',0,@isnumeric);
@@ -183,7 +183,7 @@ p.addParameter('screenTorsion',0,@isscalar);
 p.addParameter('screenRotMat',[1 0; 0 1],@isnumeric);
 p.addParameter('screenDimensions',[697.347,392.257],@isnumeric);
 p.addParameter('screenResolutions',[1920,1080],@isnumeric);
-p.addParameter('fixationEyePose',[0,0],@isnumeric);
+p.addParameter('fixationEyePose',[0; 0],@isnumeric);
 p.addParameter('surfaceSetName',{'retinaToCamera','cameraToRetina','retinaToStop','stopToMedium','retinaToMedium','mediumToRetina','mediumToCamera','cameraToMedium','glint'},@ischar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
