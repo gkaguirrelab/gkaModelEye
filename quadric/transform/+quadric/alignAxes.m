@@ -60,7 +60,7 @@ Qscale = Q(4,4);
 % Here and elsewhere, detect the case in which the scale is close to zero,
 % in which case no adjustment is made. This can occur when the quadric is
 % translated so that an apex is positioned at the origin.
-if Qscale < realmin 
+if abs(Qscale) < realmin 
     Qscale = 1;
 end
 
