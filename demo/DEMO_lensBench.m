@@ -1,4 +1,4 @@
-%% Lens Bench Demo
+%% DEMO_lensBench
 % A simple optical bench explorer
 %
 % Description:

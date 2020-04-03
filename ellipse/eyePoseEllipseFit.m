@@ -1,5 +1,5 @@
 function [eyePose, RMSE, fittedEllipse, fitAtBound] = eyePoseEllipseFit(Xp, Yp, sceneGeometry, varargin)
-% Fit an image plane ellipse by perspective projection of a pupil circle
+% Return the eye pose that best fits an ellipse to the pupil perimeter
 %
 % Syntax:
 %  [eyePose, RMSE, fittedEllipse, fitAtBound] = eyePoseEllipseFit(Xp, Yp, sceneGeometry)
@@ -7,7 +7,7 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound] = eyePoseEllipseFit(Xp, Yp, 
 % Description:
 %   The routine fits the pupil perimeter points on the image plane based
 %   upon the eye parameters (azimuth, elevation, torsion, stop radius) that
-%   produce the best fitting ellipse projected according to sceneGeometry.
+%   produce the best fitting ellipse based upon the sceneGeometry.
 %
 %   If one or more glint coordinates are supplied, the eyePose used to fit
 %   the pupil perimeter is constrained to also produce a modeled location
@@ -50,10 +50,9 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound] = eyePoseEllipseFit(Xp, Yp, 
 %   eyePose               - A 1x4 vector with values for [eyeAzimuth,
 %                           eyeElevation, eyeTorsion, stopRadius].
 %                           Azimuth, elevation, and torsion are in units of
-%                           head-centered (extrinsic) degrees, and stop
-%                           radius is in mm.
+%                           degrees, and stop radius is in mm.
 %   RMSE                  - Root mean squared error of the distance of
-%                           boundary point in the image to the fitted
+%                           boundary points in the image to the fitted
 %                           ellipse
 %   fittedEllipse         - Parameters of the best fitting ellipse
 %                           expressed in transparent form [1x5 vector]
@@ -320,7 +319,7 @@ eyePose = x0;
 % Update the fittedEllipse with the solution parameters
 fittedEllipse = projectModelEye(eyePose, sceneGeometry);
 
-% Check if the fit is at a boundary for any parameter that is not locked
+% Check if the fit is at a bound for any parameter that is not locked
 fitAtBound = any([any(abs(eyePose(notLocked)-eyePoseLB(notLocked)) < p.Results.eyePoseTol) any(abs(eyePose(notLocked)-eyePoseUB(notLocked)) < p.Results.eyePoseTol)]);
 
 % Restore the warning state

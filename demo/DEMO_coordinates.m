@@ -1,4 +1,4 @@
-%% Demo coordinate axes
+%% Demo coordinate systems
 % Plot and label the axes used in the code and projections
 % 
 % Description
@@ -11,17 +11,21 @@
 % Housekeeping
 clear
 
+% Prepare a figure
+figure('Name','Coordinate systems')
+
+% Get the default sceneGeometry
 sceneGeometry = createSceneGeometry();
 
-figure
 
+%% Eye coordinate space
 
 subplot(1,3,1)
 
 % Add the eye
 plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'newFigure',false,'surfaceAlpha',0.4);
 
-% Add axis lines for the eyeWorld space
+% Add axis lines for the eye coordinate system
 plot3([-25 25],[0 0],[0 0],'-k')
 plot3([0 0],[-25 25],[0 0],'-k')
 plot3([0 0],[0 0],[-25 25],'-k')
@@ -42,6 +46,7 @@ title('eye coordinates')
 axis off
 
 
+%% World coordinate space
 
 subplot(1,3,2)
 
@@ -69,6 +74,8 @@ title('world coordinates')
 axis off
 
 
+%% Image coordinate space
+
 subplot(1,3,3)
 
 % Add the eye
@@ -82,6 +89,7 @@ hold on
 % middle of the frame
 sceneGeometry.cameraPosition.translation(2)=4;
 
+% Render the eye
 backgroundImage = zeros(imageSizeY,imageSizeX)+0.75;
 eyePose = [0 0 0 3];
 renderEyePose(eyePose, sceneGeometry,...
@@ -90,9 +98,8 @@ renderEyePose(eyePose, sceneGeometry,...
 	'modelEyePlotColors', {'.w' 'ob' '-g' '.y'},...
 	'modelEyeSymbolSizeScaler',0.5);
 
-hold on
-
 % Add some coordinate plots
+hold on
 text(50,40,'[0 0]','HorizontalAlignment','center');
 text(400,40,'+x','HorizontalAlignment','left');
 text(50,400,'+y','HorizontalAlignment','center');

@@ -1,5 +1,5 @@
 function systemDirection = calcSystemDirection(opticalSystem, rayStartDepth)
-% Returns the valid direction for ray tracing in this optical syste,
+% Returns the valid direction for ray tracing for an optical system
 %
 % Syntax:
 %  systemDirection = calcSystemDirection(opticalSystem)
@@ -9,8 +9,6 @@ function systemDirection = calcSystemDirection(opticalSystem, rayStartDepth)
 %   results in only one direction of ray tracing being available for a
 %   given opticalSystem variable. We try both directions here and report
 %   back the valid solution.
-%
-%   In the paraxial approximation, nodal and principal points are the same.
 %
 % Inputs:
 %   opticalSystem         - An mx19 matrix, where m is set by the key value
@@ -38,7 +36,11 @@ function systemDirection = calcSystemDirection(opticalSystem, rayStartDepth)
 % Outputs:
 %  'systemDirection'      - Char vector with valid values 'eyeToCamera' or
 %                           'cameraToEye'. Defines the direction of ray
-%                           tracing for this optical system.
+%                           tracing for this optical system. For the
+%                           special case of an optical system that is empty
+%                           except for the specification of the refractive
+%                           index of the medium, the routine returns
+%                           'cameraToEye; eyeToCamera'.
 %
 % Examples:
 %{
@@ -71,6 +73,9 @@ if any(any(isnan(opticalSystem(2:end,:))))
     systemDirection = 'Invalid nan in matrix';
     return
 end
+
+% Handle the special case of an optical system that is empty except for
+% specification of the refractive index of the medium
 if size(opticalSystem,1)==1
     systemDirection = 'cameraToEye; eyeToCamera';
     return

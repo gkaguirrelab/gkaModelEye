@@ -6,11 +6,11 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera, 
 %
 % Description
 %   Calculates the refractive power of an optical system in units of
-%	diopters. A negative value specifies a lens that would be worn by
-%	someone with myopia to correct their vision.
+%	diopters. A negative value specifies the power of a lens that would be
+%	worn by someone with myopia to correct their vision.
 %
 %   Some optical systems end in a medium with a refractive index other than
-%   one. In this case the diopter strength is given by:
+%   one. In this case the optical power is given by:
 %
 %       diopters = refractiveIndex / effectiveFocalLength
 %
@@ -25,7 +25,6 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera, 
 %   optical power will vary depending upon the path of the ray. The
 %   rayOffset parameter controls the height at which the ray strikes the
 %   first surface.
-%
 %
 % Inputs:
 %   opticalSystem         - An mx19 matrix, where m is set by the key value

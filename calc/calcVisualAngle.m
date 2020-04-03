@@ -2,10 +2,10 @@ function [visualAngleTotal, visualAngleByPlane, outputRay0, outputRay1, rayPath0
 % The visual angles between two retinal points
 %
 % Syntax:
-%  visualAngleTotal = calcVisualAngle(sceneGeometry,G0,G1,X0,X1)
+%  [visualAngleTotal, visualAngleByPlane, outputRay0, outputRay1, rayPath0, rayPath1 ] = calcVisualAngle(eye,G0,G1,X0,X1,cameraMedium)
 %
 % Description
-%   Given a sceneGeometry and two coordinates on the retinal surface, the
+%   Given an eye structure and two coordinates on the retinal surface, the
 %   routine returns the total visual angle (in degrees) between the two
 %   points, as well as a vector that contains the angles projected on the
 %   p1p2 and p1p3 planes (i.e., horizontal and vertical visual angle).

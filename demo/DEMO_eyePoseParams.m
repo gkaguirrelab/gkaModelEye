@@ -5,26 +5,32 @@
 %   The routines express the pose of the eye in a 1x4 vector of eyePoses
 %   of the form [azimuth, elevation, torsion, pupilRadius]
 %
-% Here we demonstrate the interpretation of these parameters
+%   Here we demonstrate the interpretation of these parameters.
 %
 
+
+%% Housekeeping
 clear vars
 close all
 clc
 
+
+% Some info for the console
 fprintf(['The pose of the eye is described by the parameters:\n\n' ...
     '\t[azimuth, elevation, torsion, pupilRadius]\n\n' ...
     'The three rotation variables are in units of degrees, and are in the\n' ...
     '"Fick" coordinates.\n' ...
     '(i.e., rotating) coordinate frame.\n\n']);
 
-% Obtain the sceneGeometry
-sceneGeometry = createSceneGeometry();
 
 
 %% Present Figure 1
+
 figure(1)
 eyePoses=[-20 20 0 3; 0 20 0 3; 20 20 0 3; -20 0 0 3; 0 0 0 3; 20 0 0 3; -20 -20 0 3; 0 -20 0 3; 20 -20 0 3 ];
+
+% Obtain the sceneGeometry
+sceneGeometry = createSceneGeometry();
 
 for pose = 1:size(eyePoses,1)
     % Obtain the rendering of the model for this pose
@@ -53,6 +59,8 @@ eyeSides = {'right','left'};
 modelEyeLabelNames = {'irisPerimeter' 'pupilEllipse' 'pupilCenter' 'cornealApex'};
 modelEyePlotColors = {'.b' '-g' '+g' '+y'};
 partsToPlot = [3 4 7 8 9];
+
+
 for laterality = 1:2
     % prepare the model eye for this laterality
     sceneGeometry = createSceneGeometry('eyeLaterality',eyeSides{laterality},'calcLandmarkFovea',true);
@@ -86,7 +94,5 @@ fprintf(['Figure 2 top shows the perimeter of the pupil (green) and\n' ...
     'Note that the pupil is slight ellipitical, with a vertical axis. \n' ...
     'Additionally, the cornea is aspheric and rotated out of alignment \n'...
     'with the optical axis, which adds additional non-circularity to the pupil.\n' ...
-    'The cyan plus indicates the location on the pupil plane of the\n' ...
-    'visual axis of the eye, and the yellow plus is the corneal apex.\n' ...
-    'Both are  displaced nasally and superiorly.\n\n']);
+    'The yellow plus is the corneal apex, which is displaced nasally\n\n']);
 

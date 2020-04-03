@@ -8,7 +8,9 @@
 %   presence of corrective lenses.
 %
 
-clear all
+
+%% Housekeeping
+clear
 close all
 clc
 
@@ -18,7 +20,7 @@ diopterColors = {'g','r','b'};
 blankFrame = zeros(480,640)+0.5;
 
 
-%% Present Figure 1 -- Spectacle lens virtual image displacement
+%% Spectacle lens virtual image displacement
 
 fprintf(['Figure 1 shows the outline of the pupil on the image plane for an\n' ...
     'emmetropic eye in three different azimuthal poses. The pupil ellipse is drawn in \n' ...

@@ -7,7 +7,7 @@ function [outputRay,rayPath, angleError] = calcNodalRay(eye,G,X,cameraMedium)
 % Description
 %   Given an eye structure and a coordinate on the retinal surface, the
 %   routine returns a matrix that contains the path of a ray that satisfies
-%   the property that the angle (wrt the optical axis) of the ray as it
+%   the property that the angle (w.r.t the optical axis) of the ray as it
 %   departs the retina is equal to the angle with which it departs the
 %   cornea. This is a "nodal ray":
 %

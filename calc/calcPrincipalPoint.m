@@ -2,7 +2,7 @@ function P = calcPrincipalPoint(opticalSystem, rayStartDepth)
 % Returns the principal point for an opticalSystem
 %
 % Syntax:
-%  [P, systemDirection] = calcPrincipalPoint(opticalSystem)
+%  P = calcPrincipalPoint(opticalSystem, rayStartDepth)
 %
 % Description
 %   For a ray that passes through an optical system, the incoming and
@@ -17,9 +17,10 @@ function P = calcPrincipalPoint(opticalSystem, rayStartDepth)
 %   originating from the right or left. The implementation of optical
 %   systems and ray tracing in this code results in only one of these
 %   ray tracing directions being available for a given opticalSystem
-%   variable. Just the valid solution is returned.
+%   variable; only the valid solution is returned.
 %
-%   In the paraxial approximation, nodal and principal points are the same.
+%   In the paraxial approximation, nodal points and principal points are
+%   the same.
 %
 % Inputs:
 %   opticalSystem         - An mx19 matrix, where m is set by the key value

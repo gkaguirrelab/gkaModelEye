@@ -5,32 +5,33 @@ function compileInverseRayTrace( varargin )
 %  compileInverseRayTrace
 %
 % Description:
-%   This routine produces a compiled mex files for findPupilRay and
+%   This routine produces compiled MEX files for findPupilRay and
 %   findGlintRay, saves the files at the specified disk location, and
 %   places the functions on the MATLAB path.
 %
 %   The default save location is the directory that contains this function.
 %
-%   Calls to the compiled functions execute roughly ~30x faster than the
-%   native routines.
+%   Calls to the compiled functions execute ~30x faster than the native
+%   routines.
 %
 % Inputs:
 %   none
 %
 % Optional key/value pairs:
-%  'functionDirPath'      - Character vector. Specifies the location in
-%                           which the compiled function is writen.
+%  'functionDirPath'      - Character vector. Specifies the location where
+%                           the compiled functions are saved.
 %  'replaceExistingFunc'  - Logical, default false. If set to true, any
-%                           existing versions of findPupilRayMex will
-%                           be removed from the path and a new version will
-%                           be created.
+%                           existing version of the compiled functions for
+%                           the current operating system will be removed
+%                           from the path and a new version will be
+%                           created.
 %
 % Outputs:
 %   none
 %
 % Examples:
 %{
-    % Confirm that compiled and native findPupilRay yield same value
+    % Confirm that compiled and native findPupilRay yield the same value
     sceneGeometry = createSceneGeometry();
     % Assemble the args for the findPupilRay
     args = {sceneGeometry.cameraPosition.translation, ...
@@ -43,7 +44,7 @@ function compileInverseRayTrace( varargin )
     assert(max(max(abs(inverseRayNative - inverseRayCompiled))) < 1e-6)
 %}
 %{
-    % Confirm that compiled and native findGlintRay yield same value
+    % Confirm that compiled and native findGlintRay yield the same value
     sceneGeometry = createSceneGeometry();
     eyePose = [-5, 3, 0, 2];
     cameraNodalPoint = sceneGeometry.cameraPosition.translation;
@@ -121,8 +122,7 @@ end
 
 %% Remove pre-existing functions from the path
 % Detect the case in which the current directory itself contains a compiled
-% findPupilRayMex file, in which case the user needs to change
-% directories
+% findPupilRayMex file, in which case the user needs to switch directories
 if strcmp(pwd(),fileparts(which('findPupilRayMex')))
     error('compileInverseRayTrace:dirConflict','The current folder itself contains a compiled findPupilRay. Change directories to avoid function shadowing.')
 end
@@ -147,7 +147,6 @@ while notDoneFlag
         error('compileInverseRayTrace:tooManyRemovals','Potentially stuck in a loop trying to remove previous compiled functions from the path.')
     end
 end
-
 
 
 %% Define argument variables

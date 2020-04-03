@@ -5,14 +5,12 @@ function [outputRay,rayPath,fixEyePose,fixTargetCoords,foveaDistanceError] = cal
 %  [outputRay,rayPath,fixationEyePose,foveaDistanceError] = calcLineOfSightRay(sceneGeometry,stopRadius,fixTargetDistance)
 %
 % Description
-%   Given sceneGeometry, the routine identifies the ray that originates at
-%   the fixation point, passes through the center of the entrance pupil,
-%   and arrives at the fovea.
-%
-%   This ray is defined as the "line of sight" for the eye.
+%   Given a sceneGeometry, the routine identifies the ray that originates
+%   at the fixation point, passes through the center of the entrance pupil,
+%   and arrives at the fovea. This ray is the "line of sight" for the eye.
 %
 %   If not defined, the radius of the aperture stop is set to provide an
-%   entrance pupil diameter of ~2 mm, which empirically produces the
+%   entrance pupil diameter of ~3.5 mm, which tends to produce the
 %   highest degree of acuity in normal observers. The fixation target is
 %   assumed to 1500 mm unless set.
 %
@@ -67,10 +65,10 @@ function [outputRay,rayPath,fixEyePose,fixTargetCoords,foveaDistanceError] = cal
 %}
 
 % Code to determine the stop radius that corresponds to a pupil diameter of
-% 2 mm. This value is used as it is found to provide peak acuity for normal
-% observers.
+% 3.5 mm. This value is used as it is found to provide peak acuity for
+% normal observers.
 %{
-    entranceRadius = 2/2;
+    entranceRadius = 3.5/2;
     % Prepare scene geometry and eye pose aligned with visual axis
     sceneGeometry = createSceneGeometry();
     % Obtain the pupil area in the image for the entrance radius
@@ -86,13 +84,13 @@ function [outputRay,rayPath,fixEyePose,fixTargetCoords,foveaDistanceError] = cal
     myArea = @(ellipseParams) ellipseParams(3);
     myObj = @(radius) (myArea(myPupilEllipse(radius))-stopArea(1)).^2;
     stopRadius = fminunc(myObj, entranceRadius);
-    outline = sprintf('A 2mm entrance pupil corresponds to a %2.2fmm stop radius\n',stopRadius);
+    outline = sprintf('A 3.5mm diameter entrance pupil corresponds to a %2.2fmm stop radius\n',stopRadius);
     fprintf(outline);
 %}
     
 % Parse inputs
 if nargin==1
-    stopRadius = 0.8693;
+    stopRadius = 1.53;
     fixTargetDistance = 1500;
 end
 

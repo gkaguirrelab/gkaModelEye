@@ -2,7 +2,7 @@ function [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopter
 % Returns the lens accommodation parameter for a desired near focal point
 %
 % Syntax:
-%  navarroD = calcAccommodation(accommodationDiopters)
+%  [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopters)
 %
 % Description
 %   The refractive power of the crystaline lens of the model is a function
