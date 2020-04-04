@@ -2,7 +2,7 @@ function [eyeCoord, R] = rotateEyeCoord(eyeCoord, eyePose, rotationCenters, dire
 % Apply an eye rotation to an eye coordinate
 %
 % Syntax:
-%  eyeCoord = rotateEyeCoord(eyeCoord, eyePose, rotationCenters, directionFlag)
+%  [eyeCoord, R] = rotateEyeCoord(eyeCoord, eyePose, rotationCenters, directionFlag, R)
 %
 % Description
 %   The eye coordinate space is defined along the optical axis of the eye
@@ -35,11 +35,24 @@ function [eyeCoord, R] = rotateEyeCoord(eyeCoord, eyePose, rotationCenters, dire
 %   rotationCenters       - Structure. Equal to:
 %                               sceneGeometry.eye.rotationCenters
 %   directionFlag         - Char vector. Defaults to 'forward'.
+%   R                     - Structure that defines the 3x3 rotation 
+%                           matrices for each Fick angle. If passed, this
+%                           rotation matrix is used instead of
+%                           recalculating the matrix for the specified
+%                           eyePose, saving on computation time for
+%                           iterative calls to this function for the same
+%                           eyePose with different eyeCoord values. The
+%                           field "empty" is set to true if the rotation
+%                           matrices are not yet defined and consist only
+%                           of nans. This convention is needed to allow
+%                           code compilation.
 %
 % Outputs:
 %   eyeCoord              - A 1x3 vector that gives the coordinates (in mm)
 %                           of a point in eyeWorld space with the
 %                           dimensions p1, p2, p3.
+%   R                     - Structure that defines the 3x3 rotation 
+%                           matrices for each Fick angle. 
 %
 % Examples:
 %{
