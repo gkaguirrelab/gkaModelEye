@@ -21,7 +21,7 @@ function [S] = varsToMatrix(A, B, C, D, E, F, G, H, I, K)
 %        G H I K]
 %
 %   Vector form:
-%       [A B C D E F G H I J K]
+%       [A B C D E F G H I K]
 %
 % Inputs:
 %   A, B, C, ...          - The set of quadric parameters as scalars.

@@ -21,7 +21,7 @@ function S = vecToMatrix(v)
 %        G H I K]
 %
 %   Vector form:
-%       [A B C D E F G H I J K]
+%       [A B C D E F G H I K]
 %
 % Inputs:
 %   v                     - 10x1 vector of the quadric surface

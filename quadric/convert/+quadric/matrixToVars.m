@@ -21,7 +21,7 @@ function [A, B, C, D, E, F, G, H, I, K] = matrixToVars(S)
 %        G H I K]
 %
 %   Vector form:
-%       [A B C D E F G H I J K]
+%       [A B C D E F G H I K]
 %
 % Inputs:
 %   S                     - 4x4 matrix of the quadric surface.

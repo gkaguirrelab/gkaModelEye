@@ -13,12 +13,12 @@ function R = anglesToRay(p, angle_xy, angle_xz )
 %                           projected on the xy and xz planes.
 %
 % Outputs:
-%   R                     - 3x2 matrix that specifies the refracted ray as 
-%                           a unit vector of the form [p; u]:
-%                               R = p + t*u,
+%   R                     - 3x2 matrix that specifies a vector of the form 
+%                           [p; u], corresponding to
+%                               R = p + t*u
 %                           where p is vector origin, u is the direction
-%                           expressed as a unit step, and t has an
-%                           obligatory value of unity.
+%                           expressed as a unit step, and t is unity for a
+%                           unit vector.
 %
 % Examples:
 %{
@@ -39,8 +39,8 @@ if abs(angle_xy)>90 || abs(angle_xz)>90
     m = -1;
 end
 
-d = [m; m*tan(deg2rad(angle_xy)); m*tan(deg2rad(angle_xz))];
-R = quadric.normalizeRay([p, d]);
+u = [m; m*tan(deg2rad(angle_xy)); m*tan(deg2rad(angle_xz))];
+R = quadric.normalizeRay([p, u]);
 
 end
 

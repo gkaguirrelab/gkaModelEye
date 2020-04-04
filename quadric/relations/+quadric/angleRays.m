@@ -2,16 +2,18 @@ function [angle, angle_xy, angle_xz] = angleRays( R1, R2 )
 % Returns the angle in degrees between two rays
 %
 % Syntax:
-%  R = quadric.angleRays( R )
+%  [angle, angle_xy, angle_xz] = quadric.angleRays( R1, R2 )
 %
 % Description:
 %   Just what it says on the tin.
 %
 % Inputs:
-%   R1, R2                - 3x2 matrices that specify a vector of the form
-%                           [p; d]:
-%                               R = p + d,
-%                           where p is vector origin, d is the direction.
+%   R1, R2                -- 3x2 matrix that specifies a vector of the form 
+%                           [p; u], corresponding to
+%                               R = p + t*u
+%                           where p is vector origin, u is the direction
+%                           expressed as a unit step, and t is unity for a
+%                           unit vector.
 %
 % Outputs:
 %   angle                 - Scalar. Angle in degrees between the rays.

@@ -2,7 +2,7 @@ function p = plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLi
 % Add a 3D plot of the quadric surface to the active figure
 %
 % Syntax:
-%  p = quadric.plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLineColor,lineAlpha,bbTol)
+%  p = quadric.plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLineColor,lineAlpha,bbTol,meshGridSamples)
 %
 % Description:
 %   Creates a meshgrid on the quadric surface and plots this as a mesh

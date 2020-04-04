@@ -8,15 +8,17 @@ function R = normalizeRay( R )
 %   Just what it says on the tin.
 %
 % Inputs:
-%   R                     - 3x2 matrix that specifies a vector of the form
-%                           [p; d]:
-%                               R = p + d,
-%                           where p is vector origin, d is the direction.
+%   R                     - 3x2 matrix that specifies a vector of the form 
+%                           [p; u], corresponding to
+%                               R = p + t*u
+%                           where p is vector origin, u is the direction
+%                           expressed as a unit step, and t is unity for a
+%                           unit vector.
 %
 % Outputs:
-%   R                     - 3x2 matrix that specifies the refracted ray as 
-%                           a unit vector of the form [p; u]:
-%                               R = p + t*u,
+%   R                     - 3x2 matrix that specifies a vector of the form 
+%                           [p; u], corresponding to
+%                               R = p + t*u
 %                           where p is vector origin, u is the direction
 %                           expressed as a unit step, and t has an
 %                           obligatory value of unity.

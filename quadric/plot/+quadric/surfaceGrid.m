@@ -2,7 +2,7 @@ function coordinates = surfaceGrid(S, boundingBox, meshGridSamples, gridType, bb
 % Returns a set coordinates evenly distributed on the quadric surface
 %
 % Syntax:
-%  coordinates = surfaceGrid(S, boundingBox, meshGridSamples, gridType, bbTol)
+%  coordinates = quadric.surfaceGrid(S, boundingBox, meshGridSamples, gridType, bbTol)
 %
 % Description:
 %   Returns a set of coordinates that are spaced across the quadric

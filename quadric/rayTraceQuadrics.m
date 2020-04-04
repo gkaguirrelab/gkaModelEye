@@ -17,12 +17,12 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %       180-188.
 %
 % Inputs:
-%   inputRay              - 3x2 matrix that specifies the ray as a unit 
-%                           vector of the form [p; u], corresponding to
-%                               R = p + t*u,
+%   inputRay              - 3x2 matrix that specifies a vector of the form 
+%                           [p; u], corresponding to
+%                               R = p + t*u
 %                           where p is vector origin, u is the direction
-%                           expressed as a unit step, and t has an
-%                           obligatory value of unity.
+%                           expressed as a unit step, and t is unity for a
+%                           unit vector.
 %   opticalSystem         - An mx19 matrix, where m is the number of
 %                           surfaces in the model, including the initial
 %                           state of the ray. Each row contains the values:
@@ -55,11 +55,12 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %                           from the matrix and have no effect.
 %
 % Outputs:
-%   outputRay             - 3x2 matrix that specifies the ray as a unit 
-%                           vector of the form [p; d], corresponding to
+%   outputRay             - 3x2 matrix that specifies a vector of the form 
+%                           [p; u], corresponding to
 %                               R = p + t*u
-%                           where p is vector origin, d is the direction
-%                           expressed as a unit step, and t is unity.
+%                           where p is vector origin, u is the direction
+%                           expressed as a unit step, and t is unity for a
+%                           unit vector.
 %   rayPath               - 3xm matrix that provides the ray coordinates
 %                           at each surface. The value for rayPath(1,:)
 %                           is equal to initial position. If a surface is
@@ -151,7 +152,7 @@ R = inputRay;
 % Pre-allocate outputRay and rayPath
 outputRay = nan(3,2);
 rayPath = nan(3,nSurfaces);
-rayPath(:,1)=R(:,1);
+rayPath(:,1) = R(:,1);
 
 
 %% Peform the ray trace
@@ -180,7 +181,8 @@ for ii=2:nSurfaces
     % skip checking if the X coordinate is on the surface of the quadric
     N = quadric.surfaceNormal(S,X,side,[]);
 
-    % Get the refracted or reflected ray
+    % Get the refracted or reflected ray, using the sign of the refractive
+    % index as a flag for which operation to perform.
     if sign(opticalSystem(ii,19))==1
         R = quadric.refractRay(R,N,nRel);
     else

@@ -8,12 +8,12 @@ function p = plotRay(R,t,lineColor,lineAlpha)
 %   Plot a ray, scaled by t, using the supplied line color and alpha.
 %
 % Inputs:
-%   R                     - 3x2 matrix that specifies the normal as a unit
-%                           vector of the form [p; u], corresponding to
-%                               R = p + t*u,
+%   R                     - 3x2 matrix that specifies a vector of the form 
+%                           [p; u], corresponding to
+%                               R = p + t*u
 %                           where p is vector origin, u is the direction
-%                           expressed as a unit step, and t has an
-%                           obligatory value of unity.
+%                           expressed as a unit step, and t is unity for a
+%                           unit vector.
 %   t                     - Scalar. A multiplier of the u component of R.
 %   lineColor             - 1x3 vector or char string that specifies a
 %                           valid MATLAB plor color. E.g. [0.5 0.5 0.5] or

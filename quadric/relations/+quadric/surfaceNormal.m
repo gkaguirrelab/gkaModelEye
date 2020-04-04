@@ -2,7 +2,7 @@ function N = surfaceNormal(S,X,side,surfaceTolerance)
 % Returns a vector that is normal to a quadric surface at a coordinate
 %
 % Syntax:
-%  N = surfaceNormal(S,X,side,surfaceTolerance)
+%  N = quadric.surfaceNormal(S,X,side,surfaceTolerance)
 %
 % Description:
 %   Given a quadric surface (S) and a coordinate on that surface, the
@@ -24,19 +24,18 @@ function N = surfaceNormal(S,X,side,surfaceTolerance)
 %                           down the open axis, setting side = -1 returns
 %                           the normal from the interior of one of the
 %                           hyperboloid sheets, and thus the concave side.
-%                           Default value is 1.
 %   surfaceTolerance        Scalar. Defines the tolerance on the check to
 %                           ensure that the passed X coordinate is on the
 %                           quadric surface. Defaults to 1e-10 if not
 %                           defined. If set to empty the check is skipped.                           
 %
 % Outputs:
-%   N                     - 3x2 matrix that specifies the normal as a unit
-%                           vector of the form [p; u], corresponding to
-%                               R = p + t*u,
+%   N                     - 3x2 matrix that specifies the surface normal as 
+%                           a vector of the form [p; u], corresponding to
+%                               N = p + t*u
 %                           where p is vector origin, u is the direction
-%                           expressed as a unit step, and t has an
-%                           obligatory value of unity.
+%                           expressed as a unit step, and t is unity for a
+%                           unit vector.
 %
 % Examples:
 %{

@@ -11,11 +11,12 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
 % Inputs:
 %   S                     - 1x10 vector or 4x4 matrix of the quadric
 %                           surface.
-%   R                     - 3x2 matrix that specifies the ray as a unit 
-%                           vector of the form [p; u], corresponding to
+%   R                     - 3x2 matrix that specifies a vector of the form 
+%                           [p; u], corresponding to
 %                               R = p + t*u
 %                           where p is vector origin, u is the direction
-%                           expressed as a unit step, and t is unity.
+%                           expressed as a unit step, and t is unity for a
+%                           unit vector.
 %   side                  - Scalar, taking the value of -1 or 1. Defines
 %                           whether the first (-1) or second (+1)
 %                           intersection point should be returned as X1.
@@ -28,7 +29,6 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
 %                           intersection will be within the interior of one
 %                           of the hyperboloid sheets, and thus an
 %                           intersection with a concave surface.
-%                           Default value is 1.
 %   boundingBox           - 1x6 vector that specifies:
 %                           	[xmin, xmax, ymin, ymax, zmin, zmax]
 %                           These values set the bounds within which the

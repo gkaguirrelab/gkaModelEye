@@ -8,26 +8,26 @@ function Rr = reflectRay(R,N)
 %   The angle of reflection equals the angle of incidence!
 %
 % Inputs:
-%   R                     - 3x2 matrix that specifies the incident ray as a
-%                           unit vector of the form [p; u]:
-%                               R = p + t*u,
+%   R                     - 3x2 matrix that specifies the incident ray as 
+%                           a vector of the form [p; u], corresponding to
+%                               R = p + t*u
 %                           where p is vector origin, u is the direction
-%                           expressed as a unit step, and t has an
-%                           obligatory value of unity.
-%   N                     - 3x2 matrix that specifies the surface normal as
-%                           a unit vector of the form [p; u]:
-%                               N = p + t*u,
+%                           expressed as a unit step, and t is unity for a
+%                           unit vector.
+%   N                     - 3x2 matrix that specifies the surface normal as 
+%                           a vector of the form [p; u], corresponding to
+%                               N = p + t*u
 %                           where p is vector origin, u is the direction
-%                           expressed as a unit step, and t has an
-%                           obligatory value of unity.
+%                           expressed as a unit step, and t is unity for a
+%                           unit vector.
 %
 % Outputs:
 %   Rr                    - 3x2 matrix that specifies the reflected ray as 
-%                           a unit vector of the form [p; u]:
-%                               Rr = p + t*u,
+%                           a vector of the form [p; u], corresponding to
+%                               Rr = p + t*u
 %                           where p is vector origin, u is the direction
-%                           expressed as a unit steo, and t has an
-%                           obligatory value of unity.
+%                           expressed as a unit step, and t is unity for a
+%                           unit vector.
 %
 % Examples:
 %{

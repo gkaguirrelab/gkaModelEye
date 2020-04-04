@@ -9,15 +9,18 @@ function distance = distancePointRay(p,R)
 %
 % Inputs:
 %   p                     - 3x1 vector that specifies a point
-%   R                     - 3x2 matrix that specifies a vector of the form
-%                           [p; d]:
-%                               R = p + d,
-%                           where p is vector origin, d is the direction.
+%   R                    -- 3x2 matrix that specifies a vector of the form 
+%                           [p; u], corresponding to
+%                               R = p + t*u
+%                           where p is vector origin, u is the direction
+%                           expressed as a unit step, and t is unity for a
+%                           unit vector.
 %
 % Outputs:
 %   distance              - Scalar distance between the two rays at their
 %                           point of closest approach
 %
+
 
 t = dot(R(:,2),(p-R(:,1)))/dot(R(:,2),R(:,2));
 d = p-(R(:,1)+t.*R(:,2));

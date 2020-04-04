@@ -8,10 +8,12 @@ function [angle_xy, angle_xz, p] = rayToAngles( R )
 %   Just what it says on the tin.
 %
 % Inputs:
-%   R                     - 3x2 matrix that specify a vector of the form
-%                           [p; d]:
-%                               R = p + d,
-%                           where p is vector origin, d is the direction.
+%   R                     - 3x2 matrix that specifies a vector of the form 
+%                           [p; u], corresponding to
+%                               R = p + t*u
+%                           where p is vector origin, u is the direction
+%                           expressed as a unit step, and t is unity for a
+%                           unit vector.
 %
 % Outputs:
 %   angle_xy, angle_xz    - Scalars. Angles in degrees between the rays
