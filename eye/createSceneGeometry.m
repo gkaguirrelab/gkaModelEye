@@ -67,10 +67,10 @@ function sceneGeometry = createSceneGeometry(varargin)
 %  'screenPosition' - A structure that defines the spatial position of a
 %           screen that the eye is fixating upon. Sub-fields:
 %
-%      'translation' - A 3x1 vector of the form [horizontal; vertical;
-%           depth] in units of mm. Specifies the position of the center of
-%           the screen relative to the corneal apex when the optical axis
-%           of the eye is aligned with the center of the screen.
+%      'distance' - A scalar that specifies the distance (in mm) of the 
+%           center of the screen relative to the corneal apex when the
+%           optical axis of the eye is aligned with the center of the
+%           screen.
 %
 %      'dimensions' - 1x2 vector in units of mm that provides the width and
 %           height of the screen
@@ -78,20 +78,27 @@ function sceneGeometry = createSceneGeometry(varargin)
 %      'resolutions' - 1x2 vector in units of pixels for the width and
 %           height.
 %
-%      'fixationEyePose' - A 2x1 vector of [azimuth; elevation] eyePose 
-%           values at which the eye is fixated upon the center of the
-%           screen.
+%      'poseRegParams' - Structure. Contains fields that may be used to
+%           calculate gaze position on a screen (in degrees of visual
+%           angle) based upon the pose (rotation) of the eye. The sub-
+%           field "meta" contains the formulat to be used, which is of the
+%           form:
 %
-%      'torsion' - Scalar in units of degrees that specifies the torsional
-%           rotation of the screen relative to axial axis of the eye when
-%           the eye is fixated upon the center of the screen.
+%               f = R * [azi; ele] + t
 %
-%      'R' - 2x2 matrix. This is the rotation matrix implied by the torsion
-%           value. A given eye pose p of the form [azimuth, elevation] may
-%           be converted to a fixation location f [horizontal, vertical] in
-%           degrees visual angle on the screen using:
+%      'vecRegParams' - Structure. Contains fields that may be used to
+%           calculate gaze position on a screen (in degrees of visual
+%           angle) based upon the vector between the center of the pupil
+%           and a glint. The sub- field "meta" contains the formula to be
+%           used, which is of the form:
 %
-%               f = (R*p' + fixationEyePose)'
+%               f = s * R * [Xp - Xg; -1*(Yp-Yg)] + t
+%
+%           where Xp,Yp and Xg,Yg are the X and Y positions of the pupil
+%           center and the glint center. The sign of the Y dimension is
+%           reversed due to the sign convention of positive vertical
+%           rotation of the eye producing a negative change in Y position.
+%
 %
 %  'eye' - A structure that is returned by the function modelEyeParameters.
 %       The parameters define the anatomical properties of the eye. These
@@ -178,12 +185,11 @@ p.addParameter('radialDistortionVector',[0, 0],@isnumeric);
 p.addParameter('cameraTranslation',[0; 0; 120],@isnumeric);
 p.addParameter('cameraGlintSourceRelative',[-14; 0; 0],@isnumeric);
 p.addParameter('cameraTorsion',0,@isnumeric);
-p.addParameter('screenTranslation',[0; 0; 1065],@isnumeric);
-p.addParameter('screenTorsion',0,@isscalar);
-p.addParameter('screenRotMat',[1 0; 0 1],@isnumeric);
+p.addParameter('screenDistance',1065,@isnumeric);
 p.addParameter('screenDimensions',[697.347,392.257],@isnumeric);
 p.addParameter('screenResolutions',[1920,1080],@isnumeric);
-p.addParameter('fixationEyePose',[0; 0],@isnumeric);
+p.addParameter('poseRegParams',[],@isstructure);
+p.addParameter('vecRegParams',[],@isstructure);
 p.addParameter('surfaceSetName',{'retinaToCamera','cameraToRetina','retinaToStop','stopToMedium','retinaToMedium','mediumToRetina','mediumToCamera','cameraToMedium','glint'},@ischar);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
@@ -205,14 +211,14 @@ sceneGeometry.cameraPosition.translation = p.Results.cameraTranslation;
 sceneGeometry.cameraPosition.torsion = p.Results.cameraTorsion;
 sceneGeometry.cameraPosition.glintSourceRelative = p.Results.cameraGlintSourceRelative;
 
+
 %% screenPosition
-sceneGeometry.screenPosition.screenTranslation = p.Results.screenTranslation;
+sceneGeometry.screenPosition.screenDistance = p.Results.screenDistance;
 sceneGeometry.screenPosition.dimensions = p.Results.screenDimensions;
 sceneGeometry.screenPosition.resolutions = p.Results.screenResolutions;
-sceneGeometry.screenPosition.fixationEyePose = p.Results.fixationEyePose;
-sceneGeometry.screenPosition.torsion = p.Results.screenTorsion;
-sceneGeometry.screenPosition.R = p.Results.screenRotMat;
-sceneGeometry.screenPosition.meta = 'Gaze position in degrees visual angle = R * [azi;ele] + fixationEyePose';
+sceneGeometry.screenPosition.poseRegParams = p.Results.poseRegParams;
+sceneGeometry.screenPosition.vecRegParams = p.Results.vecRegParams;
+
 
 %% eye
 sceneGeometry.eye = modelEyeParameters('spectralDomain',p.Results.spectralDomain,varargin{:});
