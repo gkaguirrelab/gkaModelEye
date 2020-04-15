@@ -15,7 +15,6 @@ eyePose = [-30 -5 0 3];
 modelEyeLabelNames = {'retina' 'irisPerimeter' 'pupilEllipse' 'cornea'};
 modelEyePlotColors = {'.w' 'ob' '-g' '.y'};
 
-
 % Render the eye with corneal refraction
 renderEyePose(eyePose, sceneGeometry, ...
     'modelEyeLabelNames',modelEyeLabelNames,...
@@ -26,11 +25,17 @@ renderEyePose(eyePose, sceneGeometry, ...
 % be one.
 sceneGeometry.refraction.stopToMedium.opticalSystem(1:3,19) = 1;
 
-% Add the stop ellipse to the figure
+% Indicate that we only want to render the "pupil", which is now the same
+% as the aperture stop, as we have removed the refractive effects of the
+% cornea.
 modelEyeLabelNames = {'pupilEllipse'};
 modelEyePlotColors = {'-r'};
+
+% Render the eye again
 renderEyePose(eyePose, sceneGeometry, ...
     'newFigure', false,...
     'modelEyeLabelNames',modelEyeLabelNames,...
     'modelEyePlotColors',modelEyePlotColors);
+
+% Add a title.
 title('Stop in red, pupil in green')
