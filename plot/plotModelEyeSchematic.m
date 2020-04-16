@@ -79,6 +79,10 @@ p.addRequired('eye',@isstruct);
 p.addParameter('view','horizontal',@ischar);
 p.addParameter('newFigure',true,@islogical);
 p.addParameter('plotColor','k',@ischar);
+p.addParameter('plotIris',false,@islogical);
+p.addParameter('plotCornealApex',false,@islogical);
+p.addParameter('plotStop',false,@islogical);
+p.addParameter('plotRotationCenters',false,@islogical);
 p.addParameter('rayPath',[],@(x)(isempty(x) || ismatrix(x)));
 p.addParameter('outputRay',[],@(x)(isempty(x) || ismatrix(x)));
 
@@ -118,17 +122,27 @@ plotConicSection(eye.lens.S(end,:), titleString, p.Results.plotColor, eye.lens.b
 
 
 %% Add a 2mm radius pupil, center of rotation, iris boundary, fovea, and optic disc
+if p.Results.plotStop
 plot([eye.stop.center(PdimA) eye.stop.center(PdimA)],[-2 2],['-' p.Results.plotColor]);
-plot(eye.rotationCenters.azi(PdimA),eye.rotationCenters.azi(PdimB),['>' p.Results.plotColor])
-plot(eye.rotationCenters.ele(PdimA),eye.rotationCenters.ele(PdimB),['^' p.Results.plotColor])
+end
+
+if p.Results.plotRotationCenters
+plot(eye.rotationCenters.azi(PdimA),eye.rotationCenters.azi(PdimB),['*' p.Results.plotColor])
+plot(eye.rotationCenters.ele(PdimA),eye.rotationCenters.ele(PdimB),['o' p.Results.plotColor])
+end
+
+if p.Results.plotIris
 plot(eye.iris.center(PdimA),eye.iris.center(PdimB)+eye.iris.radius,['x' p.Results.plotColor])
 plot(eye.iris.center(PdimA),eye.iris.center(PdimB)-eye.iris.radius,['x' p.Results.plotColor])
+end
 
 %% Plot the cornealApex
+if p.Results.plotCornealApex
 sg.eye = eye;
 [~, ~, ~, ~, ~, eyeWorldPoints, pointLabels] = projectModelEye([0 0 0 1], sg, 'fullEyeModelFlag',true);
 idx = find(strcmp(pointLabels,'cornealApex'));
 plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColor]);
+end
 
 %% Plot the fovea, the visual axis, and the line of sight
 % Obtain the rayPath through the optical system from the fovea to cornea
