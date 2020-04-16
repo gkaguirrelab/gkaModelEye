@@ -1,4 +1,4 @@
-%% t02_centersOfRotation
+%% t03_centersOfRotation
 % Show on a schematic illustration the center of rotation for horizontal
 % and vertical eye movements
 
@@ -15,7 +15,7 @@ sceneGeometry=createSceneGeometry();
 %
 %       Fry, Glenn A., and W. W. Hill. "The mechanics of elevating the
 %       eye." Optometry and Vision Science 40.12 (1963): 707-716.
-
+%
 sceneGeometry.eye.rotationCenters.azi = sceneGeometry.eye.rotationCenters.azi*0.9;
 sceneGeometry.eye.rotationCenters.ele = sceneGeometry.eye.rotationCenters.ele*0.9;
 
