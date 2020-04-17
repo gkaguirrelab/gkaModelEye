@@ -26,11 +26,14 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %                           will be nan. This rayPath could be obtained
 %                           using the function:
 %                               quadric/rayTraceQuadrics.m
-%  'outputRay'            - 3x2 matrix that specifies the ray as a unit 
+%  'outputRay'            - 3x2 matrix that specifies the ray as a unit
 %                           vector of the form [p; d], corresponding to
 %                               R = p + t*u
 %                           where p is vector origin, d is the direction
 %                           expressed as a unit step, and t is unity.
+%  'plotIris','plotCornealApex','plotStop','plotRotationCenters',
+%  'plotVisualAxis'       - Logical. Control display of these model
+%                           elements.
 %
 % Outputs:
 %   figHandle             - Handle to a created figure. Empty if a new
@@ -43,15 +46,10 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
     plotModelEyeSchematic(eye);
 %}
 %{
-    % A plot with the fovea, visual axis, and optical center
-    eye = modelEyeParameters('calcLandmarkFovea',true,'calcLandmarkOpticalCenter',true);
-    plotModelEyeSchematic(eye);
-%}
-%{
     % A plot with the fovea, visual axis, and line of sight
     sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
     [outputRayLoS,rayPathLoS] = calcLineOfSightRay(sceneGeometry);
-    plotModelEyeSchematic(sceneGeometry.eye,'rayPath',rayPathLoS,'outputRay',outputRayLoS);
+    plotModelEyeSchematic(sceneGeometry.eye,'plotVisualAxis',true,'rayPath',rayPathLoS,'outputRay',outputRayLoS);
 %}
 %{
     % Two panel plot with horizontal and vertical views for eyes with 0 and -10
@@ -79,12 +77,13 @@ p.addRequired('eye',@isstruct);
 p.addParameter('view','horizontal',@ischar);
 p.addParameter('newFigure',true,@islogical);
 p.addParameter('plotColor','k',@ischar);
+p.addParameter('rayPath',[],@(x)(isempty(x) || ismatrix(x)));
+p.addParameter('outputRay',[],@(x)(isempty(x) || ismatrix(x)));
 p.addParameter('plotIris',false,@islogical);
 p.addParameter('plotCornealApex',false,@islogical);
 p.addParameter('plotStop',false,@islogical);
 p.addParameter('plotRotationCenters',false,@islogical);
-p.addParameter('rayPath',[],@(x)(isempty(x) || ismatrix(x)));
-p.addParameter('outputRay',[],@(x)(isempty(x) || ismatrix(x)));
+p.addParameter('plotVisualAxis',false,@islogical);
 
 % parse
 p.parse(eye, varargin{:})
@@ -123,25 +122,25 @@ plotConicSection(eye.lens.S(end,:), titleString, p.Results.plotColor, eye.lens.b
 
 %% Add a 2mm radius pupil, center of rotation, iris boundary, fovea, and optic disc
 if p.Results.plotStop
-plot([eye.stop.center(PdimA) eye.stop.center(PdimA)],[-2 2],['-' p.Results.plotColor]);
+    plot([eye.stop.center(PdimA) eye.stop.center(PdimA)],[-2 2],['-' p.Results.plotColor]);
 end
 
 if p.Results.plotRotationCenters
-plot(eye.rotationCenters.azi(PdimA),eye.rotationCenters.azi(PdimB),['*' p.Results.plotColor])
-plot(eye.rotationCenters.ele(PdimA),eye.rotationCenters.ele(PdimB),['o' p.Results.plotColor])
+    plot(eye.rotationCenters.azi(PdimA),eye.rotationCenters.azi(PdimB),['*' p.Results.plotColor])
+    plot(eye.rotationCenters.ele(PdimA),eye.rotationCenters.ele(PdimB),['o' p.Results.plotColor])
 end
 
 if p.Results.plotIris
-plot(eye.iris.center(PdimA),eye.iris.center(PdimB)+eye.iris.radius,['x' p.Results.plotColor])
-plot(eye.iris.center(PdimA),eye.iris.center(PdimB)-eye.iris.radius,['x' p.Results.plotColor])
+    plot(eye.iris.center(PdimA),eye.iris.center(PdimB)+eye.iris.radius,['x' p.Results.plotColor])
+    plot(eye.iris.center(PdimA),eye.iris.center(PdimB)-eye.iris.radius,['x' p.Results.plotColor])
 end
 
 %% Plot the cornealApex
 if p.Results.plotCornealApex
-sg.eye = eye;
-[~, ~, ~, ~, ~, eyeWorldPoints, pointLabels] = projectModelEye([0 0 0 1], sg, 'fullEyeModelFlag',true);
-idx = find(strcmp(pointLabels,'cornealApex'));
-plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColor]);
+    sg.eye = eye;
+    [~, ~, ~, ~, ~, eyeWorldPoints, pointLabels] = projectModelEye([0 0 0 1], sg, 'fullEyeModelFlag',true);
+    idx = find(strcmp(pointLabels,'cornealApex'));
+    plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColor]);
 end
 
 %% Plot the fovea, the visual axis, and the line of sight
@@ -150,13 +149,15 @@ if isfield(eye,'landmarks')
     if isfield(eye.landmarks,'fovea')
         plot(eye.landmarks.fovea.coords(PdimA),eye.landmarks.fovea.coords(PdimB),['*' p.Results.plotColor])
         
-        % Obtain the nodal ray from the fovea
-        [outputRay,rayPath] = calcNodalRay(eye,[],eye.landmarks.fovea.coords);
-        plot(rayPath(PdimA,:),rayPath(PdimB,:),[':' p.Results.plotColor]);
-        p1=outputRay(:,1);
-        p2=p1+outputRay(:,2).*3;
-        r = [p1 p2];
-        plot(r(PdimA,:),r(PdimB,:),[':' p.Results.plotColor]);
+        if p.Results.plotVisualAxis
+            % Obtain the nodal ray from the fovea
+            [outputRay,rayPath] = calcNodalRay(eye,[],eye.landmarks.fovea.coords);
+            plot(rayPath(PdimA,:),rayPath(PdimB,:),['-' p.Results.plotColor]);
+            p1=outputRay(:,1);
+            p2=p1+outputRay(:,2).*3;
+            r = [p1 p2];
+            plot(r(PdimA,:),r(PdimB,:),['-' p.Results.plotColor]);
+        end
     end
 end
 
@@ -177,15 +178,15 @@ end
 
 %% Plot a passed rayPath
 if ~isempty(p.Results.rayPath)
-        plot(p.Results.rayPath(PdimA,:),p.Results.rayPath(PdimB,:),['--' p.Results.plotColor]);
+    plot(p.Results.rayPath(PdimA,:),p.Results.rayPath(PdimB,:),['-' p.Results.plotColor]);
 end
 
 %% Plot a passed outputRay
 if ~isempty(p.Results.outputRay)
-        p1=p.Results.outputRay(:,1);
-        p2=p1+p.Results.outputRay(:,2).*3;
-        r = [p1 p2];
-        plot(r(PdimA,:),r(PdimB,:),['--' p.Results.plotColor]);
+    p1=p.Results.outputRay(:,1);
+    p2=p1+p.Results.outputRay(:,2).*3;
+    r = [p1 p2];
+    plot(r(PdimA,:),r(PdimB,:),['-' p.Results.plotColor]);
 end
 
 
