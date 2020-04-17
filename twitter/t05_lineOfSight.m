@@ -1,7 +1,6 @@
 %% t05_lineOfSight
-% Show on a schematic of the fovea and line of sight. The terminology and
-% properties of the various axes of the eye is a complicated topic. A good
-% reference is:
+% Show a schematic of the fovea and line of sight. The identities and names
+% of the various axes of the eye is complicated. A good reference is:
 %
 %   Atchison, D. A. & Smith, G. Optics of the human eye
 %   (Butterworth-Heinemann Oxford, 2000).
