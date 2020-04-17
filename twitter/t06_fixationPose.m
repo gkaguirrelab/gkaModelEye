@@ -1,7 +1,7 @@
 %% t06_fixationPose
 % Demonstrate the appearance of eyes that are fixated upon a distant point
 %{
-06: As the fovea is typically located inferotemporally on the retina, when fixating a distant target, the eyes are turned slightly down and out.
+06: As the fovea is typically located inferotemporally on the retina, when fixating a distant target, the eyes can appear turned slightly down and out.
 %}
 
 % Right eye, left eye
