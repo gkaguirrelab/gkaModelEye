@@ -1,6 +1,9 @@
 %% t01_cornealRefraction
 % Demonstrate the effect of refraction by the cornea on the appearance of
 % the entrance pupil of the eye
+%{
+01: The "aperture stop" is the hole (red) in the iris. We, from the outside, see this hole as the "entrance pupil" (green) of the eye through the refractive properties of the cornea. The cornea magnifies and shifts the pupil relative to the stop.
+%}
 
 
 % Create a sceneGeometry object that describes the eye, a camera, and their

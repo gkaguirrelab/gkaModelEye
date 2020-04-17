@@ -1,7 +1,9 @@
 %% t03_centersOfRotation
 % Show on a schematic illustration the center of rotation for horizontal
 % and vertical eye movements
-
+%{
+03: The eye rotates. Fry & Hill (1962, 1963) found that the center of rotation differs by rotation direction, and is slightly deeper (and shifted nasally from the optical axis) for horizontal eye movements (*) than vertical eye movements (o).
+%}
 
 % Create a sceneGeometry object that describes the eye, a camera, and their
 % position relative to one another

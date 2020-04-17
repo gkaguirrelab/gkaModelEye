@@ -1,7 +1,9 @@
 %% t04_aziEleRotation
 % Demonstrate an exagerated version of the appearance of the eye for
 % horizontal and vertical rotation. This routine creates a gif file.
-
+%{
+04: The effect of different effective centers for horizontal and vertical rotation is quite small and usually ignored, but is here exaggerated by 1.2x in the vertical, illustrating a "tilt" component of vertical motion.
+%}
 
 % Create a sceneGeometry object that describes the eye, a camera, and their
 % position relative to one another

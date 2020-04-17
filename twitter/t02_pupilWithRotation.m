@@ -1,7 +1,9 @@
 %% t02_pupilWithRotation
 % Demonstrate that the pupil  moves differently from the eyeball due to the
 % refractive effects of the cornea
-
+%{
+02: The refractive effect of the cornea varies with the relative position of the observer, causing the pupil to move differently from the sclera when the eye is in motion.
+%}
 
 % Create a sceneGeometry object that describes the eye, a camera, and their
 % position relative to one another
