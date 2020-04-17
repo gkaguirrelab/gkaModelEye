@@ -143,7 +143,7 @@ opticalSystem = sceneGeometry.refraction.retinaToCamera.opticalSystem;
 
 % Calculate the fixationEyePose
 [azimuth, elevation] = quadric.rayToAngles(outputRay);
-fixEyePose = [azimuth, elevation, 0, stopRadius];
+fixEyePose = [-azimuth, -elevation, 0, stopRadius];
 
 % Re-arrrange the eyeWorld coordinates to return the target in World coords
 fixTargetCoords = fixTargetEyeWorldCoords([2 3 1]);

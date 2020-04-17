@@ -92,7 +92,7 @@ legend({'Mathur 2013','Current model'},'Location','southeast');
 
 
 
-function diamRatio = returnPupilDiameterRatio(viewingAngleDeg,fixationAngles,stopDiam,sceneGeometry)
+function diamRatio = returnPupilDiameterRatio(viewingAngleDeg,fixationEyePose,stopDiam,sceneGeometry)
 
 
 % Setup the camera position and rotation properties
@@ -110,8 +110,8 @@ sceneGeometry.eye.rotationCenters.ele = [0 0 0];
 % the eye. The coordinates of our model eye are based around the pupil
 % axis. Therfore, we need to calculate a rotation that accounts for the
 % Mathur viewing angle and alpha.
-azimuthDeg = (-viewingAngleDeg)-fixationAngles(1);
-elevationDeg = zeros(size(viewingAngleDeg))-fixationAngles(2);
+azimuthDeg = (-viewingAngleDeg)+fixationEyePose(1);
+elevationDeg = zeros(size(viewingAngleDeg))+fixationEyePose(2);
 
 % Assemble the eyePose
 eyePose=[azimuthDeg elevationDeg 0 stopDiam/2];
