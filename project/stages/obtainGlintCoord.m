@@ -2,14 +2,12 @@ function glintCoord = obtainGlintCoord(imagePoints,pointLabels)
 % Identify the image point that is the glint and return its coordinate
 %
 % Syntax:
-%  [pupilEllipse,pupilFitError,pointLabels] = obtainImagePlaneEllipse(imagePoints,pointLabels,sceneGeometry,p,eyePose)
+%  glintCoord = obtainGlintCoord(imagePoints,pointLabels)
 %
 % Description:
-%   Fit an ellipse to the pupil in the image plane. This routine handles
-%   both the simple case of a zero-thickness iris, and the more complex
-%   case of an aperture stop that is modeled as having a thickness. In the
-%   latter case, we must determine if the front or back edge of the iris
-%   defines the pupil border.
+%   This little routine finds the imagePoints that have a label that
+%   contains the char vector "glint", and returns their coordinates to the
+%   main function.
 %
 % Inputs:
 %   imagePoints           - nx2 vector. Points in image coordinates.
