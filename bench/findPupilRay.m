@@ -1,8 +1,8 @@
-function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystemRot, opticalSystemFix )
-% Returns the virtual image ray of a point in eyeWorld coordinates
+function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyeCoordOrigin, eyePose, worldTarget, rotationCenters, opticalSystemRot, opticalSystemFix )
+% Finds the ray that starts at eyeCoordOrigin and intersects worldTarget
 %
 % Syntax:
-%  [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyePoint, eyePose, worldTarget, rotationCenters, opticalSystem )
+%  [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyeCoordOrigin, eyePose, worldTarget, rotationCenters, opticalSystem )
 %
 % Description:
 %   This routine returns the outputRay from the last surface of an optical
@@ -13,8 +13,8 @@ function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyePoint
 %   location of the virtual image of that point.
 %
 % Inputs:
-%   eyePoint              - A 1x3 vector that gives the coordinates (in mm)
-%                           of a point in eyeWorld space with the
+%   eyeCoordOrigin        - A 1x3 vector that gives the coordinates (in mm)
+%                           of a point in the eye coordinate space with the
 %                           dimensions p1, p2, p3.
 %   eyePose               - A 1x4 vector provides values for [eyeAzimuth,
 %                           eyeElevation, eyeTorsion, stopRadius].
@@ -46,7 +46,7 @@ function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyePoint
 %                           expressed as a unit step, and t is unity.
 %                           dimensions p1, p2, p3.
 %   initialRay            - A 2x3 vector that specifies in eyeWorld space
-%                           the vector arising from the eyePoint that will
+%                           the vector arising from the eyeCoordOrigin that will
 %                           intersect the worldTarget.
 %   targetIntersectError  - The distance (in mm) between the worldTarget
 %                           and the closest passage of a ray arising from
@@ -93,11 +93,7 @@ function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyePoint
 %}
 
 
-
-%% Find the p1p2 and p1p3 angles
-% For this eyeWorld point, we find the angles of origin of a ray in the
-% p1p2 and p1p3 planes that results in an exit ray (after passing through
-% the optical system) that passes as close as possible to the worldTarget
+%% Variable and search option set-up
 
 % Pre-define the output variables to keep the compiler happy
 outputRay = nan(2,3);
@@ -124,12 +120,30 @@ options = optimset('TolFun',TolFun,'TolX',TolX,'Display','off');
 % hopefully saving on execution time.
 Rstruc = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3),'empty',true);
 
-% Set the inital guess for the angles by finding (w.r.t. the optical axis)
-% the angle of the ray that connects the eye point to the worldTarget
-% (after re-arranging the dimensions of the worldTarget variable).
+
+%% Calculate initial guess for p1p2 and p1p3 angles
+% Our goal is to find the angles with which a ray departs eyeCoordOrigin
+% that results in a ray that ultimately intersects worldTarget. In the
+% typical application, eyeCoordOrigin is a point on the border of the
+% aperture stop of the iris, and  worldTarget is the nodal point of a
+% camera that is observing the eye.  Here we obtain an initial guess at the
+% solution by finding the angles of a ray that connects the eyeCoordOrigin
+% to the worldTarget
+
+
+% Convert the target from world to eye coordinates
 eyeCoordTarget = convertWorldToEyeCoord(worldTarget);
-[eyeCoordTarget, Rstruc] = rotateEyeCoord(eyeCoordTarget, eyePose, rotationCenters, 'inverse', Rstruc);
-[angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; eyeCoordTarget-eyePoint]'));
+
+% We subject the target to an inverse rotation with the angles specified by
+% the eyePose. That is, the location of the camera relative to the eye is
+% adjusted to account for the rotation of the eye
+[eyeCoordTargetRotated, Rstruc] = rotateEyeCoord(eyeCoordTarget, eyePose, rotationCenters, 'inverse', Rstruc);
+
+% Find the angles that connect a ray from the origin to the target
+[angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyeCoordOrigin; eyeCoordTargetRotated-eyeCoordOrigin]'));
+
+
+%% Define the bounds for the search
 
 % Set bounds on the search
 ub_p1p2 = 90;
@@ -138,7 +152,7 @@ lb_p1p2 = -90;
 lb_p1p3 = -90;
 
 % Create an anonymous function for ray tracing
-intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyePoint, p1p2, p1p3, eyePose, worldTarget, rotationCenters, opticalSystemRot, opticalSystemFix, Rstruc);
+intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyeCoordOrigin, p1p2, p1p3, eyePose, worldTarget, rotationCenters, opticalSystemRot, opticalSystemFix, Rstruc);
 
 % Shrink the bounds to restrict to the domain of valid ray trace solutions
 errorFunc = @(x) intersectErrorFunc(x,angle_p1p3);
@@ -153,6 +167,9 @@ angle_p1p2 = max([angle_p1p2 lb_p1p2]);
 angle_p1p2 = min([angle_p1p2 ub_p1p2]);
 angle_p1p3 = max([angle_p1p3 lb_p1p3]);
 angle_p1p3 = min([angle_p1p3 ub_p1p3]);
+
+
+%% Perform the search
 
 % Get the intial target error
 targetIntersectError = intersectErrorFunc(angle_p1p2, angle_p1p3);
@@ -227,9 +244,9 @@ end % Test x0 guess
 % Assemble the input ray. Note that the rayTraceQuadrics routine handles
 % vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
 % Tranpose operations ahead.
-initialRay = quadric.anglesToRay(eyePoint', angle_p1p2, angle_p1p3);
+initialRay = quadric.anglesToRay(eyeCoordOrigin', angle_p1p2, angle_p1p3);
 
-% Ray trace
+% Trace the system using the initialRay defined by the solution angles
 outputRay = twoSystemTrace(initialRay, eyePose, rotationCenters, opticalSystemRot, opticalSystemFix, Rstruc);
 
 % Undo the effect of eye rotation to obtain the outputRay in the coordinate
@@ -300,11 +317,11 @@ end
 
 
 %% calcTargetIntersectError
-function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystemRot, opticalSystemFix, Rstruc)
+function distance = calcTargetIntersectError(eyeCoordOrigin, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystemRot, opticalSystemFix, Rstruc)
 % Smallest distance of the exit ray from worldTarget
 %
 % Syntax:
-%  distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystem)
+%  distance = calcTargetIntersectError(eyeCoordOrigin, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystem)
 %
 % Description:
 %   This function returns the Euclidean distance between a target in the
@@ -319,7 +336,7 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 %   produce a point on the resulting image.
 %
 % Inputs:
-%   eyePoint
+%   eyeCoordOrigin
 %   angle_p1p2, angle_p1p3 - Scalars in degrees. The angle w.r.t. the 
 %                           optical axis of the initial ray. 
 %   eyePose               - As defined in the main function.
@@ -344,14 +361,14 @@ end
 % Assemble the input ray. Note that the rayTraceQuadrics routine handles
 % vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
 % Tranpose operations ahead.
-inputRayEyeWorld = quadric.anglesToRay(eyePoint',angle_p1p2,angle_p1p3);
+inputRayEyeCoord = quadric.anglesToRay(eyeCoordOrigin',angle_p1p2,angle_p1p3);
 
 % Conduct the ray trace through the rotating and fixed optical systems
-outputRayEyeWorld = twoSystemTrace(inputRayEyeWorld, eyePose, rotationCenters, opticalSystemRot, opticalSystemFix, Rstruc);
+outputRayEyeCoord = twoSystemTrace(inputRayEyeCoord, eyePose, rotationCenters, opticalSystemRot, opticalSystemFix, Rstruc);
 
 % If any must intersect surfaces were missed, the output ray will contain
 % nans. In this case, return Inf for the distance
-if any(isnan(outputRayEyeWorld))
+if any(isnan(outputRayEyeCoord))
     distance = Inf;
     return
 end
@@ -361,21 +378,21 @@ eyeCoordTarget = convertWorldToEyeCoord(worldTarget);
 
 % Calculate the distance between the closest approach of the outputRay to
 % the target.
-distance = quadric.distancePointRay(eyeCoordTarget',outputRayEyeWorld');
+distance = quadric.distancePointRay(eyeCoordTarget',outputRayEyeCoord');
 
 end % calcTargetIntersectError
 
 
-function outputRayEyeWorld = twoSystemTrace(inputRayEyeWorld, eyePose, rotationCenters, opticalSystemRot, opticalSystemFix, Rstruc)
+function outputRayEyeCoord = twoSystemTrace(inputRayEyeCoord, eyePose, rotationCenters, opticalSystemRot, opticalSystemFix, Rstruc)
 
 % Ray trace through the eye system that is subject to rotation
-outputRayEyeWorld = rayTraceQuadrics(inputRayEyeWorld, opticalSystemRot)';
+outputRayEyeCoord = rayTraceQuadrics(inputRayEyeCoord, opticalSystemRot)';
 
 % Apply the eye rotation.
-outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, eyePose, rotationCenters, 'forward', Rstruc);
+outputRayEyeCoord = rotateEyeRay(outputRayEyeCoord, eyePose, rotationCenters, 'forward', Rstruc);
 
 % Ray trace through the fixed system that is not subject to rotation
-outputRayEyeWorld = rayTraceQuadrics(outputRayEyeWorld', opticalSystemFix)';
+outputRayEyeCoord = rayTraceQuadrics(outputRayEyeCoord', opticalSystemFix)';
 
 
 end

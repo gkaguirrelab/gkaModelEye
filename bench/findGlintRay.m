@@ -1,19 +1,24 @@
-function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldPoint, eyePose, worldTarget, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR )
-% Returns the eyeWorld output ray for a worldPoint input ray
+function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldOrigin, eyePose, worldTarget, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR )
+% Finds the ray that starts at worldOrigin and intersects worldTarget
 %
 % Syntax:
-%  [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldPoint, eyePose, worldTarget, rotationCenters, opticalSystem )
+%  [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldOrigin, eyePose, worldTarget, rotationCenters, opticalSystem )
 %
 % Description:
 %   This routine returns the outputRay from the last surface of an optical
-%   system for a point that has originated from a worldPoint and has
+%   system for a point that has originated from a worldOrigin and has
 %   arrived at an observer positioned at the worldTarget location. The
 %   routine accounts for rotation of the eye specified in the eyePose
 %   variable. The outputRay returned by this routine provides the location
 %   of the virtual image of that point.
 %
+%   The routine is designed for the particular case in which the
+%   worldOrigin is an active light source associated with a camera located
+%   at worldTarget, and the outputRay is reflected off the corneal surface,
+%   creating a "glint" in the camera image.
+%
 % Inputs:
-%   worldPoint            - A 3x1 vector that specifies the point in world 
+%   worldOrigin           - A 3x1 vector that specifies the point in world 
 %                           coordinates (x, y, z) of the source of a ray.
 %                           This could be the coordinates of the light
 %                           source of an active IR camera.
@@ -75,11 +80,7 @@ function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldPoi
 %}
 
 
-
-%% Find the p1p2 and p1p3 angles
-% For this eyeWorld point, we find the angles of origin of a ray in the
-% p1p2 and p1p3 planes that results in an exit ray (after passing through
-% the optical system) that passes as close as possible to the worldTarget
+%% Variable and search option set-up
 
 % Pre-define the output variables to keep the compiler happy
 outputRay = nan(2,3);
@@ -100,26 +101,52 @@ TolFun = 1e-2; % intersection error to tolerate
 TolX = 1e-6; % precision with which theta is estimated
 options = optimset('TolFun',TolFun,'TolX',TolX,'Display','off');
 
-
 % This structure will hold the rotation matrices to apply eye rotation. We
 % define it here and then save the filled version of the variable that is
 % returned by rotateEyeCoord. We then don't need to compute it again,
 % hopefully saving on execution time.
 Rstruc = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3),'empty',true);
 
-% Set the inital guess for the angles by finding (w.r.t. the optical axis)
-% the angle of the ray that connects the worldPoint to the corneal apex,
-% after subjecting the corneal apex to rotation. Note that the corneal apex
-% may not be at the origin of the eye coordinate system if the cornea is
-% subject to tilt and tip rotations. To account for this, we find the apex
-% of the reflective surface (index of refraction < 0) in the glint optical
-% system, which is the apex of the cornea.
+
+%% Calculate initial guess for p1p2 and p1p3 angles
+% Our goal is to find the angles with which a ray that departs worldOrigin
+% results in the ray that ultimately intersects worldTarget. In the typical
+% application, the worldOrigin is an active light source attached to a
+% camera located at worldTarget, and the ray will have reflected off the
+% cornea of the eye. Here we obtain an initial guess at the solution by
+% finding the angles of a ray that connects the worldOrigin to the corneal
+% apex
+
+% When passed in the glint optical system, the cornea front surface is
+% assigned a negative refractive index, which indicates that the ray-trace
+% routine should reflect (instead of refract) the ray upon encountering
+% this surface. We use this property to identify the reflective surface.
 reflectSurfaceIdx = find(opticalSystemRot(:,end) < 0,1);
+
+% Obtain the quadric matrix for this surface
 S = quadric.vecToMatrix(opticalSystemRot(reflectSurfaceIdx,1:10));
+
+% The apex of the ellipsoid has the geodetic coordinates [0 0]. We use this
+% property to find the cartesian coordinates of the corneal apex. This
+% solution holds even when the quadric surface for the cornea is slightly
+% rotated out of alignment with the optical axis of the eye (i.e., if
+% corneal tilt / tip rotations are being modeled). The location is
+% specified in the eye coordinate space.
 cornealApex = quadric.ellipsoidalGeoToCart([0 0 0],S)';
-[cornealApexRotated, Rstruc] = rotateEyeCoord(cornealApex, eyePose, rotationCenters, 'forward', Rstruc);
-eyePoint = convertWorldToEyeCoord(worldPoint);
-[angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyePoint; cornealApexRotated - eyePoint]'));
+
+% Next, we find the location of the corneal apex when the eye has been
+% rotated by the angles specified in eyePose. We are still in the eye
+% coordinate space.
+[cornealApexRotated, Rstruc] = ...
+    rotateEyeCoord(cornealApex, eyePose, rotationCenters, 'forward', Rstruc);
+
+% Convert the origin point of the ray from world coordinates to eye
+% coordinates.
+eyeCoordOrigin = convertWorldToEyeCoord(worldOrigin);
+
+% Find the angles with which a ray departs the ray origin and arrives at
+% the corneal apex.
+[angle_p1p2, angle_p1p3] = quadric.rayToAngles(quadric.normalizeRay([eyeCoordOrigin; cornealApexRotated - eyeCoordOrigin]'));
 
 % If the absolute value of an initial search angle is greater than 90, we
 % flip the direction in the search so that we don't get stuck at the
@@ -129,42 +156,54 @@ p1p3Adjust = round(angle_p1p3/180)*180;
 angle_p1p2 = wrapTo180(angle_p1p2-p1p2Adjust);
 angle_p1p3 = wrapTo180(angle_p1p3-p1p3Adjust);
 
-% Find the angular extent of the bounding box for the first surface to set
-% the upper and lower bounds on the search angles
-bb = opticalSystemRot(2,12:17);
+
+%% Define the bounds for the search
+% We use the angular extent of the bounding box for the reflective surface
+% to set the upper and lower bounds on the possible solution angles.
+
+% The bounding box for the reflective surface of the eye
+bb = opticalSystemRot(reflectSurfaceIdx,12:17);
+
 % Rotate the bounding box with the eye pose
 bb([1 3 5])=rotateEyeCoord([bb(1) bb(3) bb(5)],eyePose, rotationCenters);
 bb([2 4 6])=rotateEyeCoord([bb(2) bb(4) bb(6)],eyePose, rotationCenters);
-% Find the bound angles
-[~,p1Idx]=min(eyePoint(1)-bb(1:2));
+
+% Find the bound angles by looping over the corners of the bounding box.
+[~,p1Idx]=min(eyeCoordOrigin(1)-bb(1:2));
 boundAngles_p1p2 = nan(2,2);
 boundAngles_p1p3 = nan(2,2);
 for xx=1:2
     for yy=1:2
         cornerPoint = [bb(p1Idx),bb(2+xx),bb(4+yy)];
         [p1p2B,p1p3B] = ...
-            quadric.rayToAngles(quadric.normalizeRay([eyePoint; cornerPoint-eyePoint]'));
+            quadric.rayToAngles(quadric.normalizeRay([eyeCoordOrigin; cornerPoint-eyeCoordOrigin]'));
         boundAngles_p1p2(xx,yy) = wrapTo180(p1p2B-p1p2Adjust);
         boundAngles_p1p3(xx,yy) = wrapTo180(p1p3B-p1p3Adjust);
     end
 end
 
-% Set bounds on the search
+% Take the max and mins of the angles to set bounds on the search
 ub_p1p2 = max(max(boundAngles_p1p2));
 ub_p1p3 = max(max(boundAngles_p1p3));
 lb_p1p2 = min(min(boundAngles_p1p2));
 lb_p1p3 = min(min(boundAngles_p1p3));
 
-% Create an anonymous function for ray tracing
-intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyePoint, wrapTo180(p1p2+p1p2Adjust), wrapTo180(p1p3+p1p3Adjust), eyePose, worldTarget, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc);
 
-% Shrink the bounds to restrict to the domain of valid ray trace solutions
+%% Create an anonymous function for ray tracing
+intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyeCoordOrigin, wrapTo180(p1p2+p1p2Adjust), wrapTo180(p1p3+p1p3Adjust), eyePose, worldTarget, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc);
+
+
+%% Shrink bounds
+% Restrict to the domain of valid ray trace solutions
 errorFunc = @(x) intersectErrorFunc(x,angle_p1p3);
 ub_p1p2 = shrinkBound(angle_p1p2,ub_p1p2,TolX,errorFunc);
 lb_p1p2 = shrinkBound(angle_p1p2,lb_p1p2,TolX,errorFunc);
 errorFunc = @(x) intersectErrorFunc(angle_p1p2,x);
 ub_p1p3 = shrinkBound(angle_p1p3,ub_p1p3,TolX,errorFunc);
 lb_p1p3 = shrinkBound(angle_p1p3,lb_p1p3,TolX,errorFunc);
+
+
+%% Perform the search
 
 % Get the intial target error
 targetIntersectError = intersectErrorFunc(angle_p1p2, angle_p1p3);
@@ -244,16 +283,16 @@ angle_p1p3 = wrapTo180(angle_p1p3+p1p3Adjust);
 % Assemble the input ray. Note that the rayTraceQuadrics routine handles
 % vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
 % Tranpose operations ahead.
-initialRay = quadric.anglesToRay(eyePoint', angle_p1p2, angle_p1p3)';
+initialRay = quadric.anglesToRay(eyeCoordOrigin', angle_p1p2, angle_p1p3)';
 
-% Ray trace
+% Trace the system using the initialRay defined by the solution angles
 outputRay = threeSystemTrace(initialRay', eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc);
 
 % Counter-rotate the output ray to account for eye rotation
 outputRay = rotateEyeRay(outputRay, eyePose, rotationCenters, 'inverse');
 
 
-end % findPupilRay -- MAIN
+end % findGlintRay -- MAIN
 
 
 
@@ -331,7 +370,7 @@ end
 
 
 %% calcTargetIntersectError
-function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc)
+function distance = calcTargetIntersectError(eyeCoordOrigin, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc)
 % Smallest distance of the exit ray from worldTarget
 %
 % Syntax:
@@ -350,7 +389,7 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 %   produce a point on the resulting image.
 %
 % Inputs:
-%   eyePoint
+%   eyeCoordOrigin        - The origin of the ray in eye coordinates
 %   angle_p1p2, angle_p1p3 - Scalars in degrees. The angle w.r.t. the 
 %                           optical axis of the initial ray. 
 %   eyePose               - As defined in the main function.
@@ -370,15 +409,15 @@ function distance = calcTargetIntersectError(eyePoint, angle_p1p2, angle_p1p3, e
 % Assemble the input ray. Note that the rayTraceQuadrics routine handles
 % vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
 % Tranpose operations ahead.
-inputRayEyeWorld = quadric.anglesToRay(eyePoint',angle_p1p2,angle_p1p3);
+inputRayEyeCoord = quadric.anglesToRay(eyeCoordOrigin',angle_p1p2,angle_p1p3);
 
 % Conduct the ray trace through the fixed, rotating, and back through the
 % fixed optical systems
-outputRayEyeWorld = threeSystemTrace(inputRayEyeWorld, eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc);
+outputRayEyeCoord = threeSystemTrace(inputRayEyeCoord, eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc);
 
 % If any must intersect surfaces were missed, the output ray will contain
-% nans. In this case, return Inf for the distance
-if any(isnan(outputRayEyeWorld))
+% nans. In this case, return 1e6 for the distance
+if any(isnan(outputRayEyeCoord))
     distance = 1e6;
     return
 end
@@ -388,32 +427,32 @@ eyeCoordTarget = convertWorldToEyeCoord(worldTarget);
 
 % Calculate the distance between the closest approach of the outputRay to
 % the target.
-distance = quadric.distancePointRay(eyeCoordTarget',outputRayEyeWorld');
+distance = quadric.distancePointRay(eyeCoordTarget',outputRayEyeCoord');
 
 end % calcTargetIntersectError
 
 
 
-function outputRayEyeWorld = threeSystemTrace(inputRayEyeWorld, eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc)
+function outputRayEyeCoord = threeSystemTrace(inputRayEyeCoord, eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc)
 
 % Ray trace through the fixed system (typically, camera to the medium
 % adjacent to the eye)
-outputRayEyeWorld = rayTraceQuadrics(inputRayEyeWorld, opticalSystemFixRL)';
+outputRayEyeCoord = rayTraceQuadrics(inputRayEyeCoord, opticalSystemFixRL)';
 
-% Counter-rotate the outputRayEyeWorld by the eye pose. This places the
-% outputRayEyeWorld so that the eyeCoordTarget is in a position equivalent
+% Counter-rotate the outputRayEyeCoord by the eye pose. This places the
+% outputRayEyeCoord so that the eyeCoordTarget is in a position equivalent
 % to if the eye had rotated.
-outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, eyePose, rotationCenters, 'inverse', Rstruc);
+outputRayEyeCoord = rotateEyeRay(outputRayEyeCoord, eyePose, rotationCenters, 'inverse', Rstruc);
 
 % Ray trace through the eye system that is subject to rotation
-outputRayEyeWorld = rayTraceQuadrics(outputRayEyeWorld', opticalSystemRot)';
+outputRayEyeCoord = rayTraceQuadrics(outputRayEyeCoord', opticalSystemRot)';
 
 % Return the ray to the original eyeWorld coordinate frame, which is
 % aligned with the optical axis of the eye
-outputRayEyeWorld = rotateEyeRay(outputRayEyeWorld, eyePose, rotationCenters, 'forward', Rstruc);
+outputRayEyeCoord = rotateEyeRay(outputRayEyeCoord, eyePose, rotationCenters, 'forward', Rstruc);
 
 % Ray trace back through the fixed system that is not subject to rotation
-outputRayEyeWorld = rayTraceQuadrics(outputRayEyeWorld', opticalSystemFixLR)';
+outputRayEyeCoord = rayTraceQuadrics(outputRayEyeCoord', opticalSystemFixLR)';
 
 
 end
