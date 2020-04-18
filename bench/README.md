@@ -1,6 +1,6 @@
 ## bench
 
-These routines for create, alter, and ray-trace an optical system.
+These routines create, alter, and ray-trace an optical system.
 
 An optical system is a set of surfaces with which light rays interact. In this code, the `opticalSystem` variable is an m x 19 matrix, with each row describing one of the m surfaces. The 19 values in a row specify (in order):
 
@@ -22,4 +22,4 @@ The routine `findGlintRay` identifies a ray that leaves a light source adjacent 
 
 The contents of the directory are:
 
-- assembleOpticalSystem.m - Given an eye structure (SEE: `modelEyeParameters.m`) returns a opticalSystem. The key `surfaceSetName` specifies which opticalSystem to generate (e.g., stopToCamera)- addBiconvexLens.m, addContactLens.m, addSpectacleLens.m, addStopAfter.m - Adds these surfaces to an optical system- findGlintRay.m, findPupilRay.m - Implements "inverse" ray-tracing. The compiled, MEX versions of these routines are stored in the `bin` directory.- reverseSystemDirection.m - Swaps the valid direction for ray-tracing of an opticalSystem variable.
+- assembleOpticalSystem.m - Given an eye structure (SEE: `modelEyeParameters.m`) returns an opticalSystem. The key `surfaceSetName` specifies which opticalSystem to generate (e.g., stopToCamera)- addBiconvexLens.m, addContactLens.m, addSpectacleLens.m, addStopAfter.m - Adds these surfaces to an optical system- findGlintRay.m, findPupilRay.m - Implements "inverse" ray-tracing. The compiled, MEX versions of these routines are stored in the `bin` directory.- reverseSystemDirection.m - Swaps the valid direction for ray-tracing of an opticalSystem variable.
