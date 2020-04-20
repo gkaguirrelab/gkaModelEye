@@ -6,7 +6,8 @@
 functionDirPath = fileparts(mfilename('fullpath'));
 
 
-%% modelEyeSchematic
+
+%% Create the model to plot
 
 % Create a sceneGeometry object that describes the eye, a camera, and their
 % position relative to one another. Set the key-value to calculate the
@@ -16,48 +17,8 @@ sceneGeometry=createSceneGeometry('calcLandmarkFovea',true);
 % Calculate the line of sight for the eye
 [outputRayLoS,rayPathLoS] = calcLineOfSightRay(sceneGeometry);
 
-% Set up a figure
-figHandle = figure('Visible','off');
-set(gcf,'PaperOrientation','portrait');
-set(figHandle, 'Units','inches')
-height = 4;
-width = 4;
-
-% The last two parameters of 'Position' define the figure size
-set(figHandle, 'Position',[25 5 width height],...
-    'PaperSize',[width height],...
-    'PaperPositionMode','auto',...
-    'Color','w');
-
-% Plot the schematic eye in red
-plotModelEyeSchematic(sceneGeometry.eye,'view','horizontal',...
-    'newFigure',false,'plotColor','r', ...
-    'rayPath',rayPathLoS,'outputRay',outputRayLoS);
-
-% Store and remove the fovea
-foveaField = sceneGeometry.eye.landmarks.fovea;
-sceneGeometry.eye.landmarks=rmfield(sceneGeometry.eye.landmarks,'fovea');
-
-% Now over-plot in black, without the fovea and line of sight
-plotModelEyeSchematic(sceneGeometry.eye,'view','horizontal','newFigure',false,'plotColor','k')
-
-% Clean up the plot limits
-xlim([-25 5])
-ylim([-15 15])
-axis square
-
-% Save this image
-filename = fullfile(functionDirPath,'modelEyeSchematic.png');
-print(figHandle,filename,'-dpng','-r300');
-
-% Close the figure
-close(figHandle)
-
 
 %% opticalSystem3D
-
-% Retore the fovea field
-sceneGeometry.eye.landmarks.fovea = foveaField;
 
 % Set up a figure
 figHandle = figure('Visible','off');
@@ -129,6 +90,45 @@ set(figHandle, 'Position',[25 5 width height],...
 
 % Save this image
 filename = fullfile(functionDirPath,'renderEyePose.png');
+print(figHandle,filename,'-dpng','-r300');
+
+% Close the figure
+close(figHandle)
+
+
+%% modelEyeSchematic
+
+% Set up a figure
+figHandle = figure('Visible','off');
+set(gcf,'PaperOrientation','portrait');
+set(figHandle, 'Units','inches')
+height = 4;
+width = 4;
+
+% The last two parameters of 'Position' define the figure size
+set(figHandle, 'Position',[25 5 width height],...
+    'PaperSize',[width height],...
+    'PaperPositionMode','auto',...
+    'Color','w');
+
+% Plot the schematic eye in red
+plotModelEyeSchematic(sceneGeometry.eye,'view','horizontal',...
+    'newFigure',false,'plotColor','r', ...
+    'rayPath',rayPathLoS,'outputRay',outputRayLoS);
+
+% Remove the fovea
+sceneGeometry.eye.landmarks=rmfield(sceneGeometry.eye.landmarks,'fovea');
+
+% Now over-plot in black, without the fovea and line of sight
+plotModelEyeSchematic(sceneGeometry.eye,'view','horizontal','newFigure',false,'plotColor','k')
+
+% Clean up the plot limits
+xlim([-25 5])
+ylim([-15 15])
+axis square
+
+% Save this image
+filename = fullfile(functionDirPath,'modelEyeSchematic.png');
 print(figHandle,filename,'-dpng','-r300');
 
 % Close the figure
