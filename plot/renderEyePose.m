@@ -234,7 +234,7 @@ for pp = 1:length(p.Results.modelEyeLabelNames)
                 s.MarkerFaceAlpha = modelEyeAlpha(pp);
                 plotObjectHandles(end+1) = s;
             case 'O'
-                s = scatter(imagePoints(idx,1), imagePoints(idx,2), (imageSizeX/(75/p.Results.modelEyeSymbolSizeScaler))^2, 'o', 'filled', 'MarkerFaceColor', mc(2), 'MarkerEdgeColor','none');
+                s = scatter(imagePoints(idx,1), imagePoints(idx,2), (imageSizeX/(75/p.Results.modelEyeSymbolSizeScaler))^2, 'o', 'MarkerFaceColor', 'none', 'MarkerEdgeColor', mc(2));
                 s.MarkerFaceAlpha = modelEyeAlpha(pp);
                 plotObjectHandles(end+1) = s;
             otherwise
