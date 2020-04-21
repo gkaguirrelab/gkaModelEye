@@ -1,7 +1,7 @@
 %% t07_torsion
 % Demonstrate the appearance of an eye undergoing torsion
 %{
-07: In addition to horizontal and vertical rotation, the eye can undergo rotation about the optical axis, which is termed "torsion".
+07: In addition to horizontal and vertical rotation, the eye can undergo rotation about the optical axis, which is termed "torsion". What is the torsion of the eye when it is gazing at a particular point in space? 
 %}
 
 % Create the sceneGeometry
