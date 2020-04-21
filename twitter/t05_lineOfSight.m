@@ -7,6 +7,9 @@
 %{
 05: Unlike a camera, optical elements of the eye are not all aligned. The fovea (*) is typically displaced inferotemporally from the retinal apex. The line-of-sight (-) connects the fixation point, center of entrance pupil, and fovea.
 %}
+% For details see:
+%   calc/calcLineOfSightRay.m
+%
 
 % Create a sceneGeometry object that describes the eye, a camera, and their
 % position relative to one another. Set the key-value to calculate the

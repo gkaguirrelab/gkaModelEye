@@ -4,8 +4,9 @@
 08: For voluntary, head-fixed eye movements, Listing's Law specifies eye torsion for any pose by reference to its "primary position". The model on the right uses "Fick" eye rotation coordinates without "pseudo torsion" correction.
 %}
 % An understanding of this topic requires grappling with different
-% coordinate systems for specifying 3D rotations. A discussion of this can
-% be found in the routine "project/addPseudoTorsion.m"
+% coordinate systems for specifying 3D rotations. For details see:
+%   project/addPseudoTorsion.m
+%
 
 % Save location for the GIF. Sorry for the Mac bias.
 gifSaveName = '~/Desktop/t08_ListingsLaw.gif';
