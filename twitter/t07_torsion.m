@@ -25,8 +25,8 @@ for ii = 1:length(rotationValues)
     
     if ii == 1
         [~, plotHandles] = renderEyePose(eyePose, sceneGeometry, 'newFigure', true, ...
-            'modelEyeLabelNames', {'retina' 'irisPerimeter' 'pupilEllipse' 'cornea'}, ...
-            'modelEyePlotColors', {'.w' 'ob' '-g' '.y'});
+            'modelEyeLabelNames', modelEyeLabelNames, ...
+            'modelEyePlotColors', modelEyePlotColors);
         
         % This command opens the gif object
         gif(gifSaveName);
@@ -34,8 +34,8 @@ for ii = 1:length(rotationValues)
     else
         delete(plotHandles(1:end))
         [~, plotHandles] = renderEyePose(eyePose, sceneGeometry, 'newFigure', false, ...
-            'modelEyeLabelNames', {'retina' 'irisPerimeter' 'pupilEllipse' 'cornea'}, ...
-            'modelEyePlotColors', {'.w' 'ob' '-g' '.y'});
+            'modelEyeLabelNames', modelEyeLabelNames, ...
+            'modelEyePlotColors', modelEyePlotColors);
     end
     
     % This updates the gif

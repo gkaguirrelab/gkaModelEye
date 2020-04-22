@@ -12,9 +12,12 @@ sceneGeometry=createSceneGeometry();
 % Save location for the GIF. Sorry for the Mac bias.
 gifSaveName = '~/Desktop/t02_pupilWithRotation.gif';
 
+% These are the elements of the model eye that we will render
+modelEyeLabelNames = {'retina' 'irisPerimeter' 'pupilEllipse' 'cornea'};
+modelEyePlotColors = {'.w' 'ob' '-g' '.y'};
+
 % The angles across which the eye will rotate
 rotationValues = [0:1:30,30:-1:-30,-30:1:-1];
-
 
 %% Loop over eyePoses
 for ii = 1:length(rotationValues)
@@ -23,8 +26,8 @@ for ii = 1:length(rotationValues)
     
     if ii == 1
         [~, plotHandles] = renderEyePose(eyePose, sceneGeometry, 'newFigure', true, ...
-            'modelEyeLabelNames', {'retina' 'irisPerimeter' 'pupilEllipse' 'cornea'}, ...
-            'modelEyePlotColors', {'.w' 'ob' '-g' '.y'});
+            'modelEyeLabelNames', modelEyeLabelNames, ...
+            'modelEyePlotColors', modelEyePlotColors);
         
         % This command opens the gif object
         gif(gifSaveName);
@@ -32,8 +35,8 @@ for ii = 1:length(rotationValues)
     else
         delete(plotHandles(1:end))
         [~, plotHandles] = renderEyePose(eyePose, sceneGeometry, 'newFigure', false, ...
-            'modelEyeLabelNames', {'retina' 'irisPerimeter' 'pupilEllipse' 'cornea'}, ...
-            'modelEyePlotColors', {'.w' 'ob' '-g' '.y'});
+            'modelEyeLabelNames', modelEyeLabelNames, ...
+            'modelEyePlotColors', modelEyePlotColors);
     end
     
     % This updates the gif
