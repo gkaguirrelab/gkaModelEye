@@ -76,7 +76,7 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
     % Confirm that a spectacle lens has the specified optical power
     lensDiopters = -15;
     opticalSystem = addSpectacleLens([],lensDiopters);
-    measuredD = calcDiopters(opticalSystem);
+    measuredD = calcOpticalPower(opticalSystem);
     assert(abs((measuredD - lensDiopters)/lensDiopters) < 0.001);
 %}
 %{
@@ -210,7 +210,7 @@ myLens = @(x) ...
 % this calculation going in the cameraToEye direction, as this is the
 % expression of optical power that is relevant for lens design. So, we have
 % to reverse the optical system.
-myDiopters = @(x) calcDiopters(myLens(x));
+myDiopters = @(x) calcOpticalPower(myLens(x));
 
 % Define an objective which is the difference between the desired and
 % measured optical power of the lens

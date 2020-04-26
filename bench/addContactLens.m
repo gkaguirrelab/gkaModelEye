@@ -55,9 +55,9 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
     lensDiopters = 3;
     eye = modelEyeParameters('sphericalAmetropia',-2);
     opticalSystemIn = assembleOpticalSystem(eye,'surfaceSetName','retinaToCamera','opticalSystemNumRows',[]);
-    eyePower = calcDiopters(opticalSystemIn);
+    eyePower = calcOpticalPower(opticalSystemIn);
     opticalSystemOut = addContactLens(opticalSystemIn,lensDiopters);
-    eyePowerWithLens = calcDiopters(opticalSystemOut);
+    eyePowerWithLens = calcOpticalPower(opticalSystemOut);
     assert(abs(eyePowerWithLens - (eyePower + lensDiopters))<0.01);
 %}
 
@@ -111,7 +111,7 @@ tearThickness = backRadii(1)+backCenter(1);
 
 % The desired optical system will have its refractive power plus the called
 % for lens refraction.
-targetDiopters = calcDiopters(opticalSystemIn) + lensRefractionDiopters;
+targetDiopters = calcOpticalPower(opticalSystemIn) + lensRefractionDiopters;
 
 %% Search for parameters of an ophthalmic lens
 % This is "convex-concave" lens with two surfaces. The back surface is
@@ -145,7 +145,7 @@ mySystem = @(x) ...
     -2, tearThickness);
 
 % Calculate the power of the lens defined by the x parameters.
-myDiopters = @(x) calcDiopters(mySystem(x));
+myDiopters = @(x) calcOpticalPower(mySystem(x));
 
 % Define an objective which is the difference between the desired and
 % measured optical power of the lens

@@ -72,14 +72,14 @@ mySystem=@(x) getfield(myScene(x),'refraction','cameraToRetina','opticalSystem')
 
 %% Anonymous functions for the rays
 % Create a pair of rays that arise from the optical axis
-intersectHeight = 1;
+rayHeight = 1;
 
 % The behavior here handles the special case of a desired accommodation of
 % zero.
 if accommodationDiopters==0
     % The rays are fixed at parallel
-    myR1 = @(x) quadric.normalizeRay([100,-1;intersectHeight,0;0,0]);
-    myR2 = @(x) quadric.normalizeRay([100,-1;-intersectHeight,0;0,0]);
+    myR1 = @(x) quadric.normalizeRay([100,-1;rayHeight,0;0,0]);
+    myR2 = @(x) quadric.normalizeRay([100,-1;-rayHeight,0;0,0]);
 else
     % The principal point of the optical system.
     myPrincipalPoint = @(x) calcPrincipalPoint(mySystem(x));
@@ -90,8 +90,8 @@ else
     myRayOrigin = @(x) (1000/accommodationDiopters) - sum(myPrincipalPoint(x).*[1;0;0]);
     
     % Calculate the angle with which the rays diverge from the optical axis
-    % such that they will intersect the plane at the intersect height
-    myAngle = @(x) rad2deg(atan2(intersectHeight,-myRayOrigin(x)));
+    % such that they will intersect the plane at the ray height
+    myAngle = @(x) rad2deg(atan2(rayHeight,-myRayOrigin(x)));
     
     % Define the two rays
     myR1 = @(x) quadric.normalizeRay(quadric.anglesToRay([myRayOrigin(x);0;0],myAngle(x),0));

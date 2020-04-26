@@ -1,4 +1,4 @@
-function P = calcPrincipalPoint(opticalSystem, rayStartDepth)
+function P = calcPrincipalPoint(opticalSystem, rayStartDepth, rayHeight)
 % Returns the principal point for an opticalSystem
 %
 % Syntax:
@@ -64,6 +64,11 @@ function P = calcPrincipalPoint(opticalSystem, rayStartDepth)
 % Handle nargin
 if nargin==1
     rayStartDepth = [100, -100];
+    rayHeight = 1;
+end
+
+if nargin==2
+    rayHeight = 1;
 end
 
 % Strip the optical system of any rows which are all nans
@@ -75,9 +80,9 @@ systemDirection = calcSystemDirection(opticalSystem, rayStartDepth);
 % Create a paraxial ray in the valid direction
 switch systemDirection
     case 'cameraToEye'
-        R = quadric.normalizeRay(quadric.anglesToRay([rayStartDepth(1);0;0],180-0.01,0));
+        R = quadric.normalizeRay(quadric.anglesToRay([rayStartDepth(1);rayHeight;rayHeight],180,0));
     case 'eyeToCamera'
-        R = quadric.normalizeRay(quadric.anglesToRay([rayStartDepth(2);0;0],0.01,0));
+        R = quadric.normalizeRay(quadric.anglesToRay([rayStartDepth(2);rayHeight;rayHeight],0,0));
     otherwise
         error(['Not a valid system direction: ' systemDirection])
 end
