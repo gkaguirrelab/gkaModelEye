@@ -1,8 +1,8 @@
-function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera, rayStartDepth, rayOffset)
+function [diopters, focalPoint] = calcOpticalPower(opticalSystem, forceEyeToCamera, rayStartDepth, rayHeight)
 % Calcuate the cameraToEye-direction refractive power of an opticalSystem
 %
 % Syntax:
-%  [diopters, focalPoint] = calcDiopters(opticalSystem)
+%  [diopters, focalPoint] = calcOpticalPower(opticalSystem)
 %
 % Description
 %   Calculates the refractive power of an optical system in units of
@@ -23,7 +23,7 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera, 
 %
 %   Note that for optical systems with spherical aberration, the calculated
 %   optical power will vary depending upon the path of the ray. The
-%   rayOffset parameter controls the height at which the ray strikes the
+%   rayHeight parameter controls the height at which the ray strikes the
 %   first surface.
 %
 % Inputs:
@@ -53,6 +53,8 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera, 
 %   rayStartDepth         - Scalar. Point of origin of the ray along the
 %                           optical axis used to probe the system. Defaults
 %                           to 100.
+%   rayHeight             - Scalar. Distance of the ray origin from the
+%                           optical axis.
 %
 % Outputs:
 %   diopters              - Scalar. The optical power of the system.
@@ -62,17 +64,19 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera, 
 %
 % Examples:
 %{
-    % Determine the refractive power of the model eye
-    sceneGeometry = createSceneGeometry;
-    diopters = calcDiopters(sceneGeometry.refraction.cameraToRetina.opticalSystem);
-    outline = sprintf('The refractive power of the model eye in resting acommodation is %2.2f diopters.\n',diopters);
+    % Determine the refractive power of the unaccomadated eye
+    sceneGeometry = createSceneGeometry('navarroD',calcAccommodation(0));
+    diopters = calcOpticalPower(sceneGeometry.refraction.cameraToRetina.opticalSystem);
+    outline = sprintf('The refractive power of the unaccommodated model eye is %2.2f diopters.\n',diopters);
     fprintf(outline)
 %}
 %{
-    % Determine the refractive power of the lens 
-    sceneGeometry = createSceneGeometry;
-    diopters = calcDiopters(sceneGeometry.refraction.retinaToStop.opticalSystem);
-    outline = sprintf('The refractive power of the crystaline lens in resting acommodation is %2.2f diopters.\n',diopters);
+    % Determine the refractive power of the lens in air
+    sceneGeometry = createSceneGeometry('navarroD',calcAccommodation(0));
+    opticalSystem = sceneGeometry.refraction.retinaToStop.opticalSystem;
+    opticalSystem = reverseSystemDirection(opticalSystem);
+    diopters = calcOpticalPower(opticalSystem);
+    outline = sprintf('The refractive power of the unaccommodated crystaline lens is %2.2f diopters.\n',diopters);
     fprintf(outline)
 %}
 
@@ -80,18 +84,18 @@ function [diopters, focalPoint] = calcDiopters(opticalSystem, forceEyeToCamera, 
 if nargin==1
     forceEyeToCamera = false;
     rayStartDepth = [100, -100];
-    rayOffset = 1;
+    rayHeight = 1;
 end
 
 % Handle nargin
 if nargin==2
     rayStartDepth = [100, -100];
-    rayOffset = 1;
+    rayHeight = 1;
 end
 
 % Handle nargin
 if nargin==3
-    rayOffset = 1;
+    rayHeight = 1;
 end
 
 % Strip the optical system of any rows which are all nans
@@ -113,17 +117,17 @@ end
 systemDirection = calcSystemDirection(opticalSystem, rayStartDepth);
 
 % Obtain the principal point
-P = calcPrincipalPoint(opticalSystem, rayStartDepth);
+P = calcPrincipalPoint(opticalSystem, rayStartDepth, rayHeight);
 
 % Create parallel rays in the valid direction
 switch systemDirection
     case 'cameraToEye'
-        R1 = quadric.normalizeRay([rayStartDepth(1),-rayOffset;-rayOffset,0;0,0]);
-        R2 = quadric.normalizeRay([rayStartDepth(1),-rayOffset;rayOffset,0;0,0]);
+        R1 = quadric.normalizeRay([rayStartDepth(1),-1;-rayHeight,0;0,0]);
+        R2 = quadric.normalizeRay([rayStartDepth(1),-1;rayHeight,0;0,0]);
         signD = 1;
     case 'eyeToCamera'
-        R1 = quadric.normalizeRay([rayStartDepth(2),rayOffset;-rayOffset,0;0,0]);
-        R2 = quadric.normalizeRay([rayStartDepth(2),rayOffset;rayOffset,0;0,0]);
+        R1 = quadric.normalizeRay([rayStartDepth(2),1;-rayHeight,0;0,0]);
+        R2 = quadric.normalizeRay([rayStartDepth(2),1;rayHeight,0;0,0]);
         signD = -1;
     otherwise
         error(['Not a valid system direction: ' systemDirection])
@@ -141,7 +145,6 @@ refractiveIndex = opticalSystem(end,end);
 
 % Obtain the power of the optical system in diopters
 diopters = signD * refractiveIndex / ((P(1) - focalPoint(1))/1000);
-
 
 end
 
