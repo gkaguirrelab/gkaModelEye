@@ -34,10 +34,11 @@ function [opticalSystem, surfaceLabels, surfaceColors, magnification] = assemble
 %                           index of refraction of the lens material. If
 %                           left empty, no contact lens is added to the
 %                           model.
-%  'spectacleLens'        - Scalar, 1x2, or 1x3 vector, with values for the
-%                           lens refraction in diopters, (optionally) the
-%                           index of refraction of the lens material, and
-%                           (optinally) the vertex distance in mm.
+%  'spectacleLens'        - Scalar, 1x2, 1x3, 1x4 vector, with values for 
+%                           the lens refraction in diopters, (optionally)
+%                           the index of refraction of the lens material,
+%                           (optinally) the vertex distance in mm, and
+%                           (optionally) the base curve in doiopters.
 %                           Typically, the spectacleLens is the only item
 %                           within the mediumToCamera or cameratToMedium
 %                           systems.
@@ -115,10 +116,6 @@ p.parse(eye, varargin{:})
 % Get the refractive index of the medium in which the medium resides
 mediumRefractiveIndex = returnRefractiveIndex( p.Results.cameraMedium, eye.meta.spectralDomain );
 
-% A valid optical system begins with a row of nans and the refractive index
-% of the medium in which the ray originates.
-opticalSystem = nan(1,19);
-
 % This variable is set to empty by default
 magnification = struct();
 
@@ -129,7 +126,7 @@ switch p.Results.surfaceSetName
     case {'retinaToCamera','cameraToRetina'}
         
         % We start in the vitreous chamber. Assign this refractive index
-        opticalSystem(1,19) = returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain );
+        opticalSystem = initializeOpticalSystem(returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain ));
         
         % Add the vitreous chamber surface. As this has the same refractive
         % index as the first line of the optical system, this surface does
@@ -156,9 +153,9 @@ switch p.Results.surfaceSetName
             switch length(p.Results.contactLens)
                 case 1
                     lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', eye.meta.spectralDomain );
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex);
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex,'cornealRotation',eye.cornea.rotation);
                 case 2
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2));
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2),'cornealRotation',eye.cornea.rotation);
                 otherwise
                     error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
             end
@@ -176,13 +173,13 @@ switch p.Results.surfaceSetName
             switch length(p.Results.spectacleLens)
                 case 1
                     lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex, 'systemDirection', 'eyeToMedium');
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex);
                 case 2
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2), 'systemDirection', 'eyeToMedium');
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2));
                 case 3
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'systemDirection', 'eyeToMedium');
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3));
                 case 4
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4), 'systemDirection', 'eyeToMedium');
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4));
                 otherwise
                     error('The key-value pair spectacleLens is limited to four elements: [refractionDiopters, refractionIndex, vertexDistance, baseCurve]');
             end
@@ -205,7 +202,7 @@ switch p.Results.surfaceSetName
     case {'retinaToMedium','mediumToRetina'}
         
         % We start in the vitreous chamber. Assign this refractive index
-        opticalSystem(1,19) = returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain );
+        opticalSystem = initializeOpticalSystem(returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain ));
         
         % Add the vitreous chamber surface. As this has the same refractive
         % index as the first line of the optical system, this surface does
@@ -232,9 +229,9 @@ switch p.Results.surfaceSetName
             switch length(p.Results.contactLens)
                 case 1
                     lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', eye.meta.spectralDomain );
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex);
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex,'cornealRotation',eye.cornea.rotation);
                 case 2
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2));
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2),'cornealRotation',eye.cornea.rotation);
                 otherwise
                     error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
             end
@@ -258,7 +255,7 @@ switch p.Results.surfaceSetName
     case {'retinaToStop','stopToRetina'}
         
         % We start in the vitreous chamber. Assign this refractive index
-        opticalSystem(1,19) = returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain );
+        opticalSystem = initializeOpticalSystem(returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain ));
         
         % Add the vitreous chamber surface. As this has the same refractive
         % index as the first line of the optical system, this surface does
@@ -289,7 +286,7 @@ switch p.Results.surfaceSetName
     case {'stopToMedium','mediumToStop'}
         
         % We start in the aqueous. Assign this refractive index
-        opticalSystem(1,19) = returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain );
+        opticalSystem = initializeOpticalSystem(returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain ));
         
         % Add the cornea
         opticalSystem = [opticalSystem; ...
@@ -306,9 +303,9 @@ switch p.Results.surfaceSetName
             switch length(p.Results.contactLens)
                 case 1
                     lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', eye.meta.spectralDomain );
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex);
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex,'cornealRotation',eye.cornea.rotation);
                 case 2
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2));
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2),'cornealRotation',eye.cornea.rotation);
                 otherwise
                     error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
             end
@@ -327,7 +324,7 @@ switch p.Results.surfaceSetName
 	case {'mediumToCamera','cameraToMedium'}
         
         % We start in the medium. Assign this refractive index
-        opticalSystem(1,19) = returnRefractiveIndex( p.Results.cameraMedium, eye.meta.spectralDomain );
+        opticalSystem = initializeOpticalSystem(returnRefractiveIndex( p.Results.cameraMedium, eye.meta.spectralDomain ));
 
         % Assemble the labels
         surfaceLabels = [{'cameraMedium'}];
@@ -340,13 +337,13 @@ switch p.Results.surfaceSetName
             switch length(p.Results.spectacleLens)
                 case 1
                     lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex, 'systemDirection', 'eyeToMedium');
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex);
                 case 2
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2), 'systemDirection', 'eyeToMedium');
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2));
                 case 3
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'systemDirection', 'eyeToMedium');
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3));
                 case 4
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4), 'systemDirection', 'eyeToMedium');
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4));
                 otherwise
                     error('The key-value pair spectacleLens is limited to four elements: [refractionDiopters, refractionIndex, vertexDistance, baseCurve]');
             end
@@ -373,7 +370,7 @@ switch p.Results.surfaceSetName
         % First assemble the path tearfilm --> medium
         
         % We start in the tearfilm
-        opticalSystem(1,19) = eye.cornea.index(2);
+        opticalSystem = initializeOpticalSystem(returnRefractiveIndex( 'tears', eye.meta.spectralDomain ));
         
         % Add the tear surface
         opticalSystem = [opticalSystem; ...
@@ -390,9 +387,9 @@ switch p.Results.surfaceSetName
             switch length(p.Results.contactLens)
                 case 1
                     lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', eye.meta.spectralDomain );
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex);
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex,'cornealRotation',eye.cornea.rotation);
                 case 2
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2));
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2),'cornealRotation',eye.cornea.rotation);
                 otherwise
                     error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
             end

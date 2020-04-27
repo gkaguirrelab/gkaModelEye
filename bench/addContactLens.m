@@ -42,6 +42,12 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %                           under visible (vis) and near infra-red (nir)
 %                           imaging domains.
 %  'minimumLensThickness' - Scalar. The minimum lens thickness in mm.
+%  'cornealRotation'      - 1x3 vector. If the cornea has been rotated out
+%                           of alignment with the optical axis, the calling
+%                           function needs to pass this value here. It
+%                           would be better if I derived the rotation
+%                           angles from the quadric itself, but this turns
+%                           out to be complicated.
 %
 %
 % Outputs:
@@ -56,7 +62,7 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
     eye = modelEyeParameters('sphericalAmetropia',-2);
     opticalSystemIn = assembleOpticalSystem(eye,'surfaceSetName','retinaToCamera','opticalSystemNumRows',[]);
     eyePower = calcOpticalPower(opticalSystemIn);
-    opticalSystemOut = addContactLens(opticalSystemIn,lensDiopters);
+    opticalSystemOut = addContactLens(opticalSystemIn,lensDiopters,'cornealRotation',eye.cornea.rotation);
     eyePowerWithLens = calcOpticalPower(opticalSystemOut);
     assert(abs(eyePowerWithLens - (eyePower + lensDiopters))<0.01);
 %}
@@ -72,6 +78,7 @@ p.addRequired('lensRefractionDiopters',@isnumeric);
 % Optional
 p.addParameter('lensRefractiveIndex',returnRefractiveIndex( 'hydrogel', 'NIR' ),@isnumeric);
 p.addParameter('minimumLensThickness',0.05,@isnumeric);
+p.addParameter('cornealRotation',[0, 0, 0],@isnumeric);
 
 % parse
 p.parse(opticalSystemIn, lensRefractionDiopters, varargin{:})
@@ -90,7 +97,7 @@ if lensRefractionDiopters==0
 end
 
 
-%% Setup fixed lens paramtersex;
+%% Setup fixed lens paramters;
 
 % The passed optical system will have a ray that emerges into a medium with
 % a specified index of refraction. We store the index of refraction of
@@ -112,6 +119,7 @@ tearThickness = backRadii(1)+backCenter(1);
 % The desired optical system will have its refractive power plus the called
 % for lens refraction.
 targetDiopters = calcOpticalPower(opticalSystemIn) + lensRefractionDiopters;
+
 
 %% Search for parameters of an ophthalmic lens
 % This is "convex-concave" lens with two surfaces. The back surface is
@@ -142,7 +150,7 @@ mySystem = @(x) ...
     assembleLensSystem(opticalSystemIn, ...
     p.Results.lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, ...
     x(1), frontCenter(x), ...
-    -2, tearThickness);
+    -2, tearThickness, p.Results.cornealRotation);
 
 % Calculate the power of the lens defined by the x parameters.
 myDiopters = @(x) calcOpticalPower(mySystem(x));
@@ -207,7 +215,7 @@ frontCenter = frontCenter(x);
 
 
 %% Add the lens
-opticalSystemOut =  assembleLensSystem(opticalSystemIn, p.Results.lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, frontCurvature, frontCenter, intersectHeight, tearThickness);
+opticalSystemOut =  assembleLensSystem(opticalSystemIn, p.Results.lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, frontCurvature, frontCenter, intersectHeight, tearThickness, p.Results.cornealRotation);
 
 
 end % function - addContactLens
@@ -267,10 +275,18 @@ intersectHeight = Xfront(1);
 end
 
 
-function opticalSystemOut = assembleLensSystem(opticalSystemIn, lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, frontCurvature, frontCenter, intersectHeight, tearThickness)
+function opticalSystemOut = assembleLensSystem(opticalSystemIn, lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, frontCurvature, frontCenter, intersectHeight, tearThickness, cornealRotation)
 % Assembles and returns an optical system matrix given input
 
 % We are always operating in the 'eyeToCamera' system direction
+
+% Obtain the radii of the last surface of the opticalSystemIn
+backRadii = quadric.radii(opticalSystemIn(end,1:10));
+
+% Create radii for the contact lens that account for the astigmatic
+% ellipsoid form of the cornea
+meanCurvDelta = mean(backRadii(2:3)+frontCurvature);
+frontRadii = [-backRadii(1), -backRadii(2)-meanCurvDelta,  -backRadii(3)-meanCurvDelta];
 
 % The opticalSystemIn ends with the outer surface of the tear film, from
 % which the ray emerges into the refractive index of the medium. When a
@@ -283,8 +299,9 @@ opticalSystemOut(end,end) = lensRefractiveIndex;
 boundingBoxLens = [intersectHeight frontCenter-frontCurvature -10 10 -10 10];
 
 % Add the front contact lens surface to the optical system
-SlensFront = quadric.scale(quadric.unitSphere,[frontCurvature frontCurvature frontCurvature]);
-SlensFront = quadric.translate(SlensFront,[frontCenter 0 0]);
+SlensFront = quadric.scale(quadric.unitSphere,frontRadii);
+SlensFront = quadric.rotate(SlensFront,cornealRotation);
+SlensFront = quadric.translate(SlensFront,[frontRadii(1)+(frontCenter-frontCurvature) 0 0]);
 lensLine = nan(1,19);
 lensLine(1:10) = quadric.matrixToVec(SlensFront);
 lensLine(11) = 1; % rays intersect concave lens surface
@@ -300,8 +317,9 @@ opticalSystemOut = [opticalSystemOut; lensLine];
 boundingBoxTears = [intersectHeight+tearThickness frontCenter-frontCurvature+tearThickness -10 10 -10 10];
 
 % Add a tear film to the optical system
-SlensFront = quadric.scale(quadric.unitSphere,[frontCurvature frontCurvature frontCurvature]);
-SlensFront = quadric.translate(SlensFront,[frontCenter+tearThickness 0 0]);
+SlensFront = quadric.scale(quadric.unitSphere,frontRadii);
+SlensFront = quadric.rotate(SlensFront,cornealRotation);
+SlensFront = quadric.translate(SlensFront,[frontRadii(1)+(frontCenter-frontCurvature)+tearThickness 0 0]);
 tearLine = nan(1,19);
 tearLine(1:10) = quadric.matrixToVec(SlensFront);
 tearLine(11) = 1; % rays intersect concave lens surface

@@ -81,8 +81,10 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %}
 %{
     % Display a spectacle lens and the focal point
-    lensDiopters = 5;
+    lensDiopters = -5;
     opticalSystem = addSpectacleLens([],lensDiopters);
+    % Reverse the optical system so we can trace from the cameraToEye
+    opticalSystem = reverseSystemDirection(opticalSystem);
     % Plot this
     plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true);
     % Trace parallel rays from right (the world) to left (the eye)
@@ -243,7 +245,7 @@ if sign(lensRefractionDiopters)==1
     % upper bound on thickness.
     x0 = [backCurvatureX0 p.Results.minimumLensThickness*2];
     lb = [-inf,p.Results.minimumLensThickness];
-    ub = [inf,inf];
+    ub = [inf,p.Results.minimumLensThickness*3];
     [x, fVal] = fmincon(myObj,x0,[],[],[],[],lb,ub,myConstraint,options);
 else
     % This is a "minus" lens. Remove the non-linear shape constraint. Pin

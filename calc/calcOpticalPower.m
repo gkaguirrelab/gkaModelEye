@@ -1,4 +1,4 @@
-function [diopters, focalPoint] = calcOpticalPower(opticalSystem, forceEyeToCamera, rayStartDepth, rayHeight)
+function [diopters, focalPoint] = calcOpticalPower(opticalSystem, rayStartDepth, rayHeight)
 % Calcuate the cameraToEye-direction refractive power of an opticalSystem
 %
 % Syntax:
@@ -16,10 +16,6 @@ function [diopters, focalPoint] = calcOpticalPower(opticalSystem, forceEyeToCame
 %
 %   where the effective focal length is the distance between the principal
 %   point of the optical system and the focal point.
-%
-%   This routine returns optical power in the cameraToEye direction for the
-%   passed optical system, unless the "forceEyeToCamera" argument is set to
-%   true.
 %
 %   Note that for optical systems with spherical aberration, the calculated
 %   optical power will vary depending upon the path of the ray. The
@@ -82,38 +78,20 @@ function [diopters, focalPoint] = calcOpticalPower(opticalSystem, forceEyeToCame
 
 % Handle nargin
 if nargin==1
-    forceEyeToCamera = false;
     rayStartDepth = [100, -100];
     rayHeight = 1;
 end
 
 % Handle nargin
 if nargin==2
-    rayStartDepth = [100, -100];
     rayHeight = 1;
 end
 
-% Handle nargin
-if nargin==3
-    rayHeight = 1;
-end
 
 % Strip the optical system of any rows which are all nans
 opticalSystem = opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
 
 % Obtain the system direction
-systemDirection = calcSystemDirection(opticalSystem, rayStartDepth);
-
-% Unless the forceEyeToCamera flag is set, ensure that the optical system
-% is in the cameraToEye state.
-if strcmp(systemDirection,'eyeToCamera') && ~forceEyeToCamera
-    opticalSystem = reverseSystemDirection(opticalSystem);
-end
-if strcmp(systemDirection,'cameraToEye') && forceEyeToCamera
-    opticalSystem = reverseSystemDirection(opticalSystem);
-end
-
-% Obtain the system direction again after that potential reversing
 systemDirection = calcSystemDirection(opticalSystem, rayStartDepth);
 
 % Obtain the principal point

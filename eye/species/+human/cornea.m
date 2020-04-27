@@ -152,18 +152,22 @@ else
     end
 end
 
-% Saving this for use in constructing the tear film below
-S_front = S;
-
-% Rotate the quadric surface, and handle laterality in the final dimension.
+% Update and store the cornea.rotation, which will be in absolute degrees,
+% as opposed to relative to the right eye
 switch eye.meta.eyeLaterality
     case 'Right'
-        S = quadric.rotate(S,cornealRotation);
+        cornea.rotation = cornealRotation;
     case 'Left'
-        S = quadric.rotate(S,cornealRotation.*[1 1 -1]);
+        cornea.rotation = cornealRotation.*[1 1 -1];
     otherwise
         error('eye laterality not defined')
 end
+
+% Saving this for use in constructing the tear film below
+S_front = S;
+
+% Rotate the quadric surface
+S = quadric.rotate(S,cornea.rotation);
 
 % We set the center of the cornea front surface ellipsoid so that the axial
 % apex (prior to rotation) is at position [0, 0, 0]
@@ -190,14 +194,7 @@ tearFilmThickness = 0.005;
 
 % Rotate the quadric surface
 S = S_front;
-switch eye.meta.eyeLaterality
-    case 'Right'
-        S = quadric.rotate(S,cornealRotation);
-    case 'Left'
-        S = quadric.rotate(S,cornealRotation.*[1 1 -1]);
-    otherwise
-        error('eye laterality not defined')
-end
+S = quadric.rotate(S,cornea.rotation);
 
 % Translate and store
 S = quadric.translate(S,[-radii(1)+tearFilmThickness 0 0]);
@@ -238,14 +235,7 @@ radii = [ 13.7716    9.3027    9.3027];
 S = quadric.scale(quadric.unitSphere,radii);
 
 % Rotate the quadric surface
-switch eye.meta.eyeLaterality
-    case 'Right'
-        S = quadric.rotate(S,cornealRotation+[ 180 180 180 ]);
-    case 'Left'
-        S = quadric.rotate(S,cornealRotation.*[1 1 -1]-[ 180 180 180 ]);
-    otherwise
-        error('eye laterality not defined')
-end
+S = quadric.rotate(S,cornea.rotation);
 
 % The center of the back cornea ellipsoid is positioned so that there is
 % 0.55 mm of corneal thickness between the front and back surface of the

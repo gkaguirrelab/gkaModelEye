@@ -22,7 +22,6 @@ function [eyePoints, pointLabels] = addFullEyeModel(eyePoints, pointLabels, scen
 %
 
 
-
 % If this stage is not requested, return
 if ~p.Results.fullEyeModelFlag
     return
