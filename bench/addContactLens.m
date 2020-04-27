@@ -236,8 +236,8 @@ switch systemDirection
         % This is the front surface of the lens. The last surface is the
         % tear film
         Sfront = opticalSystem(end-1,1:10);
-        % This is the front surface of the cornea.
-        Sback = opticalSystem(end-3,1:10);
+        % This is the tear film on the front surface of the cornea.
+        Sback = opticalSystem(end-2,1:10);
     case 'cameraToEye'
         error('addSpectacleLens:systemDirection','The routine only operates on optical systems oriented eyeToCamera');
     otherwise
@@ -251,26 +251,40 @@ end
 
 % Calculate the distance from the corneal vertex to the back and front
 % surface of the lens along a 63 degree viewing angle from the iris center.
-R = quadric.normalizeRay(quadric.anglesToRay([-3.9;0;0], 63, 0 ));
-side = 1; % Our lenses are all concave w.r.t. a ray arising from eye
-Xback = quadric.intersectRay(Sback,R,side);
-Xfront = quadric.intersectRay(Sfront,R,side);
-Dback = sqrt(sum(Xback.^2));
-Dfront = sqrt(sum(Xfront.^2));
-
-% This is the thickness of the lens at its edge. It is possible for this
-% value to be negative for some values of lens curvature.
-thicknessAtEdge = Dfront - Dback;
+% We make this calculation in four different directions
+thicknessAtEdge = [];
+Xfront = [];
+horiz = [-63 63]; vert = [-63 63];
+for hh = 1:length(horiz)
+    for vv = 1:length(vert)
+        R = quadric.normalizeRay(quadric.anglesToRay([-3.9;0;0], horiz(hh), vert(hh) ));
+        side = 1; % Our lenses are all concave w.r.t. a ray arising from eye
+        Xback = quadric.intersectRay(Sback,R,side);
+        Xfront(end+1,:) = quadric.intersectRay(Sfront,R,side);
+        Dback = sqrt(sum(Xback.^2));
+        Dfront = sqrt(sum(Xfront(end,:).^2));
+        
+        % This is the thickness of the lens at its edge. It is possible for this
+        % value to be negative for some values of lens curvature.
+        thicknessAtEdge(end+1) = Dfront - Dback;
+    end
+end
 
 % The non-linear constraint values. fmincon will search for a solution in
-% which c<=0 and c==0. That is, we would like the lens thickness at the
-% edge to be close to zero and not negative.
-c = -thicknessAtEdge;
-ceq = c;
+% which c<=0 and ceq==0. That is, we would like the lens thickness at the
+% edge to be close to zero and not negative. We down-weight the constraint
+% so that we tolerate a little bit of edge thickness
+c = -min(thicknessAtEdge);
+
+if any(thicknessAtEdge>0)
+    ceq = min(thicknessAtEdge(thicknessAtEdge>0));
+else
+    ceq = 0;
+end
 
 % Return the position along the optical axis for the edge of the lens.
 % This will be used subsequently to assemble a bounding box.
-intersectHeight = Xfront(1);
+intersectHeight = min(Xfront(:,1));
 
 end
 

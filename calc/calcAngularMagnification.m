@@ -11,7 +11,7 @@ function M = calcAngularMagnification(eye, varargin)
 %   minification.
 %
 % Inputs:
-%   none                  - Structure. SEE: modelEyeParameters
+%   eye                   - Structure. SEE: modelEyeParameters
 %
 % Optional key/value pairs:
 %  'cameraMedium'         - String, options include:
@@ -50,6 +50,9 @@ function M = calcAngularMagnification(eye, varargin)
     % Replicate Figure 1 of: WESTHEIMER, GERALD. "The visual world of the
     % new contact Lens wearer." The Australian Journal of Optometry 46.5
     % (1963): 124-127.
+    % Silence a warning about imperfect plus spectacle lenses
+    warnState = warning;
+    warning('off','addSpectacleLens:badGrind');
     % Using the same kvals as Westheimer
     kvals= [43.5, 43.5, 0, 0, 0];
     eye = modelEyeParameters('kvals',kvals);
@@ -70,6 +73,8 @@ function M = calcAngularMagnification(eye, varargin)
     xlabel('Spherical correction [diopters]');
     legend( pHandle,{'spectacle','contact'},'Location','northwest');
     title('Replicate Westheimer 1963');
+    % Restore the warning state
+    warning(warnState);
 %}
 
 
