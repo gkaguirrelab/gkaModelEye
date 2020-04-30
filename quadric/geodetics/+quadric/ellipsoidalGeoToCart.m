@@ -85,7 +85,13 @@ beta=geodetic(1);omega=geodetic(2);
 
 x=a*cos(omega/ro)*(sqrt(a^2-b^2*sin(beta/ro)^2-c^2*cos(beta/ro)^2)/sqrt(a^2-c^2));
 y=b*cos(beta/ro)*sin(omega/ro);
-z=c*sin(beta/ro)*(sqrt(a^2*sin(omega/ro)^2+b^2*cos(omega/ro)^2-c^2)/sqrt(a^2-c^2));
+
+% Under circumstances in which the the shorter radii are equivalent, the
+% following numerical value (while extremely close to zero) will
+% nonetheless be numerically negative. This step here sets the value to
+% zero if it becomes slightly negative.
+val = min([0, a^2*sin(omega/ro)^2+b^2*cos(omega/ro)^2-c^2]);
+z=c*sin(beta/ro)*(sqrt(val)/sqrt(a^2-c^2));
 
 % Assemble the coordinate
 X=[z; y; x];
