@@ -90,7 +90,7 @@ y=b*cos(beta/ro)*sin(omega/ro);
 % following numerical value (while extremely close to zero) will
 % nonetheless be numerically negative. This step here sets the value to
 % zero if it becomes slightly negative.
-val = min([0, a^2*sin(omega/ro)^2+b^2*cos(omega/ro)^2-c^2]);
+val = max([0, a^2*sin(omega/ro)^2+b^2*cos(omega/ro)^2-c^2]);
 z=c*sin(beta/ro)*(sqrt(val)/sqrt(a^2-c^2));
 
 % Assemble the coordinate
