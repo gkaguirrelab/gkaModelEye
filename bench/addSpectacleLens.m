@@ -243,9 +243,9 @@ warning('off','MATLAB:nearlySingularMatrix');
 if sign(lensRefractionDiopters)==1
     % This is a "plus" lens. Apply the shape constraint but do not place an
     % upper bound on thickness.
-    x0 = [backCurvatureX0 p.Results.minimumLensThickness*2];
+    x0 = [backCurvatureX0 max([p.Results.minimumLensThickness 0.5*lensRefractionDiopters])];
     lb = [-inf,p.Results.minimumLensThickness];
-    ub = [inf,p.Results.minimumLensThickness*3];
+    ub = [inf,p.Results.minimumLensThickness*5];
     [x, fVal] = fmincon(myObj,x0,[],[],[],[],lb,ub,myConstraint,options);
 else
     % This is a "minus" lens. Remove the non-linear shape constraint. Pin

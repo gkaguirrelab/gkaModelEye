@@ -186,7 +186,7 @@ if sign(lensRefractionDiopters)==1
     % upper bound on thickness. We allow the lower bound on thickness to go
     % below the "minimum", as otherwise we can't grind lenses that will
     % handle small (<1) positive corrections.
-    x0 = [frontCurvatureX0*0.75 thicknessX0*2];
+    x0 = [frontCurvatureX0*0.75 max([p.Results.minimumLensThickness, 0.042*lensRefractionDiopters])];
     lb = [frontCurvatureX0,p.Results.minimumLensThickness/4];
     ub = [frontCurvatureX0/4,thicknessX0*10];
     [x, fVal] = fmincon(myObj,x0,[],[],[],[],lb,ub,myConstraint,options);
@@ -271,11 +271,17 @@ for hh = 1:length(horiz)
 end
 
 % The non-linear constraint values. fmincon will search for a solution in
-% which c<=0 and ceq==0. That is, we would like the lens thickness at the
-% edge to be close to zero and not negative. We down-weight the constraint
-% so that we tolerate a little bit of edge thickness
-c = -min(thicknessAtEdge);
+% which c<=0 and ceq==0.
 
+% The constraint is violated for any thickness that is negative
+if any(thicknessAtEdge<0)
+    c = -min(thicknessAtEdge);
+else
+    c = 0;
+end
+
+% The constraint is violated if the thinnest edge of the lens is greater
+% than zero thickness
 if any(thicknessAtEdge>0)
     ceq = min(thicknessAtEdge(thicknessAtEdge>0));
 else
