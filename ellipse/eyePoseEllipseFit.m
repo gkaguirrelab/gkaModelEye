@@ -325,7 +325,7 @@ eyePose = x0;
 fittedEllipse = projectModelEye(eyePose, sceneGeometry);
 
 % Check if the fit is at a bound for any parameter that is not locked.
-fitAtBound = any([any(abs(eyePose(notLocked)-eyePoseLB(notLocked)) < p.Results.boundTol) any(abs(eyePose(notLocked)-eyePoseUB(notLocked)) < p.Results.boundTol)]);
+fitAtBound = any([any(abs(eyePose(notLocked)-eyePoseLB(notLocked)) < p.Results.boundTol(notLocked)) any(abs(eyePose(notLocked)-eyePoseUB(notLocked)) < p.Results.boundTol(notLocked))]);
 
 % Restore the warning state
 warning(warningState);
