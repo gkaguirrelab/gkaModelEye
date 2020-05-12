@@ -45,6 +45,10 @@ function [eyePose, RMSE, fittedEllipse, fitAtBound] = eyePoseEllipseFit(Xp, Yp, 
 %  'eyePoseTol'           - Scalar. The eyePose values will be searched to
 %                           within this level of precision. Doesn't have
 %                           too much of an effect upon execution time.
+%  'boundTol'             - 1x4 vector. If an eyePose value is within this
+%                           distance of the bound, it is considered to have
+%                           hit the bound. This is required as fminsearch
+%                           seems to avoid the bounds by a bit.
 %
 % Outputs:
 %   eyePose               - A 1x4 vector with values for [eyeAzimuth,
@@ -119,6 +123,7 @@ p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
 p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
 p.addParameter('eyePoseEllipseFitFunEvals',50,@isscalar);
 p.addParameter('eyePoseTol',1e-3,@isscalar);
+p.addParameter('boundTol',[0.1 0.1 0.1 0.05],@isscalar);
 
 
 % Parse and check the parameters
@@ -248,7 +253,7 @@ end
 
 %% Set up variables and functions for the search
 
-% define some search options for fminbnd
+% define some search options for fminsearch
 options = optimset('fminsearch');
 options.Display = 'off'; % Silencio
 options.FunValCheck = 'off'; % The objective will return nans when the eyepose is not valid
@@ -319,8 +324,8 @@ eyePose = x0;
 % Update the fittedEllipse with the solution parameters
 fittedEllipse = projectModelEye(eyePose, sceneGeometry);
 
-% Check if the fit is at a bound for any parameter that is not locked
-fitAtBound = any([any(abs(eyePose(notLocked)-eyePoseLB(notLocked)) < p.Results.eyePoseTol) any(abs(eyePose(notLocked)-eyePoseUB(notLocked)) < p.Results.eyePoseTol)]);
+% Check if the fit is at a bound for any parameter that is not locked.
+fitAtBound = any([any(abs(eyePose(notLocked)-eyePoseLB(notLocked)) < p.Results.boundTol) any(abs(eyePose(notLocked)-eyePoseUB(notLocked)) < p.Results.boundTol)]);
 
 % Restore the warning state
 warning(warningState);
