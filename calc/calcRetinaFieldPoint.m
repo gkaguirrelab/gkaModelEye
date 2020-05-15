@@ -44,16 +44,23 @@ function [G,X,angleError] = calcRetinaFieldPoint( eye, degField, cameraMedium )
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true,'rayPath',rayPath,'outputRay',outputRay);
 %}
 %{
-    % mm of retina per degree of visual angle at the retinal apex for an
+    % mm of retina per degree of visual angle at the fovea for an
     % emmetropic eye at resting accommodation.
-    deltaAngles=[sqrt(1/2)/2 sqrt(1/2)/2];
+    deltaDegEuclidean = 1e-3;
+    deltaAngles = [sqrt(deltaDegEuclidean/2) sqrt(deltaDegEuclidean/2)];
     length = [];
     mmPerDeg = [];
     eye = modelEyeParameters('calcLandmarkFovea',true);
-    [~,X0] = calcRetinaFieldPoint( eye, eye.landmarks.fovea.degField(1:2)-deltaAngles./2);
-    [~,X1] = calcRetinaFieldPoint( eye, eye.landmarks.fovea.degField(1:2)+deltaAngles./2);
+    [~,X0,angleError0] = calcRetinaFieldPoint( eye, eye.landmarks.fovea.degField(1:2)-deltaAngles./2);
+    [~,X1,angleError1] = calcRetinaFieldPoint( eye, eye.landmarks.fovea.degField(1:2)+deltaAngles./2);
     mmPerDeg = norm(X0-X1) / norm(deltaAngles);
     fprintf('%2.3f retinal mm per deg visual field at the fovea in the emmetropic eye.\n',mmPerDeg);
+    % Confirm that the error in calculation of the retinal field point is 
+    % two orders of magnitude less than the deltaDeg used to make the
+    % point estimate of magnification. If this assertion fails, need to
+    % consider that two small a delta is being used relative to the 
+    % accuracy of specifying retinal positions.
+    assert( (deltaDegEuclidean/max([angleError0 angleError1])) > 1e2 )
 %}
 
 % Handle incomplete inputs
