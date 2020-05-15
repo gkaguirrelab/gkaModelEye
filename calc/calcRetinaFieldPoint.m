@@ -23,12 +23,13 @@ function [G,X,angleError] = calcRetinaFieldPoint( eye, degField, cameraMedium )
 %                           Defaults to "air" if not passed.
 %
 % Outputs
-%   G                     - 3x1 vector that provides the geodetic
-%                           coordinates beta, omega, and elevation in units
-%                           of degrees. Beta is defined over the range
-%                           -90:90, and omega over the range -180:180.
-%                           Elevation has an obligatory value of zero as
-%                           this solution is only defined on the surface.
+%   G                     - 3x1 vector that provides the ellipsoidal 
+%                           geodetic coordinates beta, omega, and elevation
+%                           in units of degrees. Beta is defined over the
+%                           range -90:90, and omega over the range
+%                           -180:180. Elevation has an obligatory value of
+%                           zero as this solution is only defined on the
+%                           surface.
 %   X                     - 3x1 vector that specifies the Cartesian
 %                           location of a point on the quadric surface.
 %   angleError            - Scalar. The angle between the desired output
