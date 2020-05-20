@@ -426,7 +426,9 @@ end
 
 % The non-linear constraint is the number of pixels by which model misses
 % the glint location(s)
-ceq = norm(glintCoord - candidateGlint);
+%ceq = norm(glintCoord - candidateGlint);
+
+fVal = fVal * (1+norm(glintCoord - candidateGlint));
 
 end
 
