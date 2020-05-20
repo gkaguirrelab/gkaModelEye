@@ -112,7 +112,7 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput] =
     % Explore the trade-off between accuracy and run time in the setting
     % of a relative camera translation
     sceneGeometry=createSceneGeometry();
-    cameraTrans = [3; -1; 0];
+    cameraTrans = [0; 0; 0];
     sceneGeometryTrans = sceneGeometry;
     sceneGeometryTrans.cameraPosition.translation = ...
         sceneGeometryTrans.cameraPosition.translation + cameraTrans;
@@ -126,7 +126,7 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput] =
         [ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 10, 0 );
         for ee = 1:length(evalNum)
             tic
-            recoveredEyePose = eyePoseEllipseFit(Xp, Yp, glintCoord, sceneGeometry, 'eyePoseEllipseFitFunEvals', evalNum(ee));
+            recoveredEyePose = eyePoseEllipseFit(Xp, Yp, glintCoord, sceneGeometry, 'eyePoseEllipseFitFunEvals', evalNum(ee),'cameraTransBounds',[0;0;0]);
             executionTime(poseCount,ee) = toc();
             % Measure the absolute error in recovering eye pose values
             errors(poseCount,ee,:) = abs(eyePose - recoveredEyePose);
@@ -248,8 +248,8 @@ if isempty(p.Results.eyePoseX0)
     % Define eyePoseX0
     eyePoseX0 = zeros(1,4);
     
-    % Construct an eyePoseX0 guess by probing the forward model. First identify
-    % the center of projection
+    % Construct an eyePoseX0 guess by probing the forward model. First
+    % identify the center of projection
     rotationCenterEllipse = projectModelEye([0 0 0 2], sceneGeometry);
     CoP = [rotationCenterEllipse(1),rotationCenterEllipse(2)];
     
@@ -297,8 +297,8 @@ if isempty(p.Results.eyePoseX0)
     % Set the initial value for pupil radius in mm
     eyePoseX0(4) = pupilRadiusPixels/pixelsPerMM;
     
-    % Ensure that eyePoseX0 lies within the bounds with a bit of headroom so that
-    % the solver does not get stuck up against a bound.
+    % Ensure that eyePoseX0 lies within the bounds with a bit of headroom
+    % so that the solver does not get stuck up against a bound.
     boundHeadroom = (eyePoseUB - eyePoseLB)*0.001;
     eyePoseX0=min([eyePoseUB-boundHeadroom; eyePoseX0]);
     eyePoseX0=max([eyePoseLB+boundHeadroom; eyePoseX0]);
@@ -366,9 +366,7 @@ eyePose = x(1:4);
 cameraTrans = x(5:7)';
 
 % Update the fittedEllipse with the solution parameters
-sceneGeometry.cameraPosition.translation(1:2) = ...
-    sceneGeometry.cameraPosition.translation(1:2) + x(5:6)';
-fittedEllipse = projectModelEye(eyePose, sceneGeometry);
+fittedEllipse = projectModelEye(eyePose, sceneGeometry, 'cameraTrans', cameraTrans);
 
 % Check if the fit is within boundTol of a bound for any non-locked eyePose
 % parameter.
@@ -382,20 +380,14 @@ end % eyePoseEllipseFit
 
 function [fVal,c,ceq] = fullObjective(x,Xp,Yp,glintCoord,sceneGeometry)
 
-% This is what we return for a failed objective execution
-objFailValue = nan;
-
 % Set the default values
-fVal = objFailValue;
+fVal = nan;
 c = [];
 ceq = [];
 
-% Update the relative camera position=
-sceneGeometry.cameraPosition.translation = ...
-    sceneGeometry.cameraPosition.translation + x(5:7)';
-
-% Obtain the entrance pupil ellipse for this eyePose
-[candidateEllipse, candidateGlint] = projectModelEye(x(1:4), sceneGeometry);
+% Obtain the pupil ellipse for this eyePose
+[candidateEllipse, candidateGlint] = ...
+    projectModelEye(x(1:4), sceneGeometry, 'cameraTrans', x(5:7)');
 
 % Check for the case in which the transparentEllipse contains nan
 % values, which can arise if there were an insufficient number of
