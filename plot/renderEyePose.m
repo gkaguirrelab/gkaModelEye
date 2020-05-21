@@ -17,6 +17,12 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
 %
 % Optional key/value pairs:
+%   cameraTrans           - A 3x1 vector with values for [horizontal;
+%                           vertical; depth] in units of mm. The values are
+%                           relative to:
+%                               sceneGeometry.cameraPosition.translation
+%                           This key-value provides an easy way to update
+%                           the camera translation.
 %  'backgroundImage'      - sizeX x sizeY matrix that contains an image to
 %                           displayed behind the rendered eye. Typically,
 %                           this is an image of an eye for which this eye
@@ -121,6 +127,7 @@ p.addRequired('eyePose',@(x)(isnumeric(x) && all(size(x)==[1 4])));
 p.addRequired('sceneGeometry',@isstruct);
 
 % Optional
+p.addParameter('cameraTrans',[0;0;0],@isvector);
 p.addParameter('backgroundImage',[],@isnumeric);
 p.addParameter('backgroundGray',0.5,@isscalar);
 p.addParameter('newFigure',true,@islogical);
@@ -204,6 +211,7 @@ hold on
 % Obtain the pupilProjection of the model eye to the image plane
 [pupilEllipseParams, ~, imagePoints, ~, ~, ~, pointLabels] = ...
     projectModelEye(eyePose, sceneGeometry, ...
+    'cameraTrans',p.Results.cameraTrans, ...
     'fullEyeModelFlag', true, 'replaceReflectedPoints', true, ...
     'nStopPerimPoints',p.Results.nStopPerimPoints, ...
     'addPseudoTorsion',p.Results.addPseudoTorsion,...

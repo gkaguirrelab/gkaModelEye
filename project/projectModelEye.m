@@ -41,11 +41,12 @@ function [pupilEllipse, glintCoord, imagePoints, worldPoints, headPoints, eyePoi
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
 %
 % Optional key/value pairs:
-%   'cameraTrans'         - A 1x3 vector with values for [horizontal,
-%                           vertical, depth] in units of mm. The values are
-%                           relative to the camera position information in
-%                           the sceneGeometry and may be used to update the
-%                           camera translation.
+%   cameraTrans           - A 3x1 vector with values for [horizontal;
+%                           vertical; depth] in units of mm. The values are
+%                           relative to:
+%                               sceneGeometry.cameraPosition.translation
+%                           This key-value provides an easy way to update
+%                           the camera translation.
 %  'addPseudoTorsion'     - Logical. If set to true, the eyePose is
 %                           adjusted to add "pseudo" torsion so that the
 %                           eye movement obeys Listing's Law. More details
