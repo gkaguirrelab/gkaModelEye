@@ -386,9 +386,9 @@ function [fVal,c,ceq] = fullObjective(x,Xp,Yp,glintCoord,sceneGeometry)
 % This function returns both the objective and non-linear constraint 
 
 % Set the default values
-fVal = nan;
+fVal = NaN;
 c = [];
-ceq = [];
+ceq = Inf;
 
 % Obtain the pupil ellipse for this eyePose
 [candidateEllipse, candidateGlint] = ...
