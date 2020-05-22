@@ -15,8 +15,8 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput] =
 %
 %   If a glint is provided, a search across translation of the camera is
 %   also supported. Note that there is little ability to detect changes in
-%   camera depth, so the bounds on this search parameter are set to zero by
-%   default.
+%   camera depth, so the bounds of the search on camera depth are set to
+%   zero by default.
 %
 %   The search is constrained by the upper and lower bounds of the eyePose.
 %   The default values specified here represent the physical boundaries of
@@ -25,8 +25,8 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput] =
 %
 % Inputs:
 %   Xp, Yp                - mx1 vectors of points to be fit. These provide
-%                           the X and Y screen coordinates of points on the
-%                           boundary of the pupil.
+%                           the X and Y screen coordinates of the m points
+%                           on the boundary of the pupil.
 %   glintCoord            - A nx2 vector with the image coordinates of the
 %                           n glints.
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
@@ -53,7 +53,7 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput] =
 %                           the fminsearch operation. The example below
 %                           examines the trade-off between execution time
 %                           and function accuracy for this parameter. I
-%                           find that 50 evals takes ~1 second per eyePose
+%                           find that 200 evals takes ~3 second per eyePose
 %                           calculation on a laptop, and produces excellent
 %                           accuracy with respect to the imprecision in
 %                           empirical data.
