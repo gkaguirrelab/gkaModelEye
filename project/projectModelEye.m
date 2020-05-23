@@ -41,6 +41,12 @@ function [pupilEllipse, glintCoord, imagePoints, worldPoints, headPoints, eyePoi
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
 %
 % Optional key/value pairs:
+%   cameraTrans           - A 3x1 vector with values for [horizontal;
+%                           vertical; depth] in units of mm. The values are
+%                           relative to:
+%                               sceneGeometry.cameraPosition.translation
+%                           This key-value provides an easy way to update
+%                           the camera translation.
 %  'addPseudoTorsion'     - Logical. If set to true, the eyePose is
 %                           adjusted to add "pseudo" torsion so that the
 %                           eye movement obeys Listing's Law. More details
@@ -206,6 +212,7 @@ p.addRequired('eyePose',@(x)(isnumeric(x) && all(size(x)==[1 4])));
 p.addRequired('sceneGeometry',@isstruct);
 
 % Optional
+p.addParameter('cameraTrans',[0;0;0],@isvector);
 p.addParameter('addPseudoTorsion',true,@islogical);
 p.addParameter('fullEyeModelFlag',false,@islogical);
 p.addParameter('nStopPerimPoints',6,@(x)(isscalar(x) && x>4));
@@ -229,6 +236,11 @@ imagePoints = [];
 pupilEllipse=nan(1,5);
 pupilFitError = nan;
 glintCoord = [];
+
+
+%% Update camera translation
+sceneGeometry.cameraPosition.translation = ...
+        sceneGeometry.cameraPosition.translation + p.Results.cameraTrans;
 
 
 %% Apply pseudoTorsion
