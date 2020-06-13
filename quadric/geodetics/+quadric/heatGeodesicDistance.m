@@ -1,4 +1,4 @@
-function [distance,xErrors] = heatGeodesicDistance(S,X0,X1,subdivisions)
+function distance = heatGeodesicDistance(S,X0,X1,subdivisions)
 % Find the geodesic distance between two points on a tri-axial ellipsoid
 %
 % Syntax:
@@ -32,30 +32,17 @@ function [distance,xErrors] = heatGeodesicDistance(S,X0,X1,subdivisions)
 % Outputs:
 %   distance              - Scalar. Distance of the geodetic between the
 %                           two points.
-%   startAngle, endAngle  - Scalars. The heading of the geodetic path, in
-%                           degrees, relative to a line of constant omega
-%                           in the ellipsoidal geodetic coordinate system
-%                           on the ellipsoidal surface. 
 %
 % Examples:
 %{
-    % Numeric example provided by G. Panou in the original code
+    % Test the accuracy of the heatGeodesic approach against example 
+    % provided by G. Panou (see quadric.panouGeodesicDistance)
     S = quadric.scale(quadric.unitSphere,[0.015, 0.010, 0.009]);
     X0 = quadric.ellipsoidalGeoToCart([5; 5; 0],S);
     X1 = quadric.ellipsoidalGeoToCart([60; 120; 0],S);
     distance = quadric.heatGeodesicDistance(S,X0,X1);
-    % Check the result against Panou's value
-    assert( max(abs(distance - 0.0259)) < 1e-3 );
-%}
-%{
-    % Distance from the fovea to the optic disc
-    eye = modelEyeParameters('calcLandmarkFovea',true,'calcLandmarkOpticDisc',true);
-    S = eye.retina.S;
-    X0 = eye.landmarks.fovea.coords';
-    X1 = eye.landmarks.opticDisc.coords';
-    odf_distance = quadric.heatGeodesicDistance(S,X0,X1);
-    outline = sprintf('Geodetic distance from the fovea to the optic disc: %2.2f mm\n',odf_distance);
-    fprintf(outline);
+    % Report that the result against Panou's value
+    fprintf('Distance by heat geodetic method: %2.4f, Panou method: 0.0259\n',distance);
 %}
 
 
