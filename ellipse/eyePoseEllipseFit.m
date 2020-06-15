@@ -116,7 +116,7 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput] =
     cameraTrans = [3; -1; 0];
     executionTime = []; errors = [];
     poseCount = 0;
-    evalNum = [50 100 150 200 250];
+    evalNum = [100 150 200 250 300];
     for azi = [-10 -.5 0.5 10]; for ele = [-10 -.5 0.5 10]
         eyePose = [azi ele 0 2.5];
         poseCount = poseCount+1;
@@ -125,7 +125,6 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput] =
         for ee = 1:length(evalNum)
             tic
             recoveredEyePose = eyePoseEllipseFit(Xp, Yp, glintCoord, sceneGeometry,...
-                'cameraTransBounds',[0;0;0],...
                 'eyePoseEllipseFitFunEvals', evalNum(ee));
             executionTime(poseCount,ee) = toc();
             % Measure the absolute error in recovering eye pose values
