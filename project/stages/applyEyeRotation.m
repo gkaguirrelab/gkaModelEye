@@ -30,8 +30,8 @@ function [headPoints, pointLabels] = applyEyeRotation(eyePoints,pointLabels,scen
 %
 
 
-% Omit the eye rotation centers themselves from rotation.
-rotatePointsIdx = find(~contains(pointLabels,{'Rotation'}));
+% Omit the eye rotation centers and canthus landmarks from rotation.
+rotatePointsIdx = find(~contains(pointLabels,{'Rotation','Canthus'}));
 
 % Copy the eyePoints to the headPoints
 headPoints = eyePoints;

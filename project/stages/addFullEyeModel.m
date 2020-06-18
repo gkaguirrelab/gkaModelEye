@@ -29,7 +29,7 @@ end
 
 
 % Add points for the stop center, iris center, rotation centers, and
-% retinal landmarks if present
+% landmarks if present
 eyePoints = [eyePoints; sceneGeometry.eye.stop.center];
 pointLabels = [pointLabels; 'stopCenter'];
 eyePoints = [eyePoints; sceneGeometry.eye.iris.center];
@@ -48,6 +48,14 @@ if isfield(sceneGeometry.eye,'landmarks')
     if isfield(sceneGeometry.eye.landmarks,'opticDisc')
         eyePoints = [eyePoints; sceneGeometry.eye.landmarks.opticDisc.coords];
         pointLabels = [pointLabels; 'opticDisc'];
+    end
+    if isfield(sceneGeometry.eye.landmarks,'medialCanthus')
+        eyePoints = [eyePoints; sceneGeometry.eye.landmarks.medialCanthus.coords];
+        pointLabels = [pointLabels; 'medialCanthus'];
+    end
+    if isfield(sceneGeometry.eye.landmarks,'lateralCanthus')
+        eyePoints = [eyePoints; sceneGeometry.eye.landmarks.lateralCanthus.coords];
+        pointLabels = [pointLabels; 'lateralCanthus'];
     end
 end
 

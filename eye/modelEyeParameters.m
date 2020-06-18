@@ -232,6 +232,8 @@ switch eye.meta.species
         eye.index.aqueous = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
 
         % Landmarks. Some of these are optional
+        eye.landmarks.medialCanthus = human.landmarks.medialCanthus(eye);
+        eye.landmarks.lateralCanthus = human.landmarks.lateralCanthus(eye);
         eye.landmarks.vertex = human.landmarks.vertex(eye);
         if p.Results.calcLandmarkFovea
            eye.landmarks.fovea = human.landmarks.fovea(eye);
