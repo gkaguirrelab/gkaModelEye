@@ -328,8 +328,8 @@ lensLine(11) = 1; % rays intersect concave lens surface
 lensLine(12:17) = boundingBoxLens;
 lensLine(18) = 1; % must intersect
 
-% The ray emerges from the front contact lens surface into the
-% refractive index of the tear film
+% The ray emerges from the front contact lens surface into the refractive
+% index of the tear film
 lensLine(end) = tearRefractiveIndex;
 opticalSystemOut = [opticalSystemOut; lensLine];
 
@@ -346,8 +346,8 @@ tearLine(11) = 1; % rays intersect concave lens surface
 tearLine(12:17) = boundingBoxTears;
 tearLine(18) = 1; % must intersect
 
-% The ray emerges from the tear film into the refractice index of
-% the medium
+% The ray emerges from the tear film into the refractice index of the
+% medium
 tearLine(end) = mediumRefractiveIndex;
 opticalSystemOut = [opticalSystemOut; tearLine];
 
