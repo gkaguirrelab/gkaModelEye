@@ -382,7 +382,11 @@ switch p.Results.surfaceSetName
         % Assemble the surface plot colors
         surfaceColors = [eye.cornea.plot.color(3); eye.cornea.plot.color(3)];
         
-        % Add a contact lens if requested
+        % Add a contact lens if requested. We are going to model the glint
+        % as taking place at the corneal tear film, regardless of the
+        % presence of the contact lens. This might be introducing some
+        % error, and I'll probably want to return to test if having the
+        % glint off the contact lens tear film is more accurate.
         if ~isempty(p.Results.contactLens)
             switch length(p.Results.contactLens)
                 case 1
@@ -397,16 +401,16 @@ switch p.Results.surfaceSetName
             surfaceColors = [surfaceColors; {[.5 .5 .5]}; {'blue'}];
         end
 
-        % Now reverse and combine this system to give us a path from the
-        % medium to the tear film        
+        % Reverse the system to give us a path from the medium to the
+        % corneal tear film
         opticalSystem = reverseSystemDirection(opticalSystem);
         surfaceColors = flipud([surfaceColors(2:end); {[nan nan nan]}]);
         surfaceLabels = flipud([surfaceLabels(2:end); {'cameraMedium'}]);
         
-        % Set the refractive index of the tearfilm surface to be that of
-        % the medium, with a negative value. This results in a ray that is
-        % reflected and does not undergo refraction
-        opticalSystem(end,19) = -mediumRefractiveIndex;
+        % Set the refractive index of the corneal tear film to be that of
+        % the prior surface, with a negative value. This results in a ray
+        % that is reflected and does not undergo refraction
+        opticalSystem(end,19) = -opticalSystem(end-1,19);
         
         % If the optical system has more than two rows, that means we have
         % surfaces in between the medium and the tear film. In this case,
