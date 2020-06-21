@@ -382,11 +382,7 @@ switch p.Results.surfaceSetName
         % Assemble the surface plot colors
         surfaceColors = [eye.cornea.plot.color(3); eye.cornea.plot.color(3)];
         
-        % Add a contact lens if requested. We are going to model the glint
-        % as taking place at the corneal tear film, regardless of the
-        % presence of the contact lens. This might be introducing some
-        % error, and I'll probably want to return to test if having the
-        % glint off the contact lens tear film is more accurate.
+        % Add a contact lens if requested
         if ~isempty(p.Results.contactLens)
             switch length(p.Results.contactLens)
                 case 1
@@ -402,28 +398,23 @@ switch p.Results.surfaceSetName
         end
 
         % Reverse the system to give us a path from the medium to the
-        % corneal tear film
+        % eye
         opticalSystem = reverseSystemDirection(opticalSystem);
         surfaceColors = flipud([surfaceColors(2:end); {[nan nan nan]}]);
         surfaceLabels = flipud([surfaceLabels(2:end); {'cameraMedium'}]);
         
-        % Set the refractive index of the corneal tear film to be that of
-        % the prior surface, with a negative value. This results in a ray
-        % that is reflected and does not undergo refraction
-        opticalSystem(end,19) = -opticalSystem(end-1,19);
-        
-        % If the optical system has more than two rows, that means we have
-        % surfaces in between the medium and the tear film. In this case,
-        % we have to add the surfaces heading back out.
-        if size(opticalSystem,1)>2
-            opticalSystemR = reverseSystemDirection(opticalSystem);
-            surfaceColorsR = flipud([surfaceColors(2:end); {[nan nan nan]}]);
-            surfaceLabelsR = flipud([surfaceLabels(2:end); eye.cornea.label(3)]);            
-            
-            opticalSystem = [opticalSystem; opticalSystemR(3:end,:)];
-            surfaceColors = [surfaceColors; surfaceColorsR(3:end)];
-            surfaceLabels = [surfaceLabels; surfaceLabelsR(3:end)];
-        end
+        % Retain the first two rows of the optical system, which will be
+        % the initial state of the ray in the medium, and the first tear
+        % film (which could either be the corneal or contact lens surface
+        % tear film)
+        opticalSystem = opticalSystem(1:2,:);
+        surfaceColors = surfaceColors(1:2);
+        surfaceLabels = surfaceLabels(1:2);
+                
+        % Set the refractive index of the tear film to be that of the prior
+        % surface, with a negative value. This results in a ray that is
+        % reflected and does not undergo refraction
+        opticalSystem(end,19) = -opticalSystem(end-1,19);       
         
     otherwise
         error('Unrecognized surfaceSetName');
