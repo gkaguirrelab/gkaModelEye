@@ -69,13 +69,13 @@ function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldOri
     sceneGeometry = createSceneGeometry();
     eyePose = [-5, 3, 0, 2];
     cameraNodalPoint = sceneGeometry.cameraPosition.translation;
-    irSourceLocation = cameraNodalPoint - [14; 0; 0];
+    irSourceLocation = cameraNodalPoint - sceneGeometry.cameraPosition.glintSourceRelative;
     rotationCenters = sceneGeometry.eye.rotationCenters;
     opticalSystemFixRL = sceneGeometry.refraction.cameraToMedium.opticalSystem;
     opticalSystemRot = sceneGeometry.refraction.glint.opticalSystem;
     opticalSystemFixLR = sceneGeometry.refraction.mediumToCamera.opticalSystem;
     [outputRay, initialRay, targetIntersectError ] = findGlintRay( irSourceLocation, eyePose, cameraNodalPoint, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR );
-    outputRayCached = [ -0.016925502358049   0.557790100924268  -0.401096265941778;   0.994186649790770   0.093151851770839  -0.053996647020605];
+    outputRayCached = [ -0.091786734367945   1.389188939097675  -0.398169054719701;   0.994809764734928   0.086227957075916  -0.054021027448119 ];
     assert(max(max(abs(outputRay - outputRayCached))) < 1e-6)
 %}
 

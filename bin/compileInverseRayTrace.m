@@ -48,7 +48,7 @@ function compileInverseRayTrace( varargin )
     sceneGeometry = createSceneGeometry();
     eyePose = [-5, 3, 0, 2];
     cameraNodalPoint = sceneGeometry.cameraPosition.translation;
-    irSourceLocation = cameraNodalPoint - [14; 0; 0];
+    irSourceLocation = cameraNodalPoint - sceneGeometry.cameraPosition.glintSourceRelative;
     rotationCenters = sceneGeometry.eye.rotationCenters;
     opticalSystemFixRL = sceneGeometry.refraction.cameraToMedium.opticalSystem;
     opticalSystemRot = sceneGeometry.refraction.glint.opticalSystem;
