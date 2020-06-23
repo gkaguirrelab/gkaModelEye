@@ -65,8 +65,8 @@ eyePose = [20 5 0 3];
 backgroundImage = zeros(480,640)+0.5;
 
 % These are the elements of the model eye that we will render
-modelEyeLabelNames = {'retina' 'irisPerimeter' 'pupilEllipse' 'cornea'};
-modelEyePlotColors = {'.w' 'ob' '-g' '.y'};
+modelEyeLabelNames = {'retina' 'irisPerimeter' 'pupilEllipse' 'cornea' 'glint_01'};
+modelEyePlotColors = {'.w' 'ob' '-g' '.y' 'Qr'};
 
 % Render
 figHandle = renderEyePose(eyePose, sceneGeometry,...
