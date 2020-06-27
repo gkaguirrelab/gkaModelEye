@@ -1,4 +1,4 @@
-function M = calcAngularMagnification(eye, varargin)
+function [M, stdM] = calcAngularMagnification(eye, varargin)
 % Calcuates the percept angular magnification produced by artificial lenses
 %
 % Syntax:
@@ -7,7 +7,7 @@ function M = calcAngularMagnification(eye, varargin)
 % Description
 %   Calculates the angular magnification (as seen by the retina) produced
 %   by the addition of artificial lenses (contacts or spectacles). Values
-%   greater than 1 indicate magnification, values less than one reflect
+%   greater than 1 indicate magnification, values less than 1 reflect
 %   minification.
 %
 % Inputs:
@@ -17,7 +17,7 @@ function M = calcAngularMagnification(eye, varargin)
 %  'cameraMedium'         - String, options include:
 %                           {'air','water','vacuum'}. This sets the index
 %                           of refraction of the medium between the eye and
-%                           the medium.
+%                           the camera.
 %  'contactLens'          - Scalar or 1x2 vector, with values for the lens
 %                           refraction in diopters, and (optionally) the
 %                           index of refraction of the lens material. If
@@ -32,14 +32,17 @@ function M = calcAngularMagnification(eye, varargin)
 %                           source of the magnified image.
 %
 % Outputs:
-%   M                     - Scalar. The magnification produced by the
-%                           system.
+%   M                     - Scalar. The central tendency of the
+%                           magnification produced by the system.
+%   stdM                  - Scalar. The standard deviation of the
+%                           magnification as measured from a range of
+%                           positions (±20 degrees) in the visual field.
 %
 % Examples:
 %{
     eye = modelEyeParameters;
     diopters = -4;
-    M = calcAngularMagnification(eye,'spectacleLens',diopters);
+    [M, stdM] = calcAngularMagnification(eye,'spectacleLens',diopters);
     outline = sprintf('The angular magnfication on the retina produced by a %d diopter spectacle lens is x%2.2f \n',diopters,M);
     fprintf(outline)
     % Compare the value to the value in the table reported here:
@@ -48,7 +51,7 @@ function M = calcAngularMagnification(eye, varargin)
 %}
 %{
     % Replicate Figure 1 of: WESTHEIMER, GERALD. "The visual world of the
-    % new contact Lens wearer." The Australian Journal of Optometry 46.5
+    % new contact lens wearer." The Australian Journal of Optometry 46.5
     % (1963): 124-127.
     % Using the same kvals as Westheimer
     kvals= [43.5, 43.5, 0, 0, 0];
@@ -170,7 +173,8 @@ for hh=1:length(horiz)
     end
 end
 
-% Report the mean magnification across the sampled positions
+% Report the std and mean magnification across the sampled positions
+stdM = std(M);
 M = mean(M);
 
 end

@@ -104,10 +104,10 @@ if ~isfield(sceneGeometry.eye.landmarks,'fovea')
 end
 
 % Anonymous function to return a fixation coordinate at a given azimuth and
-% elevation relative to the origin of the eye coordinate space (the
-% un-rotated corneal apex).
-% -180 <= theta <= 180 (azimuth)
-% -90 <= phi <= 90 (elevation)
+% elevation relative to the origin of the eye coordinate space (the un-
+% rotated corneal apex).
+%   -180 <= theta <= 180 (azimuth)
+%   -90 <= phi <= 90 (elevation)
 fixEyeWorldTargetFunc = @(theta,phi) [cosd(phi)*cosd(theta);cosd(phi)*sind(theta);sind(phi)].*fixTargetDistance;
 
 % Anonymous function to return the Euclidean distance between the fovea and

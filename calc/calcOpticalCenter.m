@@ -6,18 +6,18 @@ function [opticalCenterCoord, outputRays, rayPaths] = calcOpticalCenter(eye,came
 %
 % Description
 %   The nodal points of a lens have the property that a ray aimed at the
-%   first point will then emerge from second point with the same angle
-%   relative to the optical axis. For the aspheric, astigmatic optical
-%   system of the eye, single nodal points do not exist. Nonetheless, an
-%   approximation of the nodal points is useful. Given a model eye, this
-%   routine examines a bundle of rays arising from different points in the
-%   retina. For each point, the ray is found that exits the corneal surface
-%   at the same angles (relative to the optical axis) with which it arose
-%   from the retina (a "nodal ray"). The ray bundle is then examined to
-%   identify the axial position at which the cross-sectional area of the
-%   ray bundle is smallest (i.e., the "waist" fo the bundle). The center of
-%   the waist at this location is returned as the effective nodal point
-%   coordinate, or more properly termed, the optical center.
+%   first point will emerge from second point with the same angle relative
+%   to the optical axis. For the aspheric, astigmatic optical system of the
+%   eye, single nodal points do not exist. Nonetheless, an approximation of
+%   the nodal points is useful. Given a model eye, this routine examines a
+%   bundle of rays arising from different points in the retina. For each
+%   point, the ray is found that exits the corneal surface at the same
+%   angles (relative to the optical axis) with which it arose from the
+%   retina (a "nodal ray"). The bundle is then examined to identify the
+%   axial position at which the cross-sectional area of the ray bundle is
+%   smallest (i.e., the "waist" of the bundle). The center of the waist at
+%   this location is returned as the effective nodal point coordinate, or
+%   more properly termed, the optical center.
 %
 %   These ideas are discussed in:
 %

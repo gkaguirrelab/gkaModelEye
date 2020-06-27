@@ -20,7 +20,8 @@ function [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopter
 %   passed to the createSceneGeometry fucnction.
 %
 %   The routine searches over navarroD parameter values until a pair of
-%   parallel rays intersect each other on the surface of retina.
+%   rays that arise from the near focal point intersect each other on the
+%   surface of retina.
 %
 % Inputs:
 %  'accommodationDiopters' - Scalar that supplies the accommodation state
@@ -90,7 +91,7 @@ else
     myRayOrigin = @(x) (1000/accommodationDiopters) - sum(myPrincipalPoint(x).*[1;0;0]);
     
     % Calculate the angle with which the rays diverge from the optical axis
-    % such that they will intersect the plane at the ray height
+    % such that they will intersect the principal plane at the ray height
     myAngle = @(x) rad2deg(atan2(rayHeight,-myRayOrigin(x)));
     
     % Define the two rays
@@ -99,7 +100,7 @@ else
 end
 
 
-%% Anonymous functions internal focal point
+%% Anonymous functions for the internal focal point
 
 % The point of intersection of the rays within the eye
 myInternalFocalPoint = @(x) quadric.distanceRays(rayTraceQuadrics(myR1(x), mySystem(x)),rayTraceQuadrics(myR2(x), mySystem(x)));
@@ -115,8 +116,8 @@ myObj = @(x) surfaceDistance(myRetina(x),myInternalFocalPoint(x))^2;
 %% Perform the search
 [navarroD, fVal] = fminsearch(myObj,5);
 
-% Detect and warn if no accurate solution could be found, which is the
-% case for some combinations of model eyes and accommodation states.
+% Detect and warn if no accurate solution is found, which is the case for
+% some combinations of model eyes and accommodation states.
 if fVal > 1e-6
     warnString = ['Cannot accurately accommodate the eye to ' num2str(accommodationDiopters) ' diopters'];
     warning('calcAccommodation:cannotFocus',warnString);
@@ -132,6 +133,12 @@ end
 %% LOCAL FUNCTIONS
 
 function fVal = surfaceDistance(myRetina,coord)
+% Takes as input the vector representation of the quadric surface for the
+% retina, and a 3D coordinate. The fVal returned is the distance of the
+% coordinate from the surface, which is given by evaluating the implicit
+% function defined by the quadric for the [x y z] values of the coordinate.
+% The property of the implicit form of the quadric is that it has a value
+% of zero for points on the quadric surface.
 funcS = quadric.vecToFunc(myRetina);
 fVal = funcS(coord(1),coord(2),coord(3));
 end
