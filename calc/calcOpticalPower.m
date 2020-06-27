@@ -1,5 +1,5 @@
 function [diopters, focalPoint] = calcOpticalPower(opticalSystem, rayStartDepth, rayHeight)
-% Calcuate the cameraToEye-direction refractive power of an opticalSystem
+% Calcuate the refractive power of an opticalSystem
 %
 % Syntax:
 %  [diopters, focalPoint] = calcOpticalPower(opticalSystem)
@@ -10,7 +10,7 @@ function [diopters, focalPoint] = calcOpticalPower(opticalSystem, rayStartDepth,
 %	worn by someone with myopia to correct their vision.
 %
 %   Some optical systems end in a medium with a refractive index other than
-%   one. In this case the optical power is given by:
+%   unity. In this case the optical power is given by:
 %
 %       diopters = refractiveIndex / effectiveFocalLength
 %
@@ -44,8 +44,6 @@ function [diopters, focalPoint] = calcOpticalPower(opticalSystem, rayStartDepth,
 %                                       routine exits with nans for the
 %                                       outputRay.
 %                               n     - Refractive index of the surface.
-%   forceEyeToCamera      - Logical. Optional. Defaults to false if not
-%                           set.
 %   rayStartDepth         - Scalar. Point of origin of the ray along the
 %                           optical axis used to probe the system. Defaults
 %                           to 100.
@@ -54,20 +52,18 @@ function [diopters, focalPoint] = calcOpticalPower(opticalSystem, rayStartDepth,
 %
 % Outputs:
 %   diopters              - Scalar. The optical power of the system.
-%                           Calculated in the cameraToEye direction unless
-%                           forceEyeToCamera is set to true.
 %   focalPoint            - 3x1 matrix. The location of the focal point.
 %
 % Examples:
 %{
-    % Determine the refractive power of the unaccomadated eye
+    % Determine the refractive power of the unaccommodated eye
     sceneGeometry = createSceneGeometry('navarroD',calcAccommodation(0));
     diopters = calcOpticalPower(sceneGeometry.refraction.cameraToRetina.opticalSystem);
     outline = sprintf('The refractive power of the unaccommodated model eye is %2.2f diopters.\n',diopters);
     fprintf(outline)
 %}
 %{
-    % Determine the refractive power of the lens in air
+    % Determine the refractive power of the cystraline lens in air
     sceneGeometry = createSceneGeometry('navarroD',calcAccommodation(0));
     opticalSystem = sceneGeometry.refraction.retinaToStop.opticalSystem;
     opticalSystem = reverseSystemDirection(opticalSystem);
