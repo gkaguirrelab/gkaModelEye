@@ -9,7 +9,7 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %	with the refractive power specified in the passed variable. Note that a
 %	ray emerging from the eye encounters two concave surfaces for this
 %	lens, so both surfaces will have a negative radius of curvature for
-%	rayTraceEllipsoids().
+%	rayTraceQuadrics().
 %
 %   The lenses are created (a virtual grind) through an optimization to
 %   match the desired refractive power. There is a bit of an issue that the
@@ -104,6 +104,7 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
     plotOpticalSystem('newFigure',false,'rayPath',focalRay2,'rayColor','blue');
 %}
 
+
 %% input parser
 p = inputParser; p.KeepUnmatched = true;
 
@@ -133,6 +134,7 @@ if lensRefractionDiopters==0
     return
 end
 
+
 %% Setup fixed lens paramters
 % Distribute the parameters into variables
 lensVertexDistance = p.Results.lensVertexDistance;
@@ -149,8 +151,7 @@ else
 end
 
 % Initialize the lens optical system
-lensSystem = nan(1,19);
-lensSystem(19) = mediumRefractiveIndex;
+lensSystem = initializeOpticalSystem(mediumRefractiveIndex);
 
 % If the opticalSystemIn is empty, initialize it as well
 if isempty(opticalSystemIn)
@@ -208,10 +209,7 @@ myLens = @(x) ...
     frontCurvature, frontCenter(x(2)), ...
     [lensVertexDistance/2, lensVertexDistance/2], lensVertexDistance);
 
-% Calculate the power of the lens defined by the x parameters. We perform
-% this calculation going in the cameraToEye direction, as this is the
-% expression of optical power that is relevant for lens design. So, we have
-% to reverse the optical system.
+% Calculate the power of the lens defined by the x parameters.
 myDiopters = @(x) calcOpticalPower(myLens(x));
 
 % Define an objective which is the difference between the desired and
@@ -229,7 +227,7 @@ myConstraint = @(x) checkLensShape(myLens(x));
 backCurvatureX0 = sign(lensRefractionDiopters) * ...
     ((mediumRefractiveIndex-lensRefractiveIndex)/(lensRefractionDiopters - frontDiopters))*1000;
 
-% define some search options
+% Define some search options
 options = optimoptions(@fmincon,...
     'Diagnostics','off',...
     'Display','off');
@@ -280,7 +278,6 @@ end % function - addSpectacleLens
 
 
 %% LOCAL FUNCTIONS
-
 
 function [c,ceq, intersectHeights] = checkLensShape(opticalSystem)
 

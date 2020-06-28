@@ -49,7 +49,6 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %                           angles from the quadric itself, but this turns
 %                           out to be complicated.
 %
-%
 % Outputs:
 %   opticalSystemOut      - An (m+1)x19 matrix, corresponding to the
 %                           opticalSystemIn with the addition of the
@@ -59,7 +58,7 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %{
     % Confirm that lenses of appropriate power are being created
     lensDiopters = 3;
-    eye = modelEyeParameters('sphericalAmetropia',-2);
+    eye = modelEyeParameters('sphericalAmetropia',3);
     opticalSystemIn = assembleOpticalSystem(eye,'surfaceSetName','retinaToCamera','opticalSystemNumRows',[]);
     eyePower = calcOpticalPower(opticalSystemIn);
     opticalSystemOut = addContactLens(opticalSystemIn,lensDiopters,'cornealRotation',eye.cornea.rotation);
@@ -97,7 +96,7 @@ if lensRefractionDiopters==0
 end
 
 
-%% Setup fixed lens paramters;
+%% Setup fixed lens paramters
 
 % The passed optical system will have a ray that emerges into a medium with
 % a specified index of refraction. We store the index of refraction of
@@ -170,7 +169,7 @@ myConstraint = @(x) checkLensShape(mySystem(x));
 frontCurvatureX0 = -backRadii(1);
 thicknessX0 = p.Results.minimumLensThickness;
 
-% define some search options
+% Define some search options
 options = optimoptions(@fmincon,...
     'Diagnostics','off',...
     'Display','off');
@@ -220,8 +219,8 @@ opticalSystemOut =  assembleLensSystem(opticalSystemIn, p.Results.lensRefractive
 
 end % function - addContactLens
 
-%% LOCAL FUNCTIONS
 
+%% LOCAL FUNCTIONS
 
 function [c,ceq, intersectHeight] = checkLensShape(opticalSystem)
 
@@ -264,8 +263,8 @@ for hh = 1:length(horiz)
         Dback = sqrt(sum(Xback.^2));
         Dfront = sqrt(sum(Xfront(end,:).^2));
         
-        % This is the thickness of the lens at its edge. It is possible for this
-        % value to be negative for some values of lens curvature.
+        % This is the thickness of the lens at its edge. It is possible for
+        % this value to be negative for some values of lens curvature.
         thicknessAtEdge(end+1) = Dfront - Dback;
     end
 end
@@ -296,9 +295,8 @@ end
 
 
 function opticalSystemOut = assembleLensSystem(opticalSystemIn, lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, frontCurvature, frontCenter, intersectHeight, tearThickness, cornealRotation)
-% Assembles and returns an optical system matrix given input
-
-% We are always operating in the 'eyeToCamera' system direction
+% Assembles and returns an optical system matrix given input. We are always
+% operating in the 'eyeToCamera' system direction
 
 % Obtain the radii of the last surface of the opticalSystemIn
 backRadii = quadric.radii(opticalSystemIn(end,1:10));
@@ -306,7 +304,7 @@ backRadii = quadric.radii(opticalSystemIn(end,1:10));
 % Create radii for the contact lens that account for the astigmatic
 % ellipsoid form of the cornea
 meanCurvDelta = mean(backRadii(2:3)+frontCurvature);
-frontRadii = [-backRadii(1), -backRadii(2)-meanCurvDelta,  -backRadii(3)-meanCurvDelta];
+frontRadii = [-backRadii(1), -backRadii(2)-meanCurvDelta, -backRadii(3)-meanCurvDelta];
 
 % The opticalSystemIn ends with the outer surface of the tear film, from
 % which the ray emerges into the refractive index of the medium. When a
@@ -346,7 +344,7 @@ tearLine(11) = 1; % rays intersect concave lens surface
 tearLine(12:17) = boundingBoxTears;
 tearLine(18) = 1; % must intersect
 
-% The ray emerges from the tear film into the refractice index of the
+% The ray emerges from the tear film into the refractive index of the
 % medium
 tearLine(end) = mediumRefractiveIndex;
 opticalSystemOut = [opticalSystemOut; tearLine];
