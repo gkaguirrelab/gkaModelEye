@@ -95,4 +95,4 @@ else
 end
         
         
-end % assembleOpticalSystem
+end % reverseSystemDirection

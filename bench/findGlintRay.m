@@ -2,7 +2,7 @@ function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldOri
 % Finds the ray that starts at worldOrigin and intersects worldTarget
 %
 % Syntax:
-%  [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldOrigin, eyePose, worldTarget, rotationCenters, opticalSystem )
+%  [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldOrigin, eyePose, worldTarget, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR )
 %
 % Description:
 %   This routine returns the outputRay from the last surface of an optical
@@ -49,19 +49,19 @@ function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldOri
 %                               refraction.mediumToCamera.opticalSystem
 %
 % Outputs:
-%   outputRay             - 2x3 matrix that specifies the ray as a unit 
-%                           vector of the form [p; d], corresponding to
+%   outputRay             - 2x3 matrix that specifies in the eye coordinate
+%                           space the ray as a unit vector of the form [p;
+%                           u], corresponding to
 %                               R = p + t*u
-%                           where p is vector origin, d is the direction
+%                           where p is vector origin, u is the direction
 %                           expressed as a unit step, and t is unity.
-%                           dimensions p1, p2, p3.
-%   initialRay            - A 2x3 vector that specifies in eyeWorld space
-%                           the vector arising from the eyePoint that will
-%                           intersect the worldTarget.
+%                           Dimensions are p1, p2, p3.
+%   initialRay            - A 2x3 vector that specifies in eye coordinate
+%                           space the vector arising from the worldPoint
+%                           that will intersect the worldTarget. Dimensions
+%                           are p1, p2, p3.
 %   targetIntersectError  - The distance (in mm) between the worldTarget
-%                           and the closest passage of a ray arising from
-%                           the eyeWorld point after it exits the optical
-%                           system.
+%                           and the closest passage of the outputRay
 %
 % Examples:
 %{
@@ -103,8 +103,8 @@ options = optimset('TolFun',TolFun,'TolX',TolX,'Display','off');
 
 % This structure will hold the rotation matrices to apply eye rotation. We
 % define it here and then save the filled version of the variable that is
-% returned by rotateEyeCoord. We then don't need to compute it again,
-% hopefully saving on execution time.
+% returned by rotateEyeCoord. We won't need to compute it again, hopefully
+% saving on execution time.
 Rstruc = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3),'empty',true);
 
 

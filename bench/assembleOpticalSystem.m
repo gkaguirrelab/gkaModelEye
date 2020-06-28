@@ -9,11 +9,11 @@ function [opticalSystem, surfaceLabels, surfaceColors, magnification] = assemble
 %   define a set of optical surfaces for ray tracing. In addition to an eye
 %   structure, the routine requires specification of the particular set of
 %   surfaces to be assembled. By default, the surfaces that define the
-%   pupil to medium path are returned.
+%   pupil to medium are returned.
 %
-%   The optical system of the eye (and any contact lens) is separate from
-%   the optical system of the medium to the camera. This is to allow
-%   separate behavior for eye rotation of the two systems.
+%   The routine can return the optical system of the eye (and any contact
+%   lens) separate from the optical system of the medium to the camera.
+%   This is to allow separate behavior for eye rotation of the two systems.
 %
 % Inputs:
 %   eye                   - A model eye structure.
@@ -41,8 +41,8 @@ function [opticalSystem, surfaceLabels, surfaceColors, magnification] = assemble
 %                           (optionally) the base curve in doiopters.
 %                           Typically, the spectacleLens is the only item
 %                           within the mediumToCamera or cameratToMedium
-%                           systems.
-%                           empty, no spectacle is added to the model.
+%                           systems. If left empty, no spectacle is added
+%                           to the model.
 %  'opticalSystemNumRows' - Scalar. The optical system is defined with a
 %                           fixed number of rows. This is done so that the
 %                           compiled ray trace routines can expect input

@@ -24,10 +24,10 @@ if nargin == 0
     refractiveIndex = 1;
 end
 
-% The opticalSystem starts with a row of nans
+% The opticalSystem starts with a row of nans...
 opticalSystem = nan(1,19);
 
-% Except for the refractive index value in the last position.
+% ...except for the refractive index value in the last position.
 opticalSystem(1,19) = refractiveIndex;
 
 end

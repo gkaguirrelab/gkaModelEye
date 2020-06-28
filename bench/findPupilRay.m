@@ -2,15 +2,15 @@ function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyeCoord
 % Finds the ray that starts at eyeCoordOrigin and intersects worldTarget
 %
 % Syntax:
-%  [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyeCoordOrigin, eyePose, worldTarget, rotationCenters, opticalSystem )
+%  [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyeCoordOrigin, eyePose, worldTarget, rotationCenters, opticalSystemRot, opticalSystemFix )
 %
 % Description:
 %   This routine returns the outputRay from the last surface of an optical
-%   system for a point that has originated from an eyeWorld coordinate
-%   point and has arrived at an observer positioned at the worldTarget
-%   location. The routine accounts for rotation of the eye specified in the
-%   eyePose variable. The outputRay returned by this routine provides the
-%   location of the virtual image of that point.
+%   system for a point that has originated from an eyeWorld coordinate and
+%   has arrived at an observer positioned at the worldTarget location. The
+%   routine accounts for rotation of the eye specified in the eyePose
+%   variable. The outputRay returned by this routine provides the location
+%   of the virtual image of that point.
 %
 % Inputs:
 %   eyeCoordOrigin        - A 1x3 vector that gives the coordinates (in mm)
@@ -34,8 +34,8 @@ function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyeCoord
 %                           movements. Typically set to: sceneGeometry.
 %                               refraction.stopToMedium.opticalSystem
 %   opticalSystemFix      - Struct. This is the component of the optical
-%                           system that is invariant with eye
-%                           movements. Typically set to: sceneGeometry.
+%                           system that is invariant with eye movements.
+%                           Typically set to: sceneGeometry.
 %                               refraction.mediumToCamera.opticalSystem
 %
 % Outputs:
@@ -44,14 +44,12 @@ function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyeCoord
 %                               R = p + t*u
 %                           where p is vector origin, d is the direction
 %                           expressed as a unit step, and t is unity.
-%                           dimensions p1, p2, p3.
+%                           Dimensions p1, p2, p3.
 %   initialRay            - A 2x3 vector that specifies in eyeWorld space
 %                           the vector arising from the eyeCoordOrigin that will
 %                           intersect the worldTarget.
 %   targetIntersectError  - The distance (in mm) between the worldTarget
-%                           and the closest passage of a ray arising from
-%                           the eyeWorld point after it exits the optical
-%                           system.
+%                           and the closest passage of the outputRay.
 %
 % Examples:
 %{
