@@ -151,13 +151,10 @@ mySystem = @(x) ...
     x(1), frontCenter(x), ...
     -2, tearThickness, p.Results.cornealRotation);
 
-% Calculate the power of the lens defined by the x parameters.
-myDiopters = @(x) calcOpticalPower(mySystem(x));
-
 % Define an objective which is the difference between the desired and
 % measured optical power of the lens
 myObj = @(x) ...
-    abs(targetDiopters - myDiopters(x));
+    abs(targetDiopters - myDiopters(x,mySystem));
 
 % Specify a non-linear constraint that requires that the lens has a
 % positive radial thickness for a field of view that extends 63 degrees
@@ -221,6 +218,36 @@ end % function - addContactLens
 
 
 %% LOCAL FUNCTIONS
+
+function diopters = myDiopters(x, mySystem)
+% Calculate the power of the lens defined by the x parameters.
+
+% mySystem is an anonymous function that provides the opticalSystem given
+% the x parameters of the contact lens.
+opticalSystem = mySystem(x);
+
+% I am encountering occasional "invalid system direction" errors in
+% producing some contact lenses. Placing this calculation in a try-catch
+% block to get some diagnostic information for this event.
+try
+    diopters = calcOpticalPower(opticalSystem);
+catch
+    % Make the diopters something arbitrarily large, so that fmincon will
+    % avoid whatever x parameters produced this error
+    diopters = 1e6;
+    % Print some diagnostic text to help figure out why we are getting
+    % these bad traces
+    fprintf('\n************************************\n')
+    fprintf('addContactLens produced an invalid optical system\n')
+    fprintf('Lens front curvature: %2.4f \n',x(1));
+    fprintf('Lens thickness: %2.4f \n',x(2));
+    fprintf('Optical system matrix:\n');
+    opticalSystem
+    fprintf('************************************\n\n')
+end
+
+end
+
 
 function [c,ceq, intersectHeight] = checkLensShape(opticalSystem)
 
