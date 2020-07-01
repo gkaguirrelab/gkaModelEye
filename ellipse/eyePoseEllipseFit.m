@@ -188,6 +188,11 @@ if sum((p.Results.eyePoseUB(1:3) - p.Results.eyePoseLB(1:3))==0) < 1
     warning('eyePoseEllipseFit:underconstrainedSearch','The eye pose search across possible eye rotations is underconstrained');
 end
 
+% Convert a nan glintCoord to empty
+if any(isnan(glintCoord))
+    glintCoord = [];
+end
+
 % If we have a glintCoord, make sure it is the right vector orientation
 if ~isempty(glintCoord)
     if size(glintCoord,2)~=2
