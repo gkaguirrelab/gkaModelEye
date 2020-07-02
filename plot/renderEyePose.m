@@ -272,9 +272,9 @@ end % loop over label names
 % Add a line that shows the azimuthal plane of rotation. This reflects
 % camera torsion
 if p.Results.showAzimuthPlane
-    [~, ~, imagePoints] = projectModelEye([-50 0 0 1], sceneGeometry);
+    [~, ~, imagePoints] = projectModelEye([-50 0 0 1], sceneGeometry, 'cameraTrans',p.Results.cameraTrans);
     A = nanmean(imagePoints);
-    [~, ~, imagePoints] = projectModelEye([50 0 0 1], sceneGeometry);
+    [~, ~, imagePoints] = projectModelEye([50 0 0 1], sceneGeometry, 'cameraTrans',p.Results.cameraTrans);
     B = nanmean(imagePoints);
     plot([A(1) B(1)],[A(2) B(2)],'-r')
 end
