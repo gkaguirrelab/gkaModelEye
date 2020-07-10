@@ -209,6 +209,10 @@ if any(isnan(p.Results.eyePoseLB)) || ...
     return
 end
 
+% Clear the case of an empty perimeter
+if isempty(Xp) || isempty(Yp)
+    return
+end
 
 %% Set bounds
 
