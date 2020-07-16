@@ -175,7 +175,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 
 
 %% input parser
-p = inputParser; p.KeepUnmatched = true;
+p = inputParser; p.KeepUnmatched = true; p.PartialMatching = false;
 
 % Optional analysis params
 p.addParameter('sceneGeometryFileName','', @(x)(isempty(x) | ischar(x)));

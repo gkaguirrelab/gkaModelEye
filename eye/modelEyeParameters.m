@@ -116,7 +116,7 @@ function eye = modelEyeParameters( varargin )
 
 
 %% input parser
-p = inputParser; p.KeepUnmatched = true;
+p = inputParser; p.KeepUnmatched = true; p.PartialMatching = false;
 
 % Optional
 p.addParameter('sphericalAmetropia',[],@(x)(isempty(x) || isscalar(x)));

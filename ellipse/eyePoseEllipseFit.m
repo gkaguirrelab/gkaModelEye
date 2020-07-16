@@ -149,7 +149,7 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput] =
 
 
 %% Parse input
-p = inputParser;
+p = inputParser; p.KeepUnmatched = false; p.PartialMatching = false;
 
 % Required
 p.addRequired('Xp',@isnumeric);

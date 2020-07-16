@@ -61,7 +61,7 @@ function [transparentEllipseParams, RMSE, constraintError, fitAtBound] = constra
 
 
 %% Parse input
-p = inputParser;
+p = inputParser; p.KeepUnmatched = false; p.PartialMatching = false;
 
 % Required
 p.addRequired('Xp',@isnumeric);

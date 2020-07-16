@@ -43,7 +43,7 @@ function n = returnRefractiveIndex( material, wavelength, varargin )
 %}
 
 %% input parser
-p = inputParser;
+p = inputParser; p.KeepUnmatched = false; p.PartialMatching = false;
 
 % Required
 p.addRequired('material',@ischar);
