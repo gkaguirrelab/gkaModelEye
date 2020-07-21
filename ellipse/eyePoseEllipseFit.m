@@ -15,8 +15,8 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput] =
 %
 %   If a glint is provided, a search across translation of the camera is
 %   also supported. Note that there is little ability to detect changes in
-%   camera depth, so the bounds of the search on camera depth are set to
-%   zero by default.
+%   camera depth, so the routine will provide a warning in the absence of a
+%   glint if the bounds of the search on camera depth are not zero.
 %
 %   The search is constrained by the upper and lower bounds of the eyePose.
 %   The default values specified here represent the physical boundaries of
