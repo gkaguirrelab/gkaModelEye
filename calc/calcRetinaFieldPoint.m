@@ -46,7 +46,7 @@ function [G,X,angleError] = calcRetinaFieldPoint( eye, degField, cameraMedium )
 %{
     % mm of retina per degree of visual angle at the fovea for an
     % emmetropic eye at resting accommodation.
-    deltaDegEuclidean = 1e-3;
+    deltaDegEuclidean = 1e-2;
     deltaAngles = [sqrt(deltaDegEuclidean/2) sqrt(deltaDegEuclidean/2)];
     length = [];
     mmPerDeg = [];
@@ -58,7 +58,7 @@ function [G,X,angleError] = calcRetinaFieldPoint( eye, degField, cameraMedium )
     % Confirm that the error in calculation of the retinal field point is 
     % two orders of magnitude less than the deltaDeg used to make the
     % point estimate of magnification. If this assertion fails, need to
-    % consider that two small a delta is being used relative to the 
+    % consider that too small a delta is being used relative to the 
     % accuracy of specifying retinal positions.
     assert( (deltaDegEuclidean/max([angleError0 angleError1])) > 1e2 )
 %}
