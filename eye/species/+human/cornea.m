@@ -150,17 +150,35 @@ else
 
 end
 
+% Store the value
+cornea.axialRadius = corneaAxialRadius;
+
 
 %% Diopters to transverse radii
 % The front of the cornea is a refractive surface, the optical power of
-% which can be specified in units of diopters. Because it is aspheric, two
-% values are used. The first value is always smaller, and thus describes
-% the "flatter" surface of the cornea. The second value is always larger,
-% and describes the curvature of the surface of the cornea oriented 90
-% degrees away from the flatest surface. These "k" values may be converted
-% into ellipsoidal radii given the refractice index of the cornea and the
-% axial radius of the cornea. We specify here an anonymous function to
-% perform conversions between power in diopters and radius in mm.
+% which can be specified in units of keratometric diopters. Because it is
+% aspheric, two values are used. The first value is always smaller, and
+% thus describes the "flatter" surface of the cornea. The second value is
+% always larger, and describes the curvature of the surface of the cornea
+% oriented 90 degrees away from the flatest surface.
+%
+% These k values are returned by an ophthalmologic instrument that measures
+% corneal curvature (expressed as radius of curvature at the corneal apex)
+% and then converts that number into an equivalent optical power. The
+% optical power reported is tweaked a bit so that the effect of the
+% posterior surface of the cornea is included, and to force a relationship
+% that Roc 7.5 mm == 45 diopters. To do so, a "keratometric" index of
+% refraction of 1.3375 for the cornea is assumed, yielding this equation:
+%
+%       k (diopters) = (1.3375 - 1) / RoC (meters)
+%
+% Given the radius-of-curvature, we can obtain the corresponding semi-axes
+% of the corneal ellipsoid if we know the length of the semi-axis of the
+% cornea in the axial direction.
+%
+% These anonymous functions convert between keratometric power (in
+% diopters) to the corresponding ellipsoid semi-axis length (in mm).
+%
 radiusFromPower = @(k) sqrt(corneaAxialRadius.*1000.*(1.3375-1)./k);
 powerFromRadius = @(r) (corneaAxialRadius * 337.5) ./ r.^2;
 
