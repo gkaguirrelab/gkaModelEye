@@ -182,16 +182,16 @@ if sign(lensRefractionDiopters)==1
     % upper bound on thickness. We allow the lower bound on thickness to go
     % below the "minimum", as otherwise we can't grind lenses that will
     % handle small (<1) positive corrections.
-    x0 = [frontCurvatureX0*0.75 max([p.Results.minimumLensThickness, 0.042*lensRefractionDiopters])];
-    lb = [frontCurvatureX0,p.Results.minimumLensThickness/4];
-    ub = [frontCurvatureX0/4,thicknessX0*10];
+    x0 = [frontCurvatureX0*0.75, max([p.Results.minimumLensThickness, 0.042*lensRefractionDiopters])];
+    lb = [frontCurvatureX0, p.Results.minimumLensThickness/4];
+    ub = [frontCurvatureX0/4, thicknessX0*10];
     [x, fVal] = fmincon(myObj,x0,[],[],[],[],lb,ub,myConstraint,options);
 else
     % This is a "minus" lens. Remove the non-linear shape constraint. Pin
     % the thickness to the minimum specified value.
-    x0 = [frontCurvatureX0 thicknessX0];
-    lb = [frontCurvatureX0*0.75,p.Results.minimumLensThickness];
-    ub = [frontCurvatureX0/4,p.Results.minimumLensThickness];
+    x0 = [frontCurvatureX0*0.75, thicknessX0];
+    lb = [frontCurvatureX0, p.Results.minimumLensThickness];
+    ub = [frontCurvatureX0/4, p.Results.minimumLensThickness];
     [x, fVal] = fmincon(myObj,x0,[],[],[],[],lb,ub,[],options);
 end
 
