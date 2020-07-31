@@ -195,7 +195,7 @@ else
 end
 frontSurfaceRadii = ...
     [corneaAxialRadius, radiusFromPower(cornea.kvals(1)), radiusFromPower(cornea.kvals(2))];
-
+cornea.frontSurfaceRadii = frontSurfaceRadii;
 
 %% Cornea ellipsoid rotation
 % The cornea can be rotated out of alignment with the optical axis of the
@@ -227,7 +227,7 @@ corneaRotation = [cornea.kvals(3) cornea.kvals(5) cornea.kvals(4)];
 % Account for the effects of eye laterality upon the angles
 switch eye.meta.eyeLaterality
     case 'Right'
-        corneaRotation = corneaRotation;
+        % nothing to do
     case 'Left'
         corneaRotation = corneaRotation.*[1 1 -1];
     otherwise
