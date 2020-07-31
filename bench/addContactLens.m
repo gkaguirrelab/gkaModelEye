@@ -163,7 +163,7 @@ mySystem = @(x) ...
     assembleLensSystem(opticalSystemIn, ...
     p.Results.lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, ...
     x(1), frontCenter(x), ...
-    -2, tearThickness, p.Results.cornealRotation);
+    -2, tearThickness, p.Results.cornealRotation, backRadii);
 
 % Define an objective which is the difference between the desired and
 % measured optical power of the lens
@@ -335,12 +335,9 @@ intersectHeight = min(Xfront(:,1));
 end
 
 
-function opticalSystemOut = assembleLensSystem(opticalSystemIn, lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, frontCurvature, frontCenter, intersectHeight, tearThickness, cornealRotation)
+function opticalSystemOut = assembleLensSystem(opticalSystemIn, lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, frontCurvature, frontCenter, intersectHeight, tearThickness, cornealRotation, backRadii)
 % Assembles and returns an optical system matrix given input. We are always
 % operating in the 'eyeToCamera' system direction
-
-% Obtain the radii of the last surface of the opticalSystemIn
-backRadii = quadric.radii(opticalSystemIn(end,1:10));
 
 % Create radii for the contact lens that account for the astigmatic
 % ellipsoid form of the cornea
