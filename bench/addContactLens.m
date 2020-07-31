@@ -225,7 +225,7 @@ frontCenter = frontCenter(x);
 
 
 %% Add the lens
-opticalSystemOut =  assembleLensSystem(opticalSystemIn, p.Results.lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, frontCurvature, frontCenter, intersectHeight, tearThickness, p.Results.cornealRotation);
+opticalSystemOut =  assembleLensSystem(opticalSystemIn, p.Results.lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, frontCurvature, frontCenter, intersectHeight, tearThickness, p.Results.cornealRotation, backRadii);
 
 
 end % function - addContactLens
