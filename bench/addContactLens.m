@@ -77,6 +77,8 @@ p.addRequired('lensRefractionDiopters',@isnumeric);
 % Optional
 p.addParameter('lensRefractiveIndex',returnRefractiveIndex( 'hydrogel', 'NIR' ),@isnumeric);
 p.addParameter('minimumLensThickness',0.05,@isnumeric);
+p.addParameter('frontSurfaceRadii',[],@isnumeric);
+p.addParameter('tearThickness',[],@isnumeric);
 p.addParameter('cornealRotation',[0, 0, 0],@isnumeric);
 
 % parse
@@ -112,8 +114,20 @@ tearRefractiveIndex = opticalSystemIn(end-1,19);
 tearS = tearFilm(1:10);
 backCenter = quadric.center(tearS);
 backCenter = backCenter(1);
-backRadii = quadric.radii(tearS);
-tearThickness = backRadii(1)+backCenter(1);
+
+% Derive the radii of the backSurface of the contact lens from the tear
+% film, or the passed value.
+if isempty(p.Results.frontSurfaceRadii)
+    backRadii = quadric.radii(tearS);
+else
+    backRadii = p.Results.frontSurfaceRadii;
+end
+
+if isempty(p.Results.tearThickness)
+    tearThickness = backRadii(1)+backCenter(1);
+else
+    tearThickness = p.Results.tearThickness;
+end
 
 % The desired optical system will have its refractive power plus the called
 % for lens refraction.

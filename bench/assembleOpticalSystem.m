@@ -153,9 +153,9 @@ switch p.Results.surfaceSetName
             switch length(p.Results.contactLens)
                 case 1
                     lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', eye.meta.spectralDomain );
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex,'cornealRotation',eye.cornea.rotation);
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex,'cornealRotation',eye.cornea.rotation,'frontSurfaceRadii',eye.cornea.frontSurfaceRadii);
                 case 2
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2),'cornealRotation',eye.cornea.rotation);
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2),'cornealRotation',eye.cornea.rotation,'frontSurfaceRadii',eye.cornea.frontSurfaceRadii);
                 otherwise
                     error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
             end
@@ -229,9 +229,9 @@ switch p.Results.surfaceSetName
             switch length(p.Results.contactLens)
                 case 1
                     lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', eye.meta.spectralDomain );
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex,'cornealRotation',eye.cornea.rotation);
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex,'cornealRotation',eye.cornea.rotation,'frontSurfaceRadii',eye.cornea.frontSurfaceRadii);
                 case 2
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2),'cornealRotation',eye.cornea.rotation);
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2),'cornealRotation',eye.cornea.rotation,'frontSurfaceRadii',eye.cornea.frontSurfaceRadii);
                 otherwise
                     error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
             end
@@ -303,9 +303,9 @@ switch p.Results.surfaceSetName
             switch length(p.Results.contactLens)
                 case 1
                     lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', eye.meta.spectralDomain );
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex,'cornealRotation',eye.cornea.rotation);
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex,'cornealRotation',eye.cornea.rotation,'frontSurfaceRadii',eye.cornea.frontSurfaceRadii);
                 case 2
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2),'cornealRotation',eye.cornea.rotation);
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2),'cornealRotation',eye.cornea.rotation,'frontSurfaceRadii',eye.cornea.frontSurfaceRadii);
                 otherwise
                     error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
             end
@@ -387,9 +387,9 @@ switch p.Results.surfaceSetName
             switch length(p.Results.contactLens)
                 case 1
                     lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', eye.meta.spectralDomain );
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex,'cornealRotation',eye.cornea.rotation);
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex,'cornealRotation',eye.cornea.rotation,'frontSurfaceRadii',eye.cornea.frontSurfaceRadii);
                 case 2
-                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2),'cornealRotation',eye.cornea.rotation);
+                    opticalSystem = addContactLens(opticalSystem, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2),'cornealRotation',eye.cornea.rotation,'frontSurfaceRadii',eye.cornea.frontSurfaceRadii);
                 otherwise
                     error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
             end
