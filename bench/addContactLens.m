@@ -351,13 +351,18 @@ frontRadii = [-backRadii(1), -backRadii(2)-meanCurvDelta, -backRadii(3)-meanCurv
 opticalSystemOut = opticalSystemIn;
 opticalSystemOut(end,end) = lensRefractiveIndex;
 
-% Define a bounding box for the front surface of the lens
-boundingBoxLens = [intersectHeight frontCenter-frontCurvature -10 10 -10 10];
-
-% Add the front contact lens surface to the optical system
+% Create the front contact lens surface
 SlensFront = quadric.scale(quadric.unitSphere,frontRadii);
 SlensFront = quadric.rotate(SlensFront,cornealRotation);
 SlensFront = quadric.translate(SlensFront,[frontRadii(1)+(frontCenter-frontCurvature) 0 0]);
+
+% Find the moster anterior point of this quadric surface
+X = quadric.mostAnteriorPoint( SlensFront );
+
+% Define a bounding box for the front surface of the lens
+boundingBoxLens = [intersectHeight X(1) -10 10 -10 10];
+
+% Add this surface to the optical system
 lensLine = nan(1,19);
 lensLine(1:10) = quadric.matrixToVec(SlensFront);
 lensLine(11) = 1; % rays intersect concave lens surface
@@ -369,15 +374,20 @@ lensLine(18) = 1; % must intersect
 lensLine(end) = tearRefractiveIndex;
 opticalSystemOut = [opticalSystemOut; lensLine];
 
-% Define a bounding box for the front tear film
-boundingBoxTears = [intersectHeight+tearThickness frontCenter-frontCurvature+tearThickness -10 10 -10 10];
-
 % Add a tear film to the optical system
-SlensFront = quadric.scale(quadric.unitSphere,frontRadii);
-SlensFront = quadric.rotate(SlensFront,cornealRotation);
-SlensFront = quadric.translate(SlensFront,[frontRadii(1)+(frontCenter-frontCurvature)+tearThickness 0 0]);
+SlensTear = quadric.scale(quadric.unitSphere,frontRadii);
+SlensTear = quadric.rotate(SlensTear,cornealRotation);
+SlensTear = quadric.translate(SlensTear,[frontRadii(1)+(frontCenter-frontCurvature)+tearThickness 0 0]);
+
+% Find the moster anterior point of this quadric surface
+X = quadric.mostAnteriorPoint( SlensTear );
+
+% Define a bounding box for the front tear film
+boundingBoxTears = [intersectHeight+tearThickness X(1) -10 10 -10 10];
+
+% Add this surface to the optical system
 tearLine = nan(1,19);
-tearLine(1:10) = quadric.matrixToVec(SlensFront);
+tearLine(1:10) = quadric.matrixToVec(SlensTear);
 tearLine(11) = 1; % rays intersect concave lens surface
 tearLine(12:17) = boundingBoxTears;
 tearLine(18) = 1; % must intersect

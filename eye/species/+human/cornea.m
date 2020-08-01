@@ -250,10 +250,13 @@ S = quadric.rotate(S,cornea.rotation);
 % apex (prior to rotation) is at position [0, 0, 0]
 S = quadric.translate(S,[-frontSurfaceRadii(1) 0 0]);
 
+% Find the moster anterior point of this quadric surface
+X = quadric.mostAnteriorPoint( S );
+
 % Store these values
 cornea.front.S = quadric.matrixToVec(S);
 cornea.front.side = 1;
-cornea.front.boundingBox=[-4 0 -8 8 -8 8];
+cornea.front.boundingBox=[-4 X(1) -8 8 -8 8];
 cornea.front.center=[-frontSurfaceRadii(1) 0 0];
 
 
@@ -272,11 +275,16 @@ S = quadric.scale(quadric.unitSphere,frontSurfaceRadii);
 % Rotate the quadric surface
 S = quadric.rotate(S,cornea.rotation);
 
-% Translate and store
+% Translate
 S = quadric.translate(S,[-frontSurfaceRadii(1)+tearFilmThickness 0 0]);
+
+% Find the moster anterior point of this quadric surface
+X = quadric.mostAnteriorPoint( S );
+
+% Store
 cornea.tears.S = quadric.matrixToVec(S);
 cornea.tears.side = 1;
-cornea.tears.boundingBox=[-4+tearFilmThickness tearFilmThickness -8 8 -8 8];
+cornea.tears.boundingBox=[-4+tearFilmThickness X(1) -8 8 -8 8];
 
 
 %% Back corneal surface
@@ -319,10 +327,13 @@ S = quadric.rotate(S,cornea.rotation);
 cornealThickness = 0.55;
 S = quadric.translate(S,[-cornealThickness-backSurfaceRadii(1) 0 0]);
 
+% Find the moster anterior point of this quadric surface
+X = quadric.mostAnteriorPoint( S );
+
 % Store these values
 cornea.back.S = quadric.matrixToVec(S);
 cornea.back.side = 1;
-cornea.back.boundingBox=[-4 0 -8 8 -8 8];
+cornea.back.boundingBox=[-4 X(1) -8 8 -8 8];
 
 
 %% Assemble the combined corneal surfaces
