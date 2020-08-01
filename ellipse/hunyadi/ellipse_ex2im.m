@@ -1,7 +1,7 @@
 function p = ellipse_ex2im(varargin)
-% Cast ellipse defined with explicit parameters to implicit form.
-% In explicit form, the parameters of the ellipse are its center (cx,cy) its semi-major
-% and semi-minor axes (a and b) and its angle of tilt (theta).
+% Cast ellipse defined with explicit parameters to implicit form. In
+% explicit form, the parameters of the ellipse are its center (cx,cy) its
+% semi-major and semi-minor axes (a and b) and its angle of tilt (theta).
 %
 % See also: ellipse_im2ex
 %
