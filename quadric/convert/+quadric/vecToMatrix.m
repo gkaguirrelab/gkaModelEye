@@ -8,7 +8,7 @@ function S = vecToMatrix(v)
 %   Convert between two forms of expression of the quadric surface.
 %
 %   The implicit form of a second-order (quadric) surface is:
-%       S(x,y,z) =  Ax^2 + Bx^2 + Cx^2 + 
+%       S(x,y,z) =  Ax^2 + By^2 + Cz^2 + 
 %                   2Dxy + 2Exz + 2Fyz +
 %                   2Gx + 2Hy + 2Iz + K == 0
 %

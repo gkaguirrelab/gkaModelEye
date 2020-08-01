@@ -8,7 +8,7 @@ function [A, B, C, D, E, F, G, H, I, K] = matrixToVars(S)
 %   Convert between two forms of expression of the quadric surface.
 %
 %   The implicit form of a second-order (quadric) surface is:
-%       S(x,y,z) =  Ax^2 + Bx^2 + Cx^2 + 
+%       S(x,y,z) =  Ax^2 + By^2 + Cz^2 + 
 %                   2Dxy + 2Exz + 2Fyz +
 %                   2Gx + 2Hy + 2Iz + K == 0
 %
@@ -29,6 +29,12 @@ function [A, B, C, D, E, F, G, H, I, K] = matrixToVars(S)
 % Outputs:
 %   A, B, C, ...          - The set of quadric parameters as scalars.
 %
+
+
+% If the quadric surface was passed in vector form, convert to matrix
+if isequal(size(S),[1 10])
+    S = quadric.vecToMatrix(S);
+end
 
 A = S(1,1);
 B = S(2,2);

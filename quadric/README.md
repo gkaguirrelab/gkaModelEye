@@ -7,7 +7,7 @@ The top-level function `rayTraceQuadrics.m` does not take the `quadric.` prefix.
 A quadric surface may defined in several different ways. In these routines, I adopt the forms:
 
 Implicit:
->       S(x,y,z) =  Ax^2 + Bx^2 + Cx^2 + 
+>       S(x,y,z) =  Ax^2 + By^2 + Cz^2 + 
 >                     2Dxy + 2Exz + 2Fyz +
 >                     2Gx + 2Hy + 2Iz + K == 0
 >
