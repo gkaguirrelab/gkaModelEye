@@ -1,4 +1,4 @@
-function figHandle = plotOpticalSystem(varargin)
+function [figHandle, plotHandles] = plotOpticalSystem(varargin)
 % Create a 3D rendered plot of the specified optical system 
 %
 % Syntax:
@@ -63,6 +63,7 @@ function figHandle = plotOpticalSystem(varargin)
 % Outputs:
 %   figHandle             - Handle to a created figure. Empty if a new
 %                           figure was not requested.
+%   plotHandles           - Array of handles for each of the surfaces
 %
 % Examples:
 %{
@@ -130,6 +131,9 @@ else
 end
 hold on
 
+% Create an empty cell array to hold the plot handles
+plotHandles = gobjects(0);
+
 % Plot the surfaceSet if provided
 if ~isempty(p.Results.surfaceSet)
 
@@ -177,9 +181,9 @@ if ~isempty(p.Results.surfaceSet)
             % Plot the surface. If it is the retinal surface, and geodetic
             % lines have been requested, include these.
             if strcmp(surfaceLabels{ii},'retina') && p.Results.retinaGeodetics
-                quadric.plotSurface(S,boundingBox,surfaceColors{ii},p.Results.surfaceAlpha,'g','b',p.Results.surfaceAlpha);
+                plotHandles(end+1) = quadric.plotSurface(S,boundingBox,surfaceColors{ii},p.Results.surfaceAlpha,'g','b',p.Results.surfaceAlpha);
             else
-                quadric.plotSurface(S,boundingBox,surfaceColors{ii},p.Results.surfaceAlpha);
+                plotHandles(end+1) = quadric.plotSurface(S,boundingBox,surfaceColors{ii},p.Results.surfaceAlpha);
             end
         end
     end
@@ -187,7 +191,7 @@ end
 
 % Plot the rayPath if provided
 if ~isempty(p.Results.rayPath)
-    plot3(p.Results.rayPath(1,:),p.Results.rayPath(2,:),p.Results.rayPath(3,:),'-','Color',p.Results.rayColor);
+    plotHandles(end+1) = plot3(p.Results.rayPath(1,:),p.Results.rayPath(2,:),p.Results.rayPath(3,:),'-','Color',p.Results.rayColor);
 end
 
 % Add the outputRay if provided
@@ -196,7 +200,7 @@ if ~isempty(p.Results.outputRay)
     p1=outputRay(:,1);
     p2=p1+outputRay(:,2).*p.Results.outputRayScale;
     r = [p1 p2];
-    plot3(r(1,:),r(2,:),r(3,:),'-','Color',p.Results.outputRayColor);
+    plotHandles(end+1) = plot3(r(1,:),r(2,:),r(3,:),'-','Color',p.Results.outputRayColor);
 end
 
 % Add a lighting source if requested
