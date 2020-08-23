@@ -75,6 +75,11 @@ function eye = modelEyeParameters( varargin )
 %                           horizontal axis (tip). If left undefined, the
 %                           "canonical" Navarro 2006 corneal parameters
 %                           will be used.
+%  'corneaAxialRadius'    - Scalar. The length (in mm) of the axial
+%                           semi-radius of the corneal ellipsoid. If not
+%                           left empty, this value will override the
+%                           default value implemented within the cornea
+%                           function.
 %  'rotationCenterScalers' - 1x2 numeric vector. These values apply joint
 %                           and differential multiplicative scaling on
 %                           the positions of the azimuthal and elevational
