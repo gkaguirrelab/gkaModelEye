@@ -256,7 +256,7 @@ X = quadric.mostAnteriorPoint( S );
 % Store these values
 cornea.front.S = quadric.matrixToVec(S);
 cornea.front.side = 1;
-cornea.front.boundingBox=[-4 X(1) -8 8 -8 8];
+cornea.front.boundingBox=[-4 X(1) -9 9 -9 9];
 cornea.front.center=[-frontSurfaceRadii(1) 0 0];
 
 
@@ -333,7 +333,7 @@ X = quadric.mostAnteriorPoint( S );
 % Store these values
 cornea.back.S = quadric.matrixToVec(S);
 cornea.back.side = 1;
-cornea.back.boundingBox=[-4 X(1) -8 8 -8 8];
+cornea.back.boundingBox=[-4 X(1) -9 9 -9 9];
 
 
 %% Assemble the combined corneal surfaces
