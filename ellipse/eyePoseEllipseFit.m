@@ -14,9 +14,11 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput] =
 %   of the glint(s) that matches the supplied coordinates.
 %
 %   If a glint is provided, a search across translation of the camera is
-%   also supported. Note that there is little ability to detect changes in
-%   camera depth, so the routine will provide a warning in the absence of a
-%   glint if the bounds of the search on camera depth are not zero.
+%   also supported. If there is only one glint, then only camera in-plane
+%   translation can be estimated, although not camera depth. If there is
+%   more than one glint, then 3D camera translation will be estimated. The
+%   routine will provide a warning if the bounds on the cameraTranslation
+%   search are not appropriate for the glint information provided.
 %
 %   The search is constrained by the upper and lower bounds of the eyePose.
 %   The default values specified here represent the physical boundaries of
@@ -43,7 +45,7 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput] =
 %                           Torsion is constrained to zero by default.
 %  'cameraTransX0'        - A 3x1 vector that provides starting points for
 %                           camera translation, in units of mm. If  not
-%                           defined, these are set to zero.
+%                           defined, the starting point will be estimated.
 %  'cameraTransBounds'    - A 3x1 vector that provides the symmetric bounds
 %                           around x0 on camera translation [horizontal;
 %                           vertical; depth]. Note that this manner of
@@ -53,9 +55,9 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput] =
 %                           the fminsearch operation. The example below
 %                           examines the trade-off between execution time
 %                           and function accuracy for this parameter. I
-%                           find that 200 evals takes ~3 second per eyePose
+%                           find that 250 evals takes ~3 second per eyePose
 %                           calculation on a laptop, and produces excellent
-%                           accuracy with respect to the imprecision in
+%                           accuracy with respect to the precision in
 %                           empirical data.
 %  'eyePoseTol'           - Scalar. The eyePose values will be searched to
 %                           within this level of precision. Doesn't have
@@ -161,7 +163,7 @@ p.addRequired('sceneGeometry',@isstruct);
 p.addParameter('eyePoseX0',[],@(x)(isempty(x) | isnumeric(x)));
 p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
 p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
-p.addParameter('cameraTransX0',[0; 0; 0],@isnumeric);
+p.addParameter('cameraTransX0',[],@isnumeric);
 p.addParameter('cameraTransBounds',[5; 5; 0],@isnumeric);
 p.addParameter('eyePoseEllipseFitFunEvals',250,@isscalar);
 p.addParameter('eyePoseTol',1e-3,@isscalar);
@@ -172,7 +174,8 @@ p.addParameter('boundTol',[0.1 0.1 0.1 0.05 0.1 0.1 0.1],@isscalar);
 p.parse(Xp, Yp, glintCoord, sceneGeometry, varargin{:});
 
 
-%% Check inputs
+%% Check inputs and issue warnings
+
 % Initialize the return variables
 eyePose = [nan nan nan nan];
 RMSE = nan;
@@ -196,7 +199,7 @@ end
 % If we have a glintCoord, make sure it is the right vector orientation
 if ~isempty(glintCoord)
     if size(glintCoord,2)~=2
-        error('eyePoseEllipseFit:glintCoordFormat','The optional glintCoord must be an nx2 vector');
+        error('eyePoseEllipseFit:glintCoordFormat','The glintCoord must be empty or an nx2 vector');
     end
 end
 
@@ -214,12 +217,6 @@ if isempty(Xp) || isempty(Yp)
     return
 end
 
-%% Set bounds
-
-% eyePose
-eyePoseLB = p.Results.eyePoseLB;
-eyePoseUB = p.Results.eyePoseUB;
-
 % Issue a warning if there are non-zero bounds on camera translation, but
 % there is no glint. Without a glint, we don't have much traction on
 % translation.
@@ -227,35 +224,85 @@ if isempty(glintCoord) && any(abs(p.Results.cameraTransBounds) > 0)
     warning('eyePoseEllipseFit:underconstrainedSearch','No glint provided; cameraTrans search is under-constrained');
 end
 
-% cameraTrans
-cameraTransX0 = p.Results.cameraTransX0;
-cameraTransLB = p.Results.cameraTransX0 - p.Results.cameraTransBounds;
-cameraTransUB = p.Results.cameraTransX0 + p.Results.cameraTransBounds;
-
-
-%% Obtain the unconstrained ellipse fit to the perimeter
-unconstrainedEllipse = pupilEllipseFit([Xp,Yp]);
-
-% Various degenerate sets of
-% perimeter points can cause the ellipse fit to fail and return nans
-if any(isnan(unconstrainedEllipse))
-    % The fit failed. Sythesize an ellipse vector that has as its center
-    % the mean of the X and Y positions of the perimeter points.
-    unconstrainedEllipse = nan(1,5);
-    unconstrainedEllipse(1:2) = [mean(Xp) mean(Yp)];
+% Issue a warning if there are non-zero bounds on camera depth translation,
+% but we only have one glint. Without two or more glints, we don't have
+% much traction on depth.
+if size(glintCoord,1)<2 && abs(p.Results.cameraTransBounds(3)) > 0
+    warning('eyePoseEllipseFit:underconstrainedSearch','Only one glint provided; cameraTrans depth search is under-constrained');
 end
 
 
-%% Define eyePoseX0
+%% Define cameraTransX0 and bounds
+if ~isempty(p.Results.cameraTransX0)
+    cameraTransX0 = p.Results.cameraTransX0;
+    cameraTransLB = p.Results.cameraTransX0 - p.Results.cameraTransBounds;
+    cameraTransUB = p.Results.cameraTransX0 + p.Results.cameraTransBounds;
+else
+    
+    % The bounds will be set about zero
+    cameraTransLB = -p.Results.cameraTransBounds;
+    cameraTransUB = p.Results.cameraTransBounds;
+    
+    % If we were given an eyePoseX0, use this as the pose of the eye for
+    % the calculation. Otherwise, assume the eye is looking at the camera.
+    if ~isempty(p.Results.eyePoseX0)
+        refPose = p.Results.eyePoseX0;
+    else
+        refPose = [0 0 0 2];
+    end
+
+    % Probe to find the translation in pixels produced
+    [~, probeCoord0] = projectModelEye(refPose, sceneGeometry, 'cameraTrans', [0;0;0]);
+    [~, probeCoord1] = projectModelEye(refPose, sceneGeometry, 'cameraTrans', [1;0;0]);
+    pixPerMm = mean(probeCoord0(:,1)-probeCoord1(:,1));
+    cameraTransX0 = [ ...
+        -(glintCoord(1,1)-probeCoord0(1,1))/pixPerMm; ...
+        (glintCoord(1,2)-probeCoord0(1,2))/pixPerMm; ...
+        0];
+    
+    % If there are two or more glints, determine the depth translation
+    if size(glintCoord,1)>1
+        [~, probeCoord2] = projectModelEye(refPose, sceneGeometry, 'cameraTrans', [0;0;1]);
+        a = diff(probeCoord0(1:2,1))/2;
+        b = diff(probeCoord2(1:2,1))/2;
+        t = (diff(glintCoord(1:2,1))/2 - a)/(b-a);
+        cameraTransX0(3) = t;
+    end
+        
+    % Make sure that X0 is in bounds
+    cameraTransX0 = max([cameraTransLB cameraTransX0],[],2);
+    cameraTransX0 = min([cameraTransUB cameraTransX0],[],2);
+    
+end
+
+
+
+%% Define eyePoseX0 and bounds
+
+% bounds
+eyePoseLB = p.Results.eyePoseLB;
+eyePoseUB = p.Results.eyePoseUB;
+
 % Check if eyePoseX0 was passed
 if isempty(p.Results.eyePoseX0)
     
     % Define eyePoseX0
     eyePoseX0 = zeros(1,4);
     
+    % Obtain the unconstrained ellipse fit to the perimeter to identify the
+    % center of the entrance pupil.
+    unconstrainedEllipse = pupilEllipseFit([Xp,Yp]);
+    
+    % If the fit failed, sythesize an ellipse vector that has as its center
+    % the mean of the X and Y positions of the perimeter points.
+    if any(isnan(unconstrainedEllipse))
+        unconstrainedEllipse = nan(1,5);
+        unconstrainedEllipse(1:2) = [mean(Xp) mean(Yp)];
+    end
+
     % Construct an eyePoseX0 guess by probing the forward model. First
     % identify the center of projection
-    rotationCenterEllipse = projectModelEye([0 0 0 2], sceneGeometry, 'cameraTrans', cameraTransX0);
+    rotationCenterEllipse = projectModelEye([0 0 0 2], sceneGeometry, 'cameraTrans',cameraTransX0);
     CoP = [rotationCenterEllipse(1),rotationCenterEllipse(2)];
     
     % Now the number of pixels that the pupil center is displaced from the
@@ -345,6 +392,7 @@ xLast = [];
 cLast = [];
 ceqLast = [];
 fValLast = [];
+ceqFirstFlag = true;
 
 % Initialize an anonymous function for the full objective
 fullObj = @(x) fullObjective(x,Xp,Yp,glintCoord,sceneGeometry);
@@ -359,6 +407,15 @@ fullObj = @(x) fullObjective(x,Xp,Yp,glintCoord,sceneGeometry);
             xLast = x;
         end
         fVal = fValLast;
+        % This is some business to prevent fmincon from considering as
+        % acceptable a ceq that is low relative to the x0 ceq
+        if ceqFirstFlag
+            ceqFirstFlag = false;
+        else
+            if ceqLast == 1e3
+                ceqLast = 1e6;
+            end
+        end
     end
 
     % This is the mismatch of the observed and modeled glint
@@ -368,7 +425,16 @@ fullObj = @(x) fullObjective(x,Xp,Yp,glintCoord,sceneGeometry);
             xLast = x;
         end
         c = cLast;
+        % This is some business to prevent fmincon from considering as
+        % acceptable a ceq that is low relative to the x0 ceq
         ceq = ceqLast;
+        if ceqFirstFlag
+            ceqFirstFlag = false;
+        else
+            if ceq == 1e3
+                ceq = 1e6;
+            end
+        end
     end
 
 % Unpack the x parameters into eye and head position
@@ -433,14 +499,13 @@ end
 
 % Detect cases in which we were unable to obtain a valid glint
 if isempty(candidateGlint)
-    ceq = 1e6;
+    ceq = 1e3;
     return
 end
 
 % The non-linear constraint is the number of pixels by which model misses
 % the glint location(s)
 ceq = norm(glintCoord - candidateGlint);
-
 
 end
 
