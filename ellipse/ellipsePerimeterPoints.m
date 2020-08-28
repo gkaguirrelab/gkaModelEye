@@ -1,4 +1,4 @@
-function [ Xp, Yp ] = ellipsePerimeterPoints( transparentEllipseParams, steps, phase )
+function [ Xp, Yp ] = ellipsePerimeterPoints( transparentEllipseParams, steps, phase, noise )
 % Returns a set of points on the boundary of a transparent ellipse
 %
 % Syntax:
@@ -21,20 +21,32 @@ function [ Xp, Yp ] = ellipsePerimeterPoints( transparentEllipseParams, steps, p
 %   phase                 - Scalar. The phase (in radians) of the points
 %                           around the pupil perimeter. If not passed,
 %                           phase is set to zero.
+%   noise                 - Scalar. The width of the Gaussian distributed
+%                           noise (in pixels) to be added to the X and Y
+%                           positions of the perimeter points.
 %
 % Outputs:
 %   Xp, Yp                - Each is a stepsx1 vector, providing the X
 %                           and Y coordinate of each point.
 %
 
+
+
 % If steps was not passed, set to 5.
 if nargin == 1
     steps = 5;
     phase = 0;
+    noise = 0;
 end
 
 if nargin == 2
     phase = 0;
+    noise = 0;
+end
+
+if nargin == 3
+    phase = 0;
+    noise = 0;
 end
 
 % Convert the transparent ellipse to explicit form
@@ -55,6 +67,12 @@ sinalpha = sin(alpha);
 cosalpha = cos(alpha);
 Xp = x + (a * cosalpha * costheta - b * sinalpha * sintheta);
 Yp = y + (a * cosalpha * sintheta + b * sinalpha * costheta);
+
+% Add noise
+if noise > 0
+    Xp = Xp + randn(size(Xp)).*noise;
+    Yp = Yp + randn(size(Yp)).*noise;
+end
 
 end % function -- ellipsePerimeterPoints
 
