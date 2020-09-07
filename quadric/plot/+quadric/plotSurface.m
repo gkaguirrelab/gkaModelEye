@@ -128,8 +128,8 @@ vertices = isosurface(xx, yy, zz, F(xx, yy, zz), 0);
 % Plot and define plot appearance
 p = patch(vertices);
 p.FaceColor = surfColor;
+p.FaceAlpha = surfAlpha;
 p.EdgeColor = 'none';
-alpha(surfAlpha);
 daspect([1 1 1])
 view(3);
 axis tight
@@ -155,7 +155,9 @@ if ~isempty(betaLineColor)
             (coords(:,3) < boundingBox(6)));
         if ~isempty(coords(inBounds,:))
             lh = plot3(coords(inBounds,1),coords(inBounds,2),coords(inBounds,3),'LineStyle','-','Color',betaLineColor);
-            lh.Color(4) = lineAlpha;
+            if ~strcmp(betaLineColor,'none')
+                lh.Color(4) = lineAlpha;
+            end
         end
     end
     if ~holdState
@@ -180,7 +182,9 @@ if ~isempty(omegaLineColor)
             (coords(:,3) < boundingBox(6)));
         if ~isempty(coords(inBounds,:))
             lh = plot3(coords(inBounds,1),coords(inBounds,2),coords(inBounds,3),'LineStyle','-','Color',omegaLineColor);
+            if ~strcmp(omegaLineColor,'none')
             lh.Color(4) = lineAlpha;
+            end
         end
     end
     if ~holdState
