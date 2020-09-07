@@ -1,7 +1,7 @@
 %% t10_glintStationary
 % Illustrate the ray path from light to camera to produce a glint
 %{
-10: The "glint" is the reflection of a light source from the front corneal surface (the 1st Purkinje image). Shown is the ray path from an active IR source (*) that reflects off the eye and returns to a camera (o).
+10: The "glint" is the reflection of a light source from the front corneal surface (the 1st Purkinje image). Shown is the ray path from an active IR source that reflects off the eye and returns to the nodal point of a camera.
 %}
 % For details see:
 %   project/stages/addGlint.m
@@ -41,12 +41,8 @@ plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToMedium, ...
     'outputRayScale',sceneGeometry.cameraPosition.translation(3),...
     'addLighting',true,'newFigure',false);
 
-% Add symbols to indiate the locations of the light source and camera
-hold on
-glintSourceEyeCoords = convertWorldToEyeCoord(glintSourceWorld);
-plot3(glintSourceEyeCoords(1),glintSourceEyeCoords(2),glintSourceEyeCoords(3),'*r')
-cameraCoordEyeCoords = convertWorldToEyeCoord(sceneGeometry.cameraPosition.translation);
-plot3(cameraCoordEyeCoords(1),cameraCoordEyeCoords(2),cameraCoordEyeCoords(3),'ok')
+% Add the camera
+addCameraIcon(sceneGeometry);
 
 % Provide a title
-title('Ray path from light source (*) to camera (o)')
+title('Ray path from light source to camera')
