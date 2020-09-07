@@ -55,7 +55,7 @@ switch nargin
             stopRadius = 2;
             % Assign a stop center location that is the model location for
             % the iris
-            stopCenter = [2 0 0];
+            stopCenter = [-3.9 0 0];
             % Check if there is an existing iris.stop surface
             irisStopPresent = any(strcmp(opticalSystemIn.surfaceLabels,'iris.stop'));
             if irisStopPresent
@@ -143,7 +143,7 @@ switch nargin
         error('gkaModelEye:addStopAfter','Invalid number of arguments.');
 end
 
-% Check if the stopCenter is a scaler, in which case make it a coordinate
+% Check if the stopCenter is a scalar, in which case make it a coordinate
 if isscalar(stopCenter)
     stopCenter = [stopCenter 0 0];
 end
@@ -173,7 +173,7 @@ opticalSystemMatrix = opticalSystemMatrix(sum(isnan(opticalSystemMatrix),2)~=siz
 % The stop is an ellipsoid that is very elongated, so that it has a flat
 % surface as seen by rays traveling parallel to the optical axis. The stop
 % has a trivial non-zero depth.
-ellipseDepth = 1;
+ellipseDepth = 0.01;
 S = quadric.scale(quadric.unitSphere,[ellipseDepth,stopRadius*5,stopRadius*5]);
 t = stopCenter; t(1) = t(1)-ellipseDepth;
 S = quadric.translate(S,t);
@@ -183,7 +183,7 @@ stopFront = stopCenter(1);
 % the desired stop radius
 F = quadric.vecToFunc(S);
 myObj = @(x) radiusAtX(F,stopFront-ellipseDepth+x)-stopRadius;
-x = fzero(myObj,ellipseDepth-1e-4);
+x = fzero(myObj,ellipseDepth-(1e-4));
 
 % Assemble a line for the optical system
 stopLine = nan(1,19);
