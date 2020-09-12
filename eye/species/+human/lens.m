@@ -146,7 +146,7 @@ lens.side = [lens.side; -1];
 lens.mustIntersect = [lens.mustIntersect; 1];
 lens.index = [lens.index; nEdge];
 lens.label = [lens.label; {'lens.back'}];
-lens.plot.color = [lens.plot.color; {[0.75 0.75 0.75]}];
+lens.plot.color = [lens.plot.color; {[0.75 0.75 0.75 0.75]}];
 
 
 %% Back gradient shells
@@ -182,7 +182,7 @@ for ii = 1:numShells
     lens.mustIntersect = [lens.mustIntersect; 0];
     lens.index = [lens.index; nLensVals(ii*2+1)];
     lens.label = [lens.label; {sprintf('lens.back.shell_n=%0.3f',nLensVals(ii*2))}];
-    lens.plot.color = [lens.plot.color; [0.75 0.75+0.25*(ii/numShells) 0.75]];
+    lens.plot.color = [lens.plot.color; [0.75 0.75+0.25*(ii/numShells) 0.75 0.1]];
 end
 % Force the index of the center shell to be equal to the lens core
 % refractive index. The value can be something other than this when
@@ -243,7 +243,7 @@ for ii = numShells:-1:1
     lens.mustIntersect = [lens.mustIntersect; 0];
     lens.index = [lens.index; nLensVals(ii*2-1)];
     lens.label = [lens.label; {sprintf('lens.front.shell_n=%0.3f',nLensVals(ii*2))}];
-    lens.plot.color = [lens.plot.color; [0.75 0.75+0.25*(ii/numShells) 0.75]];
+    lens.plot.color = [lens.plot.color; [0.75 0.75+0.25*(ii/numShells) 0.75 0.1]];
 end
 
 % Force the index of the space between the last front shell and the front
@@ -260,7 +260,7 @@ lens.boundingBox = [lens.boundingBox; boundingBox];
 lens.side = [lens.side; 1];
 lens.mustIntersect = [lens.mustIntersect; 1];
 lens.label = [lens.label; {'lens.front'}];
-lens.plot.color = [lens.plot.color; {[0.75 0.75 0.75]}];
+lens.plot.color = [lens.plot.color; {[0.75 0.75 0.75 0.75]}];
 lens.meta.navarroD = D;
 
 end

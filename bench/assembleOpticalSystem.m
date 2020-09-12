@@ -88,9 +88,11 @@ function [opticalSystem, surfaceLabels, surfaceColors, magnification] = assemble
 %                           from the matrix and have no effect.
 %	surfaceLabels         - A cell array of strings or character vectors
 %                           that identify each of the optical surfaces
-%   surfaceColors         - A cell array of 3x1 vectors that provide the
-%                           color specification for plotting each surface
-%                           of the optical system.
+%   surfaceColors         - A cell array of 3x1 or 4x1 vectors that provide 
+%                           the color specification for plotting each
+%                           surface of the optical system. If a 4th value
+%                           is provided, it is the relative alpha value for
+%                           the surface.
 %   magnification         - Scalar. The magnification of the visual world
 %                           experienced by the eye as a consequence of
 %                           artificial lenses. Only calculated for the
@@ -148,6 +150,9 @@ switch p.Results.surfaceSetName
         % Assemble the surface plot colors
         surfaceColors = [{[nan nan nan]}; eye.retina.plot.color; eye.lens.plot.color; eye.cornea.plot.color];
         
+        % Assemble the surface plot colors
+        
+        
         % Add a contact lens if requested
         if ~isempty(p.Results.contactLens)
             switch length(p.Results.contactLens)
@@ -160,7 +165,7 @@ switch p.Results.surfaceSetName
                     error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
             end
             surfaceLabels = [surfaceLabels; {'contactLens'}; {'tearfilm'}];
-            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {'blue'}];
+            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[0 0 1]}];
             
             % Calculate the magnification produced by this lens
             if ~p.Results.skipMagCalc
@@ -236,7 +241,7 @@ switch p.Results.surfaceSetName
                     error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
             end
             surfaceLabels = [surfaceLabels; {'contactLens'}; {'tearfilm'}];
-            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {'blue'}];
+            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[0 0 1]}];
             
             % Calculate the magnification produced by this lens
             if ~p.Results.skipMagCalc
@@ -394,7 +399,7 @@ switch p.Results.surfaceSetName
                     error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
             end
             surfaceLabels = [surfaceLabels; {'contactLens'}; {'tearfilm'}];
-            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {'blue'}];
+            surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[0 0 1]}];
         end
 
         % Reverse the system to give us a path from the medium to the

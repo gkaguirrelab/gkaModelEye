@@ -35,8 +35,8 @@ function [figHandle, plotHandles] = plotOpticalSystem(varargin)
 %                           will be plotted in gray. See
 %                               quadric/rayTraceQuadrics.m
 %                           for a description of the opticalSystem matrix.
-%  'surfaceAlpha'         - Scalar. The alpha transparency to use for the
-%                           surfaces.
+%  'surfaceAlpha'         - Scalar. This value scales the overall
+%                           transparency of the rendering.
 %  'retinaGeodetics'      - Logical. If set to true, and the surfaceSet is
 %                           a structure that contains a "retina"
 %                           surfaceLabel, then geodetic lines will be
@@ -105,7 +105,7 @@ p = inputParser; p.KeepUnmatched = true;
 p.addParameter('newFigure',true,@islogical);
 p.addParameter('visible',true,@islogical);
 p.addParameter('surfaceSet',[], @(x)(isempty(x) | isstruct(x) | isnumeric(x)));
-p.addParameter('surfaceAlpha', 0.1,@isnumeric);
+p.addParameter('surfaceAlpha', 0.2,@isnumeric);
 p.addParameter('retinaGeodetics', false,@islogical);
 p.addParameter('rayPath',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('rayColor','red',@(x)(ischar(x) | isnumeric(x)));
@@ -178,12 +178,22 @@ if ~isempty(p.Results.surfaceSet)
         if ~any(isnan(S))
             % Obtain the bounding box
             boundingBox = opticalSystem(ii,12:17);
+            % Obtain the surface color and set the surface alpha
+            surfaceColor = surfaceColors{ii};
+            % If there is a 4th value in the surface color, use this to
+            % over-ride the overall surface alpha
+            if size(surfaceColor,2) == 4
+                surfaceAlpha = surfaceColor(4) .* p.Results.surfaceAlpha;
+                surfaceColor = surfaceColor(1:3);
+            else
+                surfaceAlpha = 0.5 .* p.Results.surfaceAlpha;
+            end
             % Plot the surface. If it is the retinal surface, and geodetic
             % lines have been requested, include these.
             if strcmp(surfaceLabels{ii},'retina') && p.Results.retinaGeodetics
-                plotHandles(end+1) = quadric.plotSurface(S,boundingBox,surfaceColors{ii},p.Results.surfaceAlpha,'g','b',p.Results.surfaceAlpha);
+                plotHandles(end+1) = quadric.plotSurface(S,boundingBox,surfaceColor,surfaceAlpha,'g','b',p.Results.surfaceAlpha);
             else
-                plotHandles(end+1) = quadric.plotSurface(S,boundingBox,surfaceColors{ii},p.Results.surfaceAlpha);
+                plotHandles(end+1) = quadric.plotSurface(S,boundingBox,surfaceColor,surfaceAlpha);
             end
         end
     end
