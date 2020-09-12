@@ -32,6 +32,8 @@ end
 % assignment, the license name is given in the comment string after the
 % matching version name for each toolbox.
 requiredAddOns = {...
+    'Mapping Toolbox',...                       % map_toolbox
+    'Curve Fitting Toolbox',...                 % curve_fitting_toolbox
     'Optimization Toolbox',...                  % optimization_toolbox
     'Robotics System Toolbox',...               % robotics_system_toolbox
     'Statistics and Machine Learning Toolbox',...   % statistics_toolbox
