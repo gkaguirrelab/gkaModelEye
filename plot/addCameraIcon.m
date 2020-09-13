@@ -25,13 +25,14 @@ function plotHandles = addCameraIcon(sceneGeometry)
 
 %% Grab the nodal point of the camera
 nodalPoint = convertWorldToEyeCoord(sceneGeometry.cameraPosition.translation);
-
+sensorRatio = sceneGeometry.cameraIntrinsic.sensorResolution(2) ./ ...
+    sceneGeometry.cameraIntrinsic.sensorResolution(1);
 
 %% Define an empty variable to hold the plot objects
 plotHandles = gobjects(0);
 
 %% Plot the camera body
-edges = [10, 40, 20];
+edges = [10, 40, 40*sensorRatio];
 alpha = 0.5;
 clr = [0.75 0.75 1];
 
