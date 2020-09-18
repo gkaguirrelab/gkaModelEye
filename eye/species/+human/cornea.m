@@ -213,11 +213,13 @@ cornea.frontSurfaceRadii = frontSurfaceRadii;
 % the order:
 %
 %   [torsion, tilt (rotation about vertical), tip (rotation about the horizontal axis) ]
-% 
-if isempty(eye.meta.kvals)
-    cornea.kvals(3:5) = [0 2.5 0];
-else
-    cornea.kvals = eye.meta.kvals;
+%
+cornea.kvals(3:5) = [0 2.5 0];
+if ~isempty(eye.meta.kvals)
+    nkvals = length(eye.meta.kvals);
+    if nkvals > 2
+        cornea.kvals(3:nkvals) = eye.meta.kvals(3:nkvals);
+    end
 end
 
 % Create the corneal rotation vector. Note the different angle order from
