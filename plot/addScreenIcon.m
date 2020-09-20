@@ -27,7 +27,7 @@ if nargin==1
     gazeTargets = [];
 end
 
-if nargin==
+if nargin==2
     gazeTargets = [];
 end
 
@@ -42,8 +42,8 @@ plotHandles = gobjects(0);
 
 %% Plot the screen
 edges = [1, sceneGeometry.screenPosition.dimensions(1), sceneGeometry.screenPosition.dimensions(2)];
-alpha = 0.5;
-clr = [0.75 0.75 0.75];
+alpha = 0.25;
+clr = [0.5 0.5 0.5];
 
 % Figure out where the origin of the cuboid goes
 trans = edges.*[0 0.5 0.5];
@@ -71,9 +71,23 @@ plotHandles(end+1:end+6) = cellfun(@patch,XYZ{1},XYZ{2},XYZ{3},...
     );
 
 % If we have been given gazeTargets convert these from degrees to locations
-% on the screen
+% on the screen and plot them
 if ~isempty(gazeTargets)
     
+    % Visual angle turns out to be a surprisingly nuanced topic. For now,
+    % we will calculate visual angle w.r.t. the optical center of the eye.
+    opticalCenter = calcOpticalCenter(sceneGeometry.eye);
+     
+    % For each of the points, place a target at the center of the screen,
+    % and then rotate it around the opticalCenter by the specied gaze
+    % angle. I probably should introduce some pseudo torsion here to
+    % correct for the Fick coordinate approach I am taking, but since this
+    % is just for display purposes I am willing to let it go.
+    for gg = 1:size(gazeTargets,2)
+        plotHandles(end+1) = plot3(screenCenter(1),screenCenter(2),screenCenter(3),'.r','MarkerSize',30);
+        rotate(plotHandles(end),[0 0 1],gazeTargets(1,gg),opticalCenter);
+        rotate(plotHandles(end),[0 1 0],gazeTargets(2,gg),opticalCenter);
+    end
 end
 
 
