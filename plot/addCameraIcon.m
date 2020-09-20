@@ -1,4 +1,4 @@
-function plotHandles = addCameraIcon(sceneGeometry)
+function plotHandles = addCameraIcon(sceneGeometry,aziEle)
 % Adds a camera (with LED light sources) to the current image
 %
 % Syntax:
@@ -22,6 +22,11 @@ function plotHandles = addCameraIcon(sceneGeometry)
     addCameraIcon(sceneGeometry);
 %}
 
+
+
+if nargin==1
+    aziEle = [0, 0];
+end
 
 %% Grab the nodal point of the camera
 nodalPoint = convertWorldToEyeCoord(sceneGeometry.cameraPosition.translation);
@@ -69,12 +74,11 @@ boundingBox = [nodalPoint(1)-15 nodalPoint(1) nodalPoint(2)-5 nodalPoint(2)+5 no
 plotHandles(end+1) = quadric.plotSurface(S, boundingBox, [0.5 0.5 1], 0.5);
 
 % Add some circles to cap the lens ends
-boundingBox = [nodalPoint(1)-1 nodalPoint(1)+1 nodalPoint(2)-5 nodalPoint(2)+5 nodalPoint(3)-5 nodalPoint(3)+5];
-plotHandles(end+1) = quadric.plotSurface(S, boundingBox, 'none', 0, 'none', 'black');
+boundingBox = [nodalPoint(1)-0.1 nodalPoint(1)+0.1 nodalPoint(2)-5 nodalPoint(2)+5 nodalPoint(3)-5 nodalPoint(3)+5];
+plotHandles(end+1) = quadric.plotSurface(S, boundingBox, 'k', 0.5);
 S = quadric.translate(S,[-15 0 0]);
-boundingBox = [nodalPoint(1)-16 nodalPoint(1)+14 nodalPoint(2)-6 nodalPoint(2)+6 nodalPoint(3)-6 nodalPoint(3)+6];
-plotHandles(end+1) = quadric.plotSurface(S, boundingBox, 'none', 0, 'none', 'black');
-
+boundingBox = [nodalPoint(1)-14.9 nodalPoint(1)-15.1 nodalPoint(2)-6 nodalPoint(2)+6 nodalPoint(3)-6 nodalPoint(3)+6];
+plotHandles(end+1) = quadric.plotSurface(S, boundingBox, 'k', 0.5);
 
 %% Add the glints
 glintPoints = convertWorldToEyeCoord(sceneGeometry.cameraPosition.glintSourceRelative);
@@ -85,5 +89,11 @@ for gg = 1:size(glintPoints,1)
     boundingBox = [coord(1)-1 coord(1) coord(2)-1 coord(2)+1 coord(3)-1 coord(3)+1];
     plotHandles(end+1) = quadric.plotSurface(S, boundingBox, [1 0 0], 1);
 end
+
+
+%% Rotate the camera around the rotation center of the eye
+rotate(plotHandles,[0 0 1],aziEle(1),sceneGeometry.eye.rotationCenters.azi);
+rotate(plotHandles,[0 1 0],aziEle(2),sceneGeometry.eye.rotationCenters.ele);
+
 
 end
