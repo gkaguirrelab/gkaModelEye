@@ -216,7 +216,17 @@ sceneGeometry.cameraPosition.glintSourceRelative = p.Results.cameraGlintSourceRe
 sceneGeometry.screenPosition.screenDistance = p.Results.screenDistance;
 sceneGeometry.screenPosition.dimensions = p.Results.screenDimensions;
 sceneGeometry.screenPosition.resolutions = p.Results.screenResolutions;
-sceneGeometry.screenPosition.poseRegParams = p.Results.poseRegParams;
+if isempty(p.Results.poseRegParams)
+    sceneGeometry.screenPosition.poseRegParams.R = [1 0; 0 1];
+    sceneGeometry.screenPosition.poseRegParams.t = [0; 0];
+    sceneGeometry.screenPosition.poseRegParams.s = 1;
+    sceneGeometry.screenPosition.poseRegParams.M = [1 0 0; 0 1 0; 0 0 1];
+    sceneGeometry.screenPosition.poseRegParams.theta = 0;
+    sceneGeometry.screenPosition.poseRegParams.meta = 'f = R * [azi; ele] + t';
+    
+else
+    sceneGeometry.screenPosition.poseRegParams = p.Results.poseRegParams;
+end
 sceneGeometry.screenPosition.vecRegParams = p.Results.vecRegParams;
 
 
