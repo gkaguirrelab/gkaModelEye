@@ -128,7 +128,7 @@ vertices = isosurface(xx, yy, zz, F(xx, yy, zz), 0);
 % Plot and define plot appearance
 p = patch(vertices);
 p.FaceColor = surfColor;
-p.FaceAlpha = surfAlpha;
+p.FaceAlpha = min([1 surfAlpha]);
 p.EdgeColor = 'none';
 daspect([1 1 1])
 view(3);
