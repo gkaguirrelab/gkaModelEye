@@ -45,12 +45,12 @@ function [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopter
 %}
 %{
     % Plot the eye and the rays
-    [navarroD, fVal, path1, path2] = calcAccommodation(1.5);
+    desiredAccommodation = 7.5;
+    [navarroD, fVal, path1, path2] = calcAccommodation(desiredAccommodation);
     sceneGeometry = createSceneGeometry('navarroD',navarroD);
     plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
-    plotOpticalSystem('newFigure',false,'rayPath',path1);
-    plotOpticalSystem('newFigure',false,'rayPath',path2);
-    xlim([-25 5]);
+    plotOpticalSystem('newFigure',false,'rayPath',path1,'outputRayScale',1000/desiredAccommodation);
+    plotOpticalSystem('newFigure',false,'rayPath',path2,'outputRayScale',1000/desiredAccommodation);
 %}
 
 
