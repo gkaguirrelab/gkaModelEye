@@ -28,6 +28,10 @@ function [eyePose,navarroD,visualAngles,initialTargetWorld] = calcFixationPose(f
 %       Steinman, R. M., W. B. Cushman, and A. J. Martins. "The precision
 %       of gaze." Human neurobiology 1 (1982): 97-109.
 %
+%       Bingham, Geoffrey P. "Optical flow from eye movement with head
+%       immobilized:“Ocular occlusion” beyond the nose." Vision Research
+%       33.5-6 (1993): 777-789.
+%
 %       Mapp, Alistair P., and Hiroshi Ono. "The rhino-optical phenomenon:
 %       Ocular parallax and the visible field beyond the nose." Vision
 %       Research 26.7 (1986): 1163-1165.
