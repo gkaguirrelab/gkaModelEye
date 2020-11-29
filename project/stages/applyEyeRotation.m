@@ -36,11 +36,13 @@ rotatePointsIdx = find(~contains(pointLabels,{'Rotation','Canthus'}));
 % Copy the eyePoints to the headPoints
 headPoints = eyePoints;
 
-% Loop through the points to be rotated. We pass the rotation matrix to
-% avoid having to re-calculate this for the rotation of each point.
+% Loop through the points to be rotated. The rotation matrix R is initially
+% set to empty. The filled-in matrix is returned on the first execution of
+% rotateEyeCoord, and this is then supplied on subsequent calls to the
+% routine, saving time on this calculation.
 R = [];
 for pp = 1:length(rotatePointsIdx)
-    headPoints(rotatePointsIdx(pp),:) = rotateEyeCoord(...
+    [headPoints(rotatePointsIdx(pp),:), R] = rotateEyeCoord(...
         eyePoints(rotatePointsIdx(pp),:), ...
         eyePose, ...
         sceneGeometry.eye.rotationCenters, ...
