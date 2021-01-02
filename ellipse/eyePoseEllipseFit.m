@@ -1,8 +1,8 @@
-function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput] = eyePoseEllipseFit(Xp, Yp, glintCoord, sceneGeometry, varargin)
+function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput, xHist] = eyePoseEllipseFit(Xp, Yp, glintCoord, sceneGeometry, varargin)
 % Return the eye pose that best fits an ellipse to the pupil perimeter
 %
 % Syntax:
-%  [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound] = eyePoseEllipseFit(glintCoord, Xp, Yp, sceneGeometry)
+%  [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput, xHist] = eyePoseEllipseFit(Xp, Yp, glintCoord, sceneGeometry)
 %
 % Description:
 %   The routine finds the eyePose parameters (azimuth, elevation, torsion,
@@ -89,6 +89,7 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput] =
 %                           parameters (eye or camera) are at the upper or
 %                           lower boundary.
 %   searchOutput          - Structure. The output of the fmincon search.
+%   xHist                 - 
 %
 % Examples:
 %{
@@ -388,6 +389,7 @@ lb = [eyePoseLB cameraTransLB'];
 ub = [eyePoseUB cameraTransUB'];
 
 % Initialize nested variables
+xHist = x0;
 xLast = [];
 cLast = [];
 ceqLast = [];
@@ -405,6 +407,7 @@ fullObj = @(x) fullObjective(x,Xp,Yp,glintCoord,sceneGeometry);
         if ~isequal(x,xLast)
             [fValLast,cLast,ceqLast] = fullObj(x);
             xLast = x;
+            xHist(end+1,:) = x;
         end
         fVal = fValLast;
         % This is some business to prevent fmincon from considering as
@@ -423,6 +426,7 @@ fullObj = @(x) fullObjective(x,Xp,Yp,glintCoord,sceneGeometry);
         if ~isequal(x,xLast)
             [fValLast,cLast,ceqLast] = fullObj(x);
             xLast = x;
+            xHist(end+1,:) = x;
         end
         c = cLast;
         % This is some business to prevent fmincon from considering as
