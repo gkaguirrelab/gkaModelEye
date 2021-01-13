@@ -10,10 +10,10 @@ function opticalSystemOut = addIris(opticalSystemIn, stopRadius, irisColor)
 %   system as the radius of the stop is a dynamic parameter. The iris
 %   surface is modeled as having an infinite index of refraction, so that
 %   rays that intersect this surface go no further. The aperture stop is a
-%   circulr, must-intersect surface.
+%   circular, must-intersect surface.
 %
-%   If a iris is already present, then calling this routine will update the
-%   surfaces with the passed stopRadius
+%   If an iris is already present, then calling this routine will update
+%   the surfaces with the passed stopRadius
 %
 % Inputs:
 %   opticalSystemIn       - Struct. Must have the fields
@@ -114,17 +114,19 @@ irisCenterX = iris.center(1);
 % The stop is an ellipsoid that is elongated, so that it has a flat
 % surface as seen by rays traveling parallel to the optical axis. The stop
 % has a trivial non-zero depth.
-eRadii = [3 10 10];
+eRadii = [1 10 10];
 S = quadric.scale(quadric.unitSphere,eRadii);
 
 % Find the x axis position on the quadric where the radius in the y-z plane
 % is equal to the iris radius, and the position where the radius is equal
 % to the stop radius
 F = quadric.vecToFunc(S);
+options = optimset('fminbnd');
 myObj = @(x) abs(F(x,iris.radius,0));
-xPerim = fminbnd(myObj,0,eRadii(1));
-myObj = @(x) abs(F(x,stopRadius,0));
-xStop = fminbnd(myObj,0,eRadii(1));
+xPerim = fminbnd(myObj,0,eRadii(1),options);
+myObj = @(x) abs(F(x,stopRadius,0)).*1e6;
+options.TolX = 1e-10;
+xStop = fminbnd(myObj,0,eRadii(1),options);
 
 % Translate the quadric so that this xStop position corresponds to the iris
 % center on the x axis
