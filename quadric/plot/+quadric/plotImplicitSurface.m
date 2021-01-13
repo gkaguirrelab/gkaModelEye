@@ -1,12 +1,13 @@
-function p = plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLineColor,lineAlpha,bbTol,meshGridSamples)
+function p = plotImplicitSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLineColor,lineAlpha)
 % Add a 3D plot of the quadric surface to the active figure
 %
 % Syntax:
-%  p = quadric.plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLineColor,lineAlpha,bbTol,meshGridSamples)
+%  p = quadric.plotImplicitSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLineColor,lineAlpha)
 %
 % Description:
-%   Creates a meshgrid on the quadric surface and plots this as a mesh
-%   surface, using the supplied face color and alpha transparency.
+%   Plot the quadric surface as an implicit function. This is more precise
+%   than plotGridSurface, but the resulting plot object is heavy weight and
+%   slow to manipulate.
 %
 % Inputs:
 %   S                     - 1x10 vector or 4x4 matrix of the quadric
@@ -20,7 +21,7 @@ function p = plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLi
 %                           'red'.
 %   surfAlpha             - Scalar, range 0-1. Specifies the transparency
 %                           of the surface from 0 (opaque) to 1
-%                           (fully transparent)
+%                           (fully transparent).
 %   betaLineColor         - 1x3 vector or char string that specifies a
 %                           valid MATLAB plor color. E.g. [0.5 0.5 0.5] or
 %                           'red'. Used to plot the ellipsoidal geodetic
@@ -31,12 +32,9 @@ function p = plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLi
 %                           'red'. Used to plot the ellipsoidal geodetic
 %                           lines of constant omega. If not defined, these
 %                           lines are not shown.
-%   bbTol                 - Scalar. Defines the tolerance within which the
-%                           intersection must be within the boundingBox.
-%                           Default value is 0.1. Handles the situation in
-%                           which the intersection is right on the boundary
-%                           but is numerically outside.
-%   meshGridSamples       - Scalar. Defines the density of surface samples.
+%   lineAlpha             - Scalar, range 0-1. Specifies the transparency
+%                           of the beta and omega lines from 0 (opaque) to
+%                           1 (fully transparent).
 %
 % Outputs:
 %   p                     - Handle to the surface plot object
@@ -47,7 +45,7 @@ function p = plotSurface(S,boundingBox,surfColor,surfAlpha,betaLineColor,omegaLi
     S = quadric.scale(quadric.unitSphere,[4 5 3]);
     boundingBox = [-50 50 -30 30 -20 20];
     figure
-    quadric.plotSurface(S, boundingBox, 'k', 0.25, 'red');
+    quadric.plotImplicitSurface(S, boundingBox, 'k', 0.25, 'red');
     camlight
 %}
 
@@ -64,8 +62,7 @@ if nargin==1
     surfAlpha=0.8;
     betaLineColor = [];
     omegaLineColor = [];
-    bbTol = 1e-2;
-    meshGridSamples = 100;
+    lineAlpha = 1;
 end
 
 if nargin==2
@@ -73,60 +70,34 @@ if nargin==2
     surfAlpha=0.8;
     betaLineColor = [];
     omegaLineColor = [];
-    bbTol = 1e-2;
-    meshGridSamples = 100;
+    lineAlpha = 1;
 end
 
 if nargin==3
     surfAlpha=0.8;
     betaLineColor = [];
     omegaLineColor = [];
-    bbTol = 1e-2;
-    meshGridSamples = 100;
+    lineAlpha = 1;
 end
 
 if nargin==4
     betaLineColor = [];
     omegaLineColor = [];
-    bbTol = 1e-2;
-    meshGridSamples = 100;
+    lineAlpha = 1;
 end
 
 if nargin==5
     omegaLineColor = [];
     lineAlpha = 1;
-    bbTol = 1e-2;
-    meshGridSamples = 100;
 end
 
 if nargin==6
     lineAlpha = 1;
-    bbTol = 1e-2;
-    meshGridSamples = 100;
 end
 
-if nargin==7
-    bbTol = 1e-2;
-    meshGridSamples = 100;
-end
-
-if nargin==8
-    meshGridSamples = 100;
-end
-
-% Create a linear meshgrid within the boundingBox range
-[xx, yy, zz]=meshgrid( linspace(boundingBox(1)-bbTol,boundingBox(2)+bbTol,meshGridSamples),...
-    linspace(boundingBox(3)-bbTol,boundingBox(4)+bbTol,meshGridSamples),...
-    linspace(boundingBox(5)-bbTol,boundingBox(6)+bbTol,meshGridSamples));
-
-% Obtain the polynomial function for the quadric surface
-F = quadric.vecToFunc(S);
-
-% Find the vertices that are on the quadric surface
-vertices = isosurface(xx, yy, zz, F(xx, yy, zz), 0);
 
 % Plot and define plot appearance
-p = patch(vertices);
+p = fimplicit3(quadric.vecToFunc(S),boundingBox);
 p.FaceColor = surfColor;
 p.FaceAlpha = min([1 surfAlpha]);
 p.EdgeColor = 'none';
