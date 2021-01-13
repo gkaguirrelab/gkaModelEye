@@ -191,9 +191,9 @@ if ~isempty(p.Results.surfaceSet)
             % Plot the surface. If it is the retinal surface, and geodetic
             % lines have been requested, include these.
             if strcmp(surfaceLabels{ii},'retina') && p.Results.retinaGeodetics
-                plotHandles(end+1) = quadric.plotSurface(S,boundingBox,surfaceColor,surfaceAlpha,'g','b',p.Results.surfaceAlpha);
+                plotHandles(end+1) = quadric.plotGridSurface(S,boundingBox,surfaceColor,surfaceAlpha,'g','b',p.Results.surfaceAlpha);
             else
-                plotHandles(end+1) = quadric.plotSurface(S,boundingBox,surfaceColor,surfaceAlpha);
+                plotHandles(end+1) = quadric.plotGridSurface(S,boundingBox,surfaceColor,surfaceAlpha);
             end
         end
     end

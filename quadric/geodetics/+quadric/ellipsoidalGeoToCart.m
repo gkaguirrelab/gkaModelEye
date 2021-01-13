@@ -49,7 +49,7 @@ function X = ellipsoidalGeoToCart( geodetic, S )
     % Show an ellipsoidal surface with lines of constant beta and omega
     S = quadric.scale(quadric.unitSphere,[1 1.5 0.5]);
     figure
-    quadric.plotSurface(S,[-2,2,-2,2,-2,2],[.9 .9 .9],0.8,'b','g');
+    quadric.plotGridSurface(S,[-2,2,-2,2,-2,2],[.9 .9 .9],0.8,'b','g');
     camlight
     lighting gouraud
     fprintf('Lines of constant beta in blue\n');

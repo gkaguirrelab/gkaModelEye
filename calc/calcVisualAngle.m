@@ -55,7 +55,7 @@ function [visualAngleTotal, visualAngleByPlane, outputRay0, outputRay1, rayPath0
     S = eye.retina.S;
     boundingBox = eye.retina.boundingBox;
     figure
-    quadric.plotSurface(S,boundingBox,[0.9 0.9 0.9],0.8);
+    quadric.plotGridSurface(S,boundingBox,[0.9 0.9 0.9],0.8);
     camlight
     lighting gouraud
     hold on

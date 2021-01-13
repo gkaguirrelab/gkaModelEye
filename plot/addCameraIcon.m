@@ -71,14 +71,14 @@ plotHandles(end+1:end+6) = cellfun(@patch,XYZ{1},XYZ{2},XYZ{3},...
 S = quadric.scale(quadric.unitSphere,[2000 5 5]);
 S = quadric.translate(S,nodalPoint);
 boundingBox = [nodalPoint(1)-15 nodalPoint(1) nodalPoint(2)-5 nodalPoint(2)+5 nodalPoint(3)-5 nodalPoint(3)+5];
-plotHandles(end+1) = quadric.plotSurface(S, boundingBox, [0.5 0.5 1], 0.5);
+plotHandles(end+1) = quadric.plotGridSurface(S, boundingBox, [0.5 0.5 1], 0.5);
 
 % Add some circles to cap the lens ends
 boundingBox = [nodalPoint(1)-0.1 nodalPoint(1)+0.1 nodalPoint(2)-5 nodalPoint(2)+5 nodalPoint(3)-5 nodalPoint(3)+5];
-plotHandles(end+1) = quadric.plotSurface(S, boundingBox, 'k', 0.5);
+plotHandles(end+1) = quadric.plotGridSurface(S, boundingBox, 'k', 0.5);
 S = quadric.translate(S,[-15 0 0]);
 boundingBox = [nodalPoint(1)-14.9 nodalPoint(1)-15.1 nodalPoint(2)-6 nodalPoint(2)+6 nodalPoint(3)-6 nodalPoint(3)+6];
-plotHandles(end+1) = quadric.plotSurface(S, boundingBox, 'k', 0.5);
+plotHandles(end+1) = quadric.plotGridSurface(S, boundingBox, 'k', 0.5);
 
 %% Add the glints
 glintPoints = convertWorldToEyeCoord(sceneGeometry.cameraPosition.glintSourceRelative);
@@ -87,7 +87,7 @@ for gg = 1:size(glintPoints,1)
     S = quadric.scale(quadric.unitSphere,[1 1 1]);
     S = quadric.translate(S,coord);
     boundingBox = [coord(1)-1 coord(1) coord(2)-1 coord(2)+1 coord(3)-1 coord(3)+1];
-    plotHandles(end+1) = quadric.plotSurface(S, boundingBox, [1 0 0], 1);
+    plotHandles(end+1) = quadric.plotGridSurface(S, boundingBox, [1 0 0], 1);
 end
 
 

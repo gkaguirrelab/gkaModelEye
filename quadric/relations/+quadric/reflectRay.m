@@ -34,7 +34,7 @@ function Rr = reflectRay(R,N)
     S = quadric.scale(quadric.unitSphere(),[5,8,7]);
     boundingBox = [-10 10 -10 10 -10 10];
     figure
-    quadric.plotSurface(S, boundingBox,'k',0.2);
+    quadric.plotGridSurface(S, boundingBox,'k',0.2);
     hold on
     camlight
     R = quadric.anglesToRay([-10; 0; 0], 20, 0 );

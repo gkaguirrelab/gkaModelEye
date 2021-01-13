@@ -21,7 +21,7 @@ function fovea = fovea( eye )
     S = eye.retina.S;
     boundingBox = eye.retina.boundingBox;
     figure
-    quadric.plotSurface(S,boundingBox,[0.9 0.9 0.9],0.8,'b','g');
+    quadric.plotGridSurface(S,boundingBox,[0.9 0.9 0.9],0.8,'b','g');
     camlight
     lighting gouraud
     hold on

@@ -53,7 +53,7 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
     assert( max(abs(distance - 0.0259)) < 1e-3 );
     % Plot the result
     figure
-    quadric.plotSurface(S,boundingBox,[0.9 0.9 0.9],0.8);
+    quadric.plotGridSurface(S,boundingBox,[0.9 0.9 0.9],0.8);
     camlight
     lighting gouraud
     hold on
