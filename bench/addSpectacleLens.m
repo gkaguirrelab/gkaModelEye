@@ -5,7 +5,7 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 %  [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractionDiopters)
 %
 % Description:
-%	This routine adds an ophthalmologic spectacle lens to an optical system
+%	This routine adds an ophthalmic spectacle lens to an optical system
 %	with the refractive power specified in the passed variable. Note that a
 %	ray emerging from the eye encounters two concave surfaces for this
 %	lens, so both surfaces will have a negative radius of curvature for
