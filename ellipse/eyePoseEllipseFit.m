@@ -472,16 +472,16 @@ ceq = 0;
 [candidateEllipse, candidateGlint] = ...
     projectModelEye(x(1:4), sceneGeometry, 'cameraTrans', x(5:7)');
 
-% Check for the case in which the transparentEllipse contains nan
-% values, which can arise if there were an insufficient number of
-% pupil border points remaining after refraction to define an
+% Check for the case in which the transparentEllipse contains nan values,
+% which can arise if there were an insufficient number of pupil border
+% points remaining after refraction to define an
 % ellipse.
 if any(isnan(candidateEllipse))
     return
 end
     
-% Calculate the RMSE of the distance values of the boundary
-% points to the ellipse fit.
+% Calculate the RMSE of the distance values of the boundary points to the
+% ellipse fit.
 explicitEllipse = ellipse_transparent2ex(candidateEllipse);
 
 % Detect failures in the ellipse fit and return
@@ -495,8 +495,8 @@ end
 % Obtain the fVal
 fVal = sqrt(nanmean(ellipsefit_distance(Xp,Yp,explicitEllipse).^2));
 
-% Now compute the constraint. If there is no glint, then
-% we do not use the constraint.
+% Now compute the constraint. If there is no glint, then we do not use the
+% constraint.
 if isempty(glintCoord)
     return
 end
