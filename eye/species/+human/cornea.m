@@ -329,7 +329,7 @@ S = quadric.rotate(S,cornea.rotation);
 cornealThickness = 0.55;
 S = quadric.translate(S,[-cornealThickness-backSurfaceRadii(1) 0 0]);
 
-% Find the moster anterior point of this quadric surface
+% Find the most anterior point of this quadric surface
 X = quadric.mostAnteriorPoint( S );
 
 % Store these values
