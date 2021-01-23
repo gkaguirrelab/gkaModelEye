@@ -251,25 +251,35 @@ else
     else
         refPose = [0 0 0 2];
     end
-
+    
     % Probe to find the translation in pixels produced
     [~, probeCoord0] = projectModelEye(refPose, sceneGeometry, 'cameraTrans', [0;0;0]);
     [~, probeCoord1] = projectModelEye(refPose, sceneGeometry, 'cameraTrans', [1;0;0]);
-    pixPerMm = mean(probeCoord0(:,1)-probeCoord1(:,1));
-    cameraTransX0 = [ ...
-        -(glintCoord(1,1)-probeCoord0(1,1))/pixPerMm; ...
-        (glintCoord(1,2)-probeCoord0(1,2))/pixPerMm; ...
-        0];
     
-    % If there are two or more glints, determine the depth translation
-    if size(glintCoord,1)>1
-        [~, probeCoord2] = projectModelEye(refPose, sceneGeometry, 'cameraTrans', [0;0;1]);
-        a = diff(probeCoord0(1:2,1))/2;
-        b = diff(probeCoord2(1:2,1))/2;
-        t = (diff(glintCoord(1:2,1))/2 - a)/(b-a);
-        cameraTransX0(3) = t;
-    end
+    % If the glint was undefined, set the cameraTransX0 to zero
+    if isempty(probeCoord0) || isempty(probeCoord1)
         
+        cameraTransX0 = [0;0;0];
+        
+    else
+        
+        pixPerMm = mean(probeCoord0(:,1)-probeCoord1(:,1));
+        cameraTransX0 = [ ...
+            -(glintCoord(1,1)-probeCoord0(1,1))/pixPerMm; ...
+            (glintCoord(1,2)-probeCoord0(1,2))/pixPerMm; ...
+            0];
+        
+        % If there are two or more glints, determine the depth translation
+        if size(glintCoord,1)>1
+            [~, probeCoord2] = projectModelEye(refPose, sceneGeometry, 'cameraTrans', [0;0;1]);
+            a = diff(probeCoord0(1:2,1))/2;
+            b = diff(probeCoord2(1:2,1))/2;
+            t = (diff(glintCoord(1:2,1))/2 - a)/(b-a);
+            cameraTransX0(3) = t;
+        end
+        
+    end
+    
     % Make sure that X0 is in bounds
     cameraTransX0 = max([cameraTransLB cameraTransX0],[],2);
     cameraTransX0 = min([cameraTransUB cameraTransX0],[],2);
