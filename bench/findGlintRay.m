@@ -131,8 +131,17 @@ S = quadric.vecToMatrix(opticalSystemRot(reflectSurfaceIdx,1:10));
 % solution holds even when the quadric surface for the cornea is slightly
 % rotated out of alignment with the optical axis of the eye (i.e., if
 % corneal tilt / tip rotations are being modeled). The location is
-% specified in the eye coordinate space.
-cornealApex = quadric.ellipsoidalGeoToCart([0 0 0],S)';
+% specified in the eye coordinate space. The corneal apex can be located at
+% either geodetic [0 0 0] or geodetic [0 180 0], depending upon the
+% dimensions of the quadric. We test both and take the most anterior
+% output.
+cornealApexA = quadric.ellipsoidalGeoToCart([0 0 0],S)';
+cornealApexB = quadric.ellipsoidalGeoToCart([0 180 0],S)';
+if abs(cornealApexB(1)) < abs(cornealApexA(1))
+    cornealApex = cornealApexB;
+else
+    cornealApex = cornealApexA;
+end
 
 % Next, we find the location of the corneal apex when the eye has been
 % rotated by the angles specified in eyePose. We are still in the eye
