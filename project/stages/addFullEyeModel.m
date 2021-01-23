@@ -84,9 +84,18 @@ corneaPoints = quadric.surfaceGrid(...
     'parametricPolar');
 
 % Add the corneal apex, which is the point at ellipsoidal geodetic
-% coordinates [0 0 0] (see: quadric.ellipsoidalGeoToCart)
+% coordinates [0 0 0] (see: quadric.ellipsoidalGeoToCart). The corneal apex
+% can be located at either geodetic [0 0 0] or geodetic [0 180 0],
+% depending upon the dimensions of the quadric. We test both and take the
+% most anterior output.
 S = sceneGeometry.eye.cornea.front.S;
-cornealApex = quadric.ellipsoidalGeoToCart([0 0 0],S)';
+cornealApexA = quadric.ellipsoidalGeoToCart([0 0 0],S)';
+cornealApexB = quadric.ellipsoidalGeoToCart([0 180 0],S)';
+if abs(cornealApexB(1)) < abs(cornealApexA(1))
+    cornealApex = cornealApexB;
+else
+    cornealApex = cornealApexA;
+end
 
 % Add the corneal points and labels
 eyePoints = [eyePoints; corneaPoints];
