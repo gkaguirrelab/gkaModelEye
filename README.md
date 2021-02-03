@@ -19,7 +19,8 @@ These routines implement a ray-traced model eye in MATLAB. The software calculat
 The model is described in:
 
  * GK Aguirre (2019) [A Model of the Entrance Pupil of the Human Eye](https://www.nature.com/articles/s41598-019-45827-3). Scientific Reports, volume 9, Article number: 9360 (2019) 
-
+ * GK Aguirre (2021) [A Model of the Appearance of the Moving Human Eye](https://www.biorxiv.org/content/10.1101/2021.02.02.429411v1). bioRxiv 
+ 
 The anatomical properties of the eye are described in a set of routines that account for biometric variation, includng spherical refractive error (ametropia). Ray tracing through the optical components of the eye (and any artificial lenses) is implemented as skew rays through generalized quadric surfaces. The routine `findPupilRay.m` calculates the effect of refraction, making use of calls to `rayTraceQuadrics.m`. An improvement in execution time can be achieved by compiling the ray tracing routines. To do so, issue the command `compileInverseRayTrace` at the MATLAB console. Compiled MEX file versions of `findPupilRay` and `findGlintRay` will be placed in the `bin` directory of this repository if they are not already present.
 
 The function `projectModelEye` implements a forward model of the appearance of the entrance pupil and glint in a camera observing the eye. The model can also render the appearance of the entire model eye. Inputs to this routine are:
