@@ -17,6 +17,9 @@ sceneGeometry=createSceneGeometry('calcLandmarkFovea',true);
 % Calculate the line of sight for the eye
 [outputRayLoS,rayPathLoS] = calcLineOfSightRay(sceneGeometry);
 
+% Add an iris and aperture stop for the optical system render
+sceneGeometry.refraction.retinaToCamera = addIris(sceneGeometry.refraction.retinaToCamera, 2, 'green');
+
 
 %% opticalSystem3D
 
@@ -42,13 +45,10 @@ R = quadric.normalizeRay( ...
     sceneGeometry.eye.landmarks.fovea.degField(1), ...
     sceneGeometry.eye.landmarks.fovea.degField(2)));
 
-% Perform the ray trace
-[outputRay, rayPath] = rayTraceQuadrics(R, sceneGeometry.refraction.retinaToCamera.opticalSystem);
-
 % Add this ray to the optical system plot
 plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera, ...
     'newFigure',false,'addLighting',true, ...
-    'outputRay',outputRay,'rayPath',rayPath);
+    'outputRay',outputRayLoS,'rayPath',rayPathLoS);
 
 % Save this image
 filename = fullfile(functionDirPath,'opticalSystem3D.png');
