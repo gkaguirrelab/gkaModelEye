@@ -53,39 +53,39 @@ An improvement in execution time of the code can be achieved by compiling the ra
 
 A good place to start is to create a default model eye and then examine the effect of different poses. This example defines an emmetropic right eye, observed in the near infra-red range:
 ```
-    sceneGeometry = createSceneGeometry();
+sceneGeometry = createSceneGeometry();
 ```
 
 You can then define an eye pose. This example rotates the eye to -30 degrees in azimuth, -5 degrees elevation, 0 degrees torsion, with an aperture stop 2 mm in radius:
 ```
-    eyePose = [-30 -5 0 2];
+eyePose = [-30 -5 0 2];
 ```
 
 You can then obtain the parameters of the entrance pupil ellipse:
 ```
-    pupilEllipse = projectModelEye(eyePose, sceneGeometry);
+pupilEllipse = projectModelEye(eyePose, sceneGeometry);
 ```
 
 And render the appearance of the eye as seen by a camera:
 ```
-    renderEyePose(eyePose, sceneGeometry);
+renderEyePose(eyePose, sceneGeometry);
 ```
 
 The variable `sceneGeometry` is a structure. Examine the contents of the fields to get a sense of the model elements. Once you have a sceneGeometry, you can use it to create different displays of the eye. For example, the components of the model eye can be displayed in a cross-section schematic:
 ```
-    plotModelEyeSchematic(sceneGeometry);
+plotModelEyeSchematic(sceneGeometry);
 ```
 
 Also as a set of 3D quadric surfaces:
 ```
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
+plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
 ```
 
 ## Demos and unit tests
 
 Most functions have associated examples in the header comments. To automatically run all examples, ensure that the [ExampleTest toolbox](https://github.com/isetbio/ExampleTestToolbox.git) is on the path. This command will then test all examples:
 ```
-	[names,status] = RunExamples(fullfile(userpath(),'toolboxes','gkaModelEye'))
+[names,status] = RunExamples(fullfile(userpath(),'toolboxes','gkaModelEye'))
 ```
 
 Additional demos and examples can be found in the `demos` and `twitter` directories.
