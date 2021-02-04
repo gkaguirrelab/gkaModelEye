@@ -10,8 +10,10 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %       model/modelEyeParameters.m
 %
 % Inputs:
-%   eye                   - An eye struct returned from
-%                           modelEyeParameters()
+%   eye                   - Struct. This is the eye struct returned from
+%                           modelEyeParameters(). Optionally, if a
+%                           sceneGeometry structure is passed, the routine
+%                           will look for the eye field.
 %
 % Optional key/value pairs:
 %  'view'                 - String. The view to display. Valid choices
@@ -44,6 +46,11 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
     % Basic call for a horizontal view plot
     eye = modelEyeParameters();
     plotModelEyeSchematic(eye);
+%}
+%{
+    % Can also pass the whole sceneGeometry
+    sceneGeometry = createSceneGeometry();
+    plotModelEyeSchematic(sceneGeometry);
 %}
 %{
     % A plot with the fovea, visual axis, and line of sight
@@ -87,6 +94,13 @@ p.addParameter('plotVisualAxis',false,@islogical);
 
 % parse
 p.parse(eye, varargin{:})
+
+% Check if there is an eye field in the structure, in which case we are
+% dealing with a sceneGeometry, and we will want to extract the eye field.
+if isfield(eye,'eye')
+    eye = eye.eye;
+end
+
 
 % Open a figure
 if p.Results.newFigure
