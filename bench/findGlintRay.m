@@ -17,6 +17,13 @@ function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldOri
 %   at worldTarget, and the outputRay is reflected off the corneal surface,
 %   creating a "glint" in the camera image.
 %
+%   the routine takes as input three optical systems. This allows a ray to
+%   be traced from the light source 1) in the camera-to-eye direction
+%   through any non-rotating refractive elements in the medium (e.g., a
+%   spectacle lens), 2) reflecting off the rotating optical system (e.g.,
+%   the tear film of the eye), 3) passing back through the non-rotating
+%   elements, now in the eye-to-camera direction.
+%
 % Inputs:
 %   worldOrigin           - A 3x1 vector that specifies the point in world 
 %                           coordinates (x, y, z) of the source of a ray.
@@ -36,16 +43,18 @@ function [outputRay, initialRay, targetIntersectError ] = findGlintRay( worldOri
 %                           	sceneGeometry.cameraPosition.translation
 %   rotationCenters       - Equal to sceneGeometry.eye.rotationCenters
 %   opticalSystemFixRL    - Struct. This is the component of the optical
-%                           system that is invariant with eye
-%                           movements. Typically set to: sceneGeometry.
+%                           system that is invariant with eye movements,
+%                           traced in the camera-to-eye direction.
+%                           Typically set to: sceneGeometry.
 %                               refraction.cameraToMedium.opticalSystem
 %   opticalSystemRot      - Struct. This is the component of the optical
 %                           system that is subject to rotation with eye
 %                           movements. Typically set to: sceneGeometry.
 %                               refraction.stopToMedium.opticalSystem
 %   opticalSystemFixLR    - Struct. This is the component of the optical
-%                           system that is invariant with eye
-%                           movements. Typically set to: sceneGeometry.
+%                           system that is invariant with eye movements,
+%                           traced in the eye-to-camera direction.
+%                           Typically set to: sceneGeometry.
 %                               refraction.mediumToCamera.opticalSystem
 %
 % Outputs:

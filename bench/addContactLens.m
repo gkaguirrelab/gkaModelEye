@@ -42,6 +42,16 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
 %                           under visible (vis) and near infra-red (nir)
 %                           imaging domains.
 %  'minimumLensThickness' - Scalar. The minimum lens thickness in mm.
+%  'backSurfaceRadii'     - 1x3 vector or empty. The radii of the tear film
+%                           of the cornea, and thus the back surface of the
+%                           contact lens. If left empty, these values are
+%                           derived from the last row of the optical
+%                           system.
+%  'tearThickness'        - Scalar. The thickness of the tear film. If left
+%                           empty, this value is derived from the last rows
+%                           of the optical system
+%  'contactLensDepth'     - Scalar. The axial cup depth (in mm) of the
+%                           contact lens. Defaults to 2mm.
 %  'cornealRotation'      - 1x3 vector. If the cornea has been rotated out
 %                           of alignment with the optical axis, the calling
 %                           function needs to pass this value here. It
@@ -77,8 +87,9 @@ p.addRequired('lensRefractionDiopters',@isnumeric);
 % Optional
 p.addParameter('lensRefractiveIndex',returnRefractiveIndex( 'hydrogel', 'NIR' ),@isnumeric);
 p.addParameter('minimumLensThickness',0.05,@isnumeric);
-p.addParameter('frontSurfaceRadii',[],@isnumeric);
+p.addParameter('backSurfaceRadii',[],@isnumeric);
 p.addParameter('tearThickness',[],@isnumeric);
+p.addParameter('contactLensDepth',2,@isnumeric);
 p.addParameter('cornealRotation',[0, 0, 0],@isnumeric);
 
 % parse
@@ -117,20 +128,20 @@ backCenter = backCenter(1);
 
 % Derive the radii of the backSurface of the contact lens from the tear
 % film, or the passed value.
-if isempty(p.Results.frontSurfaceRadii)
-    backRadii = quadric.radii(tearS);
+if isempty(p.Results.backSurfaceRadii)
+    backSurfaceRadii = quadric.radii(tearS);
 else
-    backRadii = p.Results.frontSurfaceRadii;
+    backSurfaceRadii = p.Results.frontSurfaceRadii;
 end
 
 if isempty(p.Results.tearThickness)
-    tearThickness = backRadii(1)+backCenter(1);
+    tearThickness = backSurfaceRadii(1)+backCenter(1);
 else
     tearThickness = p.Results.tearThickness;
 end
 
-% The desired optical system will have its refractive power plus the called
-% for lens refraction.
+% The desired optical system will have its refractive power plus the
+% requested lens refraction.
 targetDiopters = calcOpticalPower(opticalSystemIn) + lensRefractionDiopters;
 
 
@@ -143,8 +154,8 @@ targetDiopters = calcOpticalPower(opticalSystemIn) + lensRefractionDiopters;
 % upon whether the lens has positive or negative power.
 %
 % A plus lens corrects hyperopia. It is thickest along the optical axis. We
-% constrain the shape of the lens so that it has no-zero thickness out at
-% its far edge.
+% constrain the shape of the lens so that it has non-zero thickness at the
+% far edge.
 %
 % A minus lens corrects myopia. It has a flatter front surface and a more
 % curved back surface. It will be thinnest at the center of the lens on the
@@ -158,12 +169,14 @@ targetDiopters = calcOpticalPower(opticalSystemIn) + lensRefractionDiopters;
 % curvature
 frontCenter = @(x) tearThickness + x(1) + x(2);
 
-% Return the optical system for the candidate lens
+% Return the optical system for the candidate lens. We pass the negative of
+% the contactLensDepth, as this defines the posterior aspect of the
+% bounding box for the contact lens.
 mySystem = @(x) ...
     assembleLensSystem(opticalSystemIn, ...
-    p.Results.lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, ...
-    x(1), frontCenter(x), ...
-    -2, tearThickness, p.Results.cornealRotation, backRadii);
+    p.Results.lensRefractiveIndex, mediumRefractiveIndex, ...
+    tearRefractiveIndex, x(1), frontCenter(x), -p.Results.contactLensDepth, ...
+    tearThickness, p.Results.cornealRotation, backSurfaceRadii);
 
 % Define an objective which is the difference between the desired and
 % measured optical power of the lens
@@ -177,7 +190,7 @@ myConstraint = @(x) checkLensShape(mySystem(x));
 
 % Obtain an initial guess for the radius of curvature of the front
 % surface using the thin lens approximation
-frontCurvatureX0 = -backRadii(1);
+frontCurvatureX0 = -backSurfaceRadii(1);
 thicknessX0 = p.Results.minimumLensThickness;
 
 % Define some search options
@@ -225,7 +238,7 @@ frontCenter = frontCenter(x);
 
 
 %% Add the lens
-opticalSystemOut =  assembleLensSystem(opticalSystemIn, p.Results.lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, frontCurvature, frontCenter, intersectHeight, tearThickness, p.Results.cornealRotation, backRadii);
+opticalSystemOut =  assembleLensSystem(opticalSystemIn, p.Results.lensRefractiveIndex, mediumRefractiveIndex, tearRefractiveIndex, frontCurvature, frontCenter, intersectHeight, tearThickness, p.Results.cornealRotation, backSurfaceRadii);
 
 
 end % function - addContactLens
@@ -240,9 +253,11 @@ function diopters = myDiopters(x, mySystem)
 % the x parameters of the contact lens.
 opticalSystem = mySystem(x);
 
-% I am encountering occasional "invalid system direction" errors in
+% I had been encountering occasional "invalid system direction" errors in
 % producing some contact lenses. Placing this calculation in a try-catch
-% block to get some diagnostic information for this event.
+% block to get some diagnostic information for this event. I think I solved
+% the cause (it was due to corneal rotation not being properly modeled) but
+% I have left this code here just in case the problem should return.
 try
     diopters = calcOpticalPower(opticalSystem);
 catch
