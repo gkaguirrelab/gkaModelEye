@@ -29,7 +29,7 @@ if ~strcmp(quadric.classify( S ),'ellipsoid')
     error('quadric:mostAnteriorPoint','Can only find the most anterior point for an ellipsoid');
 end
 
-% An anonymoys function that returns the area of an ellipse that is in the
+% An anonymous function that returns the area of an ellipse that is in the
 % cross-sectional plane at a given position along the x axis.
 myFun = @(x) ellipseAreaAtX(S,x);
 
@@ -60,8 +60,8 @@ function [area, center] = ellipseAreaAtX(S,x)
 % Obtain the variables for the quadric
 [A, B, C, D, E, F, G, H, I, K] = quadric.matrixToVars(S);
 
-% Map the ellipsid parameters into the parameters into the implicit
-% parameters of an ellipse at the specfied x-axis position
+% Map the ellipsoid parameters into the implicit parameters of an ellipse
+% at the specfied x-axis position
 a = B;
 b = F;
 c = C;
@@ -82,7 +82,7 @@ if check < 0
     return
 end
 
-% Conver the ellipse parameters from implicit to transparent format, and
+% Convert the ellipse parameters from implicit to transparent format, and
 % extract the area and ellipse center
 transparent = ellipse_ex2transparent(ellipse_im2ex([a 2*b c 2*d 2*f g]));
 area = transparent(3);

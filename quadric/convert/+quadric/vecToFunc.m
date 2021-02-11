@@ -21,6 +21,9 @@ function F = vecToFunc(v)
 %   S                     - 1x10 vector or 4x4 matrix of the quadric
 %                           surface.
 %
+% Outputs:
+%   F                     - Hanndle to polynomial function
+%
 
 % If the quadric surface was passed in matrix form, convert to vec
 if isequal(size(v),[4 4])

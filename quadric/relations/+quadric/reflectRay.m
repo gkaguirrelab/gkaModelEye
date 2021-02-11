@@ -65,7 +65,7 @@ u = R(:,2);
 % Obtain the direction vector of the surface normal
 q = N(:,2);
 
-% Place the surface intersection point as the origin of the refracted ray
+% Place the surface intersection point as the origin of the reflected ray
 Rr(:,1) = N(:,1);
 
 % Obtain the direction of the reflected ray

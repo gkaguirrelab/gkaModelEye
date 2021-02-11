@@ -9,7 +9,7 @@ function distance = distancePointRay(p,R)
 %
 % Inputs:
 %   p                     - 3x1 vector that specifies a point
-%   R                    -- 3x2 matrix that specifies a vector of the form 
+%   R                     - 3x2 matrix that specifies a vector of the form 
 %                           [p; u], corresponding to
 %                               R = p + t*u
 %                           where p is vector origin, u is the direction
