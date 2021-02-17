@@ -102,7 +102,7 @@ options = optimset;
 G = [0; 0; 0];
 [G(1:2),angleError] = fminsearch(myObj, g0(1:2), options);
 
-% Obtain the Cartesian coordinates of the fovea
+% Obtain the Cartesian coordinates of the retinal point
 X = quadric.ellipsoidalGeoToCart(G,S);
 
 end
