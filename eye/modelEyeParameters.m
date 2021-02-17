@@ -23,7 +23,7 @@ function eye = modelEyeParameters( varargin )
 %                           spherical refractive error of the eye. A
 %                           negative number is the correction that would be
 %                           used for a myopic person.
-%  'axialLength'          - Scalar. This is the axial length (in mm) along 
+%  'axialLength'          - Scalar. This is the axial length (in mm) along
 %                           the optical axis. This value is converted into
 %                           an equivalent spherical error and then used to
 %                           set the eye biometry. If both
@@ -39,7 +39,7 @@ function eye = modelEyeParameters( varargin )
 %                           eye to be modeled. Influences the refractive
 %                           index values of the lens.
 %  'derivedParams'        - Struct that contains fields with parameters
-%                           used by various eye model components. If left 
+%                           used by various eye model components. If left
 %                           empty, the parameters will be obtained from a
 %                           stored set of values.
 %  'navarroD'             - Scalar. The parameter D of the Navarro 2014
@@ -51,7 +51,7 @@ function eye = modelEyeParameters( varargin )
 %                           resting accommodation value for an emmetropic
 %                           eye is used, which is stored in the
 %                           derivedParams.
-%  'kvals' -                1x2 to 1x5 vector. Provides the horizontal 
+%  'kvals' -                1x2 to 1x5 vector. Provides the horizontal
 %                           and vertical curvature of the cornea (diopters;
 %                           K1 and K2). The first value is always the
 %                           smaller, and thus describes the "flatter"
@@ -65,7 +65,7 @@ function eye = modelEyeParameters( varargin )
 %                           The additional parameter values give the
 %                           rotation of the corneal ellipsoid. In the order
 %                           of:
-%                               [torsion, tilt, tip]             
+%                               [torsion, tilt, tip]
 %                           which are (respectively), the rotation of the
 %                           "horizontal" axis away from horizontal in
 %                           degrees (a.k.a., oblique asigmatism; only the
@@ -204,10 +204,10 @@ eye.meta.varargin = varargin;
 
 % Switch parameters at the top level by species
 switch eye.meta.species
-
+    
     %% Human
     case {'human','Human','HUMAN'}
-
+        
         % Obtain the derived params
         if isempty(p.Results.derivedParams)
             filename = fullfile(replace(mfilename('fullpath'),mfilename(),''),'species','+human','derivedParams.mat');
@@ -230,33 +230,49 @@ switch eye.meta.species
             retinaCenter = quadric.center(eye.retina.S);
             eye.meta.axialLength = retinaRadii(1)-retinaCenter(1);
         end
-
+        
         % Rotation centers
         eye.rotationCenters = human.rotationCenters(eye);
         
         % Refractive indices
         eye.index.vitreous = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );
         eye.index.aqueous = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
-
+        
         % Landmarks. Some of these are optional
         eye.landmarks.medialCanthus = human.landmarks.medialCanthus(eye);
         eye.landmarks.lateralCanthus = human.landmarks.lateralCanthus(eye);
         eye.landmarks.vertex = human.landmarks.vertex(eye);
         if p.Results.calcLandmarkFovea
-           eye.landmarks.fovea = human.landmarks.fovea(eye);
+            eye.landmarks.fovea = human.landmarks.fovea(eye);
         end
         if p.Results.calcLandmarkOpticDisc
-           eye.landmarks.opticDisc = human.landmarks.opticDisc(eye);
+            eye.landmarks.opticDisc = human.landmarks.opticDisc(eye);
         end
         if p.Results.calcLandmarkOpticalCenter
-           eye.landmarks.opticalCenter = calcOpticalCenter(eye);
+            eye.landmarks.opticalCenter = calcOpticalCenter(eye);
         end
         
+        
+    %% Drasdo & Fowler 1974 model eye
+    case {'Drasdo','drasdo'}
+        
+        % Eye anatomy
+        eye.cornea = drasdo.cornea(eye);
+        eye.stop = drasdo.stop(eye);
+        eye.lens = drasdo.lens(eye);
+        eye.retina = drasdo.retina(eye);
+        
+        % Index of refraction for the vitreous and aqueous
+        eye.index.vitreous = 1.336;
+        eye.index.aqueous = 1.336;
+        
+        % Landmarks
+        eye.landmarks.vertex = drasdo.landmarks.vertex(eye);
         
     %% Canine
     case {'dog','Dog','canine','Canine'}
         error('Geoff needs to implement the canine model here');
-                
+        
     otherwise
         error('Please specify a valid species for the eye model');
 end
