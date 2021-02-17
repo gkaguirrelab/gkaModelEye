@@ -19,9 +19,6 @@ function P = calcPrincipalPoint(opticalSystem, rayStartDepth, rayHeight)
 %   ray tracing directions being available for a given opticalSystem
 %   variable; only the valid solution is returned.
 %
-%   In the paraxial approximation, nodal points and principal points are
-%   the same.
-%
 % Inputs:
 %   opticalSystem         - An mx19 matrix, where m is set by the key value
 %                           opticalSystemNumRows. Each row contains the
@@ -89,7 +86,7 @@ end
 
 % Trace the ray and find the intersection of the incoming and outgoing ray 
 M = rayTraceQuadrics(R, opticalSystem);
-P = quadric.distanceRays(R,M);
+[P, d] = quadric.distanceRays(R,M);
 
 % The first element of P is the position along the optical axis. The other
 % values are set to zero as we are working with a paraxial approximation.
