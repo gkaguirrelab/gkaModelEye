@@ -8,7 +8,7 @@ function [angle, angle_xy, angle_xz] = angleRays( R1, R2 )
 %   Just what it says on the tin.
 %
 % Inputs:
-%   R1, R2                -- 3x2 matrix that specifies a vector of the form 
+%   R1, R2                - 3x2 matrix that specifies a vector of the form 
 %                           [p; u], corresponding to
 %                               R = p + t*u
 %                           where p is vector origin, u is the direction
