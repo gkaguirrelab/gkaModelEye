@@ -127,18 +127,36 @@ switch p.Results.surfaceSetName
     
     case {'retinaToCamera','cameraToRetina'}
         
+        % If the model eye has supplied the refractive index of the
+        % vitreous, use this instead of the calculated value
+        vitreousIndex = returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain );
+        if isfield(eye,'index')
+            if isfield(eye.index,'vitreous')
+                vitreousIndex = eye.index.vitreous;
+            end
+        end
+        
+        % If the model eye has supplied the refractive index of the
+        % aqueous, use this instead of the calculated value
+        aqueousIndex = returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain );
+        if isfield(eye,'index')
+            if isfield(eye.index,'aqueous')
+                aqueousIndex = eye.index.aqueous;
+            end
+        end
+        
         % We start in the vitreous chamber. Assign this refractive index
-        opticalSystem = initializeOpticalSystem(returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain ));
+        opticalSystem = initializeOpticalSystem(vitreousIndex);
         
         % Add the vitreous chamber surface. As this has the same refractive
         % index as the first line of the optical system, this surface does
         % not induce any refraction.
         opticalSystem = [opticalSystem; ...
-            [eye.retina.S eye.retina.side eye.retina.boundingBox eye.retina.mustIntersect returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
+            [eye.retina.S eye.retina.side eye.retina.boundingBox eye.retina.mustIntersect vitreousIndex]];
         
         % Add the lens
         opticalSystem = [opticalSystem; ...
-            [eye.lens.S eye.lens.side eye.lens.boundingBox eye.lens.mustIntersect [eye.lens.index; returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain )]]];
+            [eye.lens.S eye.lens.side eye.lens.boundingBox eye.lens.mustIntersect [eye.lens.index; aqueousIndex]]];
         
         % Add the cornea
         opticalSystem = [opticalSystem; ...
@@ -206,18 +224,36 @@ switch p.Results.surfaceSetName
         
     case {'retinaToMedium','mediumToRetina'}
         
+        % If the model eye has supplied the refractive index of the
+        % vitreous, use this instead of the calculated value
+        vitreousIndex = returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain );
+        if isfield(eye,'index')
+            if isfield(eye.index,'vitreous')
+                vitreousIndex = eye.index.vitreous;
+            end
+        end
+        
+        % If the model eye has supplied the refractive index of the
+        % aqueous, use this instead of the calculated value
+        aqueousIndex = returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain );
+        if isfield(eye,'index')
+            if isfield(eye.index,'aqueous')
+                aqueousIndex = eye.index.aqueous;
+            end
+        end
+        
         % We start in the vitreous chamber. Assign this refractive index
-        opticalSystem = initializeOpticalSystem(returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain ));
+        opticalSystem = initializeOpticalSystem(vitreousIndex);
         
         % Add the vitreous chamber surface. As this has the same refractive
         % index as the first line of the optical system, this surface does
         % not induce any refraction.
         opticalSystem = [opticalSystem; ...
-            [eye.retina.S eye.retina.side eye.retina.boundingBox eye.retina.mustIntersect returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
+            [eye.retina.S eye.retina.side eye.retina.boundingBox eye.retina.mustIntersect vitreousIndex]];
         
         % Add the lens
         opticalSystem = [opticalSystem; ...
-            [eye.lens.S eye.lens.side eye.lens.boundingBox eye.lens.mustIntersect [eye.lens.index; returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain )]]];
+            [eye.lens.S eye.lens.side eye.lens.boundingBox eye.lens.mustIntersect [eye.lens.index; aqueousIndex]]];
         
         % Add the cornea
         opticalSystem = [opticalSystem; ...
@@ -259,8 +295,26 @@ switch p.Results.surfaceSetName
         
     case {'retinaToStop','stopToRetina'}
         
+        % If the model eye has supplied the refractive index of the
+        % vitreous, use this instead of the calculated value
+        vitreousIndex = returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain );
+        if isfield(eye,'index')
+            if isfield(eye.index,'vitreous')
+                vitreousIndex = eye.index.vitreous;
+            end
+        end
+        
+        % If the model eye has supplied the refractive index of the
+        % aqueous, use this instead of the calculated value
+        aqueousIndex = returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain );
+        if isfield(eye,'index')
+            if isfield(eye.index,'aqueous')
+                aqueousIndex = eye.index.aqueous;
+            end
+        end
+        
         % We start in the vitreous chamber. Assign this refractive index
-        opticalSystem = initializeOpticalSystem(returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain ));
+        opticalSystem = initializeOpticalSystem(vitreousIndex);
         
         % Add the vitreous chamber surface. As this has the same refractive
         % index as the first line of the optical system, this surface does
@@ -268,11 +322,11 @@ switch p.Results.surfaceSetName
         
         % Start in the retina
         opticalSystem = [opticalSystem; ...
-            [eye.retina.S eye.retina.side eye.retina.boundingBox eye.retina.mustIntersect returnRefractiveIndex( 'vitreous', eye.meta.spectralDomain )]];
+            [eye.retina.S eye.retina.side eye.retina.boundingBox eye.retina.mustIntersect vitreousIndex]];
         
         % Add the lens, ending in the aqueous medium
         opticalSystem = [opticalSystem; ...
-            [eye.lens.S eye.lens.side eye.lens.boundingBox eye.lens.mustIntersect [eye.lens.index; returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain )]]];
+            [eye.lens.S eye.lens.side eye.lens.boundingBox eye.lens.mustIntersect [eye.lens.index; aqueousIndex]]];
         
         % Assemble the labels
         surfaceLabels = [{'vitreous'}; eye.retina.label; eye.lens.label];
@@ -289,9 +343,18 @@ switch p.Results.surfaceSetName
         
         
     case {'stopToMedium','mediumToStop'}
+                
+        % If the model eye has supplied the refractive index of the
+        % aqueous, use this instead of the calculated value
+        aqueousIndex = returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain );
+        if isfield(eye,'index')
+            if isfield(eye.index,'aqueous')
+                aqueousIndex = eye.index.aqueous;
+            end
+        end
         
         % We start in the aqueous. Assign this refractive index
-        opticalSystem = initializeOpticalSystem(returnRefractiveIndex( 'aqueous', eye.meta.spectralDomain ));
+        opticalSystem = initializeOpticalSystem(aqueousIndex);
         
         % Add the cornea
         opticalSystem = [opticalSystem; ...
@@ -374,18 +437,19 @@ switch p.Results.surfaceSetName
         
         % First assemble the path tearfilm --> medium
         
-        % We start in the tearfilm
+        % We start in the tearfilm (or the last surface on the cornea
+        % set)
         opticalSystem = initializeOpticalSystem(returnRefractiveIndex( 'tears', eye.meta.spectralDomain ));
         
         % Add the tear surface
         opticalSystem = [opticalSystem; ...
-            eye.cornea.S(3,:) eye.cornea.side(3) eye.cornea.boundingBox(3,:) 1 mediumRefractiveIndex];
+            eye.cornea.S(end,:) eye.cornea.side(end) eye.cornea.boundingBox(end,:) 1 mediumRefractiveIndex];
         
         % Assemble the labels
-        surfaceLabels = [eye.cornea.label(3); eye.cornea.label(3)];
+        surfaceLabels = [eye.cornea.label(end); eye.cornea.label(end)];
         
         % Assemble the surface plot colors
-        surfaceColors = [eye.cornea.plot.color(3); eye.cornea.plot.color(3)];
+        surfaceColors = [eye.cornea.plot.color(end); eye.cornea.plot.color(end)];
         
         % Add a contact lens if requested
         if ~isempty(p.Results.contactLens)
@@ -401,12 +465,12 @@ switch p.Results.surfaceSetName
             surfaceLabels = [surfaceLabels; {'contactLens'}; {'tearfilm'}];
             surfaceColors = [surfaceColors; {[.5 .5 .5]}; {[0 0 1]}];
         end
-
+        
         % Reverse the system to give us a path from the medium to the
         % eye
         opticalSystem = reverseSystemDirection(opticalSystem);
-        surfaceColors = flipud([surfaceColors(2:end); {[nan nan nan]}]);
-        surfaceLabels = flipud([surfaceLabels(2:end); {'cameraMedium'}]);
+        surfaceColors = flipud([surfaceColors(end-1:end); {[nan nan nan]}]);
+        surfaceLabels = flipud([surfaceLabels(end-1:end); {'cameraMedium'}]);
         
         % Retain the first two rows of the optical system, which will be
         % the initial state of the ray in the medium, and the first tear
@@ -415,11 +479,11 @@ switch p.Results.surfaceSetName
         opticalSystem = opticalSystem(1:2,:);
         surfaceColors = surfaceColors(1:2);
         surfaceLabels = surfaceLabels(1:2);
-                
+        
         % Set the refractive index of the tear film to be that of the prior
         % surface, with a negative value. This results in a ray that is
         % reflected and does not undergo refraction
-        opticalSystem(end,19) = -opticalSystem(end-1,19);       
+        opticalSystem(end,19) = -opticalSystem(end-1,19);
         
     otherwise
         error('Unrecognized surfaceSetName');
