@@ -155,7 +155,7 @@ for hh=1:length(horiz)
         worldTarget = [horiz(hh);vert(vv);p.Results.targetDistance];
         
         
-        %% The angle with which a ray departs the entrance pupil
+        %% The angle with which a ray the center of the aperture stop
         [~, initialRay]  = findPupilRay( eyeCoordOrigin, eyePose, worldTarget, rotationCenters, opticalSystemRotInitial, opticalSystemFixInitial );
         [p1p2A,p1p3A] = quadric.rayToAngles(initialRay);
         
