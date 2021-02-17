@@ -1,4 +1,4 @@
-function [opticalCenterCoord, outputRays, rayPaths] = calcOpticalCenter(eye,cameraMedium)
+function [opticalCenterCoord, outputRays, rayPaths] = calcOpticalCenter(eye,cameraMedium,systemDirection)
 % Returns the optical center for an eye in a given medium
 %
 % Syntax:
@@ -72,6 +72,11 @@ end
 
 if nargin==1
     cameraMedium = 'air';
+    systemDirection = 'retinaToCamera';
+end
+
+if nargin==2
+    systemDirection = 'retinaToCamera';
 end
 
 % Define the output variable
