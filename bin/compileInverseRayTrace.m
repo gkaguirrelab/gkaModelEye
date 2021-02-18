@@ -1,5 +1,5 @@
 function compileInverseRayTrace( varargin )
-% Compiles the findPupilRay and findGlintRay functions
+% Compiles findPupilRay, findGlintRay, and findNodalRay functions
 %
 % Syntax:
 %  compileInverseRayTrace
@@ -111,6 +111,10 @@ if ~p.Results.replaceExistingFunc
         warning('compileInverseRayTrace:functionExists','findGlintRayMex already exists; set replaceExistingFunc to true to over-write.')
         return
     end
+    if exist('findNodalRayMex')==3
+        warning('compileInverseRayTrace:functionExists','findNodalRayMex already exists; set replaceExistingFunc to true to over-write.')
+        return
+    end
 end
 
 
@@ -129,6 +133,9 @@ end
 if strcmp(pwd(),fileparts(which('findGlintRayMex')))
     error('compileInverseRayTrace:dirConflict','The current folder itself contains a compiled findGlintRay. Change directories to avoid function shadowing.')
 end
+if strcmp(pwd(),fileparts(which('findNodalRayMex')))
+    error('compileInverseRayTrace:dirConflict','The current folder itself contains a compiled findNodalRay. Change directories to avoid function shadowing.')
+end
 
 % Remove any existing versions of the compiled code from the path.
 notDoneFlag = true;
@@ -139,7 +146,7 @@ while notDoneFlag
     if isempty(funcPath)
         notDoneFlag = false;
     else
-        warning('compileInverseRayTrace:previousFunc','Removing previous findPupilRayMex and findGlintRayMex from the path');
+        warning('compileInverseRayTrace:previousFunc','Removing previous compiled functions from the path');
         rmpath(fileparts(funcPath));
         removalsCounter = removalsCounter+1;
     end
@@ -157,6 +164,7 @@ sceneGeometry = createSceneGeometry();
 % Define the form of the dynamicArgs (the eyePoint and the eyePose)
 dynamicArgsPupil = {[0,0,0], [0,0,0,0]};
 dynamicArgsGlint = {[0;0;0], [0,0,0,0]};
+dynamicArgsNodal = {[0,0,0]};
 % Define the form of the staticArgs (which are sceneGeometry components)
 staticArgsPupil = {sceneGeometry.cameraPosition.translation, ...
     sceneGeometry.eye.rotationCenters, ...
@@ -167,9 +175,11 @@ staticArgsGlint = {sceneGeometry.cameraPosition.translation, ...
     sceneGeometry.refraction.cameraToMedium.opticalSystem, ...
     sceneGeometry.refraction.glint.opticalSystem, ...
     sceneGeometry.refraction.mediumToCamera.opticalSystem};
+staticArgsNodal = {sceneGeometry.refraction.mediumToRetina.opticalSystem};
 % Assemble the full args
 argsPupil = [dynamicArgsPupil, staticArgsPupil{:}];
 argsGlint = [dynamicArgsGlint, staticArgsGlint{:}];
+argsNodal = [dynamicArgsNodal, staticArgsNodal{:}];
 
 
 %% Compile and clean up
@@ -178,6 +188,7 @@ initialDir = cd(functionDirPath);
 % Compile the mex file
 codegen -o findPupilRayMex findPupilRay -args argsPupil
 codegen -o findGlintRayMex findGlintRay -args argsGlint
+codegen -o findNodalRayMex findNodalRay -args argsNodal
 % Clean up the compile dir. Turn off warnings regarding the removal of
 % these files
 warnState = warning();
