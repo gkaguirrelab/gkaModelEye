@@ -7,7 +7,7 @@ function [G,X,angleError] = calcRetinaFieldPoint( eye, degField, cameraMedium )
 % Description:
 %   Calculates the position on the retina of a point that has the specified
 %   visual field position, where visual field position is defined with
-%   respect to the optical axis of the eye. The identified retinal point
+%   respect to the incident nodal point o optical axis of the eye. The identified retinal point
 %   has the property that a nodal ray that emerges from this point exits
 %   the cornea at angles with respect to the optical axis that are equal to
 %   the values specified in degField.
