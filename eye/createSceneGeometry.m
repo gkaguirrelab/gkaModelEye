@@ -190,7 +190,8 @@ p.addParameter('screenDimensions',[697.347,392.257],@isnumeric);
 p.addParameter('screenResolutions',[1920,1080],@isnumeric);
 p.addParameter('poseRegParams',[],@isstruct);
 p.addParameter('vecRegParams',[],@isstruct);
-p.addParameter('surfaceSetName',{'retinaToCamera','cameraToRetina','retinaToStop','stopToMedium','retinaToMedium','mediumToRetina','mediumToCamera','cameraToMedium','glint'},@ischar);
+p.addParameter('eye',[],@isstruct);
+p.addParameter('surfaceSetName',{'retinaToCamera','cameraToRetina','retinaToStop','stopToMedium','retinaToMedium','mediumToRetina','mediumToCamera','cameraToMedium','glint'},@iscell);
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('cameraMedium','air',@ischar);
@@ -199,6 +200,8 @@ p.addParameter('spectralDomain','nir',@ischar);
 % parse
 p.parse(varargin{:})
 
+% Obtain the unmatched varargin
+vararginUnmatched = namedargs2cell(p.Unmatched);
 
 %% cameraIntrinsic
 sceneGeometry.cameraIntrinsic.matrix = p.Results.intrinsicCameraMatrix;
@@ -231,8 +234,11 @@ sceneGeometry.screenPosition.vecRegParams = p.Results.vecRegParams;
 
 
 %% eye
-sceneGeometry.eye = modelEyeParameters('spectralDomain',p.Results.spectralDomain,varargin{:});
-
+if isempty(p.Results.eye)
+    sceneGeometry.eye = modelEyeParameters('spectralDomain',p.Results.spectralDomain,vararginUnmatched{:});
+else
+    sceneGeometry.eye = p.Results.eye;
+end
 
 %% refraction
 for ii = 1:length(p.Results.surfaceSetName)
@@ -242,7 +248,7 @@ for ii = 1:length(p.Results.surfaceSetName)
         'cameraMedium', p.Results.cameraMedium, ...
         'contactLens', p.Results.contactLens, ...
         'spectacleLens', p.Results.spectacleLens, ...
-        varargin{:} );
+        vararginUnmatched{:});
     sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).opticalSystem = opticalSystem;
     sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceLabels = surfaceLabels;
     sceneGeometry.refraction.(p.Results.surfaceSetName{ii}).surfaceColors = surfaceColors;
