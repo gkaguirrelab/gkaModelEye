@@ -1,8 +1,8 @@
-function [rayPath,nodalPoints,errors] = findNodalRay(eyeCoordOrigin,opticalSystem,incidentNodeX0)
+function [rayPath,nodalPoints,errors] = findNodalRay(rayOrigin,opticalSystem,incidentNodeX0)
 % Returns the path of the nodal ray from the starting coordinate
 %
 % Syntax:
-%  [rayPath,nodalPoints,errors] = findNodalRay(eyeCoordOrigin,opticalSystem,incidentNodeX0)
+%  [rayPath,nodalPoints,errors] = findNodalRay(rayOrigin,opticalSystem,incidentNodeX0)
 %
 % Description
 %   Given an opticalSystem and a coordinate in eye coordinate space, the
@@ -19,9 +19,10 @@ function [rayPath,nodalPoints,errors] = findNodalRay(eyeCoordOrigin,opticalSyste
 %   initial and exit segments of the ray to the optical axis.
 %
 % Inputs:
-%   eyeCoordOrigin        - A 1x3 vector that gives the coordinates (in mm)
+%   rayOrigin             - A 1x3 vector that gives the coordinates (in mm)
 %                           of a point in the eye coordinate space with the
-%                           dimensions p1, p2, p3.
+%                           dimensions [p1, p2, p3] from which the nodal
+%                           ray will originate.
 %   opticalSystem         - Struct. See assembleOpticalSystem.m
 %   incidentNodeX0        - An optional 1x3 vector that gives the location
 %                           in eye  space that is an initial guess for the
@@ -69,21 +70,21 @@ if nargin==2
 end
 
 % Place the vectors in column orientation
-eyeCoordOrigin = eyeCoordOrigin';
+rayOrigin = rayOrigin';
 incidentNodeX0 = incidentNodeX0';
 
 % Set an guess for the angles of the initial ray
 p0 = nan(1,2);
-[p0(1),p0(2)] = quadric.rayToAngles(quadric.normalizeRay([eyeCoordOrigin,incidentNodeX0-eyeCoordOrigin]));
+[p0(1),p0(2)] = quadric.rayToAngles(quadric.normalizeRay([rayOrigin,incidentNodeX0-rayOrigin]));
 
 % Initialize an anonymous function for the objective
-myObj = @(p) objective(p,eyeCoordOrigin,opticalSystem);
+myObj = @(p) objective(p,rayOrigin,opticalSystem);
 
 % Search
 p = fminsearch(myObj,p0);
 
 % Evaluate the objective function once more, using the found values
-[angleError,outputRay,rayPath] = objective(p,eyeCoordOrigin,opticalSystem);
+[angleError,outputRay,rayPath] = objective(p,rayOrigin,opticalSystem);
 
 % Find the nodal points
 opticalAxis = [0,1;0,0;0,0];
@@ -106,16 +107,14 @@ end
 
 %% Local function
 
-function [fVal, outputRay,rayPath] = objective(p,eyeCoordOrigin,opticalSystem)
+function [fVal, outputRay,rayPath] = objective(p,rayOrigin,opticalSystem)
 
-
-% Trace from eyeCoordOrigin at p angles.
-R = quadric.anglesToRay(eyeCoordOrigin,p(1),p(2));
+% Trace from rayOrigin at p angles.
+R = quadric.anglesToRay(rayOrigin,p(1),p(2));
 [outputRay,rayPath] = rayTraceQuadrics(R, opticalSystem);
 
 % Find the absolute difference in angles between the ray leaving T, and the
 % ray arriving at the retina
 fVal = abs(quadric.angleRays( R, outputRay ));
-
 
 end
