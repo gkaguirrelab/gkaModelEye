@@ -10,10 +10,9 @@ function R = normalizeRay( R )
 % Inputs:
 %   R                     - 3x2 matrix that specifies a vector of the form 
 %                           [p; u], corresponding to
-%                               R = p + t*u
+%                               R = p + u
 %                           where p is vector origin, u is the direction
-%                           expressed as a unit step, and t is unity for a
-%                           unit vector.
+%                           vector.
 %
 % Outputs:
 %   R                     - 3x2 matrix that specifies a vector of the form 
