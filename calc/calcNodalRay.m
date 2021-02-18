@@ -1,115 +1,114 @@
-function [outputRay,rayPath,angleError] = calcNodalRay(eye,coord,coordType,traceDirection,cameraMedium)
-% Returns the path of the nodal ray that intersects the coordinate
+function [rayPath,nodalPoints,errors] = calcNodalRay(eye,G,X,originRayDepth,cameraMedium)
+% Returns the path of the nodal ray that intersects the retinal coordinate
 %
 % Syntax:
-%  [outputRay,rayPath, angleError] = calcNodalRay(eye,G,X,cameraMedium)
+%  [rayPath,nodes,errors] = calcNodalRay(eye,G,X,originRayDepth,cameraMedium)
 %
 % Description
 %   Given an eye structure and a coordinate, the routine returns a matrix
-%   that contains the path of a ray that satisfies the property that the
-%   angle (w.r.t the optical axis) of the ray as it departs the retina is
-%   equal to the angle with which it departs the cornea. This is a "nodal
-%   ray":
+%   that contains the path of a ray that arrives at this coord and has an
+%   angle of incidence at cornea (w.r.t the optical axis) equal to the
+%   angle with which it intersects the retina. This is a "nodal ray":
 %
 %       Harris, W. F. "Nodes and nodal points and lines in eyes and other
 %       optical systems." Ophthalmic and Physiological Optics 30.1 (2010):
 %       24-42.
 %
-%   The passed coordinate is treated either as the origin or destination of
-%   the ray, dependning upon the "traceDirection" setting. Note that the
+%   The routine returns the nodalPoints,which are found by extending the
+%   initial and exit segments of the ray to the optical axis. The
 %   nodal ray that arrives at the fovea is termed the "visual axis" of the
 %   eye.
 %
-%   The routine can accept points on the ellipsoidal surface of the retina
-%   specified in either Cartesian or ellipsoidal geodetic coordinates, or
-%   from locations in the visual field specified in degrees or mm. The
-%   interpretation of the coordinate is provided by the "coordType"
-%   variable.
+%   For a model eye with decentered and/or astigmatic elements, there may
+%   not exist a true nodal ray, but only approximations to this concept.
+%   There may not be a ray that both has incident and emergent rays, and
+%   intersects the retinal target. Further, the incident and emergent rays,
+%   when extended, will pass by but not intersect the optical axis. These
+%   various error are supplied in the errors output variable. Further, the
+%   particular nodal points will vary depending upon the particular retinal
+%   target.
 %
+%   The routine can accept points on the ellipsoidal surface of the retina
+%   specified in either Cartesian or ellipsoidal geodetic coordinates.
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
-%   coord                 - 2x1 or 3x1 vector that provides the coordinates
-%                           of the origin point of the ray to be traced.
-%                           This coordinate can be either within the eye or
-%                           in the visual field, and can be of the form:
-%                             - retinal geodetic (beta, omega, and
-%                               optionally elevation in units of degrees.
-%                               Beta is defined over the range -90:90, and
-%                               omega over the range -180:180. Elevation
-%                               has an obligatory value of zero as this
-%                               solution is only defined on the surface.
-%                             - visual field (horizontal, vertical) in
-%                               units of degrees.
-%                             - cartesian (x,y,z) in units of mm.
-%	coordType             - Char vector or string. Defines the nature of
-%                           the coord variable. Options are:
-%                               {'geodetic','field','cartesian'}
-%   traceDirection        - Char vector or string. Options are:
-%                               {'cameraToEye','eyeToCamera'}
+%   G                     - 3x1 vector that provides the geodetic
+%                           coordinates beta, omega, and elevation in units
+%                           of degrees. Beta is defined over the range
+%                           -90:90, and omega over the range -180:180.
+%                           Elevation has an obligatory value of zero as
+%                           this solution is only defined on the surface.
+%   X                     - 3x1 vector that specifies the Cartesian
+%                           location of a point on the quadric surface.
+%   originRayDepth        - Scalar. The distance (in mm) of the origin of
+%                           the ray from the corneal apex.
 %   cameraMedium          - The medium in which the eye is located.
 %                           Defaults to 'air'.
 %
 % Outputs:
-%   outputRay             - 3x2 matrix that specifies the ray as a unit 
-%                           vector of the form [p; d], corresponding to
-%                               R = p + t*u
-%                           where p is vector origin, d is the direction
-%                           expressed as a unit step, and t is unity.
 %   rayPath               - 3xm matrix that provides the ray coordinates
 %                           at each surface. The value for rayPath(1,:)
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
 %                           will be nan.
-%   angleError            - Scalar. The angle between the initial and
-%                           output rays for the nominal nodal ray. Ideally,
-%                           this value should be zero.
+%   nodalPoints           - 3x2 matrix that provides the approximation to
+%                           incident and emergent nodal points in the eye
+%                           coordinate space. This is the point on each ray
+%                           that is closest to the optical axis.
+%   errors                - 1x4 matrix with the follow error values:
+%                             - distance of ray intersection from retinal
+%                               target (in mm)
+%                             - departure from parallel of the incident and
+%                               emergent rays (deg)
+%                             - distance of the incident nodal point from
+%                               the incident ray
+%                             - distance of the emergent nodal point from
+%                               the emergent ray
 %
 % Examples:
 %{
-    eye = modelEyeParameters();    
-    [outputRay,rayPath,angleError] = calcNodalRay(eye,[],eye.landmarks.vertex.coords);
-    assert(angleError < 1e-3);
+    % Define a default model eye
+    eye = modelEyeParameters();
+    % Pick a retinal point in geodetic coordinates, a bit away from the
+    % vertex
+    G = [-65,-65,0];
+    % Find the nodal ray
+    [rayPath,nodalPoints,errors] = calcNodalRay(eye,G);
+    % Show the optical system, nodal ray, and nodal points
+    opticalSystem = assembleOpticalSystem(eye,'surfaceSetName','mediumToRetina');
+    plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'rayPath',rayPath,'surfaceAlpha',0.05);
+    hold on
+    xlim([-25 10])
+    plot3(nodalPoints(1,:),nodalPoints(2,:),nodalPoints(3,:),'*b')
 %}
 
 
-% Handle incomplete arguments
-if nargin<4
+% Parse inputs
+if nargin<2
     error('Invalid number of input arguments');
 end
 
-if nargin==4
-    cameraMedium = 'air';
-end
-
-% Convert geodetic and 
-
-
 if nargin==2
-    % If only two input values were passed, derive the X0 Cartesian
-    % coordinates from the ellipsoidal geodetic coordinates.
-    S = eye.retina.S;
-    X = quadric.ellipsoidalGeoToCart( G, S );
+    X = [];
+    originRayDepth = 500;
     cameraMedium = 'air';
 end
 
 if nargin==3
-    % Check if the X0 value is empty. If so, derive the X0
-    % Cartesian coordinates from the ellipsoidal geodetic coordinate.
-    if isempty(X)
-        S = eye.retina.S;
-        X = quadric.ellipsoidalGeoToCart( G, S );
-    end
+    originRayDepth = 500;
     cameraMedium = 'air';
 end
 
 if nargin==4
-    % Check if the X0 value is empty. If so, derive the X0
-    % Cartesian coordinates from the ellipsoidal geodetic coordinate.
-    if isempty(X)
-        S = eye.retina.S;
-        X = quadric.ellipsoidalGeoToCart( G, S );
-    end
+    cameraMedium = 'air';
+end
+
+% Check if the X value is empty. If so, derive the X
+% Cartesian coordinates from the ellipsoidal geodetic coordinate.
+if isempty(X)
+    S = eye.retina.S;
+    X = quadric.ellipsoidalGeoToCart( G, S );
 end
 
 % Make sure that X is a column vector
@@ -117,62 +116,117 @@ if all(size(X)==[1 3])
     X = X';
 end
 
-% Assemble the optical system
-opticalSystem = assembleOpticalSystem( eye, ...
-    'surfaceSetName','retinaToMedium', 'cameraMedium', cameraMedium);
+% Obtain the optical system for this eye
+opticalSystem = assembleOpticalSystem(eye,...
+    'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
 
-% Define an error function that reflects the difference in angles from the
-% initial ray and the output ray from the optical system
-myError = @(p) calcOffsetFromParallel(opticalSystem,quadric.anglesToRay(X,p(1),p(2)));
 
-% Supply an x0 guess. Check a few targets to try and find one that produces a valid
-% trace through the optical system.
-targets = [...
-    eye.lens.back', ...                      % lens posterior
-    ((eye.lens.back+eye.lens.center)./2)',...  % mid-point of posterior lens
-    eye.lens.center'];                       % lens center
+% Initialize an anonymous function for the full objective. This combines
+% both the objective and the non-linear constraint.
+fullObj = @(x) fullObjective(x,opticalSystem,originRayDepth,X);
 
-stillSearching = true;
-targetIdx = 1;
-while stillSearching
-    R = quadric.normalizeRay([X'; (targets(:,targetIdx)-X)']');
-    [outputRay,rayPath] = rayTraceQuadrics(R, opticalSystem);    
-    if any(isnan(outputRay))
-        targetIdx = targetIdx + 1;
-        if targetIdx > length(targets)
-            angleError = nan;
-            return
+% Define some search options for fminsearch
+options = optimset('fmincon');
+options.FunValCheck = 'off'; % Tolerate nans from the objective
+options.Display = 'off'; % Silencio
+
+% x0, and bounds. x0 is placed so that it is in line with the un-rotated
+% corneal apex and the retinal target location,, with a slight jitter to
+% avoid local minima in a rotationally symmetric, aligned optical system.
+% The params are:
+%   - horizontal position of the ray origin (in mm)
+%   - vertical position of the ray origin (in mm)
+%   - p1 angle of the initial ray
+%   - p2 angle of the initial ray
+T = (originRayDepth./X(1)) .* X;
+[p(1),p(2)] = quadric.rayToAngles(quadric.normalizeRay([T,-T]));
+x0 = [T(2),T(3),p(1)+0.01,p(2)-0.01];
+lb = [-originRayDepth*10,-originRayDepth*10,-360,-360];
+ub = [originRayDepth*10,originRayDepth*10,360,360];
+
+% Initialize nested variables
+xLast = [];
+cLast = [];
+ceqLast = [];
+fValLast = [];
+ceqFirstFlag = true;
+
+% Perform the search, using the nested function
+x = fmincon(@objFun, x0,[],[],[],[],lb,ub,@nonlcon,options);
+    function fVal = objFun(x)
+        if ~isequal(x,xLast)
+            [fValLast,cLast,ceqLast] = fullObj(x);
+            xLast = x;
         end
-    else
-        stillSearching = false;
+        fVal = fValLast;
+        % This is some business to prevent fmincon from considering as
+        % acceptable a ceq that is low relative to the x0 ceq
+        if ceqFirstFlag
+            ceqFirstFlag = false;
+        else
+            if ceqLast == 1e3
+                ceqLast = 1e6;
+            end
+        end
     end
+    function [c, ceq] = nonlcon(x)
+        if ~isequal(x,xLast)
+            [fValLast,cLast,ceqLast] = fullObj(x);
+            xLast = x;
+        end
+        c = cLast;
+        % This is some business to prevent fmincon from considering as
+        % acceptable a ceq that is low relative to the x0 ceq
+        ceq = ceqLast;
+        if ceqFirstFlag
+            ceqFirstFlag = false;
+        else
+            if ceq == 1e3
+                ceq = 1e6;
+            end
+        end
+    end
+
+% Evaluate the objective function once more, using the final values
+[retinalDistanceError, ~, angleError, outputRay,rayPath] = ...
+    fullObjective(x,opticalSystem,originRayDepth,X);
+
+% Find the nodal points
+opticalAxis = [0,1;0,0;0,0];
+inputRay = quadric.normalizeRay([rayPath(:,1),rayPath(:,2)-rayPath(:,1)]);
+[~,iNodeError,incidentNode] = quadric.distanceRays(inputRay,opticalAxis);
+[~,eNodeError,emergentNode] = quadric.distanceRays(outputRay,opticalAxis);
+
+% Assemble the errors and nodal points for return
+nodalPoints = [incidentNode,emergentNode];
+errors = [retinalDistanceError,angleError,iNodeError,eNodeError];
+
+% Concatenate the outputRay onto the rayPath
+rayPath(:,end+1)=outputRay(:,1);
+
 end
-[angle_p1p2, angle_p1p3] = quadric.rayToAngles( R );
-x0 = [angle_p1p2, angle_p1p3];
-
-% Add a small offset to x0, as the search can be stuck in a local minimum
-% if it starts pointed straight down the optical system
-x0 = x0+[0.01 0.01];
-
-% define some search options
-options = optimset('Display','off');
-
-% Perform the search
-[inputRayAngles, angleError] = fminsearch(myError,x0, options);
-
-% Calculate and save the outputRay and the raypath
-[outputRay,rayPath] = rayTraceQuadrics(quadric.anglesToRay(X,inputRayAngles(1),inputRayAngles(2)), opticalSystem);
-
-end
 
 
-%% Local functions
+%% Local function
 
+function [fVal, c, ceq, outputRay,rayPath] = fullObjective(x,opticalSystem,originRayDepth,X)
 
-% Local function. Performs the ray trace through the optical system of the
-% eye and then calculates the angle between the initial ray and the output
-% ray.
-function angleError = calcOffsetFromParallel(opticalSystem,inputRay)
-exitRay = rayTraceQuadrics(inputRay, opticalSystem);
-angleError = quadric.angleRays( inputRay, exitRay );
+% Define a point in space
+T = [sqrt(originRayDepth^2-x(1)^2-x(2)^2);x(1);x(2)];
+
+% Trace from T at angle p.
+R = quadric.anglesToRay(T,x(3), x(4));
+[outputRay,rayPath] = rayTraceQuadrics(R, opticalSystem);
+
+% c is unused
+c = [];
+
+% Find the difference in angles between the ray leaving T, and the ray
+% arriving at the retina
+ceq = quadric.angleRays( R, outputRay );
+
+% Find the Euclidean distance between the retinal target coordinate and the
+% intersection of the ray upon the retina.
+fVal = norm(outputRay(:,1)-X);
+
 end
