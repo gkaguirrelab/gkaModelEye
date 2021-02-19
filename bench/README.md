@@ -12,7 +12,7 @@ An optical system is a set of surfaces with which light rays interact. In this c
 
 The first row of the opticalSystem corresponds to the initial conditions of the ray. Thus, the refractive index value given in the first row specifies the index of the medium in which the ray arises. The other values for the first row are typically left as nans and ignored.
 
-Ray tracing is conventionally performed from "right-to-left". Because we are interested in describing the appearance of an eye as viewed from a camera, the optical system is constructed by default in the order retina --> camera. An opticalSystem variable is only valid for ray-tracing in one direction at a time. The function `reverseSystemDirection` may be used to switch a system from the retina --> camera direction to the camera --> retina direction, and vice-a-versa.
+Ray tracing is conventionally performed from "left-to-right". Because we are interested in describing the appearance of an eye as viewed from a camera, the optical system is constructed by default in the order retina --> camera. An opticalSystem variable is only valid for ray-tracing in one direction at a time. The function `reverseSystemDirection` may be used to switch a system from the retina --> camera  (left-to-right) direction to the camera --> retina (right-to-left) direction, and vice-a-versa.
 
 The opticalSystem matrix may be stored in an opticalSystem structure, which contains as well a set of labels for the surfaces, and information regarding how the surfaces should be plotted.
 
@@ -20,6 +20,8 @@ The routine `findPupilRay` identifies a ray that leaves a location on the border
 
 The routine `findGlintRay` identifies a ray that leaves a light source adjacent to the camera, is reflected from the tear film in a rotated eye, and arrives at the nodal point of the camera. This routine is used to identify the location of any glints in an image of the eye.
 
+The routine `findNodalRay` identifies a ray that leaves a specified location and passes through an optical system as a nodal ray, meaning that the incident and emergent rays are parallel.
+
 The contents of the directory are:
 
-- assembleOpticalSystem.m - Given an eye structure (SEE: `modelEyeParameters.m`) returns an opticalSystem. The key `surfaceSetName` specifies which opticalSystem to generate (e.g., stopToCamera)- addBiconvexLens.m, addContactLens.m, addSpectacleLens.m, addStopAfter.m - Adds these surfaces to an optical system- findGlintRay.m, findPupilRay.m - Implements "inverse" ray-tracing. The compiled, MEX versions of these routines are stored in the `bin` directory.- reverseSystemDirection.m - Swaps the valid direction for ray-tracing of an opticalSystem variable.
+- assembleOpticalSystem.m - Given an eye structure (SEE: `modelEyeParameters.m`) returns an opticalSystem. The key `surfaceSetName` specifies which opticalSystem to generate (e.g., stopToCamera)- addBiconvexLens.m, addContactLens.m, addSpectacleLens.m, addStopAfter.m - Adds these surfaces to an optical system- findGlintRay.m, findPupilRay.m, findNodalRay.m - Implements "inverse" ray-tracing. The compiled, MEX versions of these routines are stored in the `bin` directory.- reverseSystemDirection.m - Swaps the valid direction for ray-tracing of an opticalSystem variable.
