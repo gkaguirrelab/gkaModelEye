@@ -28,16 +28,6 @@ function lens = lens( eye )
 %   the eye, and thus no tilt or shift is needed in the current model. The
 %   axial position of the lens center is taken from Atchison 2006.
 %
-%   The current implementation is a bit of a hodge-podge of different
-%   models (Atchison, Navarro, and Jones). It would be nice to implement a
-%   more comprehensive model that has an adaptive geometry of the lens
-%   interior with accommodative changes, such as:
-%
-%       Sheil, Conor J., and Alexander V. Goncharov. "Accommodating
-%       volume-constant age-dependent optical (AVOCADO) model of the
-%       crystalline GRIN lens." Biomedical optics express 7.5 (2016):
-%       1985-1999.
-%
 % Inputs:
 %   eye                   - Structure.
 %
@@ -45,18 +35,24 @@ function lens = lens( eye )
 %   lens                  - Structure.
 %
 
+% To set the accommodative state of the eye, we adjust the "navarroD"
+% parameter. If this parameter is not set in the meta data, we call out to
+% calcAccommodation to find the navarroD parameter for this eye that
+% produces the called for accommodation.
+
+D = [];
+if isfield(eye.meta,'navarroD')
+    if ~isempty(eye.meta.navarroD)
+        D = eye.meta.navarroD;
+    end
+end
+
+if isempty(D)
+    D = calcAccommodation(eye,eye.meta.accommodation);
+end
 
 % Obtain the age of the modeled subject
 age = eye.meta.ageYears;
-
-% Obtain the D parameter of the model
-D = eye.meta.navarroD;
-
-% If the navarroD has not been provided, use the default value in the
-% derived parameters
-if isempty(D)
-    D = eye.derivedParams.defaultRestingNavarroD;
-end
 
 % Initialize the components of the optical system
 lens.S = [];

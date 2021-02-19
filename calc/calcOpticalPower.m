@@ -57,7 +57,7 @@ function [diopters, focalPoint] = calcOpticalPower(opticalSystem, rayStartDepth,
 % Examples:
 %{
     % Determine the refractive power of the unaccommodated eye
-    sceneGeometry = createSceneGeometry('navarroD',calcAccommodation(0));
+    sceneGeometry = createSceneGeometry();
     diopters = calcOpticalPower(sceneGeometry.refraction.cameraToRetina.opticalSystem);
     outline = sprintf('The refractive power of the unaccommodated model eye is %2.2f diopters.\n',diopters);
     fprintf(outline)

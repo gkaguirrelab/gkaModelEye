@@ -1,8 +1,8 @@
-function [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopters, varargin)
+function navarroD = calcAccommodation(eye, desiredAccommodation, rayHeight, cameraMedium)
 % Returns the lens accommodation parameter for a desired near focal point
 %
 % Syntax:
-%  [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopters)
+%  navarroD = calcAccommodation(eye, desiredAccommodation, rayHeight, cameraMedium)
 %
 % Description
 %   The refractive power of the crystaline lens of the model is a function
@@ -24,15 +24,17 @@ function [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopter
 %   surface of retina.
 %
 % Inputs:
-%  'accommodationDiopters' - Scalar that supplies the accommodation state
-%                           of the eye. Valid values range from zero
+%   eye                   - Structure. SEE: modelEyeParameters
+%   desiredAccommodation  - Scalar. The desired accommodation state of the
+%                           eye in diopters. Valid values range from zero
 %                           (unaccommodated) to +10. The value sets the
-%                           distance from the princpal point of the eye to
-%                           the focal point on the right, where diopters =
-%                           1000 / distance(mm).
-%
-% Optional key/value pairs:
-%   None, although varargin are passed to createSceneGeometry
+%                           near point of the eye (measured from the
+%                           first principal point), where distance (mm) =
+%                           1000 / diopters.
+%   rayHeight             - Scalar. Distance of the ray origin from the
+%                           optical axis.
+%   cameraMedium          - The medium in which the eye is located.
+%                           Defaults to 'air'.
 %
 % Outputs:
 %   navarroD              - Scalar. The parameter "D" that is used in the
@@ -41,80 +43,32 @@ function [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopter
 %
 % Examples:
 %{
-    navarroD = calcAccommodation(1.5);
-%}
-%{
-    % Plot the eye and the rays
-    desiredAccommodation = 7.5;
-    [navarroD, fVal, path1, path2] = calcAccommodation(desiredAccommodation);
-    sceneGeometry = createSceneGeometry('navarroD',navarroD);
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
-    plotOpticalSystem('newFigure',false,'rayPath',path1,'outputRayScale',1000/desiredAccommodation);
-    plotOpticalSystem('newFigure',false,'rayPath',path2,'outputRayScale',1000/desiredAccommodation);
 %}
 
 
-% Force the varargin to include skipping the calculation of angular
-% magnification effects from lenses
-varargin = [varargin,'skipMagCalc',true];
-
-
-%% Anonymous functions for the eye
-% Define these here to use in a subsequent nonlinear search. Each function
-% takes as input a candidate Navarro D value.
-
-% A sceneGeometry. The varargin are passed here to createSceneGeometry to
-% modify the particulars of the eye.
-myScene=@(x) createSceneGeometry('navarroD',x,varargin{:});
-
-% The optical system for a model eye
-mySystem=@(x) getfield(myScene(x),'refraction','cameraToRetina','opticalSystem');
-
-
-%% Anonymous functions for the rays
-% Create a pair of rays that arise from the optical axis
-rayHeight = 1;
-
-% The behavior here handles the special case of a desired accommodation of
-% zero.
-if accommodationDiopters==0
-    % The rays are fixed at parallel
-    myR1 = @(x) quadric.normalizeRay([100,-1;rayHeight,0;0,0]);
-    myR2 = @(x) quadric.normalizeRay([100,-1;-rayHeight,0;0,0]);
-else
-    % The principal point of the optical system.
-    myPrincipalPoint = @(x) calcPrincipalPoint(mySystem(x));
-    
-    % Account for the depth of the principal point in calculating the
-    % position from which the rays arise, as the coordinate space is w.r.t.
-    % the front corneal surface.
-    myRayOrigin = @(x) (1000/accommodationDiopters) - sum(myPrincipalPoint(x).*[1;0;0]);
-    
-    % Calculate the angle with which the rays diverge from the optical axis
-    % such that they will intersect the principal plane at the ray height
-    myAngle = @(x) rad2deg(atan2(rayHeight,-myRayOrigin(x)));
-    
-    % Define the two rays
-    myR1 = @(x) quadric.normalizeRay(quadric.anglesToRay([myRayOrigin(x);0;0],myAngle(x),0));
-    myR2 = @(x) quadric.normalizeRay(quadric.anglesToRay([myRayOrigin(x);0;0],-myAngle(x),0));
+% Handle missing inputs
+if nargin<2
+    error('calcAccommodation:invalidArguments','Too few input arguments')
 end
 
+if nargin==2
+    rayHeight = 1;
+    cameraMedium = 'air';
+end
 
-%% Anonymous functions for the internal focal point
+if nargin==3
+    cameraMedium = 'air';
+end
 
-% The point of intersection of the rays within the eye
-myInternalFocalPoint = @(x) quadric.distanceRays(rayTraceQuadrics(myR1(x), mySystem(x)),rayTraceQuadrics(myR2(x), mySystem(x)));
-
-% A function to return the quadric vector for the retinal surface
-myRetina = @(x) getfield(myScene(x),'eye','retina','S')';
-
-% The objective function is the distance by which the focal point within
-% the eye misses the retinal surface
-myObj = @(x) surfaceDistance(myRetina(x),myInternalFocalPoint(x))^2;
-
-
-%% Perform the search
-[navarroD, fVal] = fminsearch(myObj,5);
+% Set up the objective for the search. The objective examines rays that
+% arise from the near focal point implied by the desired accommodation, and
+% obtains the internal focal point for those rays. The squared distance of
+% this internal focal point from the retinal surface is the error to be
+% minimized.
+myObj = @(x) objective(x,eye,desiredAccommodation,rayHeight,cameraMedium);
+options = optimset('fminsearch');
+options.Display = 'off';
+[navarroD,fVal] = fminsearch(myObj,5,options);
 
 % Detect and warn if no accurate solution is found, which is the case for
 % some combinations of model eyes and accommodation states.
@@ -123,22 +77,33 @@ if fVal > 1e-6
     warning('calcAccommodation:cannotFocus',warnString);
 end
 
-% Obtain the ray paths to return
-[~,path1] = rayTraceQuadrics(myR1(navarroD), mySystem(navarroD));
-[~,path2] = rayTraceQuadrics(myR2(navarroD), mySystem(navarroD));
-
 end
 
 
 %% LOCAL FUNCTIONS
 
-function fVal = surfaceDistance(myRetina,coord)
+function [fVal,focalPoint,blur] = objective(navarroD,eye,desiredAccommodation,rayHeight,cameraMedium)
+
+% Update the eye with the specified navarroD for the lens
+eye.meta.navarroD = navarroD;
+eye.lens = human.lens( eye );
+
+% Obtain the optical system for this eye
+opticalSystem = assembleOpticalSystem(eye,...
+    'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
+
+% Obtain the internal focal point
+[focalPoint, blur] = calcInternalFocalPoint(opticalSystem,1000/desiredAccommodation,rayHeight);
+
 % Takes as input the vector representation of the quadric surface for the
-% retina, and a 3D coordinate. The fVal returned is the distance of the
-% coordinate from the surface, which is given by evaluating the implicit
-% function defined by the quadric for the [x y z] values of the coordinate.
-% The property of the implicit form of the quadric is that it has a value
-% of zero for points on the quadric surface.
-funcS = quadric.vecToFunc(myRetina);
-fVal = funcS(coord(1),coord(2),coord(3));
+% retina, and a 3D coordinate. The fVal returned is related to the distance
+% of the coordinate from the surface, which is given by evaluating the
+% implicit function defined by the quadric for the [x y z] values of the
+% coordinate. The property of the implicit form of the quadric is that it
+% has a value of zero for points on the quadric surface.
+funcS = quadric.vecToFunc(eye.retina.S);
+fVal = funcS(focalPoint(1),focalPoint(2),focalPoint(3))^2;
+
 end
+
+

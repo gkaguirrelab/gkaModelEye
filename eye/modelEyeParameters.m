@@ -14,6 +14,11 @@ function eye = modelEyeParameters( varargin )
 %   space has the dimensions [depth, horizontal, vertical]; negative values
 %   of depth are towards the back of the eye.
 %
+%   Note that not all parameters are applicable to all "species" of model
+%   eye. For example, the Drasdo & Fowler 1974 model has fixed size and
+%   accommodation, so most of these optional key-value parameters are
+%   ignored.
+%
 % Inputs:
 %   none
 %
@@ -23,6 +28,8 @@ function eye = modelEyeParameters( varargin )
 %                           spherical refractive error of the eye. A
 %                           negative number is the correction that would be
 %                           used for a myopic person.
+%  'accommodation'        - Scalar. The accommodative state of the eye, in
+%                           diopters. If left undefined, defaults to 1.5 D.
 %  'axialLength'          - Scalar. This is the axial length (in mm) along
 %                           the optical axis. This value is converted into
 %                           an equivalent spherical error and then used to
@@ -42,15 +49,6 @@ function eye = modelEyeParameters( varargin )
 %                           used by various eye model components. If left
 %                           empty, the parameters will be obtained from a
 %                           stored set of values.
-%  'navarroD'             - Scalar. The parameter D of the Navarro 2014
-%                           lens model. This value is used to adjust the
-%                           accommodative state of the eye. To calculate a
-%                           navarroD parameter for a particular model eye
-%                           in a particular state of accommodation, use the
-%                           function calcAccommodation. If left empty, the
-%                           resting accommodation value for an emmetropic
-%                           eye is used, which is stored in the
-%                           derivedParams.
 %  'kvals' -                1x2 to 1x5 vector. Provides the horizontal
 %                           and vertical curvature of the cornea (diopters;
 %                           K1 and K2). The first value is always the
@@ -119,12 +117,12 @@ p = inputParser; p.KeepUnmatched = true; p.PartialMatching = false;
 
 % Optional
 p.addParameter('sphericalAmetropia',[],@(x)(isempty(x) || isscalar(x)));
+p.addParameter('accommodation',1.5,@isscalar);
 p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
 p.addParameter('ageYears',18,@isscalar);
 p.addParameter('derivedParams',[],@(x)(isstruct(x) || isempty(x)));
-p.addParameter('navarroD',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('kvals',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('corneaAxialRadius',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('rotationCenterScalers',[1 1],@isnumeric);
@@ -181,10 +179,10 @@ eye.meta.coordinates = 'eyeWorld';
 eye.meta.dimensions = {'depth (axial)' 'horizontal' 'vertical'};
 eye.meta.eyeLaterality = eyeLaterality;
 eye.meta.sphericalAmetropia = sphericalAmetropia;
+eye.meta.accommodation = p.Results.accommodation;
 eye.meta.axialLength = p.Results.axialLength;
 eye.meta.species = p.Results.species;
 eye.meta.ageYears = p.Results.ageYears;
-eye.meta.navarroD = p.Results.navarroD;
 eye.meta.kvals = p.Results.kvals;
 eye.meta.corneaAxialRadius = p.Results.corneaAxialRadius;
 eye.meta.rotationCenterScalers = p.Results.rotationCenterScalers;
@@ -207,7 +205,11 @@ switch eye.meta.species
         else
             eye.derivedParams = p.Results.derivedParams;
         end
-        
+
+        % Refractive indices
+        eye.index.vitreous = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );
+        eye.index.aqueous = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
+
         % Eye anatomy
         eye.cornea = human.cornea(eye);
         eye.iris = human.iris(eye);
@@ -224,11 +226,7 @@ switch eye.meta.species
         
         % Rotation centers
         eye.rotationCenters = human.rotationCenters(eye);
-        
-        % Refractive indices
-        eye.index.vitreous = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );
-        eye.index.aqueous = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
-        
+                
         % Landmarks. Some of these are optional
         eye.landmarks.medialCanthus = human.landmarks.medialCanthus(eye);
         eye.landmarks.lateralCanthus = human.landmarks.lateralCanthus(eye);
