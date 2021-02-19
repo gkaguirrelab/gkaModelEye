@@ -121,7 +121,7 @@ entranceRadius = [3.09/2 4.93/2];
 entranceEccen = [-0.12 0.175];
 
 % Prepare scene geometry including the fovea
-sceneGeometry = createSceneGeometry('derivedParams',derivedParams,'calcLandmarkFovea',true);
+sceneGeometry = createSceneGeometry('derivedParams',derivedParams);
 
 % Fix the stop eccentricity at 0 and remove refraction
 sg = sceneGeometry;

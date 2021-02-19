@@ -17,7 +17,7 @@ function fovea = fovea( eye )
 % Examples:
 %{
     % Plot the retinal surface and the positions of the fovea
-    eye = modelEyeParameters('sphericalAmetropia',-1.5,'calcLandmarkFovea',true,'calcLandmarkOpticDisc',true);
+    eye = modelEyeParameters('sphericalAmetropia',-1.5);
     S = eye.retina.S;
     boundingBox = eye.retina.boundingBox;
     figure
@@ -36,12 +36,11 @@ function fovea = fovea( eye )
     plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'-y','MarkerSize',10);
 %}
 %{
-    % ETTBSkip -- This takes about 15 minutes to run.
     % Calculate the projective distance between the optic disc and fovea for
     % a range of spherical refractive errors
     SRvals = -10:1:2;
     for ii = 1:length(SRvals)
-        eye = modelEyeParameters('sphericalAmetropia',SRvals(ii),'calcLandmarkFovea',true,'calcLandmarkOpticDisc',true);
+        eye = modelEyeParameters('sphericalAmetropia',SRvals(ii));
         odf(ii) = sqrt(sum((eye.landmarks.fovea.coords(2:3) - eye.landmarks.opticDisc.coords(2:3)).^2));
     end
     figure
@@ -58,7 +57,7 @@ function fovea = fovea( eye )
 
 % The location of the fovea on the retina is determined by first specifying
 % the angle alpha, which is the angle between the optical and visual axes
-% of the eye. The visual axis is defined by the nodal ray that originates
+% of the eye. The visual axis is defined by the nodal ray that arrives
 % at the fovea.
 %
 % The angle alpha has been proposed to vary with spherical refractive
@@ -111,17 +110,17 @@ end
 eye.meta.spectralDomain = 'vis';
 eye.meta.ageYears = 18;
 eye.meta.accommodationDiopters = 1.5;
-cameraMedium = 'air';
 
 % Update the lens field for these values
 eye.lens = human.lens(eye);
 
 % Now calculate the location on the retina corresponding to this visual
-% angle wrt the optical axis.
-[fovea.geodetic,fovea.coords] = calcRetinaFieldPoint( eye, fovea.degField, cameraMedium );
+% field location
+rayPath = calcNodalRayFromField(eye,fovea.degField);
 
-% Transposing to get the values in the right row-column orientation
-fovea.geodetic=fovea.geodetic';
-fovea.coords=fovea.coords';
+% The retinal location is the last point on the rayPath. Store this, and
+% obtain the geodetic coordinates
+fovea.coords = rayPath(:,end)';
+fovea.geodetic = quadric.cartToEllipsoidalGeo( fovea.coords', eye.retina.S )';
 
 end

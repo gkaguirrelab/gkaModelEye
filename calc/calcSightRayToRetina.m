@@ -48,11 +48,10 @@ function [rayPath,error] = calcSightRayToRetina(eye,rayDestination,rayOriginDist
 %{
     % Define a default model eye
     eye = modelEyeParameters();
-    % Pick a retinal point in geodetic coordinates, a bit away from the
-    % vertex
-    G = [-65,-65,0];
-    % Find the sight ray
-    [rayPath,error] = calcSightRayToRetina(eye,G);
+    % Obtain the coordinates of the fovea
+    rayDestination = eye.landmarks.fovea.coords;
+    % Find the sight ray to the fovea (i.e., the line of sight axis)
+    [rayPath,error] = calcSightRayToRetina(eye,rayDestination);
     % Show the optical system and sight ray
     opticalSystem = assembleOpticalSystem(eye,'surfaceSetName','mediumToRetina');
     plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'rayPath',rayPath,'surfaceAlpha',0.05);
@@ -125,12 +124,12 @@ if Sfunc(rayDestination(1),rayDestination(2),rayDestination(3)) > surfaceTol
     % If the last value of the coordinate is not zero, then this can't be a
     % geodetic coordinate either
     if rayDestination(3) > surfaceTol
-        error('calcNodalRayToRetina:invalidCoordinate','Supply a Cartesian or geodetic coordinate that is on the retinal surface.')
+        error('calcSightRayToRetina:invalidCoordinate','Supply a Cartesian or geodetic coordinate that is on the retinal surface.')
     end
     
     % Check that the candidate beta and omega values are in range
     if abs(rayDestination(1))>90 || abs(rayDestination(2))>180
-        error('calcNodalRayToRetina:invalidCoordinate','Supply a Cartesian or geodetic coordinate that is on the retinal surface.')
+        error('calcSightRayToRetina:invalidCoordinate','Supply a Cartesian or geodetic coordinate that is on the retinal surface.')
     end
     
     % Looks like a valid geodetic coordinate. Convert to Cartesian.

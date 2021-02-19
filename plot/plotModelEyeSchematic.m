@@ -54,9 +54,11 @@ function figHandle = plotModelEyeSchematic(eye, varargin)
 %}
 %{
     % A plot with the fovea, visual axis, and line of sight
-    sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
-    [outputRayLoS,rayPathLoS] = calcLineOfSightRay(sceneGeometry);
-    plotModelEyeSchematic(sceneGeometry.eye,'plotVisualAxis',true,'rayPath',rayPathLoS,'outputRay',outputRayLoS);
+    sceneGeometry = createSceneGeometry();
+    % Calculate the line-of-sight axis of the eye
+    rayDestination = sceneGeometry.eye.landmarks.fovea.coords;
+    rayPathLoS = calcSightRayToRetina(sceneGeometry.eye,rayDestination);
+    plotModelEyeSchematic(sceneGeometry.eye,'plotVisualAxis',true,'rayPath',rayPathLoS);
 %}
 %{
     % Two panel plot with horizontal and vertical views for eyes with 0 and -10
@@ -127,11 +129,11 @@ switch p.Results.view
 end
 
 %% Plot the anterior chamber, vitreous chamber, and the lens surfaces
-plotConicSection(eye.retina.S(1:10), titleString, p.Results.plotColor, eye.retina.boundingBox)
-plotConicSection(eye.cornea.S(1,:), titleString, p.Results.plotColor, eye.cornea.boundingBox(1,:))
-plotConicSection(eye.cornea.S(end,:), titleString, p.Results.plotColor, eye.cornea.boundingBox(end,:))
-plotConicSection(eye.lens.S(1,:), titleString, p.Results.plotColor, eye.lens.boundingBox(1,:))
-plotConicSection(eye.lens.S(end,:), titleString, p.Results.plotColor, eye.lens.boundingBox(end,:))
+quadric.plotConicSection(eye.retina.S(1:10), titleString, p.Results.plotColor, eye.retina.boundingBox)
+quadric.plotConicSection(eye.cornea.S(1,:), titleString, p.Results.plotColor, eye.cornea.boundingBox(1,:))
+quadric.plotConicSection(eye.cornea.S(end,:), titleString, p.Results.plotColor, eye.cornea.boundingBox(end,:))
+quadric.plotConicSection(eye.lens.S(1,:), titleString, p.Results.plotColor, eye.lens.boundingBox(1,:))
+quadric.plotConicSection(eye.lens.S(end,:), titleString, p.Results.plotColor, eye.lens.boundingBox(end,:))
 
 
 %% Add a 2mm radius pupil, center of rotation, iris boundary, fovea, and optic disc
@@ -165,12 +167,8 @@ if isfield(eye,'landmarks')
         
         if p.Results.plotVisualAxis
             % Obtain the nodal ray from the fovea
-            [outputRay,rayPath] = calcNodalRay(eye,[],eye.landmarks.fovea.coords);
+            rayPath = calcNodalRayToRetina(eye,eye.landmarks.fovea.coords);
             plot(rayPath(PdimA,:),rayPath(PdimB,:),['-' p.Results.plotColor]);
-            p1=outputRay(:,1);
-            p2=p1+outputRay(:,2).*3;
-            r = [p1 p2];
-            plot(r(PdimA,:),r(PdimB,:),['-' p.Results.plotColor]);
         end
     end
 end
@@ -213,20 +211,8 @@ title(titleString);
 ylabel(yLabelString);
 xlabel(xLabelString);
 
+%% Set the xlim
+xlim([eye.landmarks.vertex.coords(1)-5 5])
+    
 end
 
-function plotConicSection(S,plane,colorCode,boundingBox)
-F = quadric.vecToFunc(S);
-switch plane
-    case 'Horizontal'
-        fh = @(x,y) F(x,y,0);
-        rangeVec = boundingBox([1 2 3 4]);
-    case 'Vertical'
-        fh = @(x,y) F(x,0,y);
-        rangeVec = boundingBox([1 2 5 6]);
-    case 'Coronal'
-        fh = @(x,y) F(0,x,y);
-        rangeVec = boundingBox([3 4 5 6]);
-end
-fimplicit(fh,rangeVec,'Color', colorCode,'LineWidth',1);
-end

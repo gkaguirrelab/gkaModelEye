@@ -98,12 +98,6 @@ function eye = modelEyeParameters( varargin )
 %                           This is the wavelength domain within which
 %                           imaging is being performed. The refractive
 %                           indices vary based upon this choice.
-%  'calcLandmarkFovea',
-%  'calcLandmarkOpticDisc',
-%  'calcLandmarkOpticalCenter' - Logical. If set to true, the computation
-%                           of each of these landmarks is performed. This
-%                           defaults to false given that these are time
-%                           consuming operations.
 %
 % Outputs:
 %   eye                   - A structure with fields that contain the values
@@ -136,9 +130,6 @@ p.addParameter('corneaAxialRadius',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('rotationCenterScalers',[1 1],@isnumeric);
 p.addParameter('primaryPosition',[0 0],@isnumeric);
 p.addParameter('spectralDomain','nir',@ischar);
-p.addParameter('calcLandmarkFovea',false,@islogical);
-p.addParameter('calcLandmarkOpticDisc',false,@islogical);
-p.addParameter('calcLandmarkOpticalCenter',false,@islogical);
 
 % parse
 p.parse(varargin{:})
@@ -242,15 +233,8 @@ switch eye.meta.species
         eye.landmarks.medialCanthus = human.landmarks.medialCanthus(eye);
         eye.landmarks.lateralCanthus = human.landmarks.lateralCanthus(eye);
         eye.landmarks.vertex = human.landmarks.vertex(eye);
-        if p.Results.calcLandmarkFovea
-            eye.landmarks.fovea = human.landmarks.fovea(eye);
-        end
-        if p.Results.calcLandmarkOpticDisc
-            eye.landmarks.opticDisc = human.landmarks.opticDisc(eye);
-        end
-        if p.Results.calcLandmarkOpticalCenter
-            eye.landmarks.opticalCenter = calcOpticalCenter(eye);
-        end
+        eye.landmarks.fovea = human.landmarks.fovea(eye);
+        eye.landmarks.opticDisc = human.landmarks.opticDisc(eye);
         
         
     %% Drasdo & Fowler 1974 model eye

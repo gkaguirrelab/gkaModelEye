@@ -1,4 +1,4 @@
-function [rayPath,nodalPoints,errors] = calcNodalRayFromField(eye,fieldOrigin,rayOriginDistance,incidentNodeX0,cameraMedium)
+function [rayPath,nodalPoints,errors] = calcNodalRayFromField(eye,fieldOrigin,rayOriginDistance,cameraMedium)
 % Nodal ray that arises from the specified visual field location
 %
 % Syntax:
@@ -30,11 +30,6 @@ function [rayPath,nodalPoints,errors] = calcNodalRayFromField(eye,fieldOrigin,ra
 %   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
 %                           the ray from the corneal apex. Assumed to be
 %                           500 mm if not defined.
-%   incidentNodeX0        - An optional 1x3 vector that gives the location
-%                           in eye  space that is an initial guess for the
-%                           location of the incident node of the optical
-%                           system. If not supplied, a value that is
-%                           typical for the human eye is used.
 %   cameraMedium          - The medium in which the eye is located.
 %                           Defaults to 'air'.
 %
@@ -82,17 +77,21 @@ end
 
 if nargin==2
     rayOriginDistance = 500;
-    incidentNodeX0 = [-7 0 0];
     cameraMedium = 'air';
 end
 
 if nargin==3
-    incidentNodeX0 = [-7 0 0];
     cameraMedium = 'air';
 end
 
-if nargin==4
-    cameraMedium = 'air';
+% If the length of fieldOrigin is 3, and the last element is zero, drop
+% this as it is a torsion place holder.
+if length(fieldOrigin)==3
+    if fieldOrigin(end)==0
+        fieldOrigin = fieldOrigin(1:2);
+    else
+        error('calcNodalRayFromField:invalidArguments','Field origin should be two elements')
+    end
 end
 
 % Make fieldOrigin a row vector

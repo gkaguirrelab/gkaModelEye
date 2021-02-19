@@ -15,7 +15,7 @@ modelEyePlotColors = {'.w' 'ob' '-g' '.y'};
 for ii = 1:length(laterality)
     
     % Create the sceneGeometry
-    sceneGeometry=createSceneGeometry('calcLandmarkFovea',true,'eyeLaterality',laterality{ii});
+    sceneGeometry=createSceneGeometry('eyeLaterality',laterality{ii});
     
     % Define a stop radius for the eye. This value produces a pupil that is
     % about 3.5 mm in diamter

@@ -72,11 +72,10 @@ function [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination,
 %{
     % Define a default model eye
     eye = modelEyeParameters();
-    % Pick a retinal point in geodetic coordinates, a bit away from the
-    % vertex
-    G = [-65,-65,0];
+    % Obtain the coordinates of the fovea
+    rayDestination = eye.landmarks.fovea.coords;
     % Find the nodal ray
-    [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,G);
+    [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination);
     % Show the optical system, nodal ray, and nodal points
     opticalSystem = assembleOpticalSystem(eye,'surfaceSetName','mediumToRetina');
     plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'rayPath',rayPath,'surfaceAlpha',0.05);
