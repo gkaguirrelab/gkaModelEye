@@ -32,6 +32,9 @@ function systemDirection = calcSystemDirection(opticalSystem, rayStartDepth)
 %                                       routine exits with nans for the
 %                                       outputRay.
 %                               n     - Refractive index of the surface.
+%   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
+%                           the ray from the corneal apex. Assumed to be
+%                           1e5 mm if not defined.
 %
 % Outputs:
 %  'systemDirection'      - Char vector with valid values 'eyeToCamera' or
@@ -54,7 +57,7 @@ function systemDirection = calcSystemDirection(opticalSystem, rayStartDepth)
 
 % Handle nargin
 if nargin==1
-    rayStartDepth = [1e5, -1e5];
+    rayStartDepth = 1e5;
 end
 
 % Strip the optical system of any rows which are all nans
@@ -82,11 +85,11 @@ if size(opticalSystem,1)==1
 end
 
 % Trace an axial ray from the right (cameraToEye)
-R1 = quadric.normalizeRay(quadric.anglesToRay([rayStartDepth(1);0;0],180,0));
+R1 = quadric.normalizeRay(quadric.anglesToRay([rayStartDepth;0;0],180,0));
 M1 = rayTraceQuadrics(R1, opticalSystem);
 
 % Trace an axial ray from the left (eyeToCamera)
-R2 = quadric.normalizeRay(quadric.anglesToRay([rayStartDepth(2);0;0],0,0));
+R2 = quadric.normalizeRay(quadric.anglesToRay([-rayStartDepth;0;0],0,0));
 M2 = rayTraceQuadrics(R2, opticalSystem);
 
 % Find the non-nan value

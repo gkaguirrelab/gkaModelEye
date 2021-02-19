@@ -74,7 +74,7 @@ function [diopters, focalPoint] = calcOpticalPower(opticalSystem, rayStartDepth,
 
 % Handle nargin
 if nargin==1
-    rayStartDepth = [100, -100];
+    rayStartDepth = 100;
     rayHeight = 1;
 end
 
@@ -96,12 +96,12 @@ P = calcPrincipalPoint(opticalSystem, rayStartDepth, rayHeight);
 % Create parallel rays in the valid direction
 switch systemDirection
     case 'cameraToEye'
-        R1 = quadric.normalizeRay([rayStartDepth(1),-1;-rayHeight,0;0,0]);
-        R2 = quadric.normalizeRay([rayStartDepth(1),-1;rayHeight,0;0,0]);
+        R1 = quadric.normalizeRay([rayStartDepth,-1;-rayHeight,0;0,0]);
+        R2 = quadric.normalizeRay([rayStartDepth,-1;rayHeight,0;0,0]);
         signD = 1;
     case 'eyeToCamera'
-        R1 = quadric.normalizeRay([rayStartDepth(2),1;-rayHeight,0;0,0]);
-        R2 = quadric.normalizeRay([rayStartDepth(2),1;rayHeight,0;0,0]);
+        R1 = quadric.normalizeRay([-rayStartDepth,1;-rayHeight,0;0,0]);
+        R2 = quadric.normalizeRay([-rayStartDepth,1;rayHeight,0;0,0]);
         signD = -1;
     otherwise
         error(['Not a valid system direction: ' systemDirection])
