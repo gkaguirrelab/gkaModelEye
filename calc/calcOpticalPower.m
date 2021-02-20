@@ -63,8 +63,9 @@ function [diopters, focalPoint] = calcOpticalPower(opticalSystem, rayStartDepth,
     fprintf(outline)
 %}
 %{
-    % Determine the refractive power of the cystraline lens in air
-    sceneGeometry = createSceneGeometry('navarroD',calcAccommodation(0));
+    % Determine the refractive power of the un-accommodated cystraline
+    % lens in air
+    sceneGeometry = createSceneGeometry();
     opticalSystem = sceneGeometry.refraction.retinaToStop.opticalSystem;
     opticalSystem = reverseSystemDirection(opticalSystem);
     diopters = calcOpticalPower(opticalSystem);

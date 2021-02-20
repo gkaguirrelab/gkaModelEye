@@ -66,14 +66,14 @@ end
 % this internal focal point from the retinal surface is the error to be
 % minimized.
 myObj = @(x) objective(x,eye,desiredAccommodation,rayHeight,cameraMedium);
-options = optimset('fminsearch');
+options = optimset('fmincon');
 options.Display = 'off';
-[navarroD,fVal] = fminsearch(myObj,5,options);
+[navarroD,fVal] = fmincon(myObj,5,[],[],[],[],-5,100,[],options);
 
 % Detect and warn if no accurate solution is found, which is the case for
 % some combinations of model eyes and accommodation states.
 if fVal > 1e-6
-    warnString = ['Cannot accurately accommodate the eye to ' num2str(accommodationDiopters) ' diopters'];
+    warnString = ['Cannot accurately accommodate the eye to ' num2str(desiredAccommodation) ' diopters'];
     warning('calcAccommodation:cannotFocus',warnString);
 end
 

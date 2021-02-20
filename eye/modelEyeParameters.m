@@ -29,7 +29,7 @@ function eye = modelEyeParameters( varargin )
 %                           negative number is the correction that would be
 %                           used for a myopic person.
 %  'accommodation'        - Scalar. The accommodative state of the eye, in
-%                           diopters. If left undefined, defaults to 1.5 D.
+%                           diopters. If left undefined, defaults to 0 D.
 %  'axialLength'          - Scalar. This is the axial length (in mm) along
 %                           the optical axis. This value is converted into
 %                           an equivalent spherical error and then used to
@@ -117,7 +117,7 @@ p = inputParser; p.KeepUnmatched = true; p.PartialMatching = false;
 
 % Optional
 p.addParameter('sphericalAmetropia',[],@(x)(isempty(x) || isscalar(x)));
-p.addParameter('accommodation',1.5,@isscalar);
+p.addParameter('accommodation',0,@isscalar);
 p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);

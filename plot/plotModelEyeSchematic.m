@@ -213,6 +213,7 @@ xlabel(xLabelString);
 
 %% Set the xlim
 xlim([eye.landmarks.vertex.coords(1)-5 5])
+ylim([-abs(eye.landmarks.vertex.coords(1)/2) abs(eye.landmarks.vertex.coords(1)/2)])
     
 end
 

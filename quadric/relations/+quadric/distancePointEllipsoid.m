@@ -31,7 +31,7 @@ function [distance,Xprojection] = distancePointEllipsoid( X, S )
     % ellipsoid." Boletim de Ciências Geodésicas 20.4 (2014): 970-983.
     S = quadric.scale(quadric.unitSphere,[6378388.0000,6378318.0000,6356911.9461]);
     X = [3909863.9271; 3909778.1230; 3170932.5016];
-    [Xprojection,distance] = quadric.distancePointEllipsoid( X, S );
+    [distance,Xprojection] = quadric.distancePointEllipsoid( X, S );
     X0projection = [3909251.5547; 3909165.7506; 3170432.5016];
     distance0 = 1e3;
     % Test the result matches Bektas
