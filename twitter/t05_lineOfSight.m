@@ -23,13 +23,13 @@ rayPath = calcSightRayToRetina(eye,rayDestination);
 
 % Plot the schematic eye in red
 plotModelEyeSchematic(eye,'view','horizontal','plotColor','r', ...
-    'rayPath',rayPath)
+    'rayPath',rayPath);
 
 % Remove the fovea
 eye.landmarks=rmfield(sceneGeometry.eye.landmarks,'fovea');
 
 % Now over-plot in black, without the fovea and line of sight
-plotModelEyeSchematic(eye,'view','horizontal','newFigure',false,'plotColor','k')
+plotModelEyeSchematic(eye,'view','horizontal','newFigure',false,'plotColor','k');
 
 % Clean up the plot limits
 xlim([-25 5])

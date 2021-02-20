@@ -1,7 +1,8 @@
 ## calc
 
-These routines derive optical properties of a modeled eye.
+These routines derive optical properties of a modeled eye or optical system.
 
-The contents of the directory are:
-
-- calcAccommodation.m- calcAngularMagnification.m- calcDiopters.m- calcLineOfSightRay.m- calcNodalRay.m- calcOpticalCenter.m- calcPointBestFocus.m- calcPrincipalPoint.m- calcRetinaFieldPoint.m- calcSystemDirection.m- calcVisualAngle.m
+These routines operate upon an isolated opticalSystem
+- calcSystemDirection.m
+- calcOpticalPower.m
+- calcPrincipalPoint.m- calcInternalFocalPoint.mThese routines operate upon an eyeModel structurecalcSightRayToRetina.mcalcNodalRayFromField.mcalcNodalRayToRetina.mcalcAccommodation.mcalcMmRetinaPerDeg.mcalcAngularMagnification.m
