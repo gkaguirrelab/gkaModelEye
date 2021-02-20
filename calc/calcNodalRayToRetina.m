@@ -59,8 +59,10 @@ function [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination,
 %                           coordinate space. This is the point on each ray
 %                           that is closest to the optical axis.
 %   errors                - 1x4 matrix with the follow error values:
-%                             - distance of ray intersection from retinal
-%                               target (in mm)
+%                             - L2 norm distance of ray intersection from 
+%                               retinal target (in mm)
+%                             - L2 norm of the mismatch between the desired
+%                               and obtained rayOriginDistance.
 %                             - departure from parallel of the incident and
 %                               emergent rays (deg)
 %                             - distance of the incident nodal point from
@@ -76,12 +78,10 @@ function [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination,
     rayDestination = eye.landmarks.fovea.coords;
     % Find the nodal ray
     [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination);
-    % Show the optical system, nodal ray, and nodal points
-    opticalSystem = assembleOpticalSystem(eye,'surfaceSetName','mediumToRetina');
-    plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'rayPath',rayPath,'surfaceAlpha',0.05);
-    hold on
-    xlim([-25 10])
-    plot3(nodalPoints(1,:),nodalPoints(2,:),nodalPoints(3,:),'*b')
+    % Confirm that the first three elements of the error vector are within
+    % tolerance. The final two elements are expected to be non-zero as a 
+    % consequence of astigmatic and decentered elements in the model.
+    assert(all(errors(1:3)<1e-3))
 %}
 
 
@@ -152,14 +152,8 @@ end
 opticalSystem = assembleOpticalSystem(eye,...
     'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
 
-% An anonymous function that returns the coordinates of a point that is at
-% the specified rayOriginDistance, and at the passed angles (w.r.t. to the
-% un-rotated corneal apex)
-my2ndColumn = @(R) R(:,2);
-myCoord = @(p) my2ndColumn(quadric.anglesToRay([0;0;0],p(1),p(2)).*rayOriginDistance);
-
 % Initialize an anonymous function for the objective.
-myObj = @(p) objective(myCoord(p),opticalSystem,rayDestination,findNodeHandle);
+myObj = @(p) objective(p,opticalSystem,rayDestination,rayOriginDistance,findNodeHandle);
 
 % p0 is set to direct from the retinal coordinate, through a typical
 % location for the incident node.
@@ -178,7 +172,7 @@ p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
 
 % Evaluate the objective function once more, using the final values
 [retinalDistanceError,rayPath,nodalPoints,errors] = ...
-    objective(myCoord(p),opticalSystem,rayDestination,findNodeHandle);
+    objective(p,opticalSystem,rayDestination,rayOriginDistance,findNodeHandle);
 
 % Assemble the errors
 errors = [retinalDistanceError,errors];
@@ -189,10 +183,27 @@ end
 
 %% Local function
 
-function [fVal,rayPath,nodalPoints,errors] = objective(rayOrigin,opticalSystem,rayDestination,findeNodeHandle)
+function [fVal,rayPath,nodalPoints,errors] = objective(p,opticalSystem,rayDestination,rayOriginDistance,findNodeHandle)
+                                            
+% The passed p vector is interpreted as the angles of a coordinate point
+% w.r.t. the origin of the coordinate system. We find the coordinate at
+% this point, at the rayOriginDistance
+rayOrigin = quadric.anglesToRay([0;0;0],p(1),p(2)).*rayOriginDistance;
+rayOrigin = rayOrigin(:,2);
 
-% Find the nodal ray from this point
-[rayPath,nodalPoints,errors] = findeNodeHandle(rayOrigin',opticalSystem);
+% Find the nodal points from this point
+[~,nodalPoints] = findNodeHandle(rayOrigin',opticalSystem);
+
+% Adjust the rayOrigin so that it is at the appropriate rayOriginDistance
+% w.r.t. the incident node.
+rayOrigin = (rayOrigin-nodalPoints(:,1)).*(rayOriginDistance/norm(rayOrigin-nodalPoints(:,1)))+nodalPoints(:,1);
+
+% Repeat the ray trace from this updated point
+[rayPath,nodalPoints,errors] = findNodeHandle(rayOrigin',opticalSystem);
+
+% Obtain the L2 norm between the desired and realized rayOrigin
+% distance, and add this to the front of the errors
+errors = [norm(norm(rayOrigin-nodalPoints(:,1))-rayOriginDistance), errors];
 
 % Find the Euclidean distance between the retinal target coordinate and the
 % intersection of the ray upon the retina.
