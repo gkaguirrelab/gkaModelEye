@@ -39,7 +39,6 @@ function lens = lens( eye )
 % parameter. If this parameter is not set in the meta data, we call out to
 % calcAccommodation to find the navarroD parameter for this eye that
 % produces the called for accommodation.
-
 D = [];
 if isfield(eye.meta,'navarroD')
     if ~isempty(eye.meta.navarroD)
