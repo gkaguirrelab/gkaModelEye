@@ -26,7 +26,7 @@ eyePoseX0 = [0 0 0 1];
 [~, ~, ~, ~, ~, ~, xHist] = eyePoseEllipseFit(Xp, Yp, glintCoord, sceneGeometry, 'eyePoseX0', eyePoseX0, 'cameraTransX0', cameraTransX0);
 
 % Save location for the GIF. Sorry for the Mac bias.
-gifSaveName = '~/Desktop/t13_eyePoseSearch.gif';
+gifSaveName = '~/Desktop/t12_eyePoseSearch.gif';
 
 % These are the elements of the model eye that we will render
 modelEyeLabelNames = {'retina' 'pupilEllipse' 'cornea' 'glint_01'};
