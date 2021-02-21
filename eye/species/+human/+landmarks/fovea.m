@@ -109,7 +109,7 @@ end
 % calculation.
 eye.meta.spectralDomain = 'vis';
 eye.meta.ageYears = 18;
-eye.meta.accommodationDiopters = 1.5;
+eye.meta.accommodation = 1.5;
 
 % Update the lens field for these values
 eye.lens = human.lens(eye);
