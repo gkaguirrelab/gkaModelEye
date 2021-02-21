@@ -30,7 +30,7 @@ function [rayPath,nodalPoints,errors] = calcNodalRayFromField(eye,fieldOrigin,ra
 %   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
 %                           the ray from the incident node. Assumed to be
 %                           500 mm if not defined.
-%   cameraMedium          - The medium in which the eye is located.
+%   cameraMedium          - String. The medium in which the eye is located.
 %                           Defaults to 'air'.
 %
 % Outputs:

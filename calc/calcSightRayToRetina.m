@@ -1,4 +1,4 @@
-function [rayPath,errors] = calcSightRayToRetina(eye,rayDestination,rayOriginDistance,stopRadius,cameraMedium)
+function [rayPath,nodalPoints,errors] = calcSightRayToRetina(eye,rayDestination,rayOriginDistance,stopRadius,cameraMedium)
 % Ray that passes through entrance pupil center to reach the retinal coord
 %
 % Syntax:
@@ -13,9 +13,8 @@ function [rayPath,errors] = calcSightRayToRetina(eye,rayDestination,rayOriginDis
 %   sight" for the eye.
 %
 %   If not defined, the radius of the aperture stop is set to provide an
-%   entrance pupil diameter of ~3.5 mm, which tends to produce the highest
-%   degree of acuity in normal observers. The ray origin distance is
-%   assumed to 500 mm unless set.
+%   entrance pupil diameter of ~3.5 mm. The ray origin distance is assumed
+%   to 500 mm unless set.
 %
 %
 % Inputs:
@@ -43,6 +42,10 @@ function [rayPath,errors] = calcSightRayToRetina(eye,rayDestination,rayOriginDis
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
 %                           will be nan.
+%   nodalPoints           - 3x2 matrix that provides the approximation to
+%                           incident and emergent nodal points in the eye
+%                           coordinate space. This is the point on each ray
+%                           that is closest to the optical axis.
 %   errors                - 1x2 matrix with the follow error values:
 %                             - L2 norm of the distance between the retinal
 %                               target coordinate and the intersection of
@@ -57,7 +60,7 @@ function [rayPath,errors] = calcSightRayToRetina(eye,rayDestination,rayOriginDis
     % Obtain the coordinates of the fovea
     rayDestination = eye.landmarks.fovea.coords;
     % Find the sight ray to the fovea (i.e., the line of sight axis)
-    [rayPath,errors] = calcSightRayToRetina(eye,rayDestination);
+    [rayPath,nodalPoints,errors] = calcSightRayToRetina(eye,rayDestination);
     % Confirm that the first elements of the error vector are within
     % tolerance.
     assert(all(errors<1e-3))
@@ -133,9 +136,9 @@ sceneGeometry = createSceneGeometry('eye',eye,...
 % of the ray in the retina from the target coordinate.
 myObj = @(p) objective(p,sceneGeometry,rayDestination,rayOriginDistance,stopRadius,findNodeHandle);
 
-% Define a p0 location, which is in line with the retinal target and the
-% corneal apex
-p0 = (rayOriginDistance./rayDestination(1)) .* rayDestination(2:3);
+% p0 is set to direct from the retinal coordinate, through the location of
+% an un-rotated corneal apex
+[p0(1),p0(2)] = quadric.rayToAngles(quadric.normalizeRay([rayDestination,[0;0;0]-rayDestination]));
 
 % Bounds
 lb = [-90,-90];
@@ -152,7 +155,7 @@ options.Display = 'off';
 p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
 
 % Evaluate the objective with the final origin location
-[retinalDistanceError,rayPath,errors] = ...
+[retinalDistanceError,rayPath,nodalPoints,errors] = ...
     objective(p,sceneGeometry,rayDestination,rayOriginDistance,stopRadius,findNodeHandle);
 
 % Consolidate the errors
@@ -162,7 +165,7 @@ end
 
 
 %% Local function
-function [fVal,rayPath,errors] = objective(p,sceneGeometry,rayDestination,rayOriginDistance,stopRadius,findNodeHandle)
+function [fVal,rayPath,nodalPoints,errors] = objective(p,sceneGeometry,rayDestination,rayOriginDistance,stopRadius,findNodeHandle)
 
 % The passed p vector is interpreted as the angles of a coordinate point
 % w.r.t. the origin of the coordinate system. We find the coordinate at
@@ -193,12 +196,6 @@ entrancePupilCenter = mean(eyePoints(strcmp(pointLabels,'pupilPerimeter'),:))';
 % follow it to the retina
 R = quadric.normalizeRay([rayOrigin,entrancePupilCenter-rayOrigin]);
 [outputRay, rayPath] = rayTraceQuadrics(R, sceneGeometry.refraction.mediumToRetina.opticalSystem);
-
-% Concatenate the outputRay onto the rayPath
-rayPathFull = nan(3,size(rayPath,2)+1);
-rayPathFull(:,1:end-1)=rayPath;
-rayPathFull(:,end)=outputRay(:,1);
-rayPath = rayPathFull;
 
 % The fVal is the Euclidean distance between the retinal target coordinate
 % and the intersection of the ray upon the retina.
