@@ -23,16 +23,17 @@ function cornea = cornea( eye )
 % radius of curvature of 7.8 mm, and an eccentricity of 0.5. This code
 % obtains the semi-radi for this ellipse:
 %{
-    eqn1 = e == sqrt(1 - (b^2/a^2));
-    eqn2 = r == (b^2)/a;
-    eqn3 = r == 7.8;
-    eqn4 = e == 0.5;
-    sol=solve([eqn1, eqn2, eqn3, eqn4]);
+    syms a b 
+    % Equation for the eccentricity
+    eqn1 = 0.5 == (a^2-b^2)/a^2;
+    % Equation for the radius of curvature
+    eqn2 = 7.8 == (b^2)/a;
+    sol = solve([eqn1, eqn2]);
     radii = [eval(sol.a(2)), eval(sol.b(2)), eval(sol.b(2))];
 %}
 
 % Corneal radii
-radii = [10.4000    9.0067    9.0067];
+radii = [15.6000   11.0309   11.0309];
 
 % Create the quadric
 S = quadric.scale(quadric.unitSphere,radii);
@@ -52,7 +53,7 @@ cornea.front.center=[-radii(1) 0 0];
 
 % Create a back corneal surface, which is just the front translated a tiny
 % bit posteriorly
-delta = -0.01;
+delta = -0.001;
 S = quadric.translate(S,[delta 0 0]);
 cornea.back.S = quadric.matrixToVec(S);
 cornea.back.side = 1;

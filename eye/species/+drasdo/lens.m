@@ -20,10 +20,11 @@ radii = [10 10 10];
 Sfront = quadric.scale(quadric.unitSphere,radii);
 
 % Shift the quadric so that the apex of the front surface is at -3.6 mm
-Sfront = quadric.translate(Sfront,[-radii(1)-3.6 0 0]);
+anteriorLensPosition = -3.6;
+Sfront = quadric.translate(Sfront,[-radii(1)+anteriorLensPosition 0 0]);
 
 % Set the bounding box
-bbfront = [-5 -3.6 -5 5 -5 5];
+bbfront = [-5 anteriorLensPosition -5 5 -5 5];
 
 
 %% Lens back surface
@@ -34,17 +35,18 @@ Sback = quadric.scale(quadric.unitSphere,radii);
 
 % Shift the quadric so that the posterior apex of the back surface is at
 % -7.375 mm
-Sback = quadric.translate(Sback,[radii(1)-7.375 0 0]);
+posteriorLensPosition = -7.375;
+Sback = quadric.translate(Sback,[radii(1)+posteriorLensPosition 0 0]);
 
 % Set the bounding box
-bbback = [-7.4 -5 -5 5 -5 5];
+bbback = [posteriorLensPosition -5 -5 5 -5 5];
 
 
 %% Add some locations on the front, middle, and back of the lense
 % These are used as starting points in ray tracing routines
-lens.back = [-7.4 0 0];
+lens.back = [posteriorLensPosition 0 0];
 lens.center = [-5 0 0];
-lens.front = [-3.6 0 0];
+lens.front = [anteriorLensPosition 0 0];
 
 
 %% Assemble the system
