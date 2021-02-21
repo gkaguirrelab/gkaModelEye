@@ -93,14 +93,13 @@ emergentNodes = [];
 for rayOriginDistance = 100:250:1500
     for horiz = -60:15:50
         for vert = -60:15:50
-            % The calculation doesn't work for a ray along the optical axis
-            if horiz==0 && vert == 0
-                continue
-            end
             rayOrigin = quadric.anglesToRay([0;0;0],horiz,vert).*rayOriginDistance;
             rayOrigin = rayOrigin(:,2);
             [rayPath,nodalPoints,errors] = findNodeHandle(rayOrigin',opticalSystem);
-            if errors(1)<1e-3
+            % Traces that happen along the optical axis, or from extreme
+            % angles, may not yield a valid trace. Save only the valid
+            % results.
+            if errors(1)<1e-3 && ~any(isnan(nodalPoints(:)))
                 rayPaths{end+1}=rayPath;
                 incidentNodes(:,end+1)=nodalPoints(:,1);
                 emergentNodes(:,end+1)=nodalPoints(:,2);
@@ -133,6 +132,6 @@ opticalCenter(2) = mean(cellfun(@(x) interp1(x(1,:),x(2,:),opticalCenter(1),'lin
 opticalCenter(3) = mean(cellfun(@(x) interp1(x(1,:),x(3,:),opticalCenter(1),'linear'),uniquePositionRayPaths));
 
 % Find the median position of the nodes
-nodes = [median(incidentNodes,2) median(emergentNodes,2)];
+nodes = [mean(incidentNodes,2) mean(emergentNodes,2)];
 
 end
