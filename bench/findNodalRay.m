@@ -58,11 +58,7 @@ function [rayPath,nodalPoints,errors] = findNodalRay(rayOrigin,opticalSystem,inc
     X = [150, 20, 10];
     % Find the nodal ray
     [rayPath,nodalPoints,errors] = findNodalRay(X,opticalSystem);
-    % Show the optical system, nodal ray, and nodal points
-    plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'rayPath',rayPath,'surfaceAlpha',0.05);
-    hold on
-    xlim([-25 10])
-    plot3(nodalPoints(1,:),nodalPoints(2,:),nodalPoints(3,:),'*b')
+    % Check that the error is within 
 %}
 
 if nargin==2
@@ -87,7 +83,7 @@ p = fminsearch(myObj,p0);
 [angleError,outputRay,rayPath] = objective(p,rayOrigin,opticalSystem);
 
 % Find the nodal points
-opticalAxis = [0,1;0,0;0,0];
+opticalAxis = [0,-1;0,0;0,0];
 inputRay = quadric.normalizeRay([rayPath(:,1),rayPath(:,2)-rayPath(:,1)]);
 [~,iNodeError,incidentNode] = quadric.distanceRays(inputRay,opticalAxis);
 [~,eNodeError,emergentNode] = quadric.distanceRays(outputRay,opticalAxis);
