@@ -15,7 +15,7 @@ modelEyePlotColors = {'.w' 'ob' '-g' '.y'};
 for ii = 1:length(laterality)
     
     % Create the sceneGeometry
-    sceneGeometry=createSceneGeometry('eyeLaterality',laterality{ii});
+    sceneGeometry = createSceneGeometry('eyeLaterality',laterality{ii});
     
     % Define a stop radius for the eye. This value produces a pupil that is
     % about 3.5 mm in diamter
@@ -24,13 +24,14 @@ for ii = 1:length(laterality)
     % Set the target distance, which is on the optical axis of each eye. We
     % want this far enough away that we are not modeling vergence of the
     % eyes.
-    fixTargetDistance = 1500;
+    targetDistance = 1500;
     
     % Get the eyePose that places the fixation target on the line of sight
-    [~,~,fixEyePose] = calcLineOfSightRay(sceneGeometry,stopRadius,fixTargetDistance);
+    fieldTargetDeg = [0, 0];
+    eyePose = calcFixationPose(sceneGeometry.eye,fieldTargetDeg,targetDistance);
     
     % Render the eye with corneal refraction
-    [~, ~, frame] = renderEyePose(fixEyePose, sceneGeometry, ...
+    [~, ~, frame] = renderEyePose(eyePose, sceneGeometry, ...
         'visible', false, ...
         'modelEyeLabelNames',modelEyeLabelNames,...
         'modelEyePlotColors',modelEyePlotColors);
