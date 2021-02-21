@@ -70,7 +70,7 @@ end
 if isstruct(opticalSystem)
     if isfield(opticalSystem,'cornea')
         eye = opticalSystem;
-        opticalSystem = [];
+        clear opticalSystem;
         opticalSystem = assembleOpticalSystem(eye,...
             'surfaceSetName','mediumToRetina','cameraMedium','air');
     end

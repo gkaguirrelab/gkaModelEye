@@ -84,6 +84,16 @@ if nargin==2
     rayHeight = 1;
 end
 
+% Check if we were passed an eye model. If so, create the optical system
+if isstruct(opticalSystem)
+    if isfield(opticalSystem,'cornea')
+        eye = opticalSystem;
+        clear opticalSystem;
+        opticalSystem = assembleOpticalSystem(eye,...
+            'surfaceSetName','mediumToRetina','cameraMedium','air');
+    end
+end
+
 % Strip the optical system of any rows which are all nans
 opticalSystem = opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
 

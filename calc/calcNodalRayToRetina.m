@@ -81,7 +81,7 @@ function [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination,
     % Confirm that the first three elements of the error vector are within
     % tolerance. The final two elements are expected to be non-zero as a 
     % consequence of astigmatic and decentered elements in the model.
-    assert(all(errors(1:3)<1e-3))
+    assert(all(errors(1:3)<1e-2))
 %}
 
 

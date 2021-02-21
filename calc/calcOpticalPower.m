@@ -1,8 +1,8 @@
-function [diopters, focalPoint] = calcOpticalPower(opticalSystem, rayStartDepth, rayHeight)
+function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayStartDepth, rayHeight)
 % Calcuate the refractive power of an opticalSystem
 %
 % Syntax:
-%  [diopters, focalPoint] = calcOpticalPower(opticalSystem)
+%  [opticalPower, focalPoint] = calcOpticalPower(opticalSystem)
 %
 % Description
 %   Calculates the refractive power of an optical system in units of
@@ -51,25 +51,25 @@ function [diopters, focalPoint] = calcOpticalPower(opticalSystem, rayStartDepth,
 %                           optical axis.
 %
 % Outputs:
-%   diopters              - Scalar. The optical power of the system.
+%   opticalPower          - Scalar. The optical power of the system.
 %   focalPoint            - 3x1 matrix. The location of the focal point.
 %
 % Examples:
 %{
     % Determine the refractive power of the unaccommodated eye
-    sceneGeometry = createSceneGeometry();
-    diopters = calcOpticalPower(sceneGeometry.refraction.cameraToRetina.opticalSystem);
-    outline = sprintf('The refractive power of the unaccommodated model eye is %2.2f diopters.\n',diopters);
+    eye = modelEyeParameters('accommodation',0);
+    opticalPower = calcOpticalPower(eye);
+    outline = sprintf('The refractive power of the unaccommodated model eye is %2.2f diopters.\n',opticalPower);
     fprintf(outline)
 %}
 %{
     % Determine the refractive power of the un-accommodated cystraline
     % lens in air
-    sceneGeometry = createSceneGeometry();
+    sceneGeometry = createSceneGeometry('accommodation',0);
     opticalSystem = sceneGeometry.refraction.retinaToStop.opticalSystem;
     opticalSystem = reverseSystemDirection(opticalSystem);
-    diopters = calcOpticalPower(opticalSystem);
-    outline = sprintf('The refractive power of the unaccommodated crystaline lens is %2.2f diopters.\n',diopters);
+    opticalPower = calcOpticalPower(opticalSystem);
+    outline = sprintf('The refractive power of the unaccommodated crystaline lens is %2.2f diopters.\n',opticalPower);
     fprintf(outline)
 %}
 
@@ -79,11 +79,19 @@ if nargin==1
     rayHeight = 1;
 end
 
-% Handle nargin
 if nargin==2
     rayHeight = 1;
 end
 
+% Check if we were passed an eye model. If so, create the optical system
+if isstruct(opticalSystem)
+    if isfield(opticalSystem,'cornea')
+        eye = opticalSystem;
+        clear opticalSystem;
+        opticalSystem = assembleOpticalSystem(eye,...
+            'surfaceSetName','mediumToRetina','cameraMedium','air');
+    end
+end
 
 % Strip the optical system of any rows which are all nans
 opticalSystem = opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
@@ -119,7 +127,7 @@ focalPoint = quadric.distanceRays(M1,M2);
 refractiveIndex = opticalSystem(end,end);
 
 % Obtain the power of the optical system in diopters
-diopters = signD * refractiveIndex / ((P(1) - focalPoint(1))/1000);
+opticalPower = signD * refractiveIndex / ((P(1) - focalPoint(1))/1000);
 
 end
 

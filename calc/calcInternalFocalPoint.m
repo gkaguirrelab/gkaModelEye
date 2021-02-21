@@ -45,6 +45,16 @@ if nargin==2
     rayHeight = 1;
 end
 
+% Check if we were passed an eye model. If so, create the optical system
+if isstruct(opticalSystem)
+    if isfield(opticalSystem,'cornea')
+        eye = opticalSystem;
+        clear opticalSystem;
+        opticalSystem = assembleOpticalSystem(eye,...
+            'surfaceSetName','mediumToRetina','cameraMedium','air');
+    end
+end
+
 % Create rays that start on the optical axis at the rayOriginDistance, and
 % intersect the plane of the front surface of the cornea at the height
 % given by ±rayHeight.
