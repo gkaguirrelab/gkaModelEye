@@ -1,5 +1,5 @@
-function [opticalCenterCoord, outputRays, rayPaths] = calcOpticalCenter(eye,cameraMedium,systemDirection)
-% Returns the optical center for an eye in a given medium
+function [opticalCenter,nodes,rayPaths,incidentNodes,emergentNodes] = calcOpticalCenter(eye,cameraMedium)
+% Returns the optical center and nodes for an eye in a given medium
 %
 % Syntax:
 %  [opticalCenterCoord, outputRays, rayPaths] = calcOpticalCenter(eye,cameraMedium)
@@ -9,15 +9,12 @@ function [opticalCenterCoord, outputRays, rayPaths] = calcOpticalCenter(eye,came
 %   first point will emerge from second point with the same angle relative
 %   to the optical axis. For the aspheric, astigmatic optical system of the
 %   eye, single nodal points do not exist. Nonetheless, an approximation of
-%   the nodal points is useful. Given a model eye, this routine examines a
-%   bundle of rays arising from different points in the retina. For each
-%   point, the ray is found that exits the corneal surface at the same
-%   angles (relative to the optical axis) with which it arose from the
-%   retina (a "nodal ray"). The bundle is then examined to identify the
-%   axial position at which the cross-sectional area of the ray bundle is
-%   smallest (i.e., the "waist" of the bundle). The center of the waist at
-%   this location is returned as the effective nodal point coordinate, or
-%   more properly termed, the optical center.
+%   the nodal points is useful. Given a model eye, this routine finds the
+%   nodal ray from different points in the visual field. The bundle is then
+%   examined to identify the axial position at which the cross-sectional
+%   area of the ray bundle is smallest (i.e., the "waist" of the bundle).
+%   The center of the waist at this location is returned as the effective
+%   nodal point coordinate, or more properly termed, the optical center.
 %
 %   These ideas are discussed in:
 %
@@ -35,35 +32,37 @@ function [opticalCenterCoord, outputRays, rayPaths] = calcOpticalCenter(eye,came
 %                           the [p1 p2 p3] dimensions of the approximate
 %                           optical center of the eye.
 %   outputRays            - A cell array, with each cell containing a
-%                           3x2 matrix that specifies a ray as a unit 
+%                           3x2 matrix that specifies a ray as a unit
 %                           vector.
 %   rayPaths              - A cell array, with each cell containing a 3xm
 %                           matrix that provides the ray coordinates
 %                           at each surface. The value for rayPath(1,:)
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
-%                           will be nan.                     
+%                           will be nan.
 %
 % Examples:
 %{
     % Find the optical center of a model eye
     eye = modelEyeParameters();
-    opticalCenterCoord = calcOpticalCenter(eye,'air');
-    fprintf('The optical center is %0.2f mm axial distance from the cornea, and %0.2f mm from the retinal vertex\n',opticalCenterCoord(1),opticalCenterCoord(1)-eye.landmarks.vertex.coords(1));
+    opticalCenter = calcOpticalCenter(eye,'air');
+    fprintf('The optical center is %0.2f mm axial distance from the cornea, and %0.2f mm from the retinal vertex\n',opticalCenter(1),opticalCenter(1)-eye.landmarks.vertex.coords(1));
 %}
 %{
     % Find and display the optical center on the model eye
     sceneGeometry = createSceneGeometry();
-    % Plot the optical system
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true,'surfaceAlpha', 0.05);    
     % Obtain the optical center and ray bundle
-    [opticalCenterCoord, outputRays, rayPaths] = calcOpticalCenter(sceneGeometry.eye);
+    [opticalCenter,nodes,rayPaths] = calcOpticalCenter(sceneGeometry.eye);
+    % Plot the optical system
+    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.mediumToRetina,'addLighting',true,'surfaceAlpha', 0.05);    
     % Add the rays to the plot
-    for ii=1:length(outputRays)
-        plotOpticalSystem('newFigure',false,'outputRay',outputRays{ii},'rayPath',rayPaths{ii});
+    for ii=1:length(rayPaths)
+        plotOpticalSystem('newFigure',false,'rayPath',rayPaths{ii});
     end
-    plot3(opticalCenterCoord(1),opticalCenterCoord(2),opticalCenterCoord(3),'*k');
+    xlim([-25 10]);
+    plot3(opticalCenter(1),opticalCenter(2),opticalCenter(3),'*k');
 %}
+
 
 % Parse the inputs
 if nargin<1
@@ -72,30 +71,44 @@ end
 
 if nargin==1
     cameraMedium = 'air';
-    systemDirection = 'retinaToCamera';
 end
 
-if nargin==2
-    systemDirection = 'retinaToCamera';
+% Check if we have a compiled version of findNodalRay
+if exist('findNodalRayMex','file')==3
+    findNodeHandle = @findNodalRayMex;
+else
+    findNodeHandle = @findNodalRay;
 end
 
-% Define the output variable
-opticalCenterCoord = zeros(3,1);
+% Obtain the optical system for this eye
+opticalSystem = assembleOpticalSystem(eye,...
+    'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
 
-% Predefine some variables for use in the upcoming loop
-outputRays={};
-rayPaths={};
-
-% Loop over a few locations on the retinal surface, specified in
-% ellipsoidal coordinates
-for beta = [-85,-75]
-    for omega = -180:40:180
-        % Get this retinal coordinate
-        X = quadric.ellipsoidalGeoToCart( [beta, omega, 0], eye.retina.S );
-        % Get the nodal ray
-        [outputRays{end+1},rayPaths{end+1}] = calcNodalRay(eye,[],X,cameraMedium);
+% Prepare variables for the loop
+rayPaths = {};
+incidentNodes = [];
+emergentNodes = [];
+% Loop over locations in the visual field, defined by angle (w.r.t. the
+% un-rotated corneal apex for convenience) and distance
+for rayOriginDistance = 100:250:1500
+    for horiz = -60:15:50
+        for vert = -60:15:50
+            % The calculation doesn't work for a ray along the optical axis
+            if horiz==0 && vert == 0
+                continue
+            end
+            rayOrigin = quadric.anglesToRay([0;0;0],horiz,vert).*rayOriginDistance;
+            rayOrigin = rayOrigin(:,2);
+            [rayPath,nodalPoints,errors] = findNodeHandle(rayOrigin',opticalSystem);
+            if errors(1)<1e-3
+                rayPaths{end+1}=rayPath;
+                incidentNodes(:,end+1)=nodalPoints(:,1);
+                emergentNodes(:,end+1)=nodalPoints(:,2);
+            end
+        end
     end
 end
+
 
 % Remove any NaNs from the rayPaths. This happens when a given ray misses
 % one of the shells of the gradient lens model. The presence of a nan in
@@ -113,11 +126,13 @@ uniquePositionRayPaths = cellfun(@(x) x(:,logical([sum((diff(x')').^2)>samePosTo
 % Find the waist of the ray bundle along the axial (p1) dimension
 bundleArea = @(p1) range(cellfun(@(x) interp1(x(1,:),x(3,:),p1,'linear'),uniquePositionRayPaths)) * ...
     range(cellfun(@(x) interp1(x(1,:),x(2,:),p1,'linear'),uniquePositionRayPaths));
-opticalCenterCoord(1) = fminsearch(bundleArea,-6);
+opticalCenter(1) = fminsearch(bundleArea,-6);
 
 % Find the geometric center of the waist in the p2 and p3 dimensions
-opticalCenterCoord(2) = mean(cellfun(@(x) interp1(x(1,:),x(2,:),opticalCenterCoord(1),'linear'),uniquePositionRayPaths));
-opticalCenterCoord(3) = mean(cellfun(@(x) interp1(x(1,:),x(3,:),opticalCenterCoord(1),'linear'),uniquePositionRayPaths));
+opticalCenter(2) = mean(cellfun(@(x) interp1(x(1,:),x(2,:),opticalCenter(1),'linear'),uniquePositionRayPaths));
+opticalCenter(3) = mean(cellfun(@(x) interp1(x(1,:),x(3,:),opticalCenter(1),'linear'),uniquePositionRayPaths));
 
+% Find the median position of the nodes
+nodes = [median(incidentNodes,2) median(emergentNodes,2)];
 
 end
