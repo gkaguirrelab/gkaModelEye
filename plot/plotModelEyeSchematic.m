@@ -93,6 +93,8 @@ p.addParameter('plotCornealApex',false,@islogical);
 p.addParameter('plotStop',false,@islogical);
 p.addParameter('plotRotationCenters',false,@islogical);
 p.addParameter('plotVisualAxis',false,@islogical);
+p.addParameter('plotFovea',false,@islogical);
+p.addParameter('plotOpticDisc',false,@islogical);
 
 % parse
 p.parse(eye, varargin{:})
@@ -102,7 +104,6 @@ p.parse(eye, varargin{:})
 if isfield(eye,'eye')
     eye = eye.eye;
 end
-
 
 % Open a figure
 if p.Results.newFigure
@@ -116,7 +117,12 @@ switch p.Results.view
         PdimA = 1;
         PdimB = 2;
         titleString = 'Horizontal';
-        yLabelString = 'temporal <----> nasal';
+        switch eye.meta.eyeLaterality
+            case 'Left'
+                yLabelString = 'temporal <----> nasal';
+            case 'Right'
+                yLabelString = 'nasal <----> temporal';
+        end
         xLabelString = 'posterior <----> anterior';
     case {'sagittal','Sagittal','Sag','sag','Vertical','vertical','vert'}
         PdimA = 1;
@@ -136,7 +142,7 @@ quadric.plotConicSection(eye.lens.S(1,:), titleString, p.Results.plotColor, eye.
 quadric.plotConicSection(eye.lens.S(end,:), titleString, p.Results.plotColor, eye.lens.boundingBox(end,:))
 
 
-%% Add a 2mm radius pupil, center of rotation, iris boundary, fovea, and optic disc
+%% Add various additional elements, under the control of flags
 if p.Results.plotStop
     plot([eye.stop.center(PdimA) eye.stop.center(PdimA)],[-2 2],['-' p.Results.plotColor]);
 end
@@ -151,7 +157,6 @@ if p.Results.plotIris
     plot(eye.iris.center(PdimA),eye.iris.center(PdimB)-eye.iris.radius,['x' p.Results.plotColor])
 end
 
-%% Plot the cornealApex
 if p.Results.plotCornealApex
     sg.eye = eye;
     [~, ~, ~, ~, ~, eyeWorldPoints, pointLabels] = projectModelEye([0 0 0 1], sg, 'fullEyeModelFlag',true);
@@ -159,32 +164,25 @@ if p.Results.plotCornealApex
     plot(eyeWorldPoints(idx,PdimA),eyeWorldPoints(idx,PdimB),['*' p.Results.plotColor]);
 end
 
-%% Plot the fovea, the visual axis, and the line of sight
-% Obtain the rayPath through the optical system from the fovea to cornea
 if isfield(eye,'landmarks')
+    
+    % fovea
     if isfield(eye.landmarks,'fovea')
+        if p.Results.plotFovea
         plot(eye.landmarks.fovea.coords(PdimA),eye.landmarks.fovea.coords(PdimB),['*' p.Results.plotColor])
-        
+        end        
         if p.Results.plotVisualAxis
             % Obtain the nodal ray from the fovea
             rayPath = calcNodalRayToRetina(eye,eye.landmarks.fovea.coords);
             plot(rayPath(PdimA,:),rayPath(PdimB,:),['-' p.Results.plotColor]);
         end
     end
-end
-
-%% Plot the optic disc and blind spot axis
-% Obtain the rayPath through the optical system from the opticDisc to cornea
-if isfield(eye,'landmarks')
+    
+    % optic disc
     if isfield(eye.landmarks,'opticDisc')
+        if p.Results.plotOpticDisc
         plot(eye.landmarks.opticDisc.coords(PdimA),eye.landmarks.opticDisc.coords(PdimB),['x' p.Results.plotColor])
-    end
-end
-
-%% Plot the optical center
-if isfield(eye,'landmarks')
-    if isfield(eye.landmarks,'opticalCenter')
-        plot(eye.landmarks.opticalCenter(PdimA),eye.landmarks.opticalCenter(PdimB),['o' p.Results.plotColor]);
+        end
     end
 end
 
