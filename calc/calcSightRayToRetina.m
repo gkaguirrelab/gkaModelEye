@@ -31,7 +31,7 @@ function [rayPath,nodalPoints,errors] = calcSightRayToRetina(eye,rayDestination,
 %                           which type of coordinate set has been provided.
 %   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
 %                           the ray from the corneal apex. Assumed to be
-%                           500 mm if not defined.
+%                           1500 mm if not defined.
 %   stopRadius            - Scalar. Radius of the aperture stop, in mm.
 %   cameraMedium          - The medium in which the eye is located.
 %                           Defaults to 'air'.
@@ -73,7 +73,7 @@ if nargin<2
 end
 
 if nargin==2
-    rayOriginDistance = 500;
+    rayOriginDistance = 1500;
     stopRadius = 1.53;
     cameraMedium = 'air';
 end

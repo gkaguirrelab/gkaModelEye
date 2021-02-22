@@ -1,4 +1,4 @@
-function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayStartDepth, rayHeight)
+function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayOriginDistance, rayIntersectionHeight)
 % Calcuate the refractive power of an opticalSystem
 %
 % Syntax:
@@ -19,13 +19,15 @@ function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayStartDe
 %
 %   Note that for optical systems with spherical aberration, the calculated
 %   optical power will vary depending upon the path of the ray. The
-%   rayHeight parameter controls the height at which the ray strikes the
-%   first surface.
+%   rayIntersectionHeight parameter controls the height at which the ray
+%   strikes the first surface.
 %
 % Inputs:
-%   opticalSystem         - An mx19 matrix, where m is set by the key value
-%                           opticalSystemNumRows. Each row contains the
-%                           values:
+%   opticalSystem         - Either an eye structure (from which a
+%                           "mediumToRetina" optical system in air will be
+%                           derived), or an mx19 matrix, where m is set by
+%                           the key value opticalSystemNumRows. Each row
+%                           contains the values:
 %                               [S side bb must n]
 %                           where:
 %                               S     - 1x10 quadric surface vector
@@ -44,10 +46,10 @@ function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayStartDe
 %                                       routine exits with nans for the
 %                                       outputRay.
 %                               n     - Refractive index of the surface.
-%   rayStartDepth         - Scalar. Point of origin of the ray along the
+%   rayOriginDistance     - Scalar. Point of origin of the ray along the
 %                           optical axis used to probe the system. Defaults
-%                           to 100.
-%   rayHeight             - Scalar. Distance of the ray origin from the
+%                           to 1500.
+%   rayIntersectionHeight             - Scalar. Distance of the ray origin from the
 %                           optical axis.
 %
 % Outputs:
@@ -75,12 +77,12 @@ function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayStartDe
 
 % Handle nargin
 if nargin==1
-    rayStartDepth = 100;
-    rayHeight = 1;
+    rayOriginDistance = 1500;
+    rayIntersectionHeight = 0.5;
 end
 
 if nargin==2
-    rayHeight = 1;
+    rayIntersectionHeight = 0.5;
 end
 
 % Check if we were passed an eye model. If so, create the optical system
@@ -97,20 +99,20 @@ end
 opticalSystem = opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
 
 % Obtain the system direction
-systemDirection = calcSystemDirection(opticalSystem, rayStartDepth);
+systemDirection = calcSystemDirection(opticalSystem, rayOriginDistance);
 
 % Obtain the principal point
-P = calcPrincipalPoint(opticalSystem, rayStartDepth, rayHeight);
+P = calcPrincipalPoint(opticalSystem, rayOriginDistance, rayIntersectionHeight);
 
 % Create parallel rays in the valid direction
 switch systemDirection
     case 'cameraToEye'
-        R1 = quadric.normalizeRay([rayStartDepth,-1;-rayHeight,0;0,0]);
-        R2 = quadric.normalizeRay([rayStartDepth,-1;rayHeight,0;0,0]);
+        R1 = quadric.normalizeRay([rayOriginDistance,-1;-rayIntersectionHeight,0;0,0]);
+        R2 = quadric.normalizeRay([rayOriginDistance,-1;rayIntersectionHeight,0;0,0]);
         signD = 1;
     case 'eyeToCamera'
-        R1 = quadric.normalizeRay([-rayStartDepth,1;-rayHeight,0;0,0]);
-        R2 = quadric.normalizeRay([-rayStartDepth,1;rayHeight,0;0,0]);
+        R1 = quadric.normalizeRay([-rayOriginDistance,1;-rayIntersectionHeight,0;0,0]);
+        R2 = quadric.normalizeRay([-rayOriginDistance,1;rayIntersectionHeight,0;0,0]);
         signD = -1;
     otherwise
         error(['Not a valid system direction: ' systemDirection])

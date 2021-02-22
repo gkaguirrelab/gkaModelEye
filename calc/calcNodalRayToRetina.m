@@ -39,7 +39,7 @@ function [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination,
 %                           which type of coordinate set has been provided.
 %   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
 %                           the ray from the corneal apex. Assumed to be
-%                           500 mm if not defined.
+%                           1500 mm if not defined.
 %   incidentNodeX0        - An optional 1x3 vector that gives the location
 %                           in eye  space that is an initial guess for the
 %                           location of the incident node of the optical
@@ -91,7 +91,7 @@ if nargin<2
 end
 
 if nargin==2
-    rayOriginDistance = 500;
+    rayOriginDistance = 1500;
     incidentNodeX0 = [-7 0 0];
     cameraMedium = 'air';
 end

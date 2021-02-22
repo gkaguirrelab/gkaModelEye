@@ -21,9 +21,11 @@ function [opticalAxis,errors] = calcOpticalAxis(opticalSystem, rayOriginDistance
 %   differs from this slightly for an eye with decententered elements.
 %
 % Inputs:
-%   opticalSystem         - An mx19 matrix, where m is set by the key value
-%                           opticalSystemNumRows. Each row contains the
-%                           values:
+%   opticalSystem         - Either an eye structure (from which a
+%                           "mediumToRetina" optical system in air will be
+%                           derived), or an mx19 matrix, where m is set by
+%                           the key value opticalSystemNumRows. Each row
+%                           contains the values:
 %                               [S side bb must n]
 %                           where:
 %                               S     - 1x10 quadric surface vector
@@ -44,7 +46,7 @@ function [opticalAxis,errors] = calcOpticalAxis(opticalSystem, rayOriginDistance
 %                               n     - Refractive index of the surface.
 %   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
 %                           the ray from the corneal apex. Assumed to be
-%                           500 mm if not defined.
+%                           1500 mm if not defined.
 %
 % Outputs:
 %   opticalAxis           - 3x2 matrix that provides the starting and
@@ -63,7 +65,7 @@ function [opticalAxis,errors] = calcOpticalAxis(opticalSystem, rayOriginDistance
 
 % Handle nargin
 if nargin==1
-    rayOriginDistance = 500;
+    rayOriginDistance = 1500;
 end
 
 % Check if we were passed an eye model. If so, create the optical system

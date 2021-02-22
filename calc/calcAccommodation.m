@@ -1,4 +1,4 @@
-function navarroD = calcAccommodation(eye, desiredAccommodation, rayHeight, cameraMedium)
+function [navarroD,focalPoint,errors,rayPath1,rayPath2] = calcAccommodation(eye, desiredAccommodation, fieldOrigin, rayIntersectionHeight, cameraMedium, effectiveInfinity)
 % Returns the lens accommodation parameter for a desired near focal point
 %
 % Syntax:
@@ -31,8 +31,15 @@ function navarroD = calcAccommodation(eye, desiredAccommodation, rayHeight, came
 %                           near point of the eye (measured from the
 %                           first principal point), where distance (mm) =
 %                           1000 / diopters.
-%   rayHeight             - Scalar. Distance of the ray origin from the
-%                           optical axis.
+%   fieldOrigin           - 1x2 or 2x1 vector that provides the coordinates
+%                           in degrees of visual angle (as defined w.r.t
+%                           the incident node) of the location from which
+%                           the measurement of accommodation will be made.
+%                           For example, the position of the fovea in
+%                           visual space might be provided. The default
+%                           value is [0 0], and thus on the optical axis.
+%   rayIntersectionHeight - Scalar. The divergent rays will arrive at the
+%                           corneal apex separated by 2x this value.
 %   cameraMedium          - The medium in which the eye is located.
 %                           Defaults to 'air'.
 %
@@ -43,6 +50,25 @@ function navarroD = calcAccommodation(eye, desiredAccommodation, rayHeight, came
 %
 % Examples:
 %{
+    % Check that the errors are within tolerance
+    eye = modelEyeParameters();
+    [navarroD, ~, errors] = calcAccommodation(eye, 0, [0 0]);
+    assert(errors(1)<1e-3)
+%}
+%{
+    % Define a default model eye
+    eye = modelEyeParameters();
+    % Find the navarroD for accommodation to 10 diopters at the fovea
+    desiredAccommodation = 10;
+    fieldOrigin = eye.landmarks.fovea.degField(1:2);
+    [navarroD, focalPoint, errors,rayPath1, rayPath2] = calcAccommodation(eye, desiredAccommodation, fieldOrigin);
+    % Show the eye and the converging rays
+    opticalSystem = assembleOpticalSystem(eye,...
+        'surfaceSetName','mediumToRetina','cameraMedium','air',...
+        'opticalSystemNumRows',[]);
+    plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'surfaceAlpha',0.05);
+    plotOpticalSystem('newFigure',false,'rayPath',rayPath1);
+    plotOpticalSystem('newFigure',false,'rayPath',rayPath2);
 %}
 
 
@@ -52,27 +78,120 @@ if nargin<2
 end
 
 if nargin==2
-    rayHeight = 1;
+    fieldOrigin = [0, 0];
+    rayIntersectionHeight = 0.5;
     cameraMedium = 'air';
+    effectiveInfinity = 2000;
 end
 
 if nargin==3
+    rayIntersectionHeight = 0.5;
     cameraMedium = 'air';
+    effectiveInfinity = 2000;
 end
 
-% Set up the objective for the search. The objective examines rays that
-% arise from the near focal point implied by the desired accommodation, and
+if nargin==4
+    cameraMedium = 'air';
+    effectiveInfinity = 2000;
+end
+
+if nargin==5
+    effectiveInfinity = 2000;
+end
+
+% Generate the optical system
+opticalSystem = assembleOpticalSystem(eye,...
+    'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium,...
+    'opticalSystemNumRows',[]);
+
+% The rayOriginDistance is 1000/desiredAccommodation
+rayOriginDistance = 1000/desiredAccommodation;
+
+% There are several possible cases for the rayOrigin which require
+% different behavior. We detect these here and then act upon the cases
+% below.
+if isinf(rayOriginDistance) && all(fieldOrigin==0)
+    rayCase = 'infOpticalAxis';
+end
+if isinf(rayOriginDistance) && ~all(fieldOrigin==0)
+    rayCase = 'infOffAxis';
+end
+if ~isinf(rayOriginDistance) && all(fieldOrigin==0)
+    rayCase = 'finiteOpticalAxis';
+end
+if ~isinf(rayOriginDistance) && ~all(fieldOrigin==0)
+    rayCase = 'finiteOffAxis';
+end
+
+% Handle the cases
+switch rayCase
+    case 'infOpticalAxis'
+        rayOrigin = [effectiveInfinity;0;0];
+
+    case 'infOffAxis'
+        rayOrigin = quadric.anglesToRay([0;0;0],fieldOrigin(1),fieldOrigin(2)).*effectiveInfinity;
+
+    case 'finiteOpticalAxis'
+        
+        % Identify the principal point of the system
+        principalPoint = calcPrincipalPoint(opticalSystem, rayOriginDistance, rayIntersectionHeight);
+        
+        % Adjust the rayOrigin to be w.r.t. the principalPoint
+        rayOrigin = [rayOriginDistance;0;0]+principalPoint;
+
+    case 'finiteOffAxis'
+
+        % Identify the principal point of the system
+        principalPoint = calcPrincipalPoint(opticalSystem, rayOriginDistance, rayIntersectionHeight);
+        
+        % Find the location of the rayOrigin that is at the requested
+        % fieldOrigin. This point will be at a distance w.r.t. the incident
+        % node
+        rayPath = calcNodalRayFromField(eye,fieldOrigin,rayOriginDistance,cameraMedium);
+        inputRay = quadric.coordsToRay(rayPath(:,1:2));
+        
+        % We need to adjust the initial position of the inputRay, along its
+        % ray path, so that the magnitude of the initial Position is the
+        % desired rayOriginDistance from the principal point. We have to
+        % scale along the ray path so that the initial position maintains
+        % its visual field position, as this is defined w.r.t. the incident
+        % node. I have tried to find the analytic solution for this but
+        % have failed, so here is a brute force approach.
+        adjustedOrigin = @(x) inputRay(:,1) + inputRay(:,2).*x - principalPoint;
+        adjustObj = @(x) rayOriginDistance - norm(adjustedOrigin(x));
+        rayOrigin = adjustedOrigin(fzero(adjustObj,0));
+        
+end
+
+% Set up the objective for the search. The objective examines divering rays
+% that arise from the position implied by the desired accommodation, and
 % obtains the internal focal point for those rays. The squared distance of
 % this internal focal point from the retinal surface is the error to be
 % minimized.
-myObj = @(x) objective(x,eye,desiredAccommodation,rayHeight,cameraMedium);
+myObj = @(p) objective(p,eye,rayOrigin,rayIntersectionHeight,cameraMedium);
+
+% Define p0 and bounds
+p0 = 5;
+lb = -5;
+ub = 100;
+
+% Options
 options = optimset('fmincon');
 options.Display = 'off';
-[navarroD,fVal] = fmincon(myObj,5,[],[],[],[],-5,100,[],options);
+
+% Perform the search
+navarroD = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
+
+% Evaluate the objective at the solution
+[distanceFocalPointToRetina,focalPoint,raySeparationAtFocalPoint,rayPath1, rayPath2] = ...
+    objective(navarroD,eye,rayOrigin,rayIntersectionHeight,cameraMedium);
+
+% Combine the errors
+errors = [distanceFocalPointToRetina, raySeparationAtFocalPoint];
 
 % Detect and warn if no accurate solution is found, which is the case for
 % some combinations of model eyes and accommodation states.
-if fVal > 1e-6
+if distanceFocalPointToRetina > 1e-3
     warnString = ['Cannot accurately accommodate the eye to ' num2str(desiredAccommodation) ' diopters'];
     warning('calcAccommodation:cannotFocus',warnString);
 end
@@ -82,7 +201,7 @@ end
 
 %% LOCAL FUNCTIONS
 
-function [fVal,focalPoint,blur] = objective(navarroD,eye,desiredAccommodation,rayHeight,cameraMedium)
+function [fVal,focalPoint,raySeparationAtFocalPoint,rayPath1, rayPath2] = objective(navarroD,eye,rayOrigin,rayIntersectionHeight,cameraMedium)
 
 % Update the eye with the specified navarroD for the lens
 eye.meta.navarroD = navarroD;
@@ -93,14 +212,12 @@ opticalSystem = assembleOpticalSystem(eye,...
     'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
 
 % Obtain the internal focal point
-[focalPoint, blur] = calcInternalFocalPoint(opticalSystem,1000/desiredAccommodation,rayHeight);
+[focalPoint, raySeparationAtFocalPoint, rayPath1, rayPath2] = ...
+    calcInternalFocalPoint(opticalSystem,rayOrigin,rayIntersectionHeight);
 
-% Takes as input the vector representation of the quadric surface for the
-% retina, and a 3D coordinate. The fVal returned is related to the distance
-% of the coordinate from the surface, which is given by evaluating the
-% implicit function defined by the quadric for the [x y z] values of the
-% coordinate. The property of the implicit form of the quadric is that it
-% has a value of zero for points on the quadric surface.
+% Evaluate the quadric function for the retina at the focal point. The
+% property of the implicit form of the quadric is that it has a value of
+% zero for points on the quadric surface.
 funcS = quadric.vecToFunc(eye.retina.S);
 fVal = funcS(focalPoint(1),focalPoint(2),focalPoint(3))^2;
 

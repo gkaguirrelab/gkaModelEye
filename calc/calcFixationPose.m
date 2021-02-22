@@ -42,7 +42,7 @@ function [eyePose,errors] = calcFixationPose(eye,fieldTargetDeg,targetDistance,a
 %                           is aligned with the camera.
 %   targetDistance        - Scalar. The distance (in mm) of the origin of
 %                           the target from the incident node. Assumed to
-%                           be 500 mm if not defined.
+%                           be 1500 mm if not defined.
 %   addPseudoTorsionFlag  - Logical. Defaults to "true" controls if pseudo-
 %                           torsion is added to the eyePose to conform to
 %                           Listing's Law. The primary position of the eye
@@ -79,7 +79,7 @@ if nargin<2
 end
 
 if nargin==2
-    targetDistance = 500;
+    targetDistance = 1500;
     addPseudoTorsionFlag = true;
     stopRadius = 1.53;
     cameraMedium = 'air';
