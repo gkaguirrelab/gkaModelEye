@@ -47,7 +47,12 @@ if isfield(eye.meta,'navarroD')
 end
 
 if isempty(D)
-    D = calcAccommodation(eye,eye.meta.accommodation);
+    % We need to set an initial value for the lens to start the search
+    bootstrapEye = eye;
+    bootstrapEye.meta.navarroD = 1;
+    bootstrapEye.lens = human.lens(bootstrapEye);
+    D = calcAccommodation(bootstrapEye,bootstrapEye.meta.accommodation);
+    clear bootstrapEye
 end
 
 % Obtain the age of the modeled subject
