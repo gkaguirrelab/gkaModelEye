@@ -119,6 +119,7 @@ p = inputParser; p.KeepUnmatched = false; p.PartialMatching = false;
 % Optional
 p.addParameter('sphericalAmetropia',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('accommodation',1.5,@isscalar);
+p.addParameter('navarroD',[],@isscalar);
 p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
@@ -181,6 +182,7 @@ eye.meta.dimensions = {'depth (axial)' 'horizontal' 'vertical'};
 eye.meta.eyeLaterality = eyeLaterality;
 eye.meta.sphericalAmetropia = sphericalAmetropia;
 eye.meta.accommodation = p.Results.accommodation;
+eye.meta.navarroD = p.Results.navarroD;
 eye.meta.axialLength = p.Results.axialLength;
 eye.meta.species = p.Results.species;
 eye.meta.ageYears = p.Results.ageYears;
