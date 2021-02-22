@@ -35,23 +35,6 @@ function fovea = fovea( eye )
     [geoDistance,~,~,geodeticPathCoords] = quadric.panouGeodesicDistance(S,eye.landmarks.fovea.geodetic,eye.landmarks.opticDisc.geodetic);
     plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'-y','MarkerSize',10);
 %}
-%{
-    % Calculate the projective distance between the optic disc and fovea for
-    % a range of spherical refractive errors
-    SRvals = -10:1:2;
-    for ii = 1:length(SRvals)
-        eye = modelEyeParameters('sphericalAmetropia',SRvals(ii),'accommodation',max([-SRvals(ii) 0]));
-        odf(ii) = sqrt(sum((eye.landmarks.fovea.coords(2:3) - eye.landmarks.opticDisc.coords(2:3)).^2));
-    end
-    figure
-    plot(SRvals,odf,'-*r');
-    hold on
-    % Compare these model values to the measurements reported by Jonas 2015
-    % PloS One
-    axialLengthFromSR = @(SR) 23.58-(SR.*0.299);
-    odf_jonas = @(SR) 0.04 + 0.2.*(axialLengthFromSR(SR));
-    plot(SRvals,odf_jonas(SRvals),'*b')
-%}
 
 
 
