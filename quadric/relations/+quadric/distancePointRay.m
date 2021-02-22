@@ -1,5 +1,5 @@
 function distance = distancePointRay(p,R)
-% Find the minimum distance between a ray and a point
+% Find the minimum distance between a point and a ray
 %
 % Syntax:
 %  distance = quadric.distancePointRay(p,R)
