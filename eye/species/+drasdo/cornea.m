@@ -21,7 +21,10 @@ function cornea = cornea( eye )
 %% Front corneal surface
 % The Drasdo & Fowler model describes a corneal front surface that has a
 % radius of curvature of 7.8 mm, and an eccentricity of 0.5. This code
-% obtains the semi-radi for this ellipse:
+% obtains the semi-radii for this ellipse, although it requires assuming
+% something strange about D&F's definition of "eccentricity". Thanks to
+% Giovanni Montesano of the University of London for his help in sorting
+% this out.
 %{
     syms a b 
     % Equation for the eccentricity
