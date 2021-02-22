@@ -47,11 +47,19 @@ if isfield(eye.meta,'navarroD')
 end
 
 if isempty(D)
-    % We need to set an initial value for the lens to start the search
+    % We need to set an initial value for the lens to start the search. To
+    % do so, we create a "bootstrap" version of the eye that is initialized
+    % with a value for navarroD that provides for resting accommodation    
     bootstrapEye = eye;
     bootstrapEye.meta.navarroD = 1;
     bootstrapEye.lens = human.lens(bootstrapEye);
-    D = calcAccommodation(bootstrapEye,bootstrapEye.meta.accommodation);
+    bootstrapEye.landmarks.fovea = human.landmarks.fovea(bootstrapEye);
+    
+    % Now perform the search to find the navarroD parameter that provides
+    % the desired accommodation at the foveal location in the visual field.
+    D = calcAccommodation(bootstrapEye,bootstrapEye.meta.accommodation,bootstrapEye.landmarks.fovea.degField(1:2));
+    
+    % Done with the bootstrap
     clear bootstrapEye
 end
 
