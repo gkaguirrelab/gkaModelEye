@@ -62,6 +62,8 @@ function [navarroD,focalPoint,errors,rayPath1,rayPath2] = calcAccommodation(eye,
     desiredAccommodation = 10;
     fieldOrigin = eye.landmarks.fovea.degField(1:2);
     [navarroD, focalPoint, errors,rayPath1, rayPath2] = calcAccommodation(eye, desiredAccommodation, fieldOrigin);
+    % Create the model eye with this accommodation
+    eye = modelEyeParameters('navarroD',navarroD);
     % Show the eye and the converging rays
     opticalSystem = assembleOpticalSystem(eye,...
         'surfaceSetName','mediumToRetina','cameraMedium','air',...

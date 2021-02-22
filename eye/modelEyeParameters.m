@@ -118,8 +118,8 @@ p = inputParser; p.KeepUnmatched = false; p.PartialMatching = false;
 
 % Optional
 p.addParameter('sphericalAmetropia',[],@(x)(isempty(x) || isscalar(x)));
-p.addParameter('accommodation',1.5,@isscalar);
-p.addParameter('navarroD',[],@isscalar);
+p.addParameter('accommodation',[],@isscalar);
+p.addParameter('navarroD',1.5,@isscalar);
 p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);
