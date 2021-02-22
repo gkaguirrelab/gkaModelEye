@@ -34,7 +34,14 @@ radii = [6 6 6];
 Sback = quadric.scale(quadric.unitSphere,radii);
 
 % Shift the quadric so that the posterior apex of the back surface is at
-% -7.375 mm
+% -7.375 mm. This location was not provided in the Drasdo & Fowler 1974
+% paper, but was obtained by measurement of the figure by Gionvanni
+% Montesano, and reported here:
+%
+%   Montesano, Giovanni, et al. "Revisiting the drasdo model: implications
+%   for structure-function analysis of the macular region." Translational
+%   Vision Science & Technology 9.10 (2020): 15-15.
+% 
 posteriorLensPosition = -7.375;
 Sback = quadric.translate(Sback,[radii(1)+posteriorLensPosition 0 0]);
 
