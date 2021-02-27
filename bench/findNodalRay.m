@@ -59,7 +59,7 @@ function [rayPath,nodalPoints,errors] = findNodalRay(rayOrigin,opticalSystem,inc
     % Find the nodal ray
     [rayPath,nodalPoints,errors] = findNodalRay(X,opticalSystem);
     % Check that the cached are returned value is within tolerance
-    cachedNodalPoints = [-8.109808713132566  -8.567319166030780; 0.032627990661791   0.037821835725893; -0.064730518740530  -0.075035900813220];
+    cachedNodalPoints = [-8.184295483928480  -8.629869462123457; 0.033697223636839   0.038714508724336; -0.066834215746493  -0.076787643498398];
     assert(max(nodalPoints(:) - cachedNodalPoints(:)) < 1e-6);
 %}
 

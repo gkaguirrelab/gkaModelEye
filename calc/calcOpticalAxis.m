@@ -7,18 +7,18 @@ function [opticalAxis,errors] = calcOpticalAxis(opticalSystem, rayOriginDistance
 % Description
 %   The optical axis of a system is the ray that enters and exits the
 %   optical system along the same, straight line. For a simple spherical
-%   leens, this corresponds to the line that passes through the centers of
-%   curvature of the surfaces. As developed by Harris (2010) more
-%   complicated optical systems are also likely to have a single optical
-%   axis (simple optical systems may also have zero or an infinity of such
-%   rays):
+%   lens, this corresponds to the line that passes through the centers of
+%   curvature of the surfaces. As developed by Harris (2010), more
+%   complicated optical systems are likely to have a single optical axis,
+%   and simple optical systems may have zero or an infinity of such rays:
 %
 %       Harris, William F. "Optical axes of eyes and other optical
 %       systems." Optometry and Vision Science 86.5 (2009): 537-541.
 %
-%   Most of the time thye optical axis is simply assumed to be the axial
-%   (x) axis, but this measurement demonstrates that the true optical axis
-%   differs from this slightly for an eye with decententered elements.
+%   In this modeling environment, the optical axis is usually assumed to be
+%   the axial (x) axis, but this measurement demonstrates that the true
+%   optical axis differs from this slightly for an eye with decententered
+%   elements.
 %
 % Inputs:
 %   opticalSystem         - Either an eye structure (from which a

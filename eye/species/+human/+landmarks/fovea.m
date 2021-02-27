@@ -84,15 +84,17 @@ end
 
 % The calculation of the position of the retinal landmarks is based upon
 % empirical measurements of visual field position. These measurements are
-% done with the eye at resting accommodation (1.5 Diopeters), in the
-% visible spectrum, with the eye and targets in air. It is also assumed
-% that the position of the retinal landmarks were fixed at the point of
-% maturity of the visual system. Therefore, the meta values of the passed
-% eye structure are changed here to reflect these circumstances for this
-% calculation.
+% done in the visible spectrum, with the eye and targets in air. It is also
+% assumed that the position of the retinal landmarks were fixed at the
+% point of maturity of the visual system. Therefore, the meta values of the
+% passed eye structure are changed here to reflect these circumstances for
+% this calculation. The lens parameter navarroD is also set to correspond
+% to a value that provides close to resting accommodation for an emmetropic
+% eye.
 eye.meta.spectralDomain = 'vis';
 eye.meta.ageYears = 18;
-eye.meta.accommodation = 1.5;
+eye.meta.navarroD = 0;
+eye.meta.accommodation = [];
 
 % Update the lens field for these values
 eye.lens = human.lens(eye);

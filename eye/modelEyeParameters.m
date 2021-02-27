@@ -29,8 +29,19 @@ function eye = modelEyeParameters( varargin )
 %                           negative number is the correction that would be
 %                           used for a myopic person.
 %  'accommodation'        - Scalar. The accommodative state of the eye, in
-%                           diopters. If left undefined, defaults to a
-%                           "resting accommodation" value of 1.5 D.
+%                           diopters. If set, the model will search for the
+%                           navarroD parameter that produces the requested
+%                           accommodation for the fovea. Not all model eyes
+%                           are capable of accommodating at all distances.
+%                           For example, a myopic eye cannot be brought
+%                           into focus at far distances. If not set, the
+%                           accommodative state of the model eye will be
+%                           measured, and this value stored in the meta
+%                           data for the eye structure.
+%  'navarroD'             - Scalar. A parameter of the model that
+%                           influences the shape of the crystalline lens.
+%                           This parameter is passed by internal functions,
+%                           and is typically not set by the user.
 %  'axialLength'          - Scalar. This is the axial length (in mm) along
 %                           the optical axis. This value is converted into
 %                           an equivalent spherical error and then used to
@@ -118,8 +129,8 @@ p = inputParser; p.KeepUnmatched = false; p.PartialMatching = false;
 
 % Optional
 p.addParameter('sphericalAmetropia',[],@(x)(isempty(x) || isscalar(x)));
-p.addParameter('accommodation',[],@isscalar);
-p.addParameter('navarroD',1.5,@isscalar);
+p.addParameter('accommodation',[],@(x)(isempty(x) || isscalar(x)));
+p.addParameter('navarroD',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('axialLength',[],@(x)(isempty(x) || isscalar(x)));
 p.addParameter('eyeLaterality','Right',@ischar);
 p.addParameter('species','Human',@ischar);

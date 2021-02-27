@@ -131,7 +131,8 @@ switch rayCase
         rayOrigin = [effectiveInfinity;0;0];
 
     case 'infOffAxis'
-        rayOrigin = quadric.anglesToRay([0;0;0],fieldOrigin(1),fieldOrigin(2)).*effectiveInfinity;
+        ray = quadric.anglesToRay([0;0;0],fieldOrigin(1),fieldOrigin(2));
+        rayOrigin = ray(:,2).*effectiveInfinity;
 
     case 'finiteOpticalAxis'
         
@@ -205,8 +206,11 @@ end
 
 function [fVal,focalPoint,raySeparationAtFocalPoint,rayPath1, rayPath2] = objective(navarroD,eye,rayOrigin,rayIntersectionHeight,cameraMedium)
 
-% Update the eye with the specified navarroD for the lens
+% Update the eye with the specified navarroD for the lens, and make sure
+% that the value for accommodation is set to empty to avoid infinite
+% recursion in the search.
 eye.meta.navarroD = navarroD;
+eye.meta.accommodation = [];
 eye.lens = human.lens( eye );
 
 % Obtain the optical system for this eye

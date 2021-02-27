@@ -61,9 +61,9 @@ function [rayPath,nodalPoints,errors] = calcSightRayToRetina(eye,rayDestination,
     rayDestination = eye.landmarks.fovea.coords;
     % Find the sight ray to the fovea (i.e., the line of sight axis)
     [rayPath,nodalPoints,errors] = calcSightRayToRetina(eye,rayDestination);
-    % Confirm that the first elements of the error vector are within
-    % tolerance.
-    assert(all(errors<1e-3))
+    % Confirm that the elements of the error vector are within tolerance
+    assert(errors(1)<1e-3)
+    assert(errors(2)<1e-2)
 %}
 
 
