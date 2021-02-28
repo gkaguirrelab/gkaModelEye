@@ -1,8 +1,8 @@
-function [rayPath,nodalPoints,errors] = findNodalRay(rayOrigin,opticalSystem,incidentNodeX0)
+function [rayPath,angleError] = findNodalRay(rayOrigin,opticalSystem,incidentNodeX0)
 % Returns the path of the nodal ray from the starting coordinate
 %
 % Syntax:
-%  [rayPath,nodalPoints,errors] = findNodalRay(rayOrigin,opticalSystem,incidentNodeX0)
+%  [rayPath,errors] = findNodalRay(rayOrigin,opticalSystem,incidentNodeX0)
 %
 % Description
 %   Given an opticalSystem and a coordinate in eye coordinate space, the
@@ -36,17 +36,8 @@ function [rayPath,nodalPoints,errors] = findNodalRay(rayOrigin,opticalSystem,inc
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
 %                           will be nan.
-%   nodalPoints           - 3x2 matrix that provides the approximation to
-%                           incident and emergent nodal points in the eye
-%                           coordinate space. This is the point on each ray
-%                           that is closest to the optical axis.
-%   errors                - 1x4 matrix with the follow error values:
-%                             - departure from parallel of the incident and
-%                               emergent rays (deg)
-%                             - distance of the incident nodal point from
-%                               the incident ray
-%                             - distance of the emergent nodal point from
-%                               the emergent ray
+%   angleError            - Scalar. The departure from parallel of the 
+%                           incident and emergent rays (deg)
 %
 % Examples:
 %{
@@ -57,10 +48,7 @@ function [rayPath,nodalPoints,errors] = findNodalRay(rayOrigin,opticalSystem,inc
     % Define a point in eye-world coordinate space
     X = [150, 20, 10];
     % Find the nodal ray
-    [rayPath,nodalPoints,errors] = findNodalRay(X,opticalSystem);
-    % Check that the cached are returned value is within tolerance
-    cachedNodalPoints = [-8.184295483928480  -8.629869462123457; 0.033697223636839   0.038714508724336; -0.066834215746493  -0.076787643498398];
-    assert(max(nodalPoints(:) - cachedNodalPoints(:)) < 1e-6);
+    [rayPath,errors] = findNodalRay(X,opticalSystem);
 %}
 
 if nargin==2
@@ -82,30 +70,14 @@ myObj = @(p) objective(p,rayOrigin,opticalSystem);
 p = fminsearch(myObj,p0);
 
 % Evaluate the objective function once more, using the found values
-[angleError,outputRay,rayPath] = objective(p,rayOrigin,opticalSystem);
-
-% Find the nodal points
-opticalAxis = [0,-1;0,0;0,0];
-inputRay = quadric.normalizeRay([rayPath(:,1),rayPath(:,2)-rayPath(:,1)]);
-[~,iNodeError,incidentNode] = quadric.distanceRays(inputRay,opticalAxis);
-[~,eNodeError,emergentNode] = quadric.distanceRays(outputRay,opticalAxis);
-
-% Assemble the errors and nodal points for return
-nodalPoints = [incidentNode,emergentNode];
-errors = [angleError,iNodeError,eNodeError];
-
-% Concatenate the outputRay onto the rayPath
-rayPathFull = nan(3,size(rayPath,2)+1);
-rayPathFull(:,1:end-1)=rayPath;
-rayPathFull(:,end)=outputRay(:,1);
-rayPath = rayPathFull;
+[angleError,rayPath] = objective(p,rayOrigin,opticalSystem);
 
 end
 
 
 %% Local function
 
-function [fVal, outputRay,rayPath] = objective(p,rayOrigin,opticalSystem)
+function [fVal,rayPath] = objective(p,rayOrigin,opticalSystem)
 
 % Trace from rayOrigin at p angles.
 R = quadric.anglesToRay(rayOrigin,p(1),p(2));
