@@ -1,4 +1,4 @@
-function nodes = nodes( eye )
+function [incidentNode,emergentNode] = nodes( eye )
 % Returns the nodal points landmark sub-field of an eye model structure
 %
 % Syntax
@@ -19,11 +19,10 @@ function nodes = nodes( eye )
 %}
 
 % Obtain the cartesian coordinates of the nodes
-[incidentNode,emergentNode] = calcNodes(eye);
+[iN,eN] = calcNodes(eye);
 
 % Create the structure to return
-nodes.incident.coords = incidentNode';
-nodes.emergent.coords = emergentNode';
-
+incidentNode.coords = iN';
+emergentNode.coords = eN';
 
 end
