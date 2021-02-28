@@ -1,8 +1,8 @@
-function [navarroD,focalPoint,errors,rayPath1,rayPath2] = calcAccommodation(eye, desiredAccommodation, fieldOrigin, rayIntersectionHeight, cameraMedium, effectiveInfinity)
+function [navarroD,focalPoint,errors,rayPath1,rayPath2] = calcNavarroD(eye, desiredAccommodation, fieldOrigin, rayIntersectionHeight, cameraMedium, effectiveInfinity)
 % Returns the lens accommodation parameter for a desired near focal point
 %
 % Syntax:
-%  navarroD = calcAccommodation(eye, desiredAccommodation, rayHeight, cameraMedium)
+%  navarroD = calcNavarroD(eye, desiredAccommodation, rayHeight, cameraMedium)
 %
 % Description
 %   The refractive power of the crystaline lens of the model is a function
@@ -52,7 +52,7 @@ function [navarroD,focalPoint,errors,rayPath1,rayPath2] = calcAccommodation(eye,
 %{
     % Check that the errors are within tolerance
     eye = modelEyeParameters();
-    [navarroD, ~, errors] = calcAccommodation(eye, 0, [0 0]);
+    [navarroD, ~, errors] = calcNavarroD(eye, 0, [0 0]);
     assert(errors(1)<1e-3)
 %}
 %{
@@ -61,7 +61,7 @@ function [navarroD,focalPoint,errors,rayPath1,rayPath2] = calcAccommodation(eye,
     % Find the navarroD for accommodation to 10 diopters at the fovea
     desiredAccommodation = 10;
     fieldOrigin = eye.landmarks.fovea.degField(1:2);
-    [navarroD, focalPoint, errors,rayPath1, rayPath2] = calcAccommodation(eye, desiredAccommodation, fieldOrigin);
+    [navarroD, focalPoint, errors,rayPath1, rayPath2] = calcNavarroD(eye, desiredAccommodation, fieldOrigin);
     % Create the model eye with this accommodation
     eye = modelEyeParameters('navarroD',navarroD);
     % Show the eye and the converging rays
@@ -76,7 +76,7 @@ function [navarroD,focalPoint,errors,rayPath1,rayPath2] = calcAccommodation(eye,
 
 % Handle missing inputs
 if nargin<2
-    error('calcAccommodation:invalidArguments','Too few input arguments')
+    error('calcNavarroD:invalidArguments','Too few input arguments')
 end
 
 if nargin==2
@@ -196,7 +196,7 @@ errors = [distanceFocalPointToRetina, raySeparationAtFocalPoint];
 % some combinations of model eyes and accommodation states.
 if distanceFocalPointToRetina > 1e-3
     warnString = ['Cannot accurately accommodate the eye to ' num2str(desiredAccommodation) ' diopters'];
-    warning('calcAccommodation:cannotFocus',warnString);
+    warning('calcNavarroD:cannotFocus',warnString);
 end
 
 end

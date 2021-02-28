@@ -87,7 +87,7 @@ if ~isempty(A)
     
     % Now perform the search to find the navarroD parameter that provides
     % the desired accommodation at the foveal location in the visual field.
-    D = calcAccommodation(bootstrapEye,A,bootstrapEye.landmarks.fovea.degField(1:2));
+    D = calcNavarroD(bootstrapEye,A,bootstrapEye.landmarks.fovea.degField(1:2));
     
     % Done with the bootstrap
     clear bootstrapEye
