@@ -1,11 +1,11 @@
-function [rayPath,angleError] = calcNodalRayFromField(opticalSystem,opticalFieldOrigin,rayOriginDistance,cameraMedium)
-% Nodal ray that arises from the specified field location
+function [rayPath,angleError] = calcNodalRayFromField(opticalSystem,fieldAngularPosition,rayOriginDistance,referenceCoord,cameraMedium)
+% Returns a nodal ray that arises from the specified field location
 %
 % Syntax:
-%  [rayPath,angleError] = calcNodalRayFromField(opticalSystem,opticalFieldOrigin,rayOriginDistance,cameraMedium)
+%  [rayPath,angleError] = calcNodalRayFromField(opticalSystem,fieldAngularPosition,rayOriginDistance,cameraMedium)
 %
 % Description
-%   Given an optical system (or eye structure) and field location, the
+%   Given an optical system (or eye structure) and a field location, the
 %   routine returns a matrix that contains the path of a ray for which the
 %   incident and emergent segments are parallel. This is a "nodal ray":
 %
@@ -13,11 +13,12 @@ function [rayPath,angleError] = calcNodalRayFromField(opticalSystem,opticalField
 %       optical systems." Ophthalmic and Physiological Optics 30.1 (2010):
 %       24-42.
 %
-%   Note that opticalFieldOrigin is defined w.r.t. the origin of the
-%   longitudinal axis. Visual angle is often defined w.r.t. the position of
-%   the incident node (which itself is not a single point). Therefore, the
-%   opticalFieldOrigin value specified here is not the same as the visual
-%   angle for the same point in space.
+%   The fieldAngularPosition (and rayOriginDistance) is defined w.r.t. the
+%   coordinate specified in referenceCoord. If not defined, this is the
+%   origin of the longitudinal axis. Visual angle is often defined w.r.t.
+%   the position of the approximate incident nodal point, this coordinate
+%   should be provided if the fieldAngularPosition is to be interpreted as
+%   visual angle.
 %
 % Inputs:
 %   opticalSystem         - Either an eye structure (from which a
@@ -43,12 +44,17 @@ function [rayPath,angleError] = calcNodalRayFromField(opticalSystem,opticalField
 %                                       routine exits with nans for the
 %                                       outputRay.
 %                               n     - Refractive index of the surface.
-%   opticalFieldOrigin    - 1x2 or 2x1 vector that provides the coordinates
-%                           in degrees of the origin of the nodal ray with
-%                           respect to the origin of the longitudinal axis
-%                           (the un-rotated corneal apex).
+%   fieldAngularPosition  - 1x2 or 2x1 vector that provides the coordinates
+%                           of the origin of the nodal ray in [horizontal,
+%                           vertical[ degrees with respect to the
+%                           coordinate specified in referenceCoord.
 %   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
 %                           the ray from the longitudinal axis origin.
+%   referenceCoord        - 3x1 vector that provides the coordinate from
+%                           which the ray origin angles and distance are
+%                           to be calculated. By default, this is [0;0;0],
+%                           which is the origin coordinate on the
+%                           longitudinal axis.
 %   cameraMedium          - String. The medium in which the eye is located.
 %                           Defaults to 'air'.
 %
@@ -81,16 +87,22 @@ end
 
 if nargin==2
     rayOriginDistance = 1500;
+    referenceCoord = [0;0;0];
     cameraMedium = 'air';
 end
 
 if nargin==3
+    referenceCoord = [0;0;0];
     cameraMedium = 'air';
 end
 
-% Make opticalFieldOrigin a row vector
-if all(size(opticalFieldOrigin)==[2 1])
-    opticalFieldOrigin = opticalFieldOrigin';
+if nargin==4
+    cameraMedium = 'air';
+end
+
+% Make fieldAngularPosition a row vector
+if all(size(fieldAngularPosition)==[2 1])
+    fieldAngularPosition = fieldAngularPosition';
 end
 
 % Check if we have a compiled version of findNodalRay
@@ -111,7 +123,7 @@ if isstruct(opticalSystem)
 end
 
 % Define the rayOrigin
-rayOrigin = quadric.anglesToRay([0;0;0],opticalFieldOrigin(1),opticalFieldOrigin(2)).*rayOriginDistance;
+rayOrigin = quadric.anglesToRay(referenceCoord,fieldAngularPosition(1),fieldAngularPosition(2)).*rayOriginDistance;
 rayOrigin = rayOrigin(:,2);
 
 % Find the nodal ray
