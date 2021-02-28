@@ -170,7 +170,7 @@ for ii=2:nSurfaces
     nRel = abs(opticalSystem(ii-1,19)/opticalSystem(ii,19));
 
     % Compute the intersection
-    X = quadric.intersectRay(S,R,side,boundingBox);
+    X = quadric.intersectRayQuadric(S,R,side,boundingBox);
     
     % Exit if we have missed a "must intersect" surface
     if any(isnan(X)) && mustIntersectFlag
