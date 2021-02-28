@@ -1,24 +1,24 @@
-function [opticalAxis,errors] = calcOpticalAxis(opticalSystem, rayOriginDistance)
+function [opticalAxisRay,errors] = calcOpticalAxis(opticalSystem, rayOriginDistance)
 % Returns the optical axis for an opticalSystem
 %
 % Syntax:
-%  opticalAxis = calcOpticalAxis(opticalSystem, rayOriginDistance)
+%  opticalAxisRay = calcOpticalAxis(opticalSystem, rayOriginDistance)
 %
 % Description
 %   The optical axis of a system is the ray that enters and exits the
-%   optical system along the same, straight line. For a simple spherical
-%   lens, this corresponds to the line that passes through the centers of
-%   curvature of the surfaces. As developed by Harris (2010), more
-%   complicated optical systems are likely to have a single optical axis,
-%   and simple optical systems may have zero or an infinity of such rays:
+%   optical system along the same, straight line. For a system of simple
+%   spherical lenses, this corresponds to the line that passes through the
+%   centers of curvature of the surfaces. When these surfaces are centered
+%   on the longitudinal axis, then the longitudinal and optical axes are
+%   equivalent. As developed by Harris (2010), more complicated optical
+%   systems are likely to have a single optical axis, and simple optical
+%   systems may have zero or an infinity of such rays:
 %
 %       Harris, William F. "Optical axes of eyes and other optical
 %       systems." Optometry and Vision Science 86.5 (2009): 537-541.
 %
-%   In this modeling environment, the optical axis is usually assumed to be
-%   the axial (x) axis, but this measurement demonstrates that the true
-%   optical axis differs from this slightly for an eye with decententered
-%   elements.
+%   For an eye with decententered elements, the optical axis diverges
+%   somewhat from the longitudinal axis.
 %
 % Inputs:
 %   opticalSystem         - Either an eye structure (from which a
@@ -45,15 +45,14 @@ function [opticalAxis,errors] = calcOpticalAxis(opticalSystem, rayOriginDistance
 %                                       outputRay.
 %                               n     - Refractive index of the surface.
 %   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
-%                           the ray from the corneal apex. Assumed to be
-%                           1500 mm if not defined.
+%                           the ray from origin of the longitudinal axis.
+%                           Assumed to be 1500 mm if not defined.
 %
 % Outputs:
-%   opticalAxis           - 3x2 matrix that provides the starting and
-%                           ending coordinates of the optical axis.
+%   opticalAxisRay        - 3x2 matrix that is the optical axis ray.
 %   errors                - 1x1 matrix with the follow error values:
 %                             - The L2 norm of the distance between ray,
-%                             and the projected position of the output ray
+%                               and the projected position of the output ray
 %
 % Examples:
 %{
@@ -101,8 +100,6 @@ switch systemDirection
         error(['Not a valid system direction: ' systemDirection])
 end
 
-% Bounds
-
 % Options
 options = optimset('fmincon');
 options.Display = 'off';
@@ -112,15 +109,14 @@ options.Display = 'off';
 p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
 
 % Evaluate the objective once more and construct the optical axis to return
-[errors, inputRay, outputRay] = objective(p,opticalSystem,rayOriginDistance);
-opticalAxis = [inputRay(:,1),outputRay(:,1)];
+[errors, opticalAxisRay] = objective(p,opticalSystem,rayOriginDistance);
 
 end
 
 
 %% Local function
 
-function [fVal, inputRay, outputRay] = objective(p,opticalSystem,rayOriginDistance)
+function [fVal, inputRay] = objective(p,opticalSystem,rayOriginDistance)
 
 % Assemble the ray
 inputRay = quadric.normalizeRay(quadric.anglesToRay([rayOriginDistance;p(1);p(2)],p(3),p(4)));
