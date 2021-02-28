@@ -1,35 +1,54 @@
-function [rayPath,nodalPoints,errors] = calcNodalRayFromField(eye,fieldOrigin,rayOriginDistance,cameraMedium)
-% Nodal ray that arises from the specified visual field location
+function [rayPath,angleError] = calcNodalRayFromField(opticalSystem,opticalFieldOrigin,rayOriginDistance,cameraMedium)
+% Nodal ray that arises from the specified field location
 %
 % Syntax:
-%  [rayPath,nodalPoints,errors] = calcNodalRayFromField(eye,fieldOrigin,rayOriginDistance,incidentNodeX0,cameraMedium)
+%  [rayPath,angleError] = calcNodalRayFromField(opticalSystem,opticalFieldOrigin,rayOriginDistance,cameraMedium)
 %
 % Description
-%   Given an eye structure and visual field location, the routine returns a
-%   matrix that contains the path of a ray that arises from this location
-%   and has an angle of incidence at cornea (w.r.t the optical axis) equal
-%   to the angle with which it intersects the retina. This is a "nodal
-%   ray":
+%   Given an optical system (or eye structure) and field location, the
+%   routine returns a matrix that contains the path of a ray for which the
+%   incident and emergent segments are parallel. This is a "nodal ray":
 %
 %       Harris, W. F. "Nodes and nodal points and lines in eyes and other
 %       optical systems." Ophthalmic and Physiological Optics 30.1 (2010):
 %       24-42.
 %
-%   Visual angle is typically defined as the angle of an location with
-%   respect to the incident node of an optical system. For an astigmatic,
-%   decentered optical system, there is not a single nodal point.
-%   Consequently, this routine conducts an interative search to find a ray
-%   that has the specified visual angle with respect to its own incident
-%   node.
+%   Note that opticalFieldOrigin is defined w.r.t. the origin of the
+%   longitudinal axis. Visual angle is often defined w.r.t. the position of
+%   the incident node (which itself is not a single point). Therefore, the
+%   opticalFieldOrigin value specified here is not the same as the visual
+%   angle for the same point in space.
 %
 % Inputs:
-%   eye                   - Structure. SEE: modelEyeParameters
-%   fieldOrigin           - 1x2 or 2x1 vector that provides the coordinates
-%                           in degrees of visual angle of the origin of the
-%                           nodal ray.
+%   opticalSystem         - Either an eye structure (from which a
+%                           "mediumToRetina" optical system in air will be
+%                           derived), or an mx19 matrix, where m is set by
+%                           the key value opticalSystemNumRows. Each row
+%                           contains the values:
+%                               [S side bb must n]
+%                           where:
+%                               S     - 1x10 quadric surface vector
+%                               side  - Scalar taking the value -1 or 1
+%                                       that defines which of the two
+%                                       points of intersection on the
+%                                       quadric should be used as the
+%                                       refractive surface.
+%                               bb    - 1x6 vector defining the bounding
+%                                       box within which the refractive
+%                                       surface is present.
+%                               must  - Scalar taking the value of 0 or 1,
+%                                       where 1 indicates that the ray must
+%                                       intersect the surface. If the ray
+%                                       misses a required surface, the
+%                                       routine exits with nans for the
+%                                       outputRay.
+%                               n     - Refractive index of the surface.
+%   opticalFieldOrigin    - 1x2 or 2x1 vector that provides the coordinates
+%                           in degrees of the origin of the nodal ray with
+%                           respect to the origin of the longitudinal axis
+%                           (the un-rotated corneal apex).
 %   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
-%                           the ray from the incident node. Assumed to be
-%                           1500 mm if not defined.
+%                           the ray from the longitudinal axis origin.
 %   cameraMedium          - String. The medium in which the eye is located.
 %                           Defaults to 'air'.
 %
@@ -39,34 +58,19 @@ function [rayPath,nodalPoints,errors] = calcNodalRayFromField(eye,fieldOrigin,ra
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
 %                           will be nan.
-%   nodalPoints           - 3x2 matrix that provides the approximation to
-%                           incident and emergent nodal points in the eye
-%                           coordinate space. This is the point on each ray
-%                           that is closest to the optical axis.
-%   errors                - 1x4 matrix with the follow error values:
-%                             - L2 norm of the mismatch between the desired
-%                               and obtained visual angles.
-%                             - L2 norm of the mismatch between the desired
-%                               and obtained rayOriginDistance.
-%                             - departure from parallel of the incident and
-%                               emergent rays (deg)
-%                             - distance of the incident nodal point from
-%                               the incident ray
-%                             - distance of the emergent nodal point from
-%                               the emergent ray
+%   angleError            - Scalar. The departure from parallel of the 
+%                           incident and emergent rays (deg)
 %
 % Examples:
 %{
     % Define a default model eye
     eye = modelEyeParameters();
-    % Pick a visual field location
+    % Pick a field location
     F = [10,20];
     % Find the nodal ray
-    [rayPath,nodalPoints,errors] = calcNodalRayFromField(eye,F);
-    % Confirm that the first three elements of the error vector are within
-    % tolerance. The final two elements are expected to be non-zero as a 
-    % consequence of astigmatic and decentered elements in the model.
-    assert(all(errors(1:3)<1e-3))
+    [rayPath,angleError] = calcNodalRayFromField(eye,F);
+    % Confirm that the angleError is within tolerance
+    assert(angleError<1e-3)
 %}
 
 
@@ -84,19 +88,9 @@ if nargin==3
     cameraMedium = 'air';
 end
 
-% If the length of fieldOrigin is 3, and the last element is zero, drop
-% this as it is a torsion place holder.
-if length(fieldOrigin)==3
-    if fieldOrigin(end)==0
-        fieldOrigin = fieldOrigin(1:2);
-    else
-        error('calcNodalRayFromField:invalidArguments','Field origin should be two elements')
-    end
-end
-
-% Make fieldOrigin a row vector
-if all(size(fieldOrigin)==[2 1])
-    fieldOrigin = fieldOrigin';
+% Make opticalFieldOrigin a row vector
+if all(size(opticalFieldOrigin)==[2 1])
+    opticalFieldOrigin = opticalFieldOrigin';
 end
 
 % Check if we have a compiled version of findNodalRay
@@ -106,69 +100,22 @@ else
     findNodeHandle = @findNodalRay;
 end
 
-% Obtain the optical system for this eye
-opticalSystem = assembleOpticalSystem(eye,...
-    'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
-
-% Initialize an anonymous function for the objective. The fVal is the error
-% in matching the desired fieldOrigin location.
-myObj = @(p) objective(p,opticalSystem,fieldOrigin,rayOriginDistance,findNodeHandle);
-
-% Bounds
-lb = [-90,-90];
-ub = [ 90, 90];
-
-% Options
-options = optimset('fmincon');
-options.Display = 'off';
-
-% Search. The desired fieldOrigin itself is used as the p0 value.
-% The angles that are returned from "p" are the angles of a ray w.r.t. the
-% un-rotated corneal apex. If the search was successful, these angles
-% identify a rayOrigin location which is at the desired angles with respect
-% to the incident node.
-p = fmincon(myObj,fieldOrigin,[],[],[],[],lb,ub,[],options);
-
-% Evaluate the objective function once more, using the final values
-[angleMatchError,rayPath,nodalPoints,errors] = ...
-    objective(p,opticalSystem,fieldOrigin,rayOriginDistance,findNodeHandle);
-
-% Assemble the errors
-errors = [angleMatchError,errors];
-
-
+% Check if we were passed an eye model. If so, create the optical system
+if isstruct(opticalSystem)
+    if isfield(opticalSystem,'cornea')
+        eye = opticalSystem;
+        clear opticalSystem;
+        opticalSystem = assembleOpticalSystem(eye,...
+            'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
+    end
 end
 
-
-%% Local function
-
-function [fVal,rayPath,nodalPoints,errors] = objective(p,opticalSystem,fieldOrigin,rayOriginDistance,findNodeHandle)
-
-% The passed p vector is interpreted as the angles of a coordinate point
-% w.r.t. the origin of the coordinate system. We find the coordinate at
-% this point, at the rayOriginDistance
-rayOrigin = quadric.anglesToRay([0;0;0],p(1),p(2)).*rayOriginDistance;
+% Define the rayOrigin
+rayOrigin = quadric.anglesToRay([0;0;0],opticalFieldOrigin(1),opticalFieldOrigin(2)).*rayOriginDistance;
 rayOrigin = rayOrigin(:,2);
 
-% Find the nodal points from this point
-[~,nodalPoints] = findNodeHandle(rayOrigin',opticalSystem);
+% Find the nodal ray
+[rayPath,angleError] = findNodeHandle(rayOrigin',opticalSystem);
 
-% Adjust the rayOrigin so that it is at the appropriate rayOriginDistance
-% w.r.t. the incident node.
-rayOrigin = (rayOrigin-nodalPoints(:,1)).*(rayOriginDistance/norm(rayOrigin-nodalPoints(:,1)))+nodalPoints(:,1);
-
-% Repeat the ray trace from this updated point
-[rayPath,nodalPoints,errors] = findNodeHandle(rayOrigin',opticalSystem);
-
-% Find the angle of the rayOrigin with respect to the incident node
-[vf(1), vf(2)] = quadric.rayToAngles(quadric.normalizeRay([nodalPoints(:,1),rayOrigin-nodalPoints(:,1)]));
-
-% Obtain the L2 norm between the desired and realized rayOrigin
-% distance, and add this to the front of the errors
-errors = [norm(norm(rayOrigin-nodalPoints(:,1))-rayOriginDistance), errors];
-
-% Obtain the L2 norm of the mis-match between the desired and obtained
-% visual field location
-fVal = norm(fieldOrigin-vf);
 
 end

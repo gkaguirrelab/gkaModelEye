@@ -1,5 +1,5 @@
 function [focalPoint, raySeparationAtFocalPoint, rayPath1, rayPath2] = calcInternalFocalPoint(opticalSystem,rayOrigin,rayIntersectionHeight,effectiveInfinity)
-% Focal point for rays arising at the specified point on the optical axis
+% Focal point for rays arising from a specified position
 %
 % Syntax:
 %  [focalPoint, raySeparationAtFocalPoint] = calcInternalFocalPoint(opticalSystem,rayOrigin,rayIntersectionHeight)
@@ -36,11 +36,11 @@ function [focalPoint, raySeparationAtFocalPoint, rayPath1, rayPath2] = calcInter
 %                               n     - Refractive index of the surface.
 %   rayOrigin             - Scalar or 3x1 vector. If a scalar, this is the
 %                           distance (in mm) from the corneal apex of a
-%                           rayOrigin that is on the optical axis. A 3x1
-%                           vector can specify a position that is not on
-%                           the optical axis. A value of inf in the first
-%                           or only element defines parallel rays arriving
-%                           from effective infinity.
+%                           rayOrigin that is on the longitudinal axis. A
+%                           3x1 vector can specify a position that is not
+%                           on the longitudinal axis. A value of inf in the
+%                           first or only element defines parallel rays
+%                           arriving from effective infinity.
 %   rayIntersectionHeight - Scalar. The divergent rays will arrive at the
 %                           corneal apex separated by 2x this value.
 %   effectiveInfinity     - Scalar. Rays arising from this point or beyond
