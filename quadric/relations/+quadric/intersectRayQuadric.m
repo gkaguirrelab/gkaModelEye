@@ -1,8 +1,8 @@
-function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
+function [X1, X2] = intersectRayQuadric(S,R,side,boundingBox,bbTol)
 % Find the coordinates of intersection of a ray with a quadric surface
 %
 % Syntax:
-%  [X1, X2] = quadric.intersectRay(S,R,side,boundingBox,bbTol)
+%  [X1, X2] = quadric.intersectRayQuadric(S,R,side,boundingBox,bbTol)
 %
 % Description:
 %   Returns the coordinates of the points of intersection of a ray with a
@@ -54,7 +54,7 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
     p = [0; 0; 0];
     u = [1; 1; 1];
     R = quadric.normalizeRay([p, u]);
-    X = quadric.intersectRay(S,R);
+    X = quadric.intersectRayQuadric(S,R);
 %}
 %{
     % Unit sphere, axis-aligned ray starting from the origin
@@ -62,7 +62,7 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
     p = [0; 0; 0];
     u = [0; 0; 1];
     R = quadric.normalizeRay([p, u]);
-    X = quadric.intersectRay(S,R);
+    X = quadric.intersectRayQuadric(S,R);
 %}
 %{
     % Unit sphere, non-intersecting ray
@@ -70,7 +70,7 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
     p = [3; 3; 3];
     u = [0; 0; 1];
     R = quadric.normalizeRay([p, u]);
-    X = quadric.intersectRay(S,R);
+    X = quadric.intersectRayQuadric(S,R);
 %}
 %{
     % Scaled, translated sphere. Ray starts from sphere center.
@@ -80,7 +80,7 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
     p = [0;1;1];
     u = [0;tand(17.309724);1];
     R = quadric.normalizeRay([p, u]);
-    X = quadric.intersectRay(S,R);
+    X = quadric.intersectRayQuadric(S,R);
 %}
 %{
     % Centered ellipsoid. Ray starts from center.
@@ -89,7 +89,7 @@ function [X1, X2] = intersectRay(S,R,side,boundingBox,bbTol)
     p = [0;0;0];
     u = [1;tand(15);0];
     R = quadric.normalizeRay([p, u]);
-    X = quadric.intersectRay(S,R);
+    X = quadric.intersectRayQuadric(S,R);
 %}
 
 % Handle incomplete input arguments
