@@ -245,6 +245,7 @@ switch eye.meta.species
         eye.landmarks.medialCanthus = human.landmarks.medialCanthus(eye);
         eye.landmarks.lateralCanthus = human.landmarks.lateralCanthus(eye);
         eye.landmarks.vertex = human.landmarks.vertex(eye);
+        eye.landmarks.nodes = human.landmarks.nodes(eye);
         eye.landmarks.fovea = human.landmarks.fovea(eye);
         eye.landmarks.opticDisc = human.landmarks.opticDisc(eye);
         
