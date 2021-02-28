@@ -1,14 +1,17 @@
-function [focalPoint, raySeparationAtFocalPoint, rayPath1, rayPath2] = calcInternalFocalPoint(opticalSystem,rayOrigin,rayIntersectionHeight,effectiveInfinity)
-% Focal point for rays arising from a specified position
+function [focalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calcInternalFocalPoint(opticalSystem,fieldAngularPosition,rayOriginDistance,referenceCoord,rayIntersectionHeight,effectiveInfinity,cameraMedium)
+% Focal point for rays arising from a specified field position
 %
 % Syntax:
-%  [focalPoint, raySeparationAtFocalPoint] = calcInternalFocalPoint(opticalSystem,rayOrigin,rayIntersectionHeight)
+%  [focalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calcInternalFocalPoint(opticalSystem,fieldAngularPosition,rayOriginDistance,referenceCoord,rayIntersectionHeight,effectiveInfinity,cameraMedium)
 %
 % Description
-%   This routine examines the behavior of a pair of diverging rays that
-%   arise from a specified location and are directed to either side of the
-%   incident node of the optical system. The closest point of approach of
-%   the resulting emergent rays is the internal focal point for this
+%   This routine obtains the point of intersection of a pair of emergent
+%   rays that are produced by a pair of diverging (or parallel) incident
+%   rays. The incident rays arise from a particular field position (defined
+%   w.r.t. the referenceCoord). If the rayOriginDistance is Inf, then the
+%   rays are parallel. Otherwise, the rays diverge from a common origin
+%   point at the specified distance. The point of closest approach of the
+%   emergent rays is the internal focal point for the ray origin position.
 %
 % Inputs:
 %   opticalSystem         - Either an eye structure (from which a
@@ -34,17 +37,23 @@ function [focalPoint, raySeparationAtFocalPoint, rayPath1, rayPath2] = calcInter
 %                                       routine exits with nans for the
 %                                       outputRay.
 %                               n     - Refractive index of the surface.
-%   rayOrigin             - Scalar or 3x1 vector. If a scalar, this is the
-%                           distance (in mm) from the corneal apex of a
-%                           rayOrigin that is on the longitudinal axis. A
-%                           3x1 vector can specify a position that is not
-%                           on the longitudinal axis. A value of inf in the
-%                           first or only element defines parallel rays
-%                           arriving from effective infinity.
+%   fieldAngularPosition  - 2x1 vector that provides the coordinates of the
+%                           origin of the nodal ray in [horizontal,
+%                           vertical[ degrees with respect to the
+%                           coordinate specified in referenceCoord.
+%   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
+%                           the ray from the longitudinal axis origin.
+%   referenceCoord        - 3x1 vector that provides the coordinate from
+%                           which the ray origin angles and distance are
+%                           to be calculated. By default, this is [0;0;0],
+%                           which is the origin coordinate on the
+%                           longitudinal axis.
 %   rayIntersectionHeight - Scalar. The divergent rays will arrive at the
 %                           corneal apex separated by 2x this value.
 %   effectiveInfinity     - Scalar. Rays arising from this point or beyond
 %                           will be treated as parallel.
+%   cameraMedium          - String. The medium in which the eye is located.
+%                           Defaults to 'air'.
 %
 % Outputs:
 %   focalPoint            - 3x1 matrix with the Cartesian coordinates of
@@ -54,44 +63,27 @@ function [focalPoint, raySeparationAtFocalPoint, rayPath1, rayPath2] = calcInter
 %   raySeparationAtFocalPoint - The distance between the two rays at their
 %                           point of closest approach. Ideally, this value
 %                           is zero.
+%   rayPath1, rayPath2    - 3xm matrix that provides the ray coordinates
+%                           at each surface. The value for rayPath(1,:)
+%                           is equal to initial position. If a surface is
+%                           missed, then the coordinates for that surface
+%                           will be nan.
 %
 % Examples:
 %{
     eye = modelEyeParameters();
-    [focalPoint, raySeparationAtFocalPoint] = calcInternalFocalPoint(eye,Inf);
+    [focalPoint, raySeparationAtFocalPoint] = calcInternalFocalPoint(eye);
 %}
 
-
-% Handle missing inputs
-if nargin<2
-    error('calcInternalFocalPoint:invalidArguments','Too few input arguments')
-end
-
-if nargin==2
-    rayIntersectionHeight = 0.5;
-    effectiveInfinity = 2000;
-end
-
-if nargin==3
-    effectiveInfinity = 2000;
-end
-
-% If rayOrigin is a scalar, place it on the optical axis
-if isscalar(rayOrigin)
-    if isinf(rayOrigin)
-        rayOrigin = [effectiveInfinity;0;0];
-    else
-        rayOrigin = [rayOrigin;0;0];
-    end
-else
-    if any(isinf(rayOrigin))
-        error('calcInternalFocalPoint:invalidArguments','Provide a finite rayOrigin')
-    end
-end
-
-% Force rayOrigin to be a column vector
-if all(size(rayOrigin)==[1 3])
-    rayOrigin = rayOrigin';
+%% Arguments
+arguments
+    opticalSystem
+    fieldAngularPosition (2,1) double = [0, 0]
+    rayOriginDistance (1,1) double = Inf
+    referenceCoord (3,1) double = [0, 0, 0]
+    rayIntersectionHeight (1,1) double = 0.25
+    effectiveInfinity (1,1) double = 1e4
+    cameraMedium = 'air'
 end
 
 % Check if we were passed an eye model. If so, create the optical system
@@ -100,41 +92,31 @@ if isstruct(opticalSystem)
         eye = opticalSystem;
         clear opticalSystem;
         opticalSystem = assembleOpticalSystem(eye,...
-            'surfaceSetName','mediumToRetina','cameraMedium','air',...
+            'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium,...
             'opticalSystemNumRows',[]);
     end
 end
 
-% Create rays that start at rayOrigin and diverge such that they will be
-% separated by 2 x rayIntersectionHeight when they arrive at the plane of
-% the corneal apex.
+% Define the rayOrigin
+rayOrigin = quadric.anglesToRay(referenceCoord,fieldAngularPosition(1),fieldAngularPosition(2)).*min([effectiveInfinity rayOriginDistance]);
+rayOrigin = rayOrigin(:,2);
+
+% The separation between the rays at the origin of the longitudinal axis.
+deltaPosition = [0;rayIntersectionHeight/sqrt(2);rayIntersectionHeight/sqrt(2)];
+
+% Create rays that start at rayOrigin and will intersect the xy plane
+% of the longitudinal axis at a distance of 2 x rayIntersectionHeight.
 if norm(rayOrigin) >= (effectiveInfinity-1e-6)
-        
-    % Find the angle at which these rays will be traveling towards the
-    % origin
-    [p1p2, p1p3] = quadric.rayToAngles( quadric.normalizeRay([rayOrigin,-rayOrigin]) );
     
-    % Define a delta separating of the rays
-    deltaPosition = [0;rayIntersectionHeight;rayIntersectionHeight];
-    
-    % The rays are fixed at parallel
-    myR1 = quadric.normalizeRay(quadric.anglesToRay(rayOrigin+deltaPosition,p1p2,p1p3));
-    myR2 = quadric.normalizeRay(quadric.anglesToRay(rayOrigin-deltaPosition,p1p2,p1p3));
+    % These rays are parallel
+    myR1 = quadric.coordsToRay([rayOrigin+deltaPosition,referenceCoord+deltaPosition]);
+    myR2 = quadric.coordsToRay([rayOrigin-deltaPosition,referenceCoord-deltaPosition]);
     
 else
     
-    % Find the angle at which these rays will be traveling towards the
-    % origin
-    [p1p2, p1p3] = quadric.rayToAngles( quadric.normalizeRay([rayOrigin,-rayOrigin]) );
-    
-    % Calculate the angle with which the rays must diverge at the rayOrigin
-    % such that they are separated by 2 x rayIntersectionHeight in each
-    % plane (p1p2 and p1p3) when they reach origin of the coordinate system
-    deltaAngle = rad2deg(atan2(rayIntersectionHeight,norm(rayOrigin)));
-    
-    % Define the two rays.
-    myR1 = quadric.normalizeRay(quadric.anglesToRay(rayOrigin,p1p2+deltaAngle,p1p3+deltaAngle));
-    myR2 = quadric.normalizeRay(quadric.anglesToRay(rayOrigin,p1p2-deltaAngle,p1p3-deltaAngle));
+    % These rays are diverging
+    myR1 = quadric.coordsToRay([rayOrigin,referenceCoord+deltaPosition]);
+    myR2 = quadric.coordsToRay([rayOrigin,referenceCoord-deltaPosition]);
     
 end
 
@@ -146,8 +128,5 @@ end
 [focalPoint, raySeparationAtFocalPoint] = ...
     quadric.distanceRays(outputRay1,outputRay2);
 
-% Add the final step to the rayPath
-rayPath1(:,end+1)=outputRay1(:,1);
-rayPath2(:,end+1)=outputRay2(:,1);
 
 end
