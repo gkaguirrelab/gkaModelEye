@@ -44,8 +44,8 @@ function [rayPath,angleError] = calcNodalRayFromField(opticalSystem,fieldAngular
 %                                       routine exits with nans for the
 %                                       outputRay.
 %                               n     - Refractive index of the surface.
-%   fieldAngularPosition  - 1x2 or 2x1 vector that provides the coordinates
-%                           of the origin of the nodal ray in [horizontal,
+%   fieldAngularPosition  - 2x1 vector that provides the coordinates of the
+%                           origin of the nodal ray in [horizontal,
 %                           vertical[ degrees with respect to the
 %                           coordinate specified in referenceCoord.
 %   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
