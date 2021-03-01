@@ -1,4 +1,4 @@
-function [eyePose,errors] = calcFixationPose(eye,fieldTargetDeg,targetDistance,addPseudoTorsionFlag,stopRadius,cameraMedium)
+function [eyePose,errors] = calcFixationPose(eye,fieldAngularPosition,targetDistance,addPseudoTorsionFlag,stopRadius,cameraMedium)
 % Returns the oculomotor pose of the eye to fixate a target
 %
 % Syntax:
@@ -6,10 +6,10 @@ function [eyePose,errors] = calcFixationPose(eye,fieldTargetDeg,targetDistance,a
 %
 % Description
 %   Given a target in the visual field (in horizontal and vertical degrees
-%   w.r.t. the optical axis of the eye when it is aligned with the camera)
-%   and the distance of that target in mm from the incident node of the eye,
-%   the routine returns the eye pose parameters of the eye required to
-%   place the foveal line-of-sight upon that target.
+%   w.r.t. the longitudinal axis of the eye when it is aligned with the
+%   camera) and the distance of that target in mm from the incident node of
+%   the eye, the routine returns the eye pose parameters of the eye
+%   required to place the foveal line-of-sight upon that target.
 %
 %   Notably, the angles of oculomotor rotation needed to bring the line of
 %   sight to the target, and the visual angle between the line of sight and
@@ -36,10 +36,10 @@ function [eyePose,errors] = calcFixationPose(eye,fieldTargetDeg,targetDistance,a
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
-%   fieldTargetDeg        - 1x2 or 2x1 vector that provides the coordinates
+%   fieldAngularPosition  - 1x2 or 2x1 vector that provides the coordinates
 %                           in degrees of visual angle of the target
-%                           relative to the optical axis of the eye when it
-%                           is aligned with the camera.
+%                           relative to the longitudinal axis of the eye
+%                           when it is aligned with the camera.
 %   targetDistance        - Scalar. The distance (in mm) of the origin of
 %                           the target from the incident node. Assumed to
 %                           be 1500 mm if not defined.
@@ -66,9 +66,9 @@ function [eyePose,errors] = calcFixationPose(eye,fieldTargetDeg,targetDistance,a
 % Examples:
 %{
     eye = modelEyeParameters();
-    fieldTargetDeg = [-5, 10];
+    fieldAngularPosition = [-5, 10];
     targetDistance = 1500;
-    [eyePose,errors] = calcFixationPose(eye,fieldTargetDeg,targetDistance);
+    [eyePose,errors] = calcFixationPose(eye,fieldAngularPosition,targetDistance);
 %}
 
 
@@ -101,37 +101,33 @@ if nargin==5
 end
 
 
-% If the length of fieldTargetDeg is 3, and the last element is zero, drop
+% If the length of fieldAngularPosition is 3, and the last element is zero, drop
 % this as it is a torsion place holder.
-if length(fieldTargetDeg)==3
-    if fieldTargetDeg(end)==0
-        fieldTargetDeg = fieldTargetDeg(1:2);
+if length(fieldAngularPosition)==3
+    if fieldAngularPosition(end)==0
+        fieldAngularPosition = fieldAngularPosition(1:2);
     else
-        error('calcNodalRayFromField:invalidArguments','Field origin should be two elements')
+        error('calcFixationPose:invalidArguments','Field origin should be two elements')
     end
 end
 
-% Make fieldTargetDeg a row vector
-if all(size(fieldTargetDeg)==[2 1])
-    fieldTargetDeg = fieldTargetDeg';
+% Make fieldAngularPosition a row vector
+if all(size(fieldAngularPosition)==[2 1])
+    fieldAngularPosition = fieldAngularPosition';
 end
 
 % Obtain the coordinates of the fovea
-rayDestination = eye.landmarks.fovea.coords;
+rayDestination = eye.landmarks.fovea.coords';
 
 % Derive the line-of-sight for the eye for the specified target distance.
-% We also obtain here the incident node of the eye for a ray emerging from
-% the target
-[lineOfSightRayPath, nodalPoints] = calcSightRayToRetina(eye,rayDestination,targetDistance,stopRadius,cameraMedium);
-lineOfSightIncidentNode = nodalPoints(:,1);
+lineOfSightRayPath = calcSightRayToRetina(eye,rayDestination,targetDistance,stopRadius,cameraMedium);
 
-% We retain the portion of the line of sight ray that arises at the object
-% and then intersects the eye.
-lineOfSightRay = lineOfSightRayPath(:,1:2);
+% We retain the incident segment of the line-of-sight ray
+lineOfSightRay = quadric.coordsToRay(lineOfSightRayPath(:,1:2));
 
-% Define the coordinates of the desiredFixationPoint, with the distance of
-% that point from the incident node set equal to the targetDistance
-R = quadric.anglesToRay(lineOfSightIncidentNode,fieldTargetDeg(1),fieldTargetDeg(2));
+% Define the coordinates of the desiredFixationPoint, which is defined in terms of angular position w.r.t the incident node
+referenceCoord = eye.landmarks.incidentNode.coords';
+R = quadric.anglesToRay(referenceCoord,fieldAngularPosition(1),fieldAngularPosition(2));
 desiredFixationPoint = R(:,1)+R(:,2).*targetDistance;
 
 % Define the objective
@@ -140,7 +136,7 @@ myObj = @(p) objective(p,eye,lineOfSightRay,desiredFixationPoint,addPseudoTorsio
 % p0, which is the angles of the field target minus the position of the
 % fovea in field coordinates. This should get us pretty close to the
 % solution.
-p0 = fieldTargetDeg - eye.landmarks.fovea.degField(1:2);
+p0 = fieldAngularPosition - eye.landmarks.fovea.degField(1:2);
 
 % Bounds
 lb = [-90,-90];
@@ -165,7 +161,7 @@ end
 
 
 %% Local function
-function [fVal,newLineOfSightRay] = objective(p,eye,lineOfSightRay,desiredFixationPoint,addPseudoTorsionFlag)
+function fVal = objective(p,eye,lineOfSightRay,desiredFixationPoint,addPseudoTorsionFlag)
 
 % The variable "p" holds the candidate horizontal and vertical rotations of
 % the eye (in Fick coordinates) relative to [0 0], in which the optical

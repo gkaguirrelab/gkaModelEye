@@ -81,7 +81,7 @@ function [incidentNode,emergentNode,incidentRays,emergentRays] = calcNodes(optic
     % Scale up the incidentRays
     extendedRays = cellfun(@(x) [x(:,1),x(:,1)+x(:,2)*1520],incidentRays,'UniformOutput',false);
     % Plot the optical system
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.mediumToRetina,'addLighting',true,'surfaceAlpha', 0.05);    
+    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.mediumToRetina,'addLighting',true,'surfaceAlpha', 0.05);
     % Add the rays to the plot
     for ii=1:length(incidentRays)
         plotOpticalSystem('newFigure',false,'rayPath',extendedRays{ii});
@@ -151,7 +151,7 @@ emergentRays = cellfun(@(x) quadric.coordsToRay(x(:,end-1:end)),rayPaths,'Unifor
 % If we encountered bad ray traces, there will be nans in the emergent
 % rays. If so, exit with a warning
 if any(cellfun(@(x) any(isnan(x(:))),emergentRays))
-    warning('calcNodes:badRayTrace','Unable to conduct ray trace. Reduce opticalFieldAngle, or check for invalid opticalSystem'); 
+    warning('calcNodes:badRayTrace','Unable to conduct ray trace. Reduce opticalFieldAngle, or check for invalid opticalSystem');
     return
 end
 
@@ -163,8 +163,8 @@ end
 incidentCenters = [];
 emergentCenters = [];
 for ss=1:length(xSub)
-        incidentCenters(end+1,:) = quadric.distanceRays(incidentRays{xSub(ss)},incidentRays{ySub(ss)});
-        emergentCenters(end+1,:) = quadric.distanceRays(emergentRays{xSub(ss)},emergentRays{ySub(ss)});
+    incidentCenters(end+1,:) = quadric.distanceRays(incidentRays{xSub(ss)},incidentRays{ySub(ss)});
+    emergentCenters(end+1,:) = quadric.distanceRays(emergentRays{xSub(ss)},emergentRays{ySub(ss)});
 end
 
 % Find the linear fit of a plane to the set of incident centers

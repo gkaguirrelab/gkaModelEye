@@ -1,8 +1,8 @@
-function [focalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calcInternalFocalPoint(opticalSystem,fieldAngularPosition,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,rayIntersectionHeight,effectiveInfinity,cameraMedium)
-% Focal point for rays arising from a specified field position
+function [internalFocalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calcInternalFocalPoint(opticalSystem,fieldAngularPosition,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,rayIntersectionHeight,effectiveInfinity,cameraMedium)
+% Internal focal point for rays arising from a specified field position
 %
 % Syntax:
-%  [focalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calcInternalFocalPoint(opticalSystem,fieldAngularPosition,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,rayIntersectionHeight,effectiveInfinity,cameraMedium)
+%  [internalFocalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calcInternalFocalPoint(opticalSystem,fieldAngularPosition,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,rayIntersectionHeight,effectiveInfinity,cameraMedium)
 %
 % Description
 %   This routine obtains the point of intersection of a pair of emergent
@@ -43,11 +43,16 @@ function [focalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calcInternal
 %                           coordinate specified in referenceCoord.
 %   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
 %                           the ray from the longitudinal axis origin.
-%   referenceCoord        - 3x1 vector that provides the coordinate from
-%                           which the ray origin angles and distance are
-%                           to be calculated. By default, this is [0;0;0],
-%                           which is the origin coordinate on the
-%                           longitudinal axis.
+%   angleReferenceCoord   - 3x1 vector that provides the coordinate from
+%                           which the field angles are calculated. The
+%                           incident node is a typical choice. If not
+%                           defined, is set to [0;0;0], which is the origin
+%                           coordinate on the longitudinal axis.
+%   distanceReferenceCoord - 3x1 vector that provides the coordinate from
+%                           which the rayOriginDistance is calculated. The
+%                           The principal point is a typical choice. If not
+%                           defined, is set to [0;0;0], which is the origin
+%                           coordinate on the longitudinal axis.
 %   rayIntersectionHeight - Scalar. The divergent rays will arrive at the
 %                           corneal apex separated by 2x this value.
 %   effectiveInfinity     - Scalar. Rays arising from this point or beyond
@@ -56,7 +61,7 @@ function [focalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calcInternal
 %                           Defaults to 'air'.
 %
 % Outputs:
-%   focalPoint            - 3x1 matrix with the Cartesian coordinates of
+%   internalFocalPoint    - 3x1 matrix with the Cartesian coordinates of
 %                           point of closest approach of the two rays after
 %                           emerging from the optical system. Ideally, this
 %                           point is on the retina.
@@ -72,7 +77,7 @@ function [focalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calcInternal
 % Examples:
 %{
     eye = modelEyeParameters();
-    [focalPoint, raySeparationAtFocalPoint] = calcInternalFocalPoint(eye);
+    [internalFocalPoint, raySeparationAtFocalPoint] = calcInternalFocalPoint(eye);
 %}
 
 %% Arguments
@@ -136,7 +141,7 @@ end
 [outputRay2, rayPath2] = rayTraceQuadrics(myR2, opticalSystem);
 
 % The point of intersection of the rays within the eye
-[focalPoint, raySeparationAtFocalPoint] = ...
+[internalFocalPoint,raySeparationAtFocalPoint] = ...
     quadric.distanceRays(outputRay1,outputRay2);
 
 
