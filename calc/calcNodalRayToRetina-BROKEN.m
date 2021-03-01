@@ -1,4 +1,4 @@
-function [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination,rayOriginDistance,incidentNodeX0,cameraMedium)
+function [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination,rayOriginDistance,incidentNodeX0,cameraMedium,surfaceTol)
 % Returns the path of the nodal ray that intersects the retinal coordinate
 %
 % Syntax:
@@ -40,13 +40,18 @@ function [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination,
 %   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
 %                           the ray from the corneal apex. Assumed to be
 %                           1500 mm if not defined.
-%   incidentNodeX0        - An optional 1x3 vector that gives the location
-%                           in eye  space that is an initial guess for the
+%   incidentNodeX0        - 3x1 vector that gives the location in eye
+%                           space that is an initial guess for the
 %                           location of the incident node of the optical
 %                           system. If not supplied, a value that is
 %                           typical for the human eye is used.
 %   cameraMedium          - The medium in which the eye is located.
 %                           Defaults to 'air'.
+%   surfaceTol            - Scalar. When interpreting if the rayDestination
+%                           is Cartesian or geodetic coordinates, this is
+%                           the tolerance within which a candidate
+%                           Cartesian coordinate must be on the quadric
+%                           surface.
 %
 % Outputs:
 %   rayPath               - 3xm matrix that provides the ray coordinates
@@ -85,37 +90,14 @@ function [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination,
 %}
 
 
-% Handle missing inputs
-if nargin<2
-    error('calcNodalRayFromField:invalidArguments','Too few input arguments')
+arguments
+    eye (1,1) {isstruct}
+    rayDestination (3,1) {mustBeNumeric}
+    rayOriginDistance (1,1)  {mustBeNumeric} = 1500
+    incidentNodeX0 (3,1) {mustBeNumeric} = [-7; 0; 0]
+    cameraMedium = 'air'
+    surfaceTol (1,1) {mustBeNumeric} = 1e-6
 end
-
-if nargin==2
-    rayOriginDistance = 1500;
-    incidentNodeX0 = [-7 0 0];
-    cameraMedium = 'air';
-end
-
-if nargin==3
-    incidentNodeX0 = [-7 0 0];
-    cameraMedium = 'air';
-end
-
-if nargin==4
-    cameraMedium = 'air';
-end
-
-% Make  incidentNodeX0 and rayDestination column vectors
-if all(size(rayDestination)==[1 3])
-    rayDestination = rayDestination';
-end
-if all(size(incidentNodeX0)==[1 3])
-    incidentNodeX0 = incidentNodeX0';
-end
-
-% Time to interpret the rayDestination variable. Hard-code a tolerance for
-% the distance of the rayDestination coordinate from the retinal surface
-surfaceTol = 1e-6;
 
 % Get the retinal surface and quadric function
 S = eye.retina.S;
