@@ -1,25 +1,35 @@
-function mmPerDeg = calcMmRetinaPerDeg(eye,fieldOrigin,deltaDegEuclidean,rayOriginDistance,cameraMedium)
-% Returns mm/degree of visual angle at the given visual field location
+function mmPerDeg = calcMmRetinaPerDeg(eye,fieldAngularPosition,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,deltaDegEuclidean,cameraMedium)
+% Returns mm/degree of field angle at a field location
 %
 % Syntax:
 %  mmPerDeg = calcMmRetinaPerDeg(eye,fieldOrigin,deltaDegEuclidean,cameraMedium)
 %
 % Description
-%   Given an eye structure and the location of a point in visual space
-%   (w.r.t. the optical axis of the eye), returns the number of mm of
-%   retina per degree of visual angle at the corresponding retinal location
+%   Given an eye structure and the location of a point in the field,
+%   returns the mm of retina per degree of field angle at the corresponding
+%   retinal location.
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
-%   fieldOrigin           - 1x2 or 2x1 vector that provides the coordinates
-%                           in degrees of visual angle of the origin of the
-%                           nodal ray.
+%   fieldAngularPosition  - 2x1 vector that provides the coordinates of the
+%                           origin of the nodal ray in [horizontal,
+%                           vertical[ degrees with respect to the
+%                           coordinate specified in angleReferenceCoord.
+%   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
+%                           the ray from the distanceReferenceCoord.
+%   angleReferenceCoord   - 3x1 vector that provides the coordinate from
+%                           which the ray origin angles and distance are
+%                           to be calculated. By default, this is [0;0;0],
+%                           which is the origin coordinate on the
+%                           longitudinal axis.
+%   distanceReferenceCoord - 3x1 vector that provides the coordinate from
+%                           which the rayOriginDistance is calculated. The
+%                           The principal point is a typical choice. If not
+%                           defined, is set to [0;0;0], which is the origin
+%                           coordinate on the longitudinal axis.
 %   deltaDegEuclidean     - Scalar. The measurement is made for a small
 %                           displacement of visual angle specified by this
 %                           variable.
-%   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
-%                           the ray from the corneal apex. Assumed to be
-%                           500 mm if not defined.
 %   cameraMedium          - The medium in which the eye is located.
 %                           Defaults to 'air'.
 %
@@ -31,44 +41,33 @@ function mmPerDeg = calcMmRetinaPerDeg(eye,fieldOrigin,deltaDegEuclidean,rayOrig
 %{
     % mm of retina / deg at the fovea
     eye = modelEyeParameters();
-    fieldOrigin = eye.landmarks.fovea.degField(1:2);
-    mmPerDeg = calcMmRetinaPerDeg(eye,fieldOrigin);
+    fieldAngularPosition = eye.landmarks.fovea.degField(1:2);
+    rayOriginDistance = 1500;
+    angleReferenceCoord = eye.landmarks.incidentNode.coords;
+    mmPerDeg = calcMmRetinaPerDeg(eye,fieldAngularPosition,rayOriginDistance,angleReferenceCoord);
     fprintf('%2.3f retinal mm per deg visual field at the fovea in the emmetropic eye.\n',mmPerDeg);
 %}
 
-% Handle incomplete inputs
-if nargin==0
-    error('Need to specify an eye structure');
+
+arguments
+    eye (1,1) {isstruct}
+    fieldAngularPosition (1,2) {mustBeNumeric} = [0 0]
+    rayOriginDistance {isscalar,mustBeNumeric} = 1500
+    angleReferenceCoord (3,1) {mustBeNumeric} = [0;0;0]
+    distanceReferenceCoord (3,1) double = [0;0;0]
+    deltaDegEuclidean {isscalar,mustBeNumeric} = 1e-2
+    cameraMedium = 'air'
 end
 
-if nargin==1
-    fieldOrigin = [0 0];
-    deltaDegEuclidean = 1e-2;
-    rayOriginDistance = 1000;
-    cameraMedium = 'air';
-end
-
-if nargin==2
-    deltaDegEuclidean = 1e-2;
-    rayOriginDistance = 1000;
-    cameraMedium = 'air';
-end
-
-if nargin==3
-    rayOriginDistance = 1000;
-    cameraMedium = 'air';
-end
-
-if nargin==4
-    cameraMedium = 'air';
-end
 
 % Set up the jitter in angles around the specified field location
 deltaAngles = [sqrt(deltaDegEuclidean/2) sqrt(deltaDegEuclidean/2)];
 
-rayPath0 = calcNodalRayFromField(eye,fieldOrigin-deltaAngles./2,rayOriginDistance,cameraMedium);
-rayPath1 = calcNodalRayFromField(eye,fieldOrigin+deltaAngles./2,rayOriginDistance,cameraMedium);
+% Trace the nodal rays from this field position
+rayPath0 = calcNodalRayFromField(eye,fieldAngularPosition-deltaAngles./2,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,cameraMedium);
+rayPath1 = calcNodalRayFromField(eye,fieldAngularPosition+deltaAngles./2,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,cameraMedium);
 
+% Calculate the mm per deg
 mmPerDeg = norm(rayPath0(:,end)-rayPath1(:,end)) / norm(deltaAngles);
 
 
