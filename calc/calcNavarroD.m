@@ -57,7 +57,7 @@ function [navarroD,internalFocalPoint,errors,opticalSystem,rayPath1,rayPath2] = 
 %{
     % Simple example: focus an eye at infinity along the longitudinal axis
     eye = modelEyeParameters();
-    navarroD = calcNavarroD(eye)
+    navarroD = calcNavarroD(eye);
 %}
 %{
     % Focus fovea of the eye at upon a point 100 mm distant

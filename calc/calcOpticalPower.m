@@ -63,7 +63,7 @@ function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayOriginD
 % Examples:
 %{
     % Determine the refractive power of the default eye
-    eye = modelEyeParameters();
+    eye = modelEyeParameters('accommodation',0);
     opticalPower = calcOpticalPower(eye);
     outline = sprintf('The refractive power of the unaccommodated model eye is %2.2f diopters.\n',opticalPower);
     fprintf(outline)
@@ -71,7 +71,7 @@ function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayOriginD
 %{
     % Determine the refractive power of the un-accommodated cystraline
     % lens in air
-    sceneGeometry = createSceneGeometry('navarroD',0);
+    sceneGeometry = createSceneGeometry('accommodation',0);
     opticalSystem = sceneGeometry.refraction.retinaToStop.opticalSystem;
     opticalSystem = reverseSystemDirection(opticalSystem);
     opticalPower = calcOpticalPower(opticalSystem);
