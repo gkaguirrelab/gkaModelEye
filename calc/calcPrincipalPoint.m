@@ -1,8 +1,8 @@
-function P = calcPrincipalPoint(opticalSystem, rayStartDepth, rayHeight)
+function P = calcPrincipalPoint(opticalSystem, rayOriginDistance, rayIntersectionHeight, cameraMedium)
 % Returns the principal point for an opticalSystem
 %
 % Syntax:
-%  P = calcPrincipalPoint(opticalSystem, rayStartDepth)
+%  P = calcPrincipalPoint(opticalSystem, rayOriginDistance, rayIntersectionHeight, cameraMedium)
 %
 % Description
 %   For a ray that passes through an optical system, the incoming and
@@ -19,13 +19,12 @@ function P = calcPrincipalPoint(opticalSystem, rayStartDepth, rayHeight)
 %   ray tracing directions being available for a given opticalSystem
 %   variable; only the valid solution is returned.
 %
-%   In the paraxial approximation, nodal points and principal points are
-%   the same.
-%
 % Inputs:
-%   opticalSystem         - An mx19 matrix, where m is set by the key value
-%                           opticalSystemNumRows. Each row contains the
-%                           values:
+%   opticalSystem         - Either an eye structure (from which a
+%                           "mediumToRetina" optical system in air will be
+%                           derived), or an mx19 matrix, where m is set by
+%                           the key value opticalSystemNumRows. Each row
+%                           contains the values:
 %                               [S side bb must n]
 %                           where:
 %                               S     - 1x10 quadric surface vector
@@ -44,6 +43,13 @@ function P = calcPrincipalPoint(opticalSystem, rayStartDepth, rayHeight)
 %                                       routine exits with nans for the
 %                                       outputRay.
 %                               n     - Refractive index of the surface.
+%   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
+%                           the ray from the corneal apex. Assumed to be
+%                           1500 mm if not defined.
+%   rayIntersectionHeight - Scalar. The distance in the vertical direction
+%                           from the optical axis of the ray origin.
+%   cameraMedium          - String. The medium in which the eye is located.
+%                           Defaults to 'air'.
 %
 % Outputs:
 %   P                     - 3x1 matrix. The location of the principal
@@ -51,7 +57,7 @@ function P = calcPrincipalPoint(opticalSystem, rayStartDepth, rayHeight)
 %
 % Examples:
 %{
-    % Display a lens and it's principal points
+    % Display a lens and it's principal point
     systemDirection = 'cameraToEye';
     opticalSystem = addSpectacleLens([],-10,'systemDirection',systemDirection);
     % Plot this
@@ -60,29 +66,49 @@ function P = calcPrincipalPoint(opticalSystem, rayStartDepth, rayHeight)
     P = calcPrincipalPoint(opticalSystem);
     plot3(P(1),P(2),P(3),'*r')
 %}
+%{
+    % Find the principal points of an eye
+    sceneGeometry = createSceneGeometry();
+    % Find the principal point and plot this on top of a schematic eye
+    P1 = calcPrincipalPoint(sceneGeometry.refraction.mediumToRetina.opticalSystem);
+    P2 = calcPrincipalPoint(sceneGeometry.refraction.retinaToMedium.opticalSystem);
+    plotModelEyeSchematic(sceneGeometry);
+    hold on
+    plot(P1(1),P1(2),'*b')
+    plot(P2(1),P2(2),'*b')
+%}
 
-% Handle nargin
-if nargin==1
-    rayStartDepth = [100, -100];
-    rayHeight = 1;
+
+arguments
+    opticalSystem
+    rayOriginDistance (1,1) {mustBeNumeric} = 1500
+    rayIntersectionHeight (1,1) {mustBeNumeric} = 0.5
+    cameraMedium = 'air'
 end
 
-if nargin==2
-    rayHeight = 1;
+
+% Check if we were passed an eye model. If so, create the optical system
+if isstruct(opticalSystem)
+    if isfield(opticalSystem,'cornea')
+        eye = opticalSystem;
+        clear opticalSystem;
+        opticalSystem = assembleOpticalSystem(eye,...
+            'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
+    end
 end
 
 % Strip the optical system of any rows which are all nans
 opticalSystem = opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
 
 % Obtain the system direction
-systemDirection = calcSystemDirection(opticalSystem, rayStartDepth);
+systemDirection = calcSystemDirection(opticalSystem, rayOriginDistance);
 
 % Create a paraxial ray in the valid direction
 switch systemDirection
     case 'cameraToEye'
-        R = quadric.normalizeRay(quadric.anglesToRay([rayStartDepth(1);rayHeight;rayHeight],180,0));
+        R = quadric.normalizeRay(quadric.anglesToRay([rayOriginDistance;rayIntersectionHeight;rayIntersectionHeight],180,0));
     case 'eyeToCamera'
-        R = quadric.normalizeRay(quadric.anglesToRay([rayStartDepth(2);rayHeight;rayHeight],0,0));
+        R = quadric.normalizeRay(quadric.anglesToRay([-rayOriginDistance;rayIntersectionHeight;rayIntersectionHeight],0,0));
     otherwise
         error(['Not a valid system direction: ' systemDirection])
 end

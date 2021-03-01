@@ -31,42 +31,6 @@ function cornea = cornea( eye )
 % Outputs:
 %   cornea                - Structure.
 %
-% Examples:
-%{
-    % Navarro 2006 examines the orientation of the corneal ellipsoid with
-    % respect to the keratometric axis, which is the line that connects the 
-    % fixation point of a keratometer instrument with the corneal center of
-    % curvature. Here I obtain the distance in mm between the modeled apex 
-    % of the cornea, and the "vertex normal" point, which is the point of
-    % intersection of the keratometric axis with the front surface of the
-    % cornea. The calculation is made for an emmetropic eye and assumes 
-    % that the fixation point of the keratometric instrument is at 500 mm  
-    % from the corneal surface.
-
-    % Create a sceneGeometry. Put the fixation target at 500 mm, set the
-    % stop radius to 0.86 mm, which corresponds to a 2 mm diameter pupil.
-
-	fixTargetDistance = 500;
-	stopRadius = 0.8693;
-    keyVals = {'sphericalAmetropia',0,'spectralDomain','vis'};
-    navarroD = calcAccommodation(1000/fixTargetDistance,keyVals{:});
-    sceneGeometry = createSceneGeometry(...
-        keyVals{:}, ...
-        'navarroD',navarroD, ...
-        'calcLandmarkFovea',true);
-
-    % Obtain the fixation angles and fixation target location
-	[~,~,~, fixTargetWorldCoords] = calcLineOfSightRay(sceneGeometry,stopRadius,fixTargetDistance);
-
-	% Find the point of intersection of the keratometric ray with the
-	% cornea
-	fixTargetEyeCoords = fixTargetWorldCoords([3 1 2]);
-	cc = sceneGeometry.eye.cornea.front.center;
-	keratometricAxisRay = quadric.normalizeRay([fixTargetEyeCoords';cc-fixTargetEyeCoords']');
-    opticalSystem = sceneGeometry.refraction.cameraToRetina.opticalSystem;
-    [~,rayPath] = rayTraceQuadrics(keratometricAxisRay, opticalSystem);
-    horizontalDistance = rayPath(2,2);
-%}
 
 
 %% Cornea axial radius

@@ -12,10 +12,11 @@ functionDirPath = fileparts(mfilename('fullpath'));
 % Create a sceneGeometry object that describes the eye, a camera, and their
 % position relative to one another. Set the key-value to calculate the
 % location of the fovea
-sceneGeometry=createSceneGeometry('calcLandmarkFovea',true);
+sceneGeometry=createSceneGeometry();
 
-% Calculate the line of sight for the eye
-[outputRayLoS,rayPathLoS] = calcLineOfSightRay(sceneGeometry);
+% Calculate the line-of-sight axis of the eye
+rayDestination = sceneGeometry.eye.landmarks.fovea.coords;
+rayPathLoS = calcSightRayToRetina(sceneGeometry.eye,rayDestination);
 
 % Add an iris and aperture stop for the optical system render
 sceneGeometry.refraction.retinaToCamera = addIris(sceneGeometry.refraction.retinaToCamera, 2, 'green');
@@ -48,7 +49,8 @@ R = quadric.normalizeRay( ...
 % Add this ray to the optical system plot
 plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera, ...
     'newFigure',false,'addLighting',true, ...
-    'outputRay',outputRayLoS,'rayPath',rayPathLoS);
+    'rayPath',rayPathLoS);
+xlim([-25 5]);
 
 % Save this image
 filename = fullfile(functionDirPath,'opticalSystem3D.png');
@@ -114,7 +116,7 @@ set(figHandle, 'Position',[25 5 width height],...
 % Plot the schematic eye in red
 plotModelEyeSchematic(sceneGeometry.eye,'view','horizontal',...
     'newFigure',false,'plotColor','r', ...
-    'rayPath',rayPathLoS,'outputRay',outputRayLoS);
+    'rayPath',rayPathLoS);
 
 % Remove the fovea
 sceneGeometry.eye.landmarks=rmfield(sceneGeometry.eye.landmarks,'fovea');

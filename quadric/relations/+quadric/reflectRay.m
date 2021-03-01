@@ -38,7 +38,7 @@ function Rr = reflectRay(R,N)
     hold on
     camlight
     R = quadric.anglesToRay([-10; 0; 0], 20, 0 );
-    X = quadric.intersectRay(S,R,-1);
+    X = quadric.intersectRayQuadric(S,R,-1);
     N = quadric.surfaceNormal(S,X,1);
     Rr = quadric.reflectRay(R,N);
     t = abs((X(1)-R(1,1))./R(1,2));

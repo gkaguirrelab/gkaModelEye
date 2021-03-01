@@ -15,6 +15,8 @@ function derivedParams = calcDerivedParams(varargin)
 %   parameters. Absent a change in the code that computers the eye model,
 %   however, execution of this routine will not be needed in general use.
 %
+%   Right now, just the stop ellipticity is derived here.
+%
 % Inputs:
 %   none
 %
@@ -60,24 +62,9 @@ p.parse(varargin{:})
 if isempty(p.Results.derivedParams)
     derivedParams = struct();
     derivedParams.stopEccenParams = [-1.7523 4.7609 0.1800 0.0973];
-    derivedParams.defaultRestingNavarroD = 0.842407226562500;
 else
     derivedParams = p.Results.derivedParams;
 end
-
-
-%% Resting accommodation
-% The accommodative state of the lens of the eye is set by the navarroD
-% parameter. We calculate here the navarroD parameter value that places the
-% default model eye at resting accommodation, which is typically assumed to
-% be 1.5 diopters.
-
-% Alert the user
-if p.Results.verbose
-    fprintf('Calculating resting accommodation.\n');
-end
-
-derivedParams.defaultRestingNavarroD = calcAccommodation(1.5);
 
 
 %% Aperture stop ellipticity
@@ -121,7 +108,7 @@ entranceRadius = [3.09/2 4.93/2];
 entranceEccen = [-0.12 0.175];
 
 % Prepare scene geometry including the fovea
-sceneGeometry = createSceneGeometry('derivedParams',derivedParams,'calcLandmarkFovea',true);
+sceneGeometry = createSceneGeometry('derivedParams',derivedParams);
 
 % Fix the stop eccentricity at 0 and remove refraction
 sg = sceneGeometry;
@@ -216,3 +203,28 @@ end
 
 end
 
+
+% Parking this here for now
+% Code to determine the stop radius that corresponds to a pupil diameter of
+% 3.5 mm. This value is used as it is found to provide peak acuity for
+% normal observers.
+%{
+    entranceRadius = 3.5/2;
+    % Prepare scene geometry and eye pose aligned with visual axis
+    sceneGeometry = createSceneGeometry();
+    % Obtain the pupil area in the image for the entrance radius
+    % assuming no ray tracing
+    sceneGeometry.refraction = [];
+    pupilImage = projectModelEye([0, 0, 0, entranceRadius],sceneGeometry);
+    stopArea = pupilImage(3);
+    % Add the ray tracing function to the sceneGeometry
+    sceneGeometry = createSceneGeometry();
+    % Search across stop radii to find the value that matches the observed
+    % entrance area.
+    myPupilEllipse = @(radius) projectModelEye([0, 0, 0, radius],sceneGeometry);
+    myArea = @(ellipseParams) ellipseParams(3);
+    myObj = @(radius) (myArea(myPupilEllipse(radius))-stopArea(1)).^2;
+    stopRadius = fminunc(myObj, entranceRadius);
+    outline = sprintf('A 3.5mm diameter entrance pupil corresponds to a %2.2fmm stop radius\n',stopRadius);
+    fprintf(outline);
+%}

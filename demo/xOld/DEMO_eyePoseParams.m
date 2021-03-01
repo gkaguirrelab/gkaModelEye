@@ -63,7 +63,7 @@ partsToPlot = [3 4 7 8 9];
 
 for laterality = 1:2
     % prepare the model eye for this laterality
-    sceneGeometry = createSceneGeometry('eyeLaterality',eyeSides{laterality},'calcLandmarkFovea',true);
+    sceneGeometry = createSceneGeometry('eyeLaterality',eyeSides{laterality});
     sceneGeometry.cameraPosition.translation(3)=50;
     [figHandle, ~, renderedFrame] = renderEyePose([0 0 0 3], sceneGeometry, 'visible', false,'modelEyeLabelNames',modelEyeLabelNames,'modelEyePlotColors',modelEyePlotColors);
     % Close the fig handle, as we will be displaying a mosaic of the

@@ -16,7 +16,7 @@ function [eyeCoord, R] = rotateEyeCoord(eyeCoord, eyePose, rotationCenters, dire
 %
 %   The eye rotation is defined in the "Fick" coordinate frame. In this
 %   coordinate frame, the eye undergoes azimuthal rotation around a fixed
-%   vertical axies. There is then an elevational rotation around the
+%   vertical axis. There is then an elevational rotation around the
 %   rotated horizontal axis, and finally a torsional rotation around the
 %   rotated optical axis of the eye. We implement here these rotations
 %   around a head-fixed, non-rotating set of axes. Therefore, the order of

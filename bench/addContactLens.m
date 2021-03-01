@@ -114,7 +114,7 @@ end
 % The passed optical system will have a ray that emerges into a medium with
 % a specified index of refraction. We store the index of refraction of
 % the ambient medium (which will typically be air and thus 1.0) to apply to
-% the final exit ray.=
+% the final exit ray.
 mediumRefractiveIndex = opticalSystemIn(end,end);
 
 % Obtain the properties of the tear film from the optical system. This is
@@ -314,8 +314,8 @@ for hh = 1:length(horiz)
     for vv = 1:length(vert)
         R = quadric.normalizeRay(quadric.anglesToRay([-3.9;0;0], horiz(hh), vert(hh) ));
         side = 1; % Our lenses are all concave w.r.t. a ray arising from eye
-        Xback = quadric.intersectRay(Sback,R,side);
-        Xfront(end+1,:) = quadric.intersectRay(Sfront,R,side);
+        Xback = quadric.intersectRayQuadric(Sback,R,side);
+        Xfront(end+1,:) = quadric.intersectRayQuadric(Sfront,R,side);
         Dback = sqrt(sum(Xback.^2));
         Dfront = sqrt(sum(Xfront(end,:).^2));
         

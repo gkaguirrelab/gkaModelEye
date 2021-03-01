@@ -91,7 +91,7 @@ function X = parametricGeoToCart( geodetic, S )
     u = [1;tand(15);tand(-15)];
     u = u./sqrt(sum(u.^2));
     R = [p, u];
-    X = quadric.intersectRay(S,R);
+    X = quadric.intersectRayQuadric(S,R);
     geodetic = quadric.cartToParametricGeo( X, S );
     Xprime = quadric.parametricGeoToCart( geodetic, S );
     assert(max(abs(X-Xprime)) < 1e-6);

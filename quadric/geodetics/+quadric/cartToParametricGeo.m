@@ -55,7 +55,7 @@ function geodetic = cartToParametricGeo( X, S )
     p = [0;0;0];
     u = [1;tand(15);tand(-15)];
     R = quadric.normalizeRay([p, u]);
-    X = quadric.intersectRay(S,R);
+    X = quadric.intersectRayQuadric(S,R);
     geodetic = quadric.cartToParametricGeo( X, S );
     Xprime = quadric.parametricGeoToCart( geodetic, S );
     assert(max(abs(X-Xprime)) < 1e-6);
@@ -68,7 +68,7 @@ function geodetic = cartToParametricGeo( X, S )
     p = [0;0;0];
     u = [1;tand(15);tand(15)];
     R = quadric.normalizeRay([p, u]);
-    X = quadric.intersectRay(S,R);
+    X = quadric.intersectRayQuadric(S,R);
     for p1=[-1 1]
         for p2=[-1 1]
             for p3=[-1 1]

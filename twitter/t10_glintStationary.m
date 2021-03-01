@@ -1,7 +1,7 @@
 %% t10_glintStationary
 % Illustrate the ray path from light to camera to produce a glint
 %{
-10: The "glint" is the reflection of a light source from the front corneal surface (the 1st Purkinje image). Shown is the ray path from an active IR source that reflects off the eye and returns to the nodal point of a camera.
+10: The "glint" is the reflection of a light source from the front corneal surface (the 1st Purkinje image). Shown is the ray path from an active IR source that reflects off the eye and returns to the stop of a camera.
 %}
 % For details see:
 %   project/stages/addGlint.m

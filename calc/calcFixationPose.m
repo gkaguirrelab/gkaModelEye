@@ -1,20 +1,16 @@
-function [eyePose,navarroD,visualAngles,initialTargetWorld] = calcFixationPose(fixTargetWorld,stopRadius,varargin)
+function [eyePose,errors] = calcFixationPose(eye,fieldAngularPosition,targetDistance,addPseudoTorsionFlag,stopRadius,cameraMedium)
 % Returns the oculomotor pose of the eye to fixate a target
 %
 % Syntax:
-%  [eyePose,navarroD,visualAngles] = calcFixationPose(targetWorldCoords,stopRadius,varargin)
+%  eyePose = calcFixationPose(targetWorldCoords,stopRadius,varargin)
 %
 % Description
-%   Given a target location in world coordinates, this routine reports the
-%   parameter values that produce an eye that is fixated upon that point.
-%   These parameters include the azimuthal and elevational rotation of the
-%   eye and the navarroD accomodation parameter.
+%   Given a target in the visual field (in horizontal and vertical degrees
+%   w.r.t. the longitudinal axis of the eye when it is aligned with the
+%   camera) and the distance of that target in mm from the incident node of
+%   the eye, the routine returns the eye pose parameters of the eye
+%   required to place the foveal line-of-sight upon that target.
 %
-%   If not defined, the radius of the aperture stop is set to provide an
-%   entrance pupil diameter of ~3.5 mm, which tends to produce the
-%   highest degree of acuity in normal observers.
-%
-%   The visual angles of the target (w.r.t. the fovea) are also returned.
 %   Notably, the angles of oculomotor rotation needed to bring the line of
 %   sight to the target, and the visual angle between the line of sight and
 %   the target, are not equal. This is because the eye rotates about points
@@ -35,107 +31,129 @@ function [eyePose,navarroD,visualAngles,initialTargetWorld] = calcFixationPose(f
 %       Mapp, Alistair P., and Hiroshi Ono. "The rhino-optical phenomenon:
 %       Ocular parallax and the visible field beyond the nose." Vision
 %       Research 26.7 (1986): 1163-1165.
-%   
+%
 %
 %
 % Inputs:
-%   fixTargetWorld        - A 3x1 vector that gives the location of the
-%                           fixation target in the world coordinate space
-%                           in units of mm.
-%   stopRadius            - Scalar. The radius of the aperture stop.
-%                           Optional.
-%   fixTargetDistance     - Scalar that is the Euclidean distance in mm of 
-%                           the fixation target from the origin of the
-%                           world coordinate frame. Defaults to 1500.
-%
-% Optional key/value pairs:
-%   None, although varargin are passed to createSceneGeometry
+%   eye                   - Structure. SEE: modelEyeParameters
+%   fieldAngularPosition  - 1x2 vector that provides the coordinates in
+%                           degrees of visual angle of the target
+%                           relative to the longitudinal axis of the eye
+%                           when it is aligned with the camera.
+%   targetDistance        - Scalar. The distance (in mm) of the origin of
+%                           the target from the incident node. Assumed to
+%                           be 1500 mm if not defined.
+%   addPseudoTorsionFlag  - Logical. Defaults to "true" controls if pseudo-
+%                           torsion is added to the eyePose to conform to
+%                           Listing's Law. The primary position of the eye
+%                           influences the correction, and is found in the
+%                           field:
+%                               eye.rotationCenters.primaryPosition
+%                           For more details see:
+%                               /project/stages/addPseudoTorsion.m
+%   stopRadius            - Scalar. Radius of the aperture stop, in mm.
+%   cameraMedium          - The medium in which the eye is located.
+%                           Defaults to 'air'.
 %
 % Outputs:
 %   eyePose               - A 1x4 vector provides values for [eyeAzimuth,
 %                           eyeElevation, eyeTorsion, stopRadius].
-%                           This is the pose of the eye for which the line
-%                           of sight axis intersects the targetWorldCoords.
-%   navarroD              - Scalar. The parameter "D" that is used in the
-%                           Navarro lens shape equations. See the function:
-%                               human.lens
-%   visualAngles          - A 1x2 vector. The visual field position of the
-%                           target with respect to the fovea.
-%   initialTargetWorld    - The fixation point of the eye prior to
-%                           rotation.
+%                           This is the pose of the eye that places the 
+%                           point of regard at the fixation target.
+%   errors                - 1x1 matrix with the follow error values:
+%                             - L2 norm of the mismatch between the
+%                               coordinates of the field target and the
+%                               location of the point-of-regard of the eye
+%                               following the eyePose rotation.
 %
 % Examples:
 %{
-    fixTargetWorld = [200;100;500];
-    [eyePose,navarroD,visualAngles,initialTargetWorld] = calcFixationPose(fixTargetWorld);
-    sceneGeometry = createSceneGeometry('calcLandmarkFovea',true);
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
-    fixTargetEye = convertWorldToEyeCoord(fixTargetWorld);
-    initialTargetEye = convertWorldToEyeCoord(initialTargetWorld);
-    plot3(fixTargetEye(1),fixTargetEye(2),fixTargetEye(3),'*r');
-    plot3(initialTargetEye(1),initialTargetEye(2),initialTargetEye(3),'xb');
+    eye = modelEyeParameters();
+    fieldAngularPosition = [-5, 10];
+    targetDistance = 1500;
+    [eyePose,errors] = calcFixationPose(eye,fieldAngularPosition,targetDistance);
 %}
-    
-%% Handle nargin
-if nargin == 1
-    stopRadius = 1.53;
+
+
+arguments
+    eye (1,1) {isstruct}
+    fieldAngularPosition (1,2) {mustBeNumeric} = [0, 0]
+    targetDistance (1,1) {mustBeNumeric} = 1500
+    addPseudoTorsionFlag (1,1) {islogical} = true
+    stopRadius (1,1) {mustBeNumeric} = 1.53
+    cameraMedium = 'air'
 end
 
-% Force the varargin to include skipping the calculation of angular
-% magnification effects from lenses
-varargin = [varargin,'skipMagCalc',true];
 
-% There is a small error here, as when the eye is rotated to fixate the
-% target, the distance from the corneal apex to the target will be slightly
-% different.
-fixTargetDistance = norm(fixTargetWorld);
+% Obtain the coordinates of the fovea
+rayDestination = eye.landmarks.fovea.coords';
 
-% We will need the target in eye coordinates below
-fixTargetEye = convertWorldToEyeCoord(fixTargetWorld);
+% Derive the line-of-sight for the eye for the specified target distance.
+lineOfSightRayPath = calcSightRayToRetina(eye,rayDestination,targetDistance,stopRadius,cameraMedium);
 
-% If we have not been supplied with a navarroD parameter, calculate it
-if ~any(strcmp(varargin,'navarroD'))
-    
-    % Find the navarroD value that provides for accomodation at the target
-    % distance
-    navarroD = calcAccommodation(1000/fixTargetDistance, varargin{:});
-    
-    % Add this to the varargin
-    varargin = [varargin,'navarroD',navarroD];
-    
-end
+% We retain the incident segment of the line-of-sight ray
+lineOfSightRay = quadric.coordsToRay(lineOfSightRayPath(:,1:2));
 
-% Create the sceneGeometry
-sceneGeometry = createSceneGeometry(varargin{:},'calcLandmarkFovea',true);
+% Define the coordinates of the desiredFixationPoint, which is defined in terms of angular position w.r.t the incident node
+referenceCoord = eye.landmarks.incidentNode.coords';
+R = quadric.anglesToRay(referenceCoord,fieldAngularPosition(1),fieldAngularPosition(2));
+desiredFixationPoint = R(:,1)+R(:,2).*targetDistance;
 
-% Find the fixation point along the lineOfSight.
-[~,~,~,initialTargetWorld] = calcLineOfSightRay(sceneGeometry,stopRadius,fixTargetDistance);
+% Define the objective
+myObj = @(p) objective(p,eye,lineOfSightRay,desiredFixationPoint,addPseudoTorsionFlag);
 
-% Find the position of the fixation target in units of visual angle w.r.t.
-% the fovea. First we have to find the retinal location that receives the
-% nodal ray from this point
-myObj = @(x) quadric.distancePointRay(fixTargetEye',calcNodalRay(sceneGeometry.eye,[x 0]));
-x0 = sceneGeometry.eye.landmarks.vertex.geodetic(1:2);
-x = fminsearch(myObj,x0);
-Gtarget = [x 0];
+% p0, which is the angles of the field target minus the position of the
+% fovea in field coordinates. This should get us pretty close to the
+% solution.
+p0 = fieldAngularPosition - eye.landmarks.fovea.degField;
 
-% Now find the visual angles of this point w.r.t. the fovea
-[~, visualAngles ] = calcVisualAngle(sceneGeometry.eye,sceneGeometry.eye.landmarks.fovea.geodetic,Gtarget);
+% Bounds
+lb = [-90,-90];
+ub = [ 90, 90];
 
-% Flip the sign on the elevation value to fit the convention that a
-% positive elevational rotation moves the eye to look at things that are
-% higher up.
-visualAngles(2) = -visualAngles(2);
+% Options
+options = optimset('fmincon');
+options.Display = 'off';
 
-% Find the inverse eye rotation that places the target at the point of best
-% focus. This search is done in the eye coordinate space
-myObj = @(x) norm(convertWorldToEyeCoord(initialTargetWorld) - rotateEyeCoord(convertWorldToEyeCoord(fixTargetWorld), [x(1) x(2) 0 2], sceneGeometry.eye.rotationCenters, 'inverse'));
-x = fminsearch(myObj,visualAngles);
+% Search. The values returned in p are the horizontal and vertical eyePose
+% needed to bring the point-of-regard of the eye to the desired fixation
+% point.
+p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
 
-% Prepare the variable to return
-eyePose = [x(1) x(2) 0 stopRadius];
+% Call the objective one more time to get the return values
+errors = objective(p,eye,lineOfSightRay,desiredFixationPoint,addPseudoTorsionFlag);
 
+% Assemble a full eyePose vector from p and the passed stopRadius
+eyePose = [p(1) p(2) 0 stopRadius];
 
 end
 
+
+%% Local function
+function fVal = objective(p,eye,lineOfSightRay,desiredFixationPoint,addPseudoTorsionFlag)
+
+% The variable "p" holds the candidate horizontal and vertical rotations of
+% the eye (in Fick coordinates) relative to [0 0], in which the optical
+% axis of the eye and the camera are aligned (i.e., relative to the origin
+% of the rotational coordinates). We place these values in an eyePose
+% vector, with the last two positions holding the torsion of the eye, and
+% the radius of the aperture stop (which is unused here).
+eyePose = [p(1), p(2), 0, nan];
+
+% If the addPseudoTorsionFlag is set, then a torsional component is added
+% so that the eye movement conforms to Listing's Law.
+if addPseudoTorsionFlag
+    params.Results.addPseudoTorsion = addPseudoTorsionFlag;
+    sg.eye = eye;
+    eyePose = addPseudoTorsion(sg,params,eyePose);
+end
+
+% Apply the eye rotation to the lineOfSightRay
+newLineOfSightRay = rotateEyeRay(lineOfSightRay', eyePose, eye.rotationCenters)';
+
+% L2 norm of distance between the desired and obtained fixation point
+fVal = norm(quadric.distancePointRay(desiredFixationPoint,newLineOfSightRay));
+
+
+end
 

@@ -28,16 +28,6 @@ function lens = lens( eye )
 %   the eye, and thus no tilt or shift is needed in the current model. The
 %   axial position of the lens center is taken from Atchison 2006.
 %
-%   The current implementation is a bit of a hodge-podge of different
-%   models (Atchison, Navarro, and Jones). It would be nice to implement a
-%   more comprehensive model that has an adaptive geometry of the lens
-%   interior with accommodative changes, such as:
-%
-%       Sheil, Conor J., and Alexander V. Goncharov. "Accommodating
-%       volume-constant age-dependent optical (AVOCADO) model of the
-%       crystalline GRIN lens." Biomedical optics express 7.5 (2016):
-%       1985-1999.
-%
 % Inputs:
 %   eye                   - Structure.
 %
@@ -45,18 +35,65 @@ function lens = lens( eye )
 %   lens                  - Structure.
 %
 
+% The accommodative state of the eye can be specified in two different
+% ways. An explicit value for the "navarroD" parameter may be set, or the
+% desired accommodative state of the eye may be specified. If neither is
+% set, then navarroD is set to 0. If the navarroD is set, then this value
+% is used. If the accommodation is set, then a search is performed in an
+% attempt to find the navarroD parameter that provides the desired
+% accommodation value for this eye along the longitudinal axis. If both
+% values are set, then the navarroD parameter is used as the initial guess
+% for the search to produce the desired accommodation.
+
+% Set the navarroD to empty, or the passed value
+D = [];
+if isfield(eye.meta,'navarroD')
+    if ~isempty(eye.meta.navarroD)
+        D = eye.meta.navarroD;
+    end
+end
+
+% Set the desired accommodation to empty, or the passed value
+A = [];
+if isfield(eye.meta,'accommodation')
+    if ~isempty(eye.meta.accommodation)
+        A = eye.meta.accommodation;
+    end
+end
+
+% If neither A nor D was provided, set D to zero.
+if isempty(D) && isempty(A)
+    D = 0;
+end
+
+% If an A value is specified, search to set a D value that provides the
+% desired A accommodation.
+if ~isempty(A)
+    
+    % We need to set an initial value for the lens to start the search. To
+    % do so, we create a "bootstrap" version of the eye that is initialized
+    % with a value for navarroD that provides for resting accommodation. In
+    % the bootstrap eye, we also need to empty the "accommodation" field to
+    % avoid infinite recursion.
+    bootstrapEye = eye;
+    bootstrapEye.meta.accommodation = [];
+    if isempty(D)
+        bootstrapEye.meta.navarroD = 0;
+    else
+        bootstrapEye.meta.navarroD = D;
+    end
+    bootstrapEye.lens = human.lens(bootstrapEye);
+    
+    % Now perform the search to find the navarroD parameter that provides
+    % the desired accommodation along the longitudinal axis.
+    D = calcNavarroD(bootstrapEye,A);
+    
+    % Done with the bootstrap
+    clear bootstrapEye
+end
 
 % Obtain the age of the modeled subject
 age = eye.meta.ageYears;
-
-% Obtain the D parameter of the model
-D = eye.meta.navarroD;
-
-% If the navarroD has not been provided, use the default value in the
-% derived parameters
-if isempty(D)
-    D = eye.derivedParams.defaultRestingNavarroD;
-end
 
 % Initialize the components of the optical system
 lens.S = [];

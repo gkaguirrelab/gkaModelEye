@@ -22,10 +22,10 @@ sceneGeometry.eye.rotationCenters.azi = sceneGeometry.eye.rotationCenters.azi*0.
 sceneGeometry.eye.rotationCenters.ele = sceneGeometry.eye.rotationCenters.ele*0.9;
 
 % Plot the schematic eye in red, including the rotation centers
-plotModelEyeSchematic(sceneGeometry.eye,'view','horizontal','plotRotationCenters',true,'plotColor','r')
+plotModelEyeSchematic(sceneGeometry.eye,'view','horizontal','plotRotationCenters',true,'plotColor','r');
 
 % Now over-plot in black, so that the rotation centers stand out
-plotModelEyeSchematic(sceneGeometry.eye,'view','horizontal','newFigure',false,'plotColor','k')
+plotModelEyeSchematic(sceneGeometry.eye,'view','horizontal','newFigure',false,'plotColor','k');
 
 % Clean up the plot limits
 xlim([-25 5])

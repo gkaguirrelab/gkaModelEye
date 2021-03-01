@@ -11,9 +11,9 @@
 % Save location for the GIF. Sorry for the Mac bias.
 gifSaveName = '~/Desktop/t08_ListingsLaw.gif';
 
-% Create a sceneGeometry in which the cornea is aligned with the optical
+% Create an eye with a specific measuredCornealCurvature sceneGeometry in which the cornea is aligned with the optical
 % axis of the eye. Forcing this alignment makes the demo a bit clearer.
-sceneGeometry=createSceneGeometry('measuredCornealCurvature',[44.2410 45.6302 0 0 0]);
+sceneGeometry=createSceneGeometry('kvals',[44.2410 45.6302 0 0 0]);
 
 % For the same reason, force the aperture stop of the iris to be perfectly
 % circular

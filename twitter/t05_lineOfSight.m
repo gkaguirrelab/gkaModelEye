@@ -14,20 +14,22 @@
 % Create a sceneGeometry object that describes the eye, a camera, and their
 % position relative to one another. Set the key-value to calculate the
 % location of the fovea
-sceneGeometry=createSceneGeometry('calcLandmarkFovea',true);
+eye = modelEyeParameters();
 
 % Calculate the line of sight for the eye
-[outputRayLoS,rayPathLoS] = calcLineOfSightRay(sceneGeometry);
+rayDestination = eye.landmarks.fovea.coords;
+% Find the sight ray to the fovea (i.e., the line of sight axis)
+rayPath = calcSightRayToRetina(eye,rayDestination);
 
 % Plot the schematic eye in red
-plotModelEyeSchematic(sceneGeometry.eye,'view','horizontal','plotColor','r', ...
-    'rayPath',rayPathLoS,'outputRay',outputRayLoS)
+plotModelEyeSchematic(eye,'view','horizontal','plotColor','r', ...
+    'rayPath',rayPath);
 
 % Remove the fovea
-sceneGeometry.eye.landmarks=rmfield(sceneGeometry.eye.landmarks,'fovea');
+eye.landmarks=rmfield(sceneGeometry.eye.landmarks,'fovea');
 
 % Now over-plot in black, without the fovea and line of sight
-plotModelEyeSchematic(sceneGeometry.eye,'view','horizontal','newFigure',false,'plotColor','k')
+plotModelEyeSchematic(eye,'view','horizontal','newFigure',false,'plotColor','k');
 
 % Clean up the plot limits
 xlim([-25 5])

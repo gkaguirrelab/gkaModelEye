@@ -1,144 +1,124 @@
-function [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopters, varargin)
-% Returns the lens accommodation parameter for a desired near focal point
+function accommodation = calcAccommodation(eye,fieldAngularPosition,angleReferenceCoord,rayIntersectionHeight,effectiveInfinity,cameraMedium)
+% Returns the accommodative state of the eye for a field location
 %
 % Syntax:
-%  [navarroD, fVal, path1, path2] = calcAccommodation(accommodationDiopters)
+%  accommodation = calcAccommodation(eye,fieldAngularPosition,angleReferenceCoord,rayIntersectionHeight,effectiveInfinity,cameraMedium)
 %
 % Description
-%   The refractive power of the crystaline lens of the model is a function
-%   of the parameter "D" from Navarro's equations. Adjustments to this
-%   parameter can be used to set the accommodative state of the model eye
-%   so that it has a requested near focal point. The accommodative state of
-%   the eye is specified in units of diopters, where the reciprocal of this
-%   value gives the distance from the principal point of the optical
-%   system to the focal point.
+%   The accommodative state of the eye is specified in units of diopters,
+%   where the reciprocal of this value gives the distance from the
+%   principal point of the optical system to the focal point.
 %
-%   The purpose of this routine is to determine the navarroD parameter that
-%   produces the desired accommodative state of a model eye. By default,
-%   the routine creates an emmetropic right eye, although this behavior is
-%   modified by providing key-value pairs as varargin, which are then
-%   passed to the createSceneGeometry fucnction.
-%
-%   The routine searches over navarroD parameter values until a pair of
-%   rays that arise from the near focal point intersect each other on the
-%   surface of retina.
+%   By default, the calculation is performed with respect to a field
+%   position point on the longitudinal axis of the optical system. An
+%   alternative (more complicated) choice is to select a
+%   fieldAngularPosition and angleReferenceCoord corresponding to the
+%   location of the fovea w.r.t. the incidentNode of the eye. A further
+%   wrinkle is that the approximation to the incident nodal point shifts
+%   with changes in lens properties. Therefore, one convention is to
+%   estimate the incident nodal point for an eye accommodated at infinity,
+%   and then retain this as the landmark for which visual angle is
+%   calculated.
+
 %
 % Inputs:
-%  'accommodationDiopters' - Scalar that supplies the accommodation state
-%                           of the eye. Valid values range from zero
-%                           (unaccommodated) to +10. The value sets the
-%                           distance from the princpal point of the eye to
-%                           the focal point on the right, where diopters =
-%                           1000 / distance(mm).
-%
-% Optional key/value pairs:
-%   None, although varargin are passed to createSceneGeometry
+%   eye                   - Structure. SEE: modelEyeParameters
+%   fieldAngularPosition  - 2x1 vector that provides the coordinates of the
+%                           origin of the nodal ray in [horizontal,
+%                           vertical[ degrees with respect to the
+%                           coordinate specified in referenceCoord.
+%   angleReferenceCoord   - 3x1 vector that provides the coordinate from
+%                           which the field angles are calculated. The
+%                           incident node is a typical choice. If not
+%                           defined, is set to [0;0;0], which is the origin
+%                           coordinate on the longitudinal axis.
+%   rayIntersectionHeight - Scalar. The divergent rays will arrive at the
+%                           corneal apex separated by 2x this value.
+%   effectiveInfinity     - Scalar. Rays arising from this point or beyond
+%                           will be treated as parallel.
+%   cameraMedium          - String. The medium in which the eye is located.
+%                           Defaults to 'air'.
 %
 % Outputs:
-%   navarroD              - Scalar. The parameter "D" that is used in the
-%                           Navarro lens shape equations. See the function:
-%                               human.lens
+%   accommodation         - Scalar. The accommodative state (in diopters)
+%                           of the eye w.r.t the specified field position.
 %
 % Examples:
 %{
-    navarroD = calcAccommodation(1.5);
+    % Test that we can create and recover a specified accommodation to a
+    % point on the longitudinal axis
+    desiredAccommodation = 4;
+    eye = modelEyeParameters('accommodation',desiredAccommodation);
+    measuredAccommodation = calcAccommodation(eye);
+    assert(abs(desiredAccommodation-measuredAccommodation)<5e-3)
 %}
 %{
-    % Plot the eye and the rays
-    desiredAccommodation = 7.5;
-    [navarroD, fVal, path1, path2] = calcAccommodation(desiredAccommodation);
-    sceneGeometry = createSceneGeometry('navarroD',navarroD);
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
-    plotOpticalSystem('newFigure',false,'rayPath',path1,'outputRayScale',1000/desiredAccommodation);
-    plotOpticalSystem('newFigure',false,'rayPath',path2,'outputRayScale',1000/desiredAccommodation);
+    % Test that we can create and recover a specified accommodation for the
+    % fovea. We first measure the approximation to the incident nodal point
+    % in this eye with a navarroD value of zero. We then retain this
+    % landmark to define visual field position.
+    eye = modelEyeParameters('navarroD',0);
+    angleReferenceCoord = eye.landmarks.incidentNode.coords;
+    fieldAngularPosition = eye.landmarks.fovea.degField;
+    desiredAccommodation = 4;
+    navarroD = calcNavarroD(eye,desiredAccommodation,fieldAngularPosition,angleReferenceCoord);
+    eye = modelEyeParameters('navarroD',navarroD);
+    measuredAccommodation = calcAccommodation(eye,fieldAngularPosition,angleReferenceCoord);
+    assert(abs(desiredAccommodation-measuredAccommodation)<5e-3)
 %}
 
 
-% Force the varargin to include skipping the calculation of angular
-% magnification effects from lenses
-varargin = [varargin,'skipMagCalc',true];
+arguments
+    eye (1,1) {isstruct}
+    fieldAngularPosition (2,1) {mustBeNumeric} = [0; 0]
+    angleReferenceCoord (3,1) {mustBeNumeric} = [0; 0; 0]
+    rayIntersectionHeight (1,1) {mustBeNumeric} = 0.25
+    effectiveInfinity (1,1) {mustBeNumeric} = 1e4
+    cameraMedium = 'air'
+end
 
+% Generate the optical system
+opticalSystem = assembleOpticalSystem(eye,...
+    'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium,...
+    'opticalSystemNumRows',[]);
 
-%% Anonymous functions for the eye
-% Define these here to use in a subsequent nonlinear search. Each function
-% takes as input a candidate Navarro D value.
+% Anonymous function to return the internalFocalPoint based upon the
+% rayOriginDistance from the principal point
+distanceReferenceCoord = calcPrincipalPoint(opticalSystem);
+myFP = @(d) calcInternalFocalPoint(opticalSystem,fieldAngularPosition,d,angleReferenceCoord,distanceReferenceCoord,rayIntersectionHeight,effectiveInfinity);
 
-% A sceneGeometry. The varargin are passed here to createSceneGeometry to
-% modify the particulars of the eye.
-myScene=@(x) createSceneGeometry('navarroD',x,varargin{:});
+% The objective is the value of the retinal surface quadric function at the
+% focal point
+funcS = quadric.vecToFunc(eye.retina.S);
+myObj = @(d) objective(myFP(d),funcS);
 
-% The optical system for a model eye
-mySystem=@(x) getfield(myScene(x),'refraction','cameraToRetina','opticalSystem');
+% Define p0 and bounds
+p0 = 1000;
+lb = 10;
+ub = effectiveInfinity;
 
+% Options
+options = optimset('fmincon');
+options.Display = 'off';
 
-%% Anonymous functions for the rays
-% Create a pair of rays that arise from the optical axis
-rayHeight = 1;
+% Perform the search
+rayOriginDistance = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
 
-% The behavior here handles the special case of a desired accommodation of
-% zero.
-if accommodationDiopters==0
-    % The rays are fixed at parallel
-    myR1 = @(x) quadric.normalizeRay([100,-1;rayHeight,0;0,0]);
-    myR2 = @(x) quadric.normalizeRay([100,-1;-rayHeight,0;0,0]);
+if rayOriginDistance>=(effectiveInfinity-1e-3)
+    accommodation = 0;
 else
-    % The principal point of the optical system.
-    myPrincipalPoint = @(x) calcPrincipalPoint(mySystem(x));
-    
-    % Account for the depth of the principal point in calculating the
-    % position from which the rays arise, as the coordinate space is w.r.t.
-    % the front corneal surface.
-    myRayOrigin = @(x) (1000/accommodationDiopters) - sum(myPrincipalPoint(x).*[1;0;0]);
-    
-    % Calculate the angle with which the rays diverge from the optical axis
-    % such that they will intersect the principal plane at the ray height
-    myAngle = @(x) rad2deg(atan2(rayHeight,-myRayOrigin(x)));
-    
-    % Define the two rays
-    myR1 = @(x) quadric.normalizeRay(quadric.anglesToRay([myRayOrigin(x);0;0],myAngle(x),0));
-    myR2 = @(x) quadric.normalizeRay(quadric.anglesToRay([myRayOrigin(x);0;0],-myAngle(x),0));
+    accommodation = 1000/rayOriginDistance;
 end
-
-
-%% Anonymous functions for the internal focal point
-
-% The point of intersection of the rays within the eye
-myInternalFocalPoint = @(x) quadric.distanceRays(rayTraceQuadrics(myR1(x), mySystem(x)),rayTraceQuadrics(myR2(x), mySystem(x)));
-
-% A function to return the quadric vector for the retinal surface
-myRetina = @(x) getfield(myScene(x),'eye','retina','S')';
-
-% The objective function is the distance by which the focal point within
-% the eye misses the retinal surface
-myObj = @(x) surfaceDistance(myRetina(x),myInternalFocalPoint(x))^2;
-
-
-%% Perform the search
-[navarroD, fVal] = fminsearch(myObj,5);
-
-% Detect and warn if no accurate solution is found, which is the case for
-% some combinations of model eyes and accommodation states.
-if fVal > 1e-6
-    warnString = ['Cannot accurately accommodate the eye to ' num2str(accommodationDiopters) ' diopters'];
-    warning('calcAccommodation:cannotFocus',warnString);
-end
-
-% Obtain the ray paths to return
-[~,path1] = rayTraceQuadrics(myR1(navarroD), mySystem(navarroD));
-[~,path2] = rayTraceQuadrics(myR2(navarroD), mySystem(navarroD));
 
 end
 
 
 %% LOCAL FUNCTIONS
 
-function fVal = surfaceDistance(myRetina,coord)
-% Takes as input the vector representation of the quadric surface for the
-% retina, and a 3D coordinate. The fVal returned is the distance of the
-% coordinate from the surface, which is given by evaluating the implicit
-% function defined by the quadric for the [x y z] values of the coordinate.
-% The property of the implicit form of the quadric is that it has a value
-% of zero for points on the quadric surface.
-funcS = quadric.vecToFunc(myRetina);
-fVal = funcS(coord(1),coord(2),coord(3));
+% Just need this to distribute the coordinates of the focal point to the
+% quadric function
+function fVal = objective(internalFocalPoint,funcS)
+fVal = funcS(internalFocalPoint(1),internalFocalPoint(2),internalFocalPoint(3))^2;
 end
+
+
