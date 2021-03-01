@@ -1,3 +1,3 @@
 ## demo
 
-A set of longer, more complicated demonstrations of things that may be calculated using the model eye.
+A set of LiveScript demos, as well as some older demos that I'm still converting over to LiveScript.
