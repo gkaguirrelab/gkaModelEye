@@ -1,8 +1,8 @@
-function [focalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calcInternalFocalPoint(opticalSystem,fieldAngularPosition,rayOriginDistance,referenceCoord,rayIntersectionHeight,effectiveInfinity,cameraMedium)
+function [focalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calcInternalFocalPoint(opticalSystem,fieldAngularPosition,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,rayIntersectionHeight,effectiveInfinity,cameraMedium)
 % Focal point for rays arising from a specified field position
 %
 % Syntax:
-%  [focalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calcInternalFocalPoint(opticalSystem,fieldAngularPosition,rayOriginDistance,referenceCoord,rayIntersectionHeight,effectiveInfinity,cameraMedium)
+%  [focalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calcInternalFocalPoint(opticalSystem,fieldAngularPosition,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,rayIntersectionHeight,effectiveInfinity,cameraMedium)
 %
 % Description
 %   This routine obtains the point of intersection of a pair of emergent
@@ -80,7 +80,8 @@ arguments
     opticalSystem
     fieldAngularPosition (2,1) double = [0, 0]
     rayOriginDistance (1,1) double = Inf
-    referenceCoord (3,1) double = [0, 0, 0]
+    angleReferenceCoord (3,1) double = [0, 0, 0]
+    distanceReferenceCoord (3,1) double = [0, 0, 0]
     rayIntersectionHeight (1,1) double = 0.25
     effectiveInfinity (1,1) double = 1e4
     cameraMedium = 'air'
@@ -97,9 +98,19 @@ if isstruct(opticalSystem)
     end
 end
 
-% Define the rayOrigin
-rayOrigin = quadric.anglesToRay(referenceCoord,fieldAngularPosition(1),fieldAngularPosition(2)).*min([effectiveInfinity rayOriginDistance]);
-rayOrigin = rayOrigin(:,2);
+% Define the rayOrigin. First, create a ray that leaves the
+% angleReferenceCoord at the specified fieldAngularPositions
+R = quadric.anglesToRay(angleReferenceCoord,fieldAngularPosition(1),fieldAngularPosition(2));
+
+% We now need to determine how far we can travel along this ray such that
+% our position from the distanceReferenceCoord is equal to the desired
+% rayOriginDistance. I brute force this.
+finiteDistance = min([rayOriginDistance effectiveInfinity]);
+myObj = @(d) finiteDistance - norm( R(:,1)+R(:,2)*d-distanceReferenceCoord );
+d = fzero(myObj,finiteDistance);
+
+% Produce the specified rayOrigin
+rayOrigin = R(:,1)+R(:,2)*d;
 
 % The separation between the rays at the origin of the longitudinal axis.
 deltaPosition = [0;rayIntersectionHeight/sqrt(2);rayIntersectionHeight/sqrt(2)];
@@ -109,14 +120,14 @@ deltaPosition = [0;rayIntersectionHeight/sqrt(2);rayIntersectionHeight/sqrt(2)];
 if norm(rayOrigin) >= (effectiveInfinity-1e-6)
     
     % These rays are parallel
-    myR1 = quadric.coordsToRay([rayOrigin+deltaPosition,referenceCoord+deltaPosition]);
-    myR2 = quadric.coordsToRay([rayOrigin-deltaPosition,referenceCoord-deltaPosition]);
+    myR1 = quadric.coordsToRay([rayOrigin+deltaPosition,angleReferenceCoord+deltaPosition]);
+    myR2 = quadric.coordsToRay([rayOrigin-deltaPosition,angleReferenceCoord-deltaPosition]);
     
 else
     
     % These rays are diverging
-    myR1 = quadric.coordsToRay([rayOrigin,referenceCoord+deltaPosition]);
-    myR2 = quadric.coordsToRay([rayOrigin,referenceCoord-deltaPosition]);
+    myR1 = quadric.coordsToRay([rayOrigin,angleReferenceCoord+deltaPosition]);
+    myR2 = quadric.coordsToRay([rayOrigin,angleReferenceCoord-deltaPosition]);
     
 end
 
