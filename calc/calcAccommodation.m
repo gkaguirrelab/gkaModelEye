@@ -33,12 +33,25 @@ function accommodation = calcAccommodation(eye,fieldAngularPosition,angleReferen
 %
 % Examples:
 %{
-    % Test that we can create and recover a specified accommodation
-    eye = modelEyeParameters();
+    % Test that we can create and recover a specified accommodation to a
+    % point on the longitudinal axis
     desiredAccommodation = 4;
-    navarroD = calcNavarroD(eye,desiredAccommodation);
-    eye = modelEyeParameters('navarroD',navarroD);
+    eye = modelEyeParameters('accommodation',desiredAccommodation);
     measuredAccommodation = calcAccommodation(eye);
+    assert(abs(desiredAccommodation-measuredAccommodation)<5e-3)
+%}
+%{
+    % Test that we can create and recover a specified accommodation for the
+    % fovea. We first measure the approximation to the incident nodal point
+    % in this eye with a navarroD value of zero. We then retain this
+    % landmark to define visual field position.
+    eye = modelEyeParameters('navarroD',0);
+    angleReferenceCoord = eye.landmarks.incidentNode.coords;
+    fieldAngularPosition = eye.landmarks.fovea.degField(1:2);
+    desiredAccommodation = 4;
+    navarroD = calcNavarroD(eye,desiredAccommodation,fieldAngularPosition,angleReferenceCoord);
+    eye = modelEyeParameters('navarroD',navarroD);
+    measuredAccommodation = calcAccommodation(eye,fieldAngularPosition,angleReferenceCoord);
     assert(abs(desiredAccommodation-measuredAccommodation)<5e-3)
 %}
 

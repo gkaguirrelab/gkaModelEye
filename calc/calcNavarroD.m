@@ -14,10 +14,15 @@ function [navarroD,internalFocalPoint,errors,opticalSystem,rayPath1,rayPath2] = 
 %   system to the focal point. 
 %
 %   By default, the calculation is performed with respect to a field
-%   position point on the longitudinal axis of the optical system. A
-%   typical alternative choice is to select a fieldAngularPosition and
-%   angleReferenceCoord corresponding to the location of the fovea w.r.t.
-%   the incidentNode of the eye.
+%   position point on the longitudinal axis of the optical system. An
+%   alternative (more complicated) choice is to select a
+%   fieldAngularPosition and angleReferenceCoord corresponding to the
+%   location of the fovea w.r.t. the incidentNode of the eye. A further
+%   wrinkle is that the approximation to the incident nodal point shifts
+%   with changes in lens properties. Therefore, one convention is to
+%   estimate the incident nodal point for an eye accommodated at infinity,
+%   and then retain this as the landmark for which visual angle is
+%   calculated.
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
@@ -55,8 +60,8 @@ function [navarroD,internalFocalPoint,errors,opticalSystem,rayPath1,rayPath2] = 
     navarroD = calcNavarroD(eye)
 %}
 %{
-    % Focus the eye at the fovea upon a point 100 mm distant
-    eye = modelEyeParameters();
+    % Focus fovea of the eye at upon a point 100 mm distant
+    eye = modelEyeParameters('accommodation',0);
     desiredAccommodation = 1000/100;
     fieldAngularPosition = eye.landmarks.fovea.degField(1:2);
     angleReferenceCoord = eye.landmarks.incidentNode.coords';

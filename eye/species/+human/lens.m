@@ -41,9 +41,9 @@ function lens = lens( eye )
 % set, then navarroD is set to 0. If the navarroD is set, then this value
 % is used. If the accommodation is set, then a search is performed in an
 % attempt to find the navarroD parameter that provides the desired
-% accommodation value for this eye. If both values are set, then the
-% navarroD parameter is used as the initial guess for the search to produce
-% the desired accommodation.
+% accommodation value for this eye along the longitudinal axis. If both
+% values are set, then the navarroD parameter is used as the initial guess
+% for the search to produce the desired accommodation.
 
 % Set the navarroD to empty, or the passed value
 D = [];
@@ -83,11 +83,10 @@ if ~isempty(A)
         bootstrapEye.meta.navarroD = D;
     end
     bootstrapEye.lens = human.lens(bootstrapEye);
-    bootstrapEye.landmarks.fovea = human.landmarks.fovea(bootstrapEye);
     
     % Now perform the search to find the navarroD parameter that provides
-    % the desired accommodation at the foveal location in the visual field.
-    D = calcNavarroD(bootstrapEye,A,bootstrapEye.landmarks.fovea.degField(1:2));
+    % the desired accommodation along the longitudinal axis.
+    D = calcNavarroD(bootstrapEye,A);
     
     % Done with the bootstrap
     clear bootstrapEye

@@ -31,13 +31,11 @@ function eye = modelEyeParameters( varargin )
 %  'accommodation'        - Scalar. The accommodative state of the eye, in
 %                           diopters. If set, the model will search for the
 %                           navarroD parameter that produces the requested
-%                           accommodation for the fovea. Not all model eyes
-%                           are capable of accommodating at all distances.
-%                           For example, a myopic eye cannot be brought
-%                           into focus at far distances. If not set, the
-%                           accommodative state of the model eye will be
-%                           measured, and this value stored in the meta
-%                           data for the eye structure.
+%                           accommodation for points on the longitudinal
+%                           axis. Not all model eyes are capable of
+%                           accommodating at all distances. For example, a
+%                           myopic eye cannot be brought into focus at far
+%                           distances.
 %  'navarroD'             - Scalar. A parameter of the model that
 %                           influences the shape of the crystalline lens.
 %                           This parameter is passed by internal functions,

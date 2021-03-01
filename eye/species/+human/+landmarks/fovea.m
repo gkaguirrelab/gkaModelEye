@@ -99,6 +99,9 @@ eye.meta.accommodation = [];
 % Update the lens field for these values
 eye.lens = human.lens(eye);
 
+% Update the incident node field
+[eye.landmarks.incidentNode,eye.landmarks.emergentNode] = human.landmarks.nodes(eye);
+
 % Now calculate the location on the retina corresponding to this visual
 % field location
 rayPath = calcNodalRayFromField(eye,fovea.degField(1:2),1500,eye.landmarks.incidentNode.coords');
