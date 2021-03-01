@@ -314,8 +314,8 @@ for hh = 1:length(horiz)
     for vv = 1:length(vert)
         R = quadric.normalizeRay(quadric.anglesToRay([-3.9;0;0], horiz(hh), vert(hh) ));
         side = 1; % Our lenses are all concave w.r.t. a ray arising from eye
-        Xback = quadric.intersectRay(Sback,R,side);
-        Xfront(end+1,:) = quadric.intersectRay(Sfront,R,side);
+        Xback = quadric.intersectRayQuadric(Sback,R,side);
+        Xfront(end+1,:) = quadric.intersectRayQuadric(Sfront,R,side);
         Dback = sqrt(sum(Xback.^2));
         Dfront = sqrt(sum(Xfront(end,:).^2));
         

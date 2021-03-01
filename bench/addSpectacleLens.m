@@ -299,8 +299,8 @@ end
 % surface of the lens along a 63 degree viewing angle.
 R = quadric.normalizeRay(quadric.anglesToRay([0;0;0], 63, 0 ));
 side = 1; % Our lenses are all concave w.r.t. a ray arising from eye
-Xback = quadric.intersectRay(Sback,R,side);
-Xfront = quadric.intersectRay(Sfront,R,side);
+Xback = quadric.intersectRayQuadric(Sback,R,side);
+Xfront = quadric.intersectRayQuadric(Sfront,R,side);
 Dback = sqrt(sum(Xback.^2));
 Dfront = sqrt(sum(Xfront.^2));
 
