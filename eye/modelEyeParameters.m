@@ -244,7 +244,6 @@ switch eye.meta.species
         eye.landmarks.lateralCanthus = human.landmarks.lateralCanthus(eye);
         eye.landmarks.vertex = human.landmarks.vertex(eye);
         [eye.landmarks.incidentNode,eye.landmarks.emergentNode] = human.landmarks.nodes(eye);
-        eye.landmarks.principalPoint.coords = calcPrincipalPoint(eye)';
         eye.landmarks.fovea = human.landmarks.fovea(eye);
         eye.landmarks.opticDisc = human.landmarks.opticDisc(eye);
         

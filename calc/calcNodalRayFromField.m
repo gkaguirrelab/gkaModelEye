@@ -1,4 +1,4 @@
-function [rayPath,angleError] = calcNodalRayFromField(opticalSystem,fieldAngularPosition,rayOriginDistance,angleReferenceCoord,cameraMedium)
+function [rayPath,angleError] = calcNodalRayFromField(opticalSystem,fieldAngularPosition,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,cameraMedium)
 % Returns a nodal ray that arises from the specified field location
 %
 % Syntax:
@@ -14,11 +14,14 @@ function [rayPath,angleError] = calcNodalRayFromField(opticalSystem,fieldAngular
 %       24-42.
 %
 %   The fieldAngularPosition (and rayOriginDistance) is defined w.r.t. the
-%   coordinate specified in angleReferenceCoord. If not defined, this is
-%   the origin of the longitudinal axis. Visual angle is often defined
-%   w.r.t. the position of the approximate incident nodal point, this
-%   coordinate should be provided if the fieldAngularPosition is to be
-%   interpreted as visual angle.
+%   coordinate specified in angleReferenceCoord and distanceReferenceCoord.
+%   If not defined, this is the origin of the longitudinal axis. Visual
+%   angle is often defined w.r.t. the position of the approximate incident
+%   nodal point, this coordinate should be provided if the
+%   fieldAngularPosition is to be interpreted as visual angle. The distance
+%   of a stimulus is relevant to the accommodative state of the eye. As
+%   accommodation distance is measured relative to the principal point of
+%   the eye, this value may be used for the distanceReferenceCoord.
 %
 % Inputs:
 %   opticalSystem         - Either an eye structure (from which a
@@ -55,6 +58,11 @@ function [rayPath,angleError] = calcNodalRayFromField(opticalSystem,fieldAngular
 %                           to be calculated. By default, this is [0;0;0],
 %                           which is the origin coordinate on the
 %                           longitudinal axis.
+%   distanceReferenceCoord - 3x1 vector that provides the coordinate from
+%                           which the rayOriginDistance is calculated. The
+%                           The principal point is a typical choice. If not
+%                           defined, is set to [0;0;0], which is the origin
+%                           coordinate on the longitudinal axis.
 %   cameraMedium          - String. The medium in which the eye is located.
 %                           Defaults to 'air'.
 %
@@ -85,6 +93,7 @@ arguments
     fieldAngularPosition (1,2) {mustBeNumeric} = [0, 0]
     rayOriginDistance (1,1) {mustBeNumeric} = 1500
     angleReferenceCoord (3,1) {mustBeNumeric} = [0;0;0]
+    distanceReferenceCoord (3,1) double = [0, 0, 0]
     cameraMedium = 'air'
 end
 
@@ -107,8 +116,8 @@ if isstruct(opticalSystem)
 end
 
 % Define the rayOrigin
-rayOrigin = quadric.anglesToRay(angleReferenceCoord,fieldAngularPosition(1),fieldAngularPosition(2)).*rayOriginDistance;
-rayOrigin = rayOrigin(:,2);
+fieldRay = calcFieldRay(fieldAngularPosition,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord);
+rayOrigin = fieldRay(:,1);
 
 % Find the nodal ray
 [rayPath,angleError] = findNodeHandle(rayOrigin',opticalSystem);

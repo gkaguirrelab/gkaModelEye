@@ -9,6 +9,18 @@ function accommodation = calcAccommodation(eye,fieldAngularPosition,angleReferen
 %   where the reciprocal of this value gives the distance from the
 %   principal point of the optical system to the focal point.
 %
+%   By default, the calculation is performed with respect to a field
+%   position point on the longitudinal axis of the optical system. An
+%   alternative (more complicated) choice is to select a
+%   fieldAngularPosition and angleReferenceCoord corresponding to the
+%   location of the fovea w.r.t. the incidentNode of the eye. A further
+%   wrinkle is that the approximation to the incident nodal point shifts
+%   with changes in lens properties. Therefore, one convention is to
+%   estimate the incident nodal point for an eye accommodated at infinity,
+%   and then retain this as the landmark for which visual angle is
+%   calculated.
+
+%
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
 %   fieldAngularPosition  - 2x1 vector that provides the coordinates of the
@@ -58,8 +70,8 @@ function accommodation = calcAccommodation(eye,fieldAngularPosition,angleReferen
 
 arguments
     eye (1,1) {isstruct}
-    fieldAngularPosition (2,1) {mustBeNumeric} = [0, 0]
-    angleReferenceCoord (3,1) {mustBeNumeric} = [0, 0, 0]
+    fieldAngularPosition (2,1) {mustBeNumeric} = [0; 0]
+    angleReferenceCoord (3,1) {mustBeNumeric} = [0; 0; 0]
     rayIntersectionHeight (1,1) {mustBeNumeric} = 0.25
     effectiveInfinity (1,1) {mustBeNumeric} = 1e4
     cameraMedium = 'air'
@@ -72,7 +84,7 @@ opticalSystem = assembleOpticalSystem(eye,...
 
 % Anonymous function to return the internalFocalPoint based upon the
 % rayOriginDistance from the principal point
-distanceReferenceCoord = eye.landmarks.principalPoint.coords';
+distanceReferenceCoord = calcPrincipalPoint(opticalSystem);
 myFP = @(d) calcInternalFocalPoint(opticalSystem,fieldAngularPosition,d,angleReferenceCoord,distanceReferenceCoord,rayIntersectionHeight,effectiveInfinity);
 
 % The objective is the value of the retinal surface quadric function at the

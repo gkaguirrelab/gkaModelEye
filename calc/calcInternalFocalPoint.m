@@ -83,12 +83,12 @@ function [internalFocalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calc
 
 arguments
     opticalSystem
-    fieldAngularPosition (2,1) double = [0, 0]
-    rayOriginDistance (1,1) double = Inf
-    angleReferenceCoord (3,1) double = [0, 0, 0]
-    distanceReferenceCoord (3,1) double = [0, 0, 0]
-    rayIntersectionHeight (1,1) double = 0.25
-    effectiveInfinity (1,1) double = 1e4
+    fieldAngularPosition (2,1) {mustBeNumeric} = [0; 0]
+    rayOriginDistance {isscalar,mustBeNumeric} = Inf
+    angleReferenceCoord (3,1) {mustBeNumeric} = [0; 0; 0]
+    distanceReferenceCoord (3,1) {mustBeNumeric} = [0; 0; 0]
+    rayIntersectionHeight {isscalar,mustBeNumeric} = 0.25
+    effectiveInfinity {isscalar,mustBeNumeric} = 1e4
     cameraMedium = 'air'
 end
 
@@ -103,19 +103,13 @@ if isstruct(opticalSystem)
     end
 end
 
-% Define the rayOrigin. First, create a ray that leaves the
-% angleReferenceCoord at the specified fieldAngularPositions
-R = quadric.anglesToRay(angleReferenceCoord,fieldAngularPosition(1),fieldAngularPosition(2));
-
-% We now need to determine how far we can travel along this ray such that
-% our position from the distanceReferenceCoord is equal to the desired
-% rayOriginDistance. I brute force this.
+% Obtain the fieldRay
 finiteDistance = min([rayOriginDistance effectiveInfinity]);
-myObj = @(d) finiteDistance - norm( R(:,1)+R(:,2)*d-distanceReferenceCoord );
-d = fzero(myObj,finiteDistance);
+fieldRay = ...
+    calcFieldRay(fieldAngularPosition,finiteDistance,angleReferenceCoord,distanceReferenceCoord);
 
-% Produce the specified rayOrigin
-rayOrigin = R(:,1)+R(:,2)*d;
+% We just need the origin of the fieldRay
+rayOrigin = fieldRay(:,1);
 
 % The separation between the rays at the origin of the longitudinal axis.
 deltaPosition = [0;rayIntersectionHeight/sqrt(2);rayIntersectionHeight/sqrt(2)];
