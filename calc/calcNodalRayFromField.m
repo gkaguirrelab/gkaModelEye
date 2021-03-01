@@ -52,7 +52,7 @@ function [rayPath,angleError] = calcNodalRayFromField(opticalSystem,fieldAngular
 %                           vertical[ degrees with respect to the
 %                           coordinate specified in angleReferenceCoord.
 %   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
-%                           the ray from the longitudinal axis origin.
+%                           the ray from the distanceReferenceCoord.
 %   angleReferenceCoord   - 3x1 vector that provides the coordinate from
 %                           which the ray origin angles and distance are
 %                           to be calculated. By default, this is [0;0;0],
@@ -90,10 +90,10 @@ function [rayPath,angleError] = calcNodalRayFromField(opticalSystem,fieldAngular
 
 arguments
     opticalSystem
-    fieldAngularPosition (1,2) {mustBeNumeric} = [0, 0]
+    fieldAngularPosition (1,2) {mustBeNumeric} = [0,0]
     rayOriginDistance (1,1) {mustBeNumeric} = 1500
     angleReferenceCoord (3,1) {mustBeNumeric} = [0;0;0]
-    distanceReferenceCoord (3,1) double = [0, 0, 0]
+    distanceReferenceCoord (3,1) double = [0;0;0]
     cameraMedium = 'air'
 end
 
