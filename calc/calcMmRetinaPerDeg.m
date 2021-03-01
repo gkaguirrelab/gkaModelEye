@@ -41,7 +41,7 @@ function mmPerDeg = calcMmRetinaPerDeg(eye,fieldAngularPosition,rayOriginDistanc
 %{
     % mm of retina / deg at the fovea
     eye = modelEyeParameters();
-    fieldAngularPosition = eye.landmarks.fovea.degField(1:2);
+    fieldAngularPosition = eye.landmarks.fovea.degField;
     rayOriginDistance = 1500;
     angleReferenceCoord = eye.landmarks.incidentNode.coords;
     mmPerDeg = calcMmRetinaPerDeg(eye,fieldAngularPosition,rayOriginDistance,angleReferenceCoord);

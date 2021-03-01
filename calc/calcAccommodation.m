@@ -59,7 +59,7 @@ function accommodation = calcAccommodation(eye,fieldAngularPosition,angleReferen
     % landmark to define visual field position.
     eye = modelEyeParameters('navarroD',0);
     angleReferenceCoord = eye.landmarks.incidentNode.coords;
-    fieldAngularPosition = eye.landmarks.fovea.degField(1:2);
+    fieldAngularPosition = eye.landmarks.fovea.degField;
     desiredAccommodation = 4;
     navarroD = calcNavarroD(eye,desiredAccommodation,fieldAngularPosition,angleReferenceCoord);
     eye = modelEyeParameters('navarroD',navarroD);

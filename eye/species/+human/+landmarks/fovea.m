@@ -69,7 +69,7 @@ function fovea = fovea( eye )
 % the value given by Mathur 2013. For the vertical alpha, I assume an
 % elevation of 2.5 degrees in the emmetropic eye.
 %
-a0 = [5.45 2.5 0];
+a0 = [5.45 2.5];
 L = @(SR) 16.5 / (16.5 - 0.299*SR );
 alpha = @(SR) atand(L(SR).*tand(a0));
 fovea.degField = alpha(eye.meta.sphericalAmetropia);
@@ -104,7 +104,7 @@ eye.lens = human.lens(eye);
 
 % Now calculate the location on the retina corresponding to this visual
 % field location
-rayPath = calcNodalRayFromField(eye,fovea.degField(1:2),1500,eye.landmarks.incidentNode.coords');
+rayPath = calcNodalRayFromField(eye,fovea.degField,1500,eye.landmarks.incidentNode.coords');
 
 % The retinal location is the last point on the rayPath. Store this, and
 % obtain the geodetic coordinates

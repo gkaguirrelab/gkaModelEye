@@ -263,6 +263,8 @@ switch eye.meta.species
         
         % Landmarks
         eye.landmarks.vertex = drasdo.landmarks.vertex(eye);
+        [eye.landmarks.incidentNode,eye.landmarks.emergentNode] = drasdo.landmarks.nodes(eye);
+        eye.landmarks.fovea = drasdo.landmarks.fovea(eye);
         
     %% Canine
     case {'dog','Dog','canine','Canine'}

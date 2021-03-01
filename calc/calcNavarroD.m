@@ -63,7 +63,7 @@ function [navarroD,internalFocalPoint,errors,opticalSystem,rayPath1,rayPath2] = 
     % Focus fovea of the eye at upon a point 100 mm distant
     eye = modelEyeParameters('accommodation',0);
     desiredAccommodation = 1000/100;
-    fieldAngularPosition = eye.landmarks.fovea.degField(1:2);
+    fieldAngularPosition = eye.landmarks.fovea.degField;
     angleReferenceCoord = eye.landmarks.incidentNode.coords';
     [navarroD,internalFocalPoint,errors,opticalSystem,rayPath1,rayPath2] = calcNavarroD(eye,desiredAccommodation,fieldAngularPosition,angleReferenceCoord);
     % Show the eye and the converging rays

@@ -1,4 +1,4 @@
-function [rayPath,errors] = calcNodalRayToRetina(eye,rayDestination,rayOriginDistance,distanceReferenceCoord,incidentNodeX0,cameraMedium,surfaceTol)
+function [rayPath,fieldAngularPosition,errors] = calcNodalRayToRetina(eye,rayDestination,rayOriginDistance,distanceReferenceCoord,incidentNodeX0,cameraMedium,surfaceTol)
 % Returns the path of the nodal ray that intersects the retinal coordinate
 %
 % Syntax:
@@ -64,6 +64,9 @@ function [rayPath,errors] = calcNodalRayToRetina(eye,rayDestination,rayOriginDis
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
 %                           will be nan.
+%   fieldAngularPosition  - 1x2 vector with the angles of the origin of the
+%                           nodal ray, w.r.t. the origin of the
+%                           longitudinal axis [0;0;0]
 %   errors                - 1x2 matrix with the follow error values:
 %                             - L2 norm distance of ray intersection from 
 %                               retinal target (in mm)
@@ -77,7 +80,7 @@ function [rayPath,errors] = calcNodalRayToRetina(eye,rayDestination,rayOriginDis
     % Obtain the coordinates of the fovea
     rayDestination = eye.landmarks.fovea.coords;
     % Find the visual axis
-    [rayPath,errors] = calcNodalRayToRetina(eye,rayDestination);
+    [rayPath,fieldAngularPosition,errors] = calcNodalRayToRetina(eye,rayDestination);
     % Confirm that the errors are within tolerance.
     assert(all(errors<1e-2))
 %}

@@ -24,10 +24,13 @@ function cornea = cornea( eye )
 % obtains the semi-radii for this ellipse, although it requires assuming
 % something strange about D&F's definition of "eccentricity". Thanks to
 % Giovanni Montesano of the University of London for his help in sorting
-% this out.
+% this out. In the Table of the Drasdo & Fowler paper, values for
+% "horizontal" and "vertical" radii in mm are given for the cornea. The use
+% of these values, however, result in a cornea with optical power that is
+% far too low.
 %{
     syms a b 
-    % Equation for the eccentricity
+    % Equation for the eccentricity (with a strange squaring of the denom)
     eqn1 = 0.5 == (a^2-b^2)/a^2;
     % Equation for the radius of curvature
     eqn2 = 7.8 == (b^2)/a;

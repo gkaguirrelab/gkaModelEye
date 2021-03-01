@@ -78,7 +78,7 @@ function [eyePose,errors] = calcFixationPose(eye,fieldAngularPosition,targetDist
 arguments
     eye (1,1) {isstruct}
     fieldAngularPosition (1,2) {mustBeNumeric} = [0, 0]
-    targetDistance (1,1)  {mustBeNumeric} = 1500
+    targetDistance (1,1) {mustBeNumeric} = 1500
     addPseudoTorsionFlag (1,1) {islogical} = true
     stopRadius (1,1) {mustBeNumeric} = 1.53
     cameraMedium = 'air'
@@ -105,7 +105,7 @@ myObj = @(p) objective(p,eye,lineOfSightRay,desiredFixationPoint,addPseudoTorsio
 % p0, which is the angles of the field target minus the position of the
 % fovea in field coordinates. This should get us pretty close to the
 % solution.
-p0 = fieldAngularPosition - eye.landmarks.fovea.degField(1:2);
+p0 = fieldAngularPosition - eye.landmarks.fovea.degField;
 
 % Bounds
 lb = [-90,-90];
