@@ -114,7 +114,7 @@ end
 % The passed optical system will have a ray that emerges into a medium with
 % a specified index of refraction. We store the index of refraction of
 % the ambient medium (which will typically be air and thus 1.0) to apply to
-% the final exit ray.=
+% the final exit ray.
 mediumRefractiveIndex = opticalSystemIn(end,end);
 
 % Obtain the properties of the tear film from the optical system. This is
