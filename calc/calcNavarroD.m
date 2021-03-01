@@ -68,15 +68,13 @@ function [navarroD,internalFocalPoint,errors,opticalSystem,rayPath1,rayPath2] = 
 %}
 
 
-
-%% Arguments
 arguments
-    eye (1,1) struct
-    desiredAccommodation (1,1) double = 0
-    fieldAngularPosition (2,1) double = [0, 0]
-    angleReferenceCoord (3,1) double = [0, 0, 0]
-    rayIntersectionHeight (1,1) double = 0.25
-    effectiveInfinity (1,1) double = 1e4
+    eye (1,1) {isstruct}
+    desiredAccommodation (1,1) {mustBeNumeric} = 0
+    fieldAngularPosition (2,1) {mustBeNumeric} = [0, 0]
+    angleReferenceCoord (3,1) {mustBeNumeric} = [0, 0, 0]
+    rayIntersectionHeight (1,1) {mustBeNumeric} = 0.25
+    effectiveInfinity (1,1) {mustBeNumeric} = 1e4
     cameraMedium = 'air'
 end
 

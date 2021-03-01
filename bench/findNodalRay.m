@@ -8,15 +8,12 @@ function [rayPath,angleError] = findNodalRay(rayOrigin,opticalSystem,incidentNod
 %   Given an opticalSystem and a coordinate in eye coordinate space, the
 %   routine returns a matrix that contains the path of a ray that departs
 %   from this coord and has an angle of incidence at the first optical
-%   surface (w.r.t the optical axis) equal to the angle with which it
-%   leaves the last surface. This is a "nodal ray":
+%   surface equal to the angle with which it leaves the last surface. This
+%   is a "nodal ray":
 %
 %       Harris, W. F. "Nodes and nodal points and lines in eyes and other
 %       optical systems." Ophthalmic and Physiological Optics 30.1 (2010):
 %       24-42.
-%
-%   The routine returns the nodalPoints,which are found by extending the
-%   initial and exit segments of the ray to the optical axis.
 %
 % Inputs:
 %   rayOrigin             - A 1x3 vector that gives the coordinates (in mm)
@@ -48,7 +45,7 @@ function [rayPath,angleError] = findNodalRay(rayOrigin,opticalSystem,incidentNod
     % Define a point in eye-world coordinate space
     X = [150, 20, 10];
     % Find the nodal ray
-    [rayPath,errors] = findNodalRay(X,opticalSystem);
+    [rayPath,angleError] = findNodalRay(X,opticalSystem);
 %}
 
 if nargin==2

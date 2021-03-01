@@ -80,7 +80,7 @@ function [internalFocalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calc
     [internalFocalPoint, raySeparationAtFocalPoint] = calcInternalFocalPoint(eye);
 %}
 
-%% Arguments
+
 arguments
     opticalSystem
     fieldAngularPosition (2,1) double = [0, 0]

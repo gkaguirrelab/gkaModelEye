@@ -43,13 +43,12 @@ function accommodation = calcAccommodation(eye,fieldAngularPosition,angleReferen
 %}
 
 
-%% Arguments
 arguments
-    eye (1,1) struct
-    fieldAngularPosition (2,1) double = [0, 0]
-    angleReferenceCoord (3,1) double = [0, 0, 0]
-    rayIntersectionHeight (1,1) double = 0.25
-    effectiveInfinity (1,1) double = 1e4
+    eye (1,1) {isstruct}
+    fieldAngularPosition (2,1) {mustBeNumeric} = [0, 0]
+    angleReferenceCoord (3,1) {mustBeNumeric} = [0, 0, 0]
+    rayIntersectionHeight (1,1) {mustBeNumeric} = 0.25
+    effectiveInfinity (1,1) {mustBeNumeric} = 1e4
     cameraMedium = 'air'
 end
 

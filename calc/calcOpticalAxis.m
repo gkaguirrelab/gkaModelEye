@@ -1,8 +1,8 @@
-function [opticalAxisRay,errors] = calcOpticalAxis(opticalSystem, rayOriginDistance)
+function [opticalAxisRay,errors] = calcOpticalAxis(opticalSystem,rayOriginDistance,cameraMedium)
 % Returns the optical axis for an opticalSystem
 %
 % Syntax:
-%  opticalAxisRay = calcOpticalAxis(opticalSystem, rayOriginDistance)
+%  [opticalAxisRay,errors] = calcOpticalAxis(opticalSystem,rayOriginDistance,cameraMedium)
 %
 % Description
 %   The optical axis of a system is the ray that enters and exits the
@@ -58,14 +58,16 @@ function [opticalAxisRay,errors] = calcOpticalAxis(opticalSystem, rayOriginDista
 %{
     % Find the optical axis of an eye
     eye = modelEyeParameters();
-    [opticalAxis, errors] = calcOpticalAxis(eye);
+    [opticalAxisRay, errors] = calcOpticalAxis(eye);
 %}
 
 
-% Handle nargin
-if nargin==1
-    rayOriginDistance = 1500;
+arguments
+    opticalSystem
+    rayOriginDistance (1,1) {mustBeNumeric} = 1500
+    cameraMedium = 'air'
 end
+
 
 % Check if we were passed an eye model. If so, create the optical system
 if isstruct(opticalSystem)
@@ -73,7 +75,7 @@ if isstruct(opticalSystem)
         eye = opticalSystem;
         clear opticalSystem;
         opticalSystem = assembleOpticalSystem(eye,...
-            'surfaceSetName','mediumToRetina','cameraMedium','air');
+            'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
     end
 end
 

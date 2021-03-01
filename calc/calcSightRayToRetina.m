@@ -1,21 +1,21 @@
-function [rayPath,retinalDistanceError] = calcSightRayToRetina(eye,rayDestination,rayOriginDistance,stopRadius,cameraMedium)
+function [rayPath,retinaDistanceError] = calcSightRayToRetina(eye,rayDestination,rayOriginDistance,stopRadius,cameraMedium,surfaceTol)
 % Ray that passes through entrance pupil center to reach the retinal coord
 %
 % Syntax:
-%  [outputRay,rayPath,fixationEyePose,foveaDistanceError] = calcSightRayToRetina(sceneGeometry,stopRadius,fixTargetDistance)
+%  [rayPath,retinaDistanceError] = calcSightRayToRetina(eye,rayDestination,rayOriginDistance,stopRadius,cameraMedium)
 %
 % Description
-%   Given an eye and a retinal coordinate, the routine identifies the ray
-%   that passes through the center of the entrance window, and arrives at
-%   the specified retinal location.
+%   Given an eye and a coordinate on the retina, the routine identifies the
+%   ray that passes through the center of the entrance window, and arrives
+%   at the specified retinal location. If the retinal location is the
+%   fovea, then this ray is the "line of sight" for the eye.
 %
-%   If the retinal location is the fovea, then this ray is the "line of
-%   sight" for the eye.
-%
-%   If not defined, the radius of the aperture stop is set to provide an
-%   entrance pupil diameter of ~3.5 mm. The ray origin distance is assumed
-%   to 1500 mm unless set.
-%
+%   Note on terminology: the "entrance pupil" is the appearance of the
+%   aperture stop through the optical elements that are in front of the
+%   stop (e.g., the cornea of the eye) as viewed from a point on the
+%   optical axis in object spaace. When the viewing point is off the
+%   optical axis, then the image of the aperture stop is the "entrance
+%   window".
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
@@ -35,6 +35,11 @@ function [rayPath,retinalDistanceError] = calcSightRayToRetina(eye,rayDestinatio
 %   stopRadius            - Scalar. Radius of the aperture stop, in mm.
 %   cameraMedium          - The medium in which the eye is located.
 %                           Defaults to 'air'.
+%   surfaceTol            - Scalar. When interpreting if the rayDestination
+%                           is Cartesian or geodetic coordinates, this is
+%                           the tolerance within which a candidate
+%                           Cartesian coordinate must be on the quadric
+%                           surface.
 %
 % Outputs:
 %   rayPath               - 3xm matrix that provides the ray coordinates
@@ -60,41 +65,20 @@ function [rayPath,retinalDistanceError] = calcSightRayToRetina(eye,rayDestinatio
     % Obtain the coordinates of the fovea
     rayDestination = eye.landmarks.fovea.coords;
     % Find the sight ray to the fovea (i.e., the line of sight axis)
-    [rayPath,retinalDistanceError] = calcSightRayToRetina(eye,rayDestination);
+    [rayPath,retinaDistanceError] = calcSightRayToRetina(eye,rayDestination);
     % Confirm that the elements of the error vector are within tolerance
-    assert(errors(1)<1e-3)
-    assert(errors(2)<1e-2)
+    assert(retinaDistanceError(1)<1e-3)
 %}
 
 
-% Parse inputs
-if nargin<2
-    error('calcSightRayToRetina:invalidArguments','Too few input arguments')
+arguments
+    eye (1,1) {isstruct}
+    rayDestination (3,1) {mustBeNumeric}
+    rayOriginDistance (1,1)  {mustBeNumeric} = 1500
+    stopRadius (1,1) {mustBeNumeric} = 1.53
+    cameraMedium = 'air'
+    surfaceTol (1,1) {mustBeNumeric} = 1e-6
 end
-
-if nargin==2
-    rayOriginDistance = 1500;
-    stopRadius = 1.53;
-    cameraMedium = 'air';
-end
-
-if nargin==3
-    stopRadius = 1.53;
-    cameraMedium = 'air';
-end
-
-if nargin==4
-    cameraMedium = 'air';
-end
-
-% Make rayDestination a column vector
-if all(size(rayDestination)==[1 3])
-    rayDestination = rayDestination';
-end
-
-% Time to interpret the rayDestination variable. Hard-code a tolerance for
-% the distance of the rayDestination coordinate from the retinal surface
-surfaceTol = 1e-6;
 
 % Get the retinal surface and quadric function
 S = eye.retina.S;
@@ -146,7 +130,7 @@ options.Display = 'off';
 p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
 
 % Evaluate the objective with the final origin location
-[retinalDistanceError,rayPath] = ...
+[retinaDistanceError,rayPath] = ...
     objective(p,sceneGeometry,rayDestination,rayOriginDistance,stopRadius);
 
 

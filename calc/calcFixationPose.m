@@ -36,8 +36,8 @@ function [eyePose,errors] = calcFixationPose(eye,fieldAngularPosition,targetDist
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
-%   fieldAngularPosition  - 1x2 or 2x1 vector that provides the coordinates
-%                           in degrees of visual angle of the target
+%   fieldAngularPosition  - 1x2 vector that provides the coordinates in
+%                           degrees of visual angle of the target
 %                           relative to the longitudinal axis of the eye
 %                           when it is aligned with the camera.
 %   targetDistance        - Scalar. The distance (in mm) of the origin of
@@ -51,6 +51,9 @@ function [eyePose,errors] = calcFixationPose(eye,fieldAngularPosition,targetDist
 %                               eye.rotationCenters.primaryPosition
 %                           For more details see:
 %                               /project/stages/addPseudoTorsion.m
+%   stopRadius            - Scalar. Radius of the aperture stop, in mm.
+%   cameraMedium          - The medium in which the eye is located.
+%                           Defaults to 'air'.
 %
 % Outputs:
 %   eyePose               - A 1x4 vector provides values for [eyeAzimuth,
@@ -72,49 +75,15 @@ function [eyePose,errors] = calcFixationPose(eye,fieldAngularPosition,targetDist
 %}
 
 
-
-% Handle missing inputs
-if nargin<2
-    error('calcFixationPose:invalidArguments','Too few input arguments')
+arguments
+    eye (1,1) {isstruct}
+    fieldAngularPosition (1,2) {mustBeNumeric} = [0, 0]
+    targetDistance (1,1)  {mustBeNumeric} = 1500
+    addPseudoTorsionFlag (1,1) {islogical} = true
+    stopRadius (1,1) {mustBeNumeric} = 1.53
+    cameraMedium = 'air'
 end
 
-if nargin==2
-    targetDistance = 1500;
-    addPseudoTorsionFlag = true;
-    stopRadius = 1.53;
-    cameraMedium = 'air';
-end
-
-if nargin==3
-    addPseudoTorsionFlag = true;
-    stopRadius = 1.53;
-    cameraMedium = 'air';
-end
-
-if nargin==4
-    stopRadius = 1.53;
-    cameraMedium = 'air';
-end
-
-if nargin==5
-    cameraMedium = 'air';
-end
-
-
-% If the length of fieldAngularPosition is 3, and the last element is zero, drop
-% this as it is a torsion place holder.
-if length(fieldAngularPosition)==3
-    if fieldAngularPosition(end)==0
-        fieldAngularPosition = fieldAngularPosition(1:2);
-    else
-        error('calcFixationPose:invalidArguments','Field origin should be two elements')
-    end
-end
-
-% Make fieldAngularPosition a row vector
-if all(size(fieldAngularPosition)==[2 1])
-    fieldAngularPosition = fieldAngularPosition';
-end
 
 % Obtain the coordinates of the fovea
 rayDestination = eye.landmarks.fovea.coords';

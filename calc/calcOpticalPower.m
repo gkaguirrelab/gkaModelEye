@@ -1,8 +1,8 @@
-function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayOriginDistance, rayIntersectionHeight)
+function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayOriginDistance, rayIntersectionHeight, cameraMedium)
 % Calcuate the refractive power of an opticalSystem
 %
 % Syntax:
-%  [opticalPower, focalPoint] = calcOpticalPower(opticalSystem)
+%  [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayOriginDistance, rayIntersectionHeight, cameraMedium)
 %
 % Description
 %   Calculates the refractive power of an optical system in units of
@@ -17,10 +17,11 @@ function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayOriginD
 %   where the effective focal length is the distance between the principal
 %   point of the optical system and the focal point.
 %
-%   Note that for optical systems with spherical aberration, the calculated
-%   optical power will vary depending upon the path of the ray. The
-%   rayIntersectionHeight parameter controls the height at which the ray
-%   strikes the first surface.
+%   The calculation is performed along the longitudinal axis. Note that for
+%   optical systems with spherical aberration, the calculated optical power
+%   will vary depending upon the path of the ray. The rayIntersectionHeight
+%   parameter controls the height at which the ray strikes the first
+%   surface.
 %
 % Inputs:
 %   opticalSystem         - Either an eye structure (from which a
@@ -47,10 +48,13 @@ function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayOriginD
 %                                       outputRay.
 %                               n     - Refractive index of the surface.
 %   rayOriginDistance     - Scalar. Point of origin of the ray along the
-%                           optical axis used to probe the system. Defaults
-%                           to 1500.
-%   rayIntersectionHeight             - Scalar. Distance of the ray origin from the
-%                           optical axis.
+%                           longitudinal axis used to probe the system. 
+%                           Defaults to 1500.
+%   rayIntersectionHeight - Scalar. Distance of the ray from the 
+%                           longitudinal axis at the point the ray
+%                           intersects the origin plane.
+%   cameraMedium          - String. The medium in which the eye is located.
+%                           Defaults to 'air'.
 %
 % Outputs:
 %   opticalPower          - Scalar. The optical power of the system.
@@ -58,8 +62,8 @@ function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayOriginD
 %
 % Examples:
 %{
-    % Determine the refractive power of the unaccommodated eye
-    eye = modelEyeParameters('accommodation',0);
+    % Determine the refractive power of the default eye
+    eye = modelEyeParameters();
     opticalPower = calcOpticalPower(eye);
     outline = sprintf('The refractive power of the unaccommodated model eye is %2.2f diopters.\n',opticalPower);
     fprintf(outline)
@@ -75,14 +79,11 @@ function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayOriginD
     fprintf(outline)
 %}
 
-% Handle nargin
-if nargin==1
-    rayOriginDistance = 1500;
-    rayIntersectionHeight = 0.5;
-end
-
-if nargin==2
-    rayIntersectionHeight = 0.5;
+arguments
+    opticalSystem
+    rayOriginDistance (1,1) {mustBeNumeric} = 1500
+    rayIntersectionHeight (1,1) {mustBeNumeric} = 0.5
+    cameraMedium = 'air'
 end
 
 % Check if we were passed an eye model. If so, create the optical system
@@ -91,7 +92,7 @@ if isstruct(opticalSystem)
         eye = opticalSystem;
         clear opticalSystem;
         opticalSystem = assembleOpticalSystem(eye,...
-            'surfaceSetName','mediumToRetina','cameraMedium','air');
+            'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
     end
 end
 

@@ -1,4 +1,4 @@
-function systemDirection = calcSystemDirection(opticalSystem, rayStartDepth)
+function systemDirection = calcSystemDirection(opticalSystem, rayOriginDistance)
 % Returns the valid direction for ray tracing for an optical system
 %
 % Syntax:
@@ -32,9 +32,9 @@ function systemDirection = calcSystemDirection(opticalSystem, rayStartDepth)
 %                                       routine exits with nans for the
 %                                       outputRay.
 %                               n     - Refractive index of the surface.
-%   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
-%                           the ray from the corneal apex. Assumed to be
-%                           1e5 mm if not defined.
+%   rayOriginDistance     - Scalar. The distance (in mm) of the start of
+%                           the ray from the longitudinal axis origin.
+%                           Assumed to be 1e5 mm if not defined.
 %
 % Outputs:
 %  'systemDirection'      - Char vector with valid values 'eyeToCamera' or
@@ -55,10 +55,12 @@ function systemDirection = calcSystemDirection(opticalSystem, rayStartDepth)
     assert(strcmp(systemDirectionIn,systemDirectionOut));
 %}
 
-% Handle nargin
-if nargin==1
-    rayStartDepth = 1e5;
+
+arguments
+    opticalSystem (:,19) {ismatrix,mustBeNumeric}
+    rayOriginDistance (1,1) {mustBeNumeric} = 1e5
 end
+
 
 % Strip the optical system of any rows which are all nans
 opticalSystem = opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
@@ -85,11 +87,11 @@ if size(opticalSystem,1)==1
 end
 
 % Trace an axial ray from the right (cameraToEye)
-R1 = quadric.normalizeRay(quadric.anglesToRay([rayStartDepth;0;0],180,0));
+R1 = quadric.normalizeRay(quadric.anglesToRay([rayOriginDistance;0;0],180,0));
 M1 = rayTraceQuadrics(R1, opticalSystem);
 
 % Trace an axial ray from the left (eyeToCamera)
-R2 = quadric.normalizeRay(quadric.anglesToRay([-rayStartDepth;0;0],0,0));
+R2 = quadric.normalizeRay(quadric.anglesToRay([-rayOriginDistance;0;0],0,0));
 M2 = rayTraceQuadrics(R2, opticalSystem);
 
 % Find the non-nan value

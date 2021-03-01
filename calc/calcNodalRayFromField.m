@@ -80,30 +80,14 @@ function [rayPath,angleError] = calcNodalRayFromField(opticalSystem,fieldAngular
 %}
 
 
-% Handle missing inputs
-if nargin<2
-    error('calcNodalRayFromField:invalidArguments','Too few input arguments')
+arguments
+    opticalSystem
+    fieldAngularPosition (1,2) {mustBeNumeric} = [0, 0]
+    rayOriginDistance (1,1) {mustBeNumeric} = 1500
+    angleReferenceCoord (3,1) {mustBeNumeric} = [0;0;0]
+    cameraMedium = 'air'
 end
 
-if nargin==2
-    rayOriginDistance = 1500;
-    angleReferenceCoord = [0;0;0];
-    cameraMedium = 'air';
-end
-
-if nargin==3
-    angleReferenceCoord = [0;0;0];
-    cameraMedium = 'air';
-end
-
-if nargin==4
-    cameraMedium = 'air';
-end
-
-% Make fieldAngularPosition a row vector
-if all(size(fieldAngularPosition)==[2 1])
-    fieldAngularPosition = fieldAngularPosition';
-end
 
 % Check if we have a compiled version of findNodalRay
 if exist('findNodalRayMex','file')==3

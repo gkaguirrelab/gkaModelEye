@@ -1,8 +1,8 @@
-function [incidentNode,emergentNode,incidentRays,emergentRays] = calcNodes(opticalSystem,opticalFieldAngle,rayOriginDistance,bundleCount,cameraMedium)
+function [incidentNode,emergentNode,incidentRays,emergentRays] = calcNodes(opticalSystem,longitudinalFieldAngle,rayOriginDistance,bundleCount,cameraMedium)
 % The approximate incident and emergent nodal points of an eye
 %
 % Syntax:
-%  [incidentNode,emergentNode,incidentRays,emergentRays] = calcNodes(opticalSystem,opticalFieldAngle,rayOriginDistance,bundleCount,cameraMedium)
+%  [incidentNode,emergentNode,incidentRays,emergentRays] = calcNodes(opticalSystem,longitudinalFieldAngle,rayOriginDistance,bundleCount,cameraMedium)
 %
 % Description
 %   For the aspheric, astigmatic optical system of the eye, single nodal
@@ -46,7 +46,7 @@ function [incidentNode,emergentNode,incidentRays,emergentRays] = calcNodes(optic
 %                                       routine exits with nans for the
 %                                       outputRay.
 %                               n     - Refractive index of the surface.
-%   opticalFieldAngle     - Scalar. The optical field angle that will be
+%   longitudinalFieldAngle - Scalar. The optical field angle that will be
 %                           used to define the bundle of rays.
 %   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
 %                           the rays from the longitudinal axis origin.
@@ -70,7 +70,7 @@ function [incidentNode,emergentNode,incidentRays,emergentRays] = calcNodes(optic
 %{
     % Find the approximate nodes of a model eye
     eye = modelEyeParameters();
-    [incidentNode,emergentNode,~,~,errors] = calcNodes(eye);
+    [incidentNode,emergentNode] = calcNodes(eye);
     fprintf('The longitudinal positions of the approximate incident and emergent nodes are %0.2f and %0.2f mm \n',incidentNode(1),emergentNode(1));
 %}
 %{
@@ -91,33 +91,14 @@ function [incidentNode,emergentNode,incidentRays,emergentRays] = calcNodes(optic
 %}
 
 
-
-% Parse the inputs
-if nargin<1
-    error('Invalid number of input arguments');
+arguments
+    opticalSystem
+    longitudinalFieldAngle (1,1) {mustBeNumeric} = 14.3; % Following Harris Example 3
+    rayOriginDistance (1,1)  {mustBeNumeric} = 1500
+    bundleCount (1,1)  {mustBeNumeric} = 16
+    cameraMedium = 'air'
 end
 
-if nargin==1
-    opticalFieldAngle = 14.3; % Following Harris Example 3
-    rayOriginDistance = 1500;
-    bundleCount = 16;
-    cameraMedium = 'air';
-end
-
-if nargin==2
-    rayOriginDistance = 1500;
-    bundleCount = 16;
-    cameraMedium = 'air';
-end
-
-if nargin==3
-    bundleCount = 16;
-    cameraMedium = 'air';
-end
-
-if nargin==4
-    cameraMedium = 'air';
-end
 
 % Check if we were passed an eye model. If so, create the optical system
 if isstruct(opticalSystem)
@@ -135,11 +116,11 @@ opticalAxisRay = calcOpticalAxis(opticalSystem, rayOriginDistance);
 % Prepare variables for the loop
 rayPaths = cell(1,bundleCount);
 
-% Loop over opticalFieldAngles and send off the ray bundle
+% Loop over longitudinalFieldAngles and send off the ray bundle
 for bb = 1:bundleCount
     opticalFieldOrigin = [ ...
-        sind(bb*360/bundleCount)*opticalFieldAngle, ...
-        cosd(bb*360/bundleCount)*opticalFieldAngle, ...
+        sind(bb*360/bundleCount)*longitudinalFieldAngle, ...
+        cosd(bb*360/bundleCount)*longitudinalFieldAngle, ...
         ];
     rayPaths{bb} = calcNodalRayFromField(opticalSystem,opticalFieldOrigin,rayOriginDistance);
 end
@@ -151,7 +132,7 @@ emergentRays = cellfun(@(x) quadric.coordsToRay(x(:,end-1:end)),rayPaths,'Unifor
 % If we encountered bad ray traces, there will be nans in the emergent
 % rays. If so, exit with a warning
 if any(cellfun(@(x) any(isnan(x(:))),emergentRays))
-    warning('calcNodes:badRayTrace','Unable to conduct ray trace. Reduce opticalFieldAngle, or check for invalid opticalSystem');
+    warning('calcNodes:badRayTrace','Unable to conduct ray trace. Reduce longitudinalFieldAngle, or check for invalid opticalSystem');
     return
 end
 

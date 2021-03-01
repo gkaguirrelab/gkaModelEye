@@ -67,7 +67,7 @@ end
 
 % Now calculate the location on the retina corresponding to this visual
 % field location
-rayPath = calcNodalRayFromField(eye,opticDisc.degField,1500,eye.landmarks.incidentNode.coords');
+rayPath = calcNodalRayFromField(eye,opticDisc.degField(1:2),1500,eye.landmarks.incidentNode.coords');
 
 % The retinal location is the last point on the rayPath. Store this, and
 % obtain the geodetic coordinates

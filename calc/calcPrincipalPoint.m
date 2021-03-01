@@ -1,8 +1,8 @@
-function P = calcPrincipalPoint(opticalSystem, rayOriginDistance, rayIntersectionHeight)
+function P = calcPrincipalPoint(opticalSystem, rayOriginDistance, rayIntersectionHeight, cameraMedium)
 % Returns the principal point for an opticalSystem
 %
 % Syntax:
-%  P = calcPrincipalPoint(opticalSystem, rayOriginDistance, rayIntersectionHeight)
+%  P = calcPrincipalPoint(opticalSystem, rayOriginDistance, rayIntersectionHeight, cameraMedium)
 %
 % Description
 %   For a ray that passes through an optical system, the incoming and
@@ -48,6 +48,8 @@ function P = calcPrincipalPoint(opticalSystem, rayOriginDistance, rayIntersectio
 %                           1500 mm if not defined.
 %   rayIntersectionHeight - Scalar. The distance in the vertical direction
 %                           from the optical axis of the ray origin.
+%   cameraMedium          - String. The medium in which the eye is located.
+%                           Defaults to 'air'.
 %
 % Outputs:
 %   P                     - 3x1 matrix. The location of the principal
@@ -55,7 +57,7 @@ function P = calcPrincipalPoint(opticalSystem, rayOriginDistance, rayIntersectio
 %
 % Examples:
 %{
-    % Display a lens and it's principal points
+    % Display a lens and it's principal point
     systemDirection = 'cameraToEye';
     opticalSystem = addSpectacleLens([],-10,'systemDirection',systemDirection);
     % Plot this
@@ -76,15 +78,14 @@ function P = calcPrincipalPoint(opticalSystem, rayOriginDistance, rayIntersectio
     plot(P2(1),P2(2),'*b')
 %}
 
-% Handle nargin
-if nargin==1
-    rayOriginDistance = 1500;
-    rayIntersectionHeight = 0.5;
+
+arguments
+    opticalSystem
+    rayOriginDistance (1,1) {mustBeNumeric} = 1500
+    rayIntersectionHeight (1,1) {mustBeNumeric} = 0.5
+    cameraMedium = 'air'
 end
 
-if nargin==2
-    rayIntersectionHeight = 0.5;
-end
 
 % Check if we were passed an eye model. If so, create the optical system
 if isstruct(opticalSystem)
@@ -92,7 +93,7 @@ if isstruct(opticalSystem)
         eye = opticalSystem;
         clear opticalSystem;
         opticalSystem = assembleOpticalSystem(eye,...
-            'surfaceSetName','mediumToRetina','cameraMedium','air');
+            'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
     end
 end
 
