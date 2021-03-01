@@ -1,4 +1,4 @@
-function [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination,rayOriginDistance,incidentNodeX0,cameraMedium,surfaceTol)
+function [rayPath,errors] = calcNodalRayToRetina(eye,rayDestination,rayOriginDistance,distanceReferenceCoord,incidentNodeX0,cameraMedium,surfaceTol)
 % Returns the path of the nodal ray that intersects the retinal coordinate
 %
 % Syntax:
@@ -17,13 +17,13 @@ function [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination,
 %   The nodal ray that arrives at the fovea is termed the "visual axis" of
 %   the eye.
 %
-%   The routine returns the nodalPoints,which are found by extending the
-%   initial and exit segments of the ray to their closest approach to the
-%   optical axis. For a model eye with decentered and/or astigmatic
-%   elements, there is not a single nodal point.
-%
 %   The routine can accept points on the ellipsoidal surface of the retina
 %   specified in either Cartesian or ellipsoidal geodetic coordinates.
+%
+%   The routine allows specification of the rayOriginDistance. This is of
+%   little consequence for the path of the ray through the optics of the
+%   eye, but is included here so that the calling function can define the
+%   field origin of the rays with accuracy.
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
@@ -40,6 +40,11 @@ function [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination,
 %   rayOriginDistance     - Scalar. The distance (in mm) of the origin of
 %                           the ray from the corneal apex. Assumed to be
 %                           1500 mm if not defined.
+%   distanceReferenceCoord - 3x1 vector that provides the coordinate from
+%                           which the rayOriginDistance is calculated. The
+%                           The principal point is a typical choice. If not
+%                           defined, is set to [0;0;0], which is the origin
+%                           coordinate on the longitudinal axis.
 %   incidentNodeX0        - 3x1 vector that gives the location in eye
 %                           space that is an initial guess for the
 %                           location of the incident node of the optical
@@ -59,21 +64,11 @@ function [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination,
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
 %                           will be nan.
-%   nodalPoints           - 3x2 matrix that provides the approximation to
-%                           incident and emergent nodal points in the eye
-%                           coordinate space. This is the point on each ray
-%                           that is closest to the optical axis.
-%   errors                - 1x4 matrix with the follow error values:
+%   errors                - 1x2 matrix with the follow error values:
 %                             - L2 norm distance of ray intersection from 
 %                               retinal target (in mm)
-%                             - L2 norm of the mismatch between the desired
-%                               and obtained rayOriginDistance.
 %                             - departure from parallel of the incident and
 %                               emergent rays (deg)
-%                             - distance of the incident nodal point from
-%                               the incident ray
-%                             - distance of the emergent nodal point from
-%                               the emergent ray
 %
 % Examples:
 %{
@@ -81,19 +76,18 @@ function [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination,
     eye = modelEyeParameters();
     % Obtain the coordinates of the fovea
     rayDestination = eye.landmarks.fovea.coords;
-    % Find the nodal ray
-    [rayPath,nodalPoints,errors] = calcNodalRayToRetina(eye,rayDestination);
-    % Confirm that the first three elements of the error vector are within
-    % tolerance. The final two elements are expected to be non-zero as a 
-    % consequence of astigmatic and decentered elements in the model.
-    assert(all(errors(1:3)<1e-2))
+    % Find the visual axis
+    [rayPath,errors] = calcNodalRayToRetina(eye,rayDestination);
+    % Confirm that the errors are within tolerance.
+    assert(all(errors<1e-2))
 %}
 
 
 arguments
     eye (1,1) {isstruct}
     rayDestination (3,1) {mustBeNumeric}
-    rayOriginDistance (1,1)  {mustBeNumeric} = 1500
+    rayOriginDistance (1,1) {mustBeNumeric} = 1500
+    distanceReferenceCoord (3,1) {mustBeNumeric} = [0; 0; 0]
     incidentNodeX0 (3,1) {mustBeNumeric} = [-7; 0; 0]
     cameraMedium = 'air'
     surfaceTol (1,1) {mustBeNumeric} = 1e-6
@@ -135,7 +129,7 @@ opticalSystem = assembleOpticalSystem(eye,...
     'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
 
 % Initialize an anonymous function for the objective.
-myObj = @(p) objective(p,opticalSystem,rayDestination,rayOriginDistance,findNodeHandle);
+myObj = @(p) objective(p,opticalSystem,rayDestination,rayOriginDistance,distanceReferenceCoord,findNodeHandle);
 
 % p0 is set to direct from the retinal coordinate, through a typical
 % location for the incident node.
@@ -150,14 +144,14 @@ options = optimset('fmincon');
 options.Display = 'off';
 
 % Search
-p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
+fieldAngularPosition = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
 
 % Evaluate the objective function once more, using the final values
-[retinalDistanceError,rayPath,nodalPoints,errors] = ...
-    objective(p,opticalSystem,rayDestination,rayOriginDistance,findNodeHandle);
+[retinalDistanceError,rayPath,angleError] = ...
+    objective(fieldAngularPosition,opticalSystem,rayDestination,rayOriginDistance,distanceReferenceCoord,findNodeHandle);
 
 % Assemble the errors
-errors = [retinalDistanceError,errors];
+errors = [retinalDistanceError,angleError];
 
 
 end
@@ -165,27 +159,15 @@ end
 
 %% Local function
 
-function [fVal,rayPath,nodalPoints,errors] = objective(p,opticalSystem,rayDestination,rayOriginDistance,findNodeHandle)
+function [fVal,rayPath,angleError] = objective(fieldAngularPosition,opticalSystem,rayDestination,rayOriginDistance,distanceReferenceCoord,findNodeHandle)
                                             
 % The passed p vector is interpreted as the angles of a coordinate point
-% w.r.t. the origin of the coordinate system. We find the coordinate at
-% this point, at the rayOriginDistance
-rayOrigin = quadric.anglesToRay([0;0;0],p(1),p(2)).*rayOriginDistance;
-rayOrigin = rayOrigin(:,2);
+% w.r.t. the origin of the coordinate system.
+fieldRay = calcFieldRay(fieldAngularPosition,rayOriginDistance,[0;0;0],distanceReferenceCoord);
+rayOrigin = fieldRay(:,1);
 
-% Find the nodal points from this point
-[~,nodalPoints] = findNodeHandle(rayOrigin',opticalSystem);
-
-% Adjust the rayOrigin so that it is at the appropriate rayOriginDistance
-% w.r.t. the incident node.
-rayOrigin = (rayOrigin-nodalPoints(:,1)).*(rayOriginDistance/norm(rayOrigin-nodalPoints(:,1)))+nodalPoints(:,1);
-
-% Repeat the ray trace from this updated point
-[rayPath,nodalPoints,errors] = findNodeHandle(rayOrigin',opticalSystem);
-
-% Obtain the L2 norm between the desired and realized rayOrigin
-% distance, and add this to the front of the errors
-errors = [norm(norm(rayOrigin-nodalPoints(:,1))-rayOriginDistance), errors];
+% Find the nodal ray from this point
+[rayPath,angleError] = findNodeHandle(rayOrigin',opticalSystem);
 
 % Find the Euclidean distance between the retinal target coordinate and the
 % intersection of the ray upon the retina.
