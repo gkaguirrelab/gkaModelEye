@@ -156,10 +156,12 @@ function sceneGeometry = createSceneGeometry(varargin)
 %                           {'air','water','vacuum'}. This sets the index
 %                           of refraction of the medium between the eye and
 %                           the camera.
-%  'spectralDomain'       - String, options include {'vis','nir'}.
-%                           This is the light domain within which imaging
-%                           is being performed. The refractive indices vary
-%                           based upon this choice.
+%  'spectralDomain'       - String or numerica scalar. This is the
+%                           wavelength domain within which imaging is being
+%                           performed. The refractive indices vary based
+%                           upon this choice. Either a wavelength (in nm)
+%                           may be provided, or one of the char vectors:
+%                           {'vis','nir'}.
 %
 % Outputs
 %	sceneGeometry         - A structure.
@@ -195,7 +197,7 @@ p.addParameter('surfaceSetName',{'retinaToCamera','cameraToRetina','retinaToStop
 p.addParameter('contactLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('spectacleLens',[], @(x)(isempty(x) | isnumeric(x)));
 p.addParameter('cameraMedium','air',@ischar);
-p.addParameter('spectralDomain','nir',@ischar);
+p.addParameter('spectralDomain','nir',@(x)(ischar(x) || isnumeric(x)));
 
 % parse
 p.parse(varargin{:})

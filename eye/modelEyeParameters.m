@@ -102,10 +102,12 @@ function eye = modelEyeParameters( varargin )
 %                           frame in which the alignment of the camera and
 %                           eye optical systems has eyePose values of
 %                           [0, 0].
-%  'spectralDomain'       - String, options include {'vis','nir'}.
-%                           This is the wavelength domain within which
-%                           imaging is being performed. The refractive
-%                           indices vary based upon this choice.
+%  'spectralDomain'       - String or numerica scalar. This is the
+%                           wavelength domain within which imaging is being
+%                           performed. The refractive indices vary based
+%                           upon this choice. Either a wavelength (in nm)
+%                           may be provided, or one of the char vectors:
+%                           {'vis','nir'}.
 %
 % Outputs:
 %   eye                   - A structure with fields that contain the values
@@ -138,7 +140,7 @@ p.addParameter('kvals',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('corneaAxialRadius',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('rotationCenterScalers',[1 1],@isnumeric);
 p.addParameter('primaryPosition',[0 0],@isnumeric);
-p.addParameter('spectralDomain','nir',@ischar);
+p.addParameter('spectralDomain','nir',@(x)(ischar(x) || isnumeric(x)));
 
 % parse
 p.parse(varargin{:})
