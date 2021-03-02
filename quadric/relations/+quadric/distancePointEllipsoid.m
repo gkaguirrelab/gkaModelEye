@@ -76,6 +76,10 @@ x=X(1);y=X(2);z=X(3);
 E=sign(a)/a^2;F=sign(b)/b^2;G=sign(c)/c^2;
 xo=x;yo=y;zo=z;
 
+% Silence a warning that can occur with the regression step
+warnState = warning();
+warning('off','MATLAB:nearlySingularMatrix');
+
 for i=1:20
     j11=F*yo-(yo-y)*E;
     j12=(xo-x)*F-E*xo;
@@ -96,6 +100,9 @@ for i=1:20
         break
     end
 end
+
+% Restore the warn state
+warning(warnState);
 
 % The solution
 distance = sqrt((x-xo)^2+(y-yo)^2+(z-zo)^2);
