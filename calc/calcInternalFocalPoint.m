@@ -103,16 +103,16 @@ if isstruct(opticalSystem)
     end
 end
 
-% Obtain the fieldRay
-finiteDistance = min([rayOriginDistance effectiveInfinity]);
+% Obtain the field ray
 fieldRay = ...
-    calcFieldRay(fieldAngularPosition,finiteDistance,angleReferenceCoord,distanceReferenceCoord);
-
-% We just need the origin of the fieldRay
+    calcFieldRay(fieldAngularPosition,min([effectiveInfinity rayOriginDistance]),angleReferenceCoord,distanceReferenceCoord);
 rayOrigin = fieldRay(:,1);
 
-% The separation between the rays at the origin of the longitudinal axis.
+% Calculate the deltaPosition and deltaSign
 deltaPosition = [0;rayIntersectionHeight/sqrt(2);rayIntersectionHeight/sqrt(2)];
+deltaSign = sign(rayOrigin-angleReferenceCoord).*[0;-1;1];
+deltaSign(abs(deltaSign)<1)=-1;
+deltaPosition = deltaPosition.* deltaSign;
 
 % Create rays that start at rayOrigin and will intersect the xy plane
 % of the longitudinal axis at a distance of 2 x rayIntersectionHeight.
