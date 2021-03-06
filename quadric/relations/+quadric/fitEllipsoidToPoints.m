@@ -41,7 +41,8 @@ function [S,fVal] = fitEllipsoidToPoints(pp,s0,sB)
     iFP(1,:) = iFP(1,:)-min(iFP(1,:)) - s0(1);
     [SFit,fVal] = quadric.fitEllipsoidToPoints(iFP,s0,sB);
     % Report the difference between s0 and s
-    s0 - quadric.radii(SFit)
+    sD = s0 - quadric.radii(SFit);
+    fprintf('The difference [h,v] radii between the emmetropic retina and the image surface: [%2.2f, %2.2f]\n',sD(2:3));
 %}
 
 % Functions for the quadric surface and the objective
