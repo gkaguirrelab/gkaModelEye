@@ -184,13 +184,13 @@ numShells = 21;
 % Rconst is 5.9 if derived from the Navarro 2014 parameters, but is
 % modified here to a value of 4.0 to provide appropriate peripheral retinal
 % accommodation in the emmetropic eye.
-Rconst = 4.0;
+Rconst = 4;
 R = 1./( -(1/(Rconst - 0.013*age)) - 0.0043*D  );
 
 % The asphericity (Q) value is given as -3 in Navarro 2014, but is adjusted
-% here to be -2 to provide appropriate peripheral retinal accommodation in
-% the emmetropic eye.
-Q = -2;
+% here to be -2.5 to provide appropriate peripheral retinal accommodation
+% in the emmetropic eye.
+Q = -2.5;
 a = R * sqrt(abs( 1 / (Q - 1 ) )) * sign(Q);
 b = R / (Q - 1 );
 lensBackRadii(1) = abs(b); lensBackRadii(2:3) = abs(a);
