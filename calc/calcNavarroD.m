@@ -91,7 +91,7 @@ myObj = @(p) objective(p,eye,fieldAngularPosition,rayOriginDistance,angleReferen
 
 % Define p0 and bounds
 p0 = 0;
-lb = -5;
+lb = -50;
 ub = 100;
 
 % Options
