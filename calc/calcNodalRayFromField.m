@@ -93,7 +93,7 @@ arguments
     fieldAngularPosition (1,2) {mustBeNumeric} = [0,0]
     rayOriginDistance (1,1) {mustBeNumeric} = 1500
     angleReferenceCoord (3,1) {mustBeNumeric} = [0;0;0]
-    distanceReferenceCoord (3,1) double = [0;0;0]
+    distanceReferenceCoord (3,1) {mustBeNumeric} = [0;0;0]
     cameraMedium = 'air'
 end
 
