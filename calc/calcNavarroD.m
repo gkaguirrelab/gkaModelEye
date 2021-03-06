@@ -60,7 +60,7 @@ function [navarroD,internalFocalPoint,errors,opticalSystem,rayPath1,rayPath2] = 
     navarroD = calcNavarroD(eye);
 %}
 %{
-    % Focus fovea of the eye at upon a point 100 mm distant
+    % Focus fovea of the eye upon a point 100 mm distant.
     eye = modelEyeParameters('accommodation',0);
     desiredAccommodation = 1000/100;
     fieldAngularPosition = eye.landmarks.fovea.degField;
