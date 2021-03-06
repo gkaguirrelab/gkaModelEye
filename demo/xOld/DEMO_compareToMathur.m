@@ -53,16 +53,16 @@ stopDiam = 2.6475*2;
 
 % Subjects in the Mathur study fixated a point 3 meters away
 fixationTargetDistance = 3000;
-accommodationDiopters = 1000/3000;
+accommodation = 1000/3000;
 
 % Obtain the sceneGeometry
 sceneGeometry = createSceneGeometry(...
     'sphericalAmetropia',sphericalAmetropia,...
-    'accommodationDiopters',accommodationDiopters,...
+    'accommodation',accommodation,...
     'spectralDomain','vis');
 
 % Obtain the eyePose for fixating the target
-[~,~,fixationEyePose]=calcLineOfSightRay(sceneGeometry,stopDiam/2,fixationTargetDistance);
+fixationEyePose=calcFixationPose(sceneGeometry.eye,fixationTargetDistance,true,stopDiam/2);
 
 % Loop over the viewing angles and calculate the diameter ratio
 for vv = 1:length(viewingAngleDeg)
