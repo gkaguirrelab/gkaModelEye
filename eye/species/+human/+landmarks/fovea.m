@@ -93,7 +93,7 @@ end
 % eye.
 eye.meta.spectralDomain = 'vis';
 eye.meta.ageYears = 18;
-eye.meta.navarroD = 0;
+eye.meta.navarroD = eye.derivedParams.navarroDAtInfinity;
 eye.meta.accommodation = [];
 
 % Update the lens field for these values
