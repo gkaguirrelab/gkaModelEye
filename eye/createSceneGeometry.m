@@ -156,7 +156,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %                           {'air','water','vacuum'}. This sets the index
 %                           of refraction of the medium between the eye and
 %                           the camera.
-%  'spectralDomain'       - String or numerica scalar. This is the
+%  'spectralDomain'       - String or numerical scalar. This is the
 %                           wavelength domain within which imaging is being
 %                           performed. The refractive indices vary based
 %                           upon this choice. Either a wavelength (in nm)
