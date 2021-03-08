@@ -75,13 +75,14 @@ function [incidentNode,emergentNode,incidentRays,emergentRays] = calcNodes(optic
 %}
 %{
     % Find and display the nodes on the model eye
-    sceneGeometry = createSceneGeometry();
+    eye = modelEyeParameters();
     % Obtain the optical center and ray bundle
-    [incidentNode,~,incidentRays,~] = calcNodes(sceneGeometry.eye);
+    [incidentNode,~,incidentRays,~] = calcNodes(eye);
     % Scale up the incidentRays
     extendedRays = cellfun(@(x) [x(:,1),x(:,1)+x(:,2)*1520],incidentRays,'UniformOutput',false);
     % Plot the optical system
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.mediumToRetina,'addLighting',true,'surfaceAlpha', 0.05);
+    opticalSystem = assembleOpticalSystem(eye,'surfaceSetName','mediumToRetina');
+    plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'surfaceAlpha', 0.05);
     % Add the rays to the plot
     for ii=1:length(incidentRays)
         plotOpticalSystem('newFigure',false,'rayPath',extendedRays{ii});
