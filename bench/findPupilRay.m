@@ -251,6 +251,8 @@ outputRay = twoSystemTrace(initialRay, eyePose, rotationCenters, opticalSystemRo
 % space of the eye prior to rotation
 outputRay = rotateEyeRay(outputRay, eyePose, rotationCenters, 'inverse');
 
+% Transpose the initialRay to return
+initialRay = initialRay';
 
 end % findPupilRay -- MAIN
 
