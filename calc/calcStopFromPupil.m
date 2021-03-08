@@ -5,11 +5,12 @@ function stopRadius = calcStopFromPupil(eye,pupilRadius,cameraDistance,cameraMed
 %  stopRadius = calcStopFromPupil(eye,entranceRadius,cameraMedium)
 %
 % Description
-%   We sometimes wish to simulate the an eye with an entrance pupil of a
+%   We sometimes wish to simulate an eye with an entrance pupil of a
 %   specified size. To do so, we need to determine the size of the aperture
 %   stop that would produce the desired pupil size. This calculation is
 %   performed for the stop as viewed by a camera positioned on the
-%   longitudinal axis of the optical system.
+%   longitudinal axis of the optical system. That is, the calculation is
+%   for the proper entrance pupil, as opposed to an entrance window.
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
@@ -20,7 +21,7 @@ function stopRadius = calcStopFromPupil(eye,pupilRadius,cameraDistance,cameraMed
 %                           Defaults to 'air'.
 %
 % Outputs:
-%   stopRadius           - Scalar. The size in mm of the entrance pupil.
+%   stopRadius            - Scalar. The size in mm of the aperture stop.
 %
 % Examples:
 %{
