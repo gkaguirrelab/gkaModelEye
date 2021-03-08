@@ -12,6 +12,11 @@ function [entranceWindowCenter,objectCoord,entranceWindowPerimeter] = calcEntran
 %   center (and perimeter) of the entrance window of the eye as viewed from
 %   a specified position, and for an aperture stop of a specified radius.
 %
+%   I position the entrance window so that it is centered on the
+%   longitudinal axis in the horizontal and vertical directions. When the
+%   object position is on the longitudinal axis, the entrance window is the
+%   proper entrance pupil.
+%
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
 %   stopRadius            - Scalar. The size in mm of the aperture stop.
