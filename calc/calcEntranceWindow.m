@@ -53,17 +53,13 @@ function [entranceWindowCenter,objectCoord,entranceWindowPerimeter] = calcEntran
 %{
     % Define a default model eye
     eye = modelEyeParameters();
-    % Pick a field location
-    fieldAngularPosition = [10,20];
-    % Pick a stop radius
-    stopRadius = 1;
     % Find the center of the entrance window
-    windowCoord = calcEntranceWindow(eye,fieldAngularPosition,stopRadius);
+    windowCoord = calcEntranceWindow(eye);
 %}
 %{
     % Plot the location of the entrance window in an optical system
     eye = modelEyeParameters();
-    [~,~,perimeter] = calcEntranceWindow(eye,[0 0]);
+    [~,~,perimeter] = calcEntranceWindow(eye,[30 0]);
     opticalSystem = assembleOpticalSystem(eye,'surfaceSetName','mediumToRetina');
     plotOpticalSystem('surfaceSet',opticalSystem);
     plot3(perimeter(1,:),perimeter(2,:),perimeter(3,:),'*k');
