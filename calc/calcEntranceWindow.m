@@ -141,7 +141,7 @@ for ii = 1:nStopPerimPoints
 end
 
 % Some mechanics to shift the entrance window points back along their ray
-% path so place the center of the entrance window on the longitudinal axis.
+% path to place the center of the entrance window on the longitudinal axis.
 shifted = @(t) p - t.*u;
 hvNorm = @(ep) norm(mean(ep(2:3,:),2));
 myObj = @(t) hvNorm(shifted(t));
