@@ -1,8 +1,8 @@
-function n = returnRefractiveIndex( material, wavelength, varargin )
+function [n, wavelength] = returnRefractiveIndex( material, wavelength, varargin )
 % Refractive index for a specified material at a specified wavelength
 %
 % Syntax:
-%  n = returnRefractiveIndex( material, wavelength )
+%  [n, wavelength] = returnRefractiveIndex( material, wavelength )
 %
 % Description:
 %   The ray tracing model requires the refractive index of several
@@ -36,10 +36,12 @@ function n = returnRefractiveIndex( material, wavelength, varargin )
 %
 % Outputs:
 %   n                     - The requested index of refraction.
+%   wavelength            - Scalar. The numerical wavelength (in nm) used
+%                           for the calculation. 
 %
 % Examples:
 %{
-    n = returnRefractiveIndex( 'cornea', 'visible' );
+    [n,wavelength] = returnRefractiveIndex( 'cornea', 'visible' );
 %}
 
 %% input parser
