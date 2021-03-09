@@ -44,17 +44,15 @@ function [retinaPoints,rayPaths] = calcRayBundleFromField(eye,fieldAngularPositi
 %{
     % Define a default model eye
     accommodation = 1;
-    stopRadius = 1;
-    eye = modelEyeParameters('accommodation',accommodation);
+    stopRadius = 2;
+    eye = modelEyeParameters('spectralDomain','vis','accommodation',accommodation);
     % Pick a field location
     rayOriginDistance = 1000/accommodation;
     angleReferenceCoord = eye.landmarks.incidentNode.coords;
     distanceReferenceCoord = calcPrincipalPoint(eye);
-    fieldAngularPosition = [40 10];
+    fieldAngularPosition = [0 0];
     % Trace the bundle
     [retinaPoints,rayPaths] = calcRayBundleFromField(eye,fieldAngularPosition,stopRadius,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord);
-    % Compare this to the nodal ray point
-    nodalRayPath = calcNodalRayFromField(eye,fieldAngularPosition,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord);
     % Plot the optical system
     opticalSystem = assembleOpticalSystem(eye,'surfaceSetName','mediumToRetina');
     plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'surfaceAlpha', 0.05);
@@ -63,7 +61,6 @@ function [retinaPoints,rayPaths] = calcRayBundleFromField(eye,fieldAngularPositi
         plotOpticalSystem('newFigure',false,'rayPath',rayPaths{ii});
     end
     xlim([-25 10]);
-    plot3(nodalRayPath(1,end),nodalRayPath(2,end),nodalRayPath(3,end),'*k');
 %}
 
 
@@ -74,7 +71,7 @@ arguments
     rayOriginDistance (1,1) {mustBeNumeric} = 1500
     angleReferenceCoord (3,1) {mustBeNumeric} = [0;0;0]
     distanceReferenceCoord (3,1) {mustBeNumeric} = [0;0;0]
-    nStopPerimPoints (1,1) {mustBeNumeric} = 6
+    nStopPerimPoints (1,1) {mustBeNumeric} = 16
     paraxialThresh (1,1) {mustBeNumeric} = 1e-3
     cameraMedium = 'air'
 end
@@ -85,17 +82,25 @@ opticalSystem = assembleOpticalSystem(eye,...
     'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
 
 % Find the entrance window
-[~,objectCoord,entranceWindowPerimeter] = ...
+[entranceWindowCenter,objectCoord,entranceWindowPerimeter] = ...
     calcEntranceWindow(eye,fieldAngularPosition,stopRadius,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,nStopPerimPoints,paraxialThresh,cameraMedium);
 
 % Direct rays from the field point to the borders of the entrance window
-retinaPoints = nan(3,nStopPerimPoints);
-rayPaths = cell(1,nStopPerimPoints);
-for ii = 1:size(entranceWindowPerimeter,2)
-    bundleRay = quadric.coordsToRay([objectCoord,entranceWindowPerimeter(:,ii)]);
-    [outputRay, rayPaths{ii}] = rayTraceQuadrics(bundleRay, opticalSystem);
-    retinaPoints(:,ii) = outputRay(:,1);
-end
+retinaPoints = [];
+rayPaths = {};
 
+% Fill the window by scaling the set of rays towards the window center
+for ss = [0,0.25,0.5,1.0]
+    for ii = 1:size(entranceWindowPerimeter,2)
+        windowTarget = entranceWindowPerimeter(:,ii);
+        windowTarget = entranceWindowCenter + ss.*(windowTarget - entranceWindowCenter);
+        if ss==0 && ii~=1
+            continue
+        end
+        bundleRay = quadric.coordsToRay([objectCoord,windowTarget]);
+        [outputRay, rayPaths{end+1}] = rayTraceQuadrics(bundleRay, opticalSystem);
+        retinaPoints(:,end+1) = outputRay(:,1);
+    end
+end
 
 end
