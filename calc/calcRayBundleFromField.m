@@ -82,25 +82,18 @@ opticalSystem = assembleOpticalSystem(eye,...
     'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
 
 % Find the entrance window
-[entranceWindowCenter,objectCoord,entranceWindowPerimeter] = ...
+[~,objectCoord,entranceWindowPerimeter] = ...
     calcEntranceWindow(eye,fieldAngularPosition,stopRadius,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,nStopPerimPoints,paraxialThresh,cameraMedium);
 
 % Direct rays from the field point to the borders of the entrance window
-retinaPoints = [];
-rayPaths = {};
+retinaPoints = nan(3,nStopPerimPoints);
+rayPaths = cell(1,nStopPerimPoints);
 
-% Fill the window by scaling the set of rays towards the window center
-for ss = [0,0.25,0.5,1.0]
-    for ii = 1:size(entranceWindowPerimeter,2)
-        windowTarget = entranceWindowPerimeter(:,ii);
-        windowTarget = entranceWindowCenter + ss.*(windowTarget - entranceWindowCenter);
-        if ss==0 && ii~=1
-            continue
-        end
-        bundleRay = quadric.coordsToRay([objectCoord,windowTarget]);
-        [outputRay, rayPaths{end+1}] = rayTraceQuadrics(bundleRay, opticalSystem);
-        retinaPoints(:,end+1) = outputRay(:,1);
-    end
+% Loop over points on the perimeter of the entrance pupil
+for ii = 1:size(entranceWindowPerimeter,2)
+    bundleRay = quadric.coordsToRay([objectCoord,entranceWindowPerimeter(:,ii)]);
+    [outputRay, rayPaths{ii}] = rayTraceQuadrics(bundleRay, opticalSystem);
+    retinaPoints(:,ii) = outputRay(:,1);
 end
 
 end
