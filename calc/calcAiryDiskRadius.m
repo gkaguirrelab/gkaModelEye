@@ -5,7 +5,9 @@ function airyDiskRadius = calcAiryDiskRadius(eye,stopRadius)
 %  airyDiskRadius = calcAiryDiskRadius(eye,stopRadius)
 %
 % Description
-%   Foo
+%   The diffraction limit of an optical system can be characterized by the
+%   size of the Airy Disk, which is influenced by the wavelength of light
+%   and the size of the aperture stop.
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
@@ -20,34 +22,33 @@ function airyDiskRadius = calcAiryDiskRadius(eye,stopRadius)
     eye = modelEyeParameters('spectralDomain',550,'accommodation',1);
     % Create a plot of Airy Disk diameters vs. stop size
     stopRadius = 0.5:0.5:3;
-    diskDiam = [];
-    for ss = stopRadius
-        diskDiam(end+1) = calcAiryDiskRadius(eye,ss);
+    diskRadius = nan(size(stopRadius));
+    for ss = 1:length(stopRadius)
+        diskRadius(ss) = calcAiryDiskRadius(eye,stopRadius(ss));
     end
-    plot(stopRadius,diskDiam);
+    plot(stopRadius,diskRadius);
+    xlabel('radius aperture stop [mm]');
+    ylabel('radius Airy Disk [mm]');
+    title('Airy Disk size by stop radius');
 %}
 
 
 arguments
     eye (1,1) {isstruct}
-    stopRadius (1,1) {mustBeNumeric} = 1
+    stopRadius (1,1) {mustBeNumeric}
 end
-
-% Obtain the optical power for this eye
-%% CALCULATE FOR FOCAL LENGTH IN AIR OR IN VITREOUS?
-[diopters,focalPoint] = calcOpticalPower(eye);
-
-% Obtain the radius of the entrance pupil for this eye
-pupilRadius = stopRadius;
-
-% The f-number of the eye
-f = norm(1000/diopters)/(pupilRadius*2);
 
 % The wavelength for the calculation, in mm
 lambdaMm = eye.index.wavelength / 1e6;
 
-% The airy disk diameter
-airyDiskRadius = 2.44 * lambdaMm * f;
+% The angular width of the first minimum of the Airy Disk on the retina,
+% as seen from the aperture, in degrees
+angularDiam = rad2deg(1.22 * lambdaMm / (stopRadius*2));
 
+% We obtain the distance of the aperture stop from the vertex of the retina
+d = eye.stop.center(1) - eye.landmarks.vertex.coords(1);
+
+% Convert the angular diameter to radius, and then mm
+airyDiskRadius = tand(angularDiam/2)*d;
 
 end
