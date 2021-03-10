@@ -157,12 +157,12 @@ for hh=1:length(horiz)
         
         %% The angle with which a ray the center of the aperture stop
         [~, initialRay]  = findPupilRay( eyeCoordOrigin, eyePose, worldTarget, rotationCenters, opticalSystemRotInitial, opticalSystemFixInitial );
-        [p1p2A,p1p3A] = quadric.rayToAngles(initialRay);
+        [p1p2A,p1p3A] = quadric.rayToAngles(initialRay');
         
         
         %% Repeat the ray trace with the lens correction
         [~, initialRay]  = findPupilRay( eyeCoordOrigin, eyePose, worldTarget, rotationCenters, opticalSystemRot, opticalSystemFix );
-        [p1p2B,p1p3B] = quadric.rayToAngles(initialRay);
+        [p1p2B,p1p3B] = quadric.rayToAngles(initialRay');
         
         
         %% Calculate magnification

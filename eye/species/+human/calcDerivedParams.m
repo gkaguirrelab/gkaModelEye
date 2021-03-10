@@ -15,7 +15,12 @@ function derivedParams = calcDerivedParams(varargin)
 %   parameters. Absent a change in the code that computers the eye model,
 %   however, execution of this routine will not be needed in general use.
 %
-%   Right now, just the stop ellipticity is derived here.
+%   The following values are derived:
+%     - stop ellipticity
+%     - navarroD parameter that provides 0 accommodation for emmetropic eye
+%
+%   The 'initialize' flag may be set to induce the routine to save out the
+%   derivedParams with their initialization values.
 %
 % Inputs:
 %   none
@@ -25,6 +30,11 @@ function derivedParams = calcDerivedParams(varargin)
 %                           parameter values.
 %
 % Examples:
+%{
+    % ETTBSkip -- We don't want to initialize the params everytime we test
+    % the examples
+    human.calcDerivedParams('initialize',true);
+%}
 %{
     % ETTBSkip -- We don't want to remake the params when we are testing
     % Iteratively run the routine to find the stable set of params
@@ -46,6 +56,7 @@ p.addParameter('derivedParams',[],@(x)(isstruct(x) || isempty(x)));
 p.addParameter('derivedParamsPath', ...
     replace(mfilename('fullpath'),mfilename(),'derivedParams.mat'), ...
     @(x)(ischar(x) || isempty(x)));
+p.addParameter('initialize',false,@islogical);
 p.addParameter('verbose',true,@islogical);
 p.addParameter('showPlots',true,@islogical);
 
@@ -53,7 +64,7 @@ p.addParameter('showPlots',true,@islogical);
 p.parse(varargin{:})
 
 
-%% Initialize derivedParams
+%% Set default derivedParams
 % There is a boot-strapping problem as the set of parameters are inter-
 % dependent. The params are either passed or set to initial values to
 % permit the subsequent calculations to proceed. The ability to pass in the
@@ -62,8 +73,15 @@ p.parse(varargin{:})
 if isempty(p.Results.derivedParams)
     derivedParams = struct();
     derivedParams.stopEccenParams = [-1.7523 4.7609 0.1800 0.0973];
+    derivedParams.navarroDAtInfinity = -15;
 else
     derivedParams = p.Results.derivedParams;
+end
+
+% If we have been told to initialize, then save out the default params
+if p.Results.initialize && ~isempty(p.Results.derivedParamsPath)
+    save(p.Results.derivedParamsPath,'derivedParams')
+    return
 end
 
 
@@ -193,6 +211,27 @@ if p.Results.showPlots
     xlabel('aperture stop radius [mm]');
     ylabel('aperture stop non-loinear ellipticity');
     title('derivedParams.stopEccenParams');
+end
+
+
+%% NavarroD at infinity
+% Used in human.lens, this is the default value for the navarroD parameter
+% that provides for accommodation at infinity for the default eye.
+
+% Alert the user
+if p.Results.verbose
+    fprintf('Calculating navarroD at infinity.\n');
+    tic
+end
+
+eye = modelEyeParameters();
+derivedParams.navarroDAtInfinity = calcNavarroD(eye,0);
+
+% Alert the user
+if p.Results.verbose
+    toc
+    fprintf('derivedParams.navarroDAtInfinity = [%4.3f];\n', ...
+        derivedParams.navarroDAtInfinity);
 end
 
 

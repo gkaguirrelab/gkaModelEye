@@ -61,6 +61,25 @@ function fieldRay = calcFieldRay(fieldAngularPosition,rayOriginDistance,angleRef
 %                           expressed as a unit step, and t is unity for a
 %                           unit vector.
 %
+% Examples:
+%{
+    % A field ray arising at the visual angles corresponding to the fovea
+    eye = modelEyeParameters();
+    fieldAngularPosition = eye.landmarks.fovea.degField;
+    angleReferenceCoord = eye.landmarks.incidentNode.coords;
+    rayOriginDistance = 1000;
+    distanceReferenceCoord = calcPrincipalPoint(eye);
+    fieldRay = calcFieldRay(fieldAngularPosition,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord);
+%}
+
+
+arguments
+    fieldAngularPosition (1,2) {mustBeNumeric}
+    rayOriginDistance (1,1) {mustBeNumeric}
+    angleReferenceCoord (3,1) {mustBeNumeric}
+    distanceReferenceCoord (3,1) {mustBeNumeric}
+end
+
 
 % First, create a ray that leaves the angleReferenceCoord at the specified
 % fieldAngularPositions

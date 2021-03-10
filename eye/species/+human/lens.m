@@ -7,9 +7,14 @@ function lens = lens( eye )
 % Description:
 %   A model of the crystalline lens is generated, expressed as a set of
 %   quadric surfaces. The anterior and posterior surfaces of the lens are
-%   modeled as one-half of a two-sheeted hyperboloid. The radii of the
-%   surfaces, and their dependence upon age and the accommodative state of
-%   the eye, are taken from:
+%   modeled as one-half of a two-sheeted hyperboloid.
+%
+%   The lens model begins with published values, which are subsequently
+%   adjusted to allow for relatively equal accommodation across the retinal
+%   surface in the emmetropic eye.
+%
+%   The starting point for the radii of the surfaces, and their dependence
+%   upon age and the accommodative state of the eye, are taken from:
 %
 %       Navarro, Rafael. "Adaptive model of the aging emmetropic eye and
 %       its changes with accommodation." Journal of vision 14.13 (2014):
@@ -25,8 +30,16 @@ function lens = lens( eye )
 %   Liou & Brennan 1997 JOSA-A.
 %
 %   The lens is modeled as being center aligned with the optical axis of
-%   the eye, and thus no tilt or shift is needed in the current model. The
-%   axial position of the lens center is taken from Atchison 2006.
+%   the eye, and thus no tilt or shift is needed in the current model.
+%
+%   The axial position of the lens center was selected so that the anterior
+%   surface of the lens is at the leve of the aperture stop when an
+%   emmetropic eye is accommodated to 5 D.
+%
+%   The values for the radius of curvature and asphericity of the posterior
+%   surface of the lens were modified so that the image surface (±40°)
+%   produced by an emmetropic eye accommodated at infinity closely
+%   approximates the retinal surface. SEE: d004_imageSurface.mlx
 %
 % Inputs:
 %   eye                   - Structure.
@@ -35,15 +48,19 @@ function lens = lens( eye )
 %   lens                  - Structure.
 %
 
+
+%% Set accommodation
 % The accommodative state of the eye can be specified in two different
 % ways. An explicit value for the "navarroD" parameter may be set, or the
 % desired accommodative state of the eye may be specified. If neither is
-% set, then navarroD is set to 0. If the navarroD is set, then this value
-% is used. If the accommodation is set, then a search is performed in an
-% attempt to find the navarroD parameter that provides the desired
-% accommodation value for this eye along the longitudinal axis. If both
-% values are set, then the navarroD parameter is used as the initial guess
-% for the search to produce the desired accommodation.
+% set, then navarroD is set to the value in the derived parameters that
+% provides for accommodation at infinity for the default (emmetropic) eye.
+% If the navarroD is set, then this value is used. If the accommodation is
+% set, then a search is performed in an attempt to find the navarroD
+% parameter that provides the desired accommodation value for this eye
+% along the longitudinal axis. If both values are set, then the navarroD
+% parameter is used as the initial guess for the search to produce the
+% desired accommodation.
 
 % Set the navarroD to empty, or the passed value
 D = [];
@@ -61,9 +78,9 @@ if isfield(eye.meta,'accommodation')
     end
 end
 
-% If neither A nor D was provided, set D to zero.
+% If neither A nor D was provided, set D to the derived parameter value
 if isempty(D) && isempty(A)
-    D = 0;
+    D = eye.derivedParams.navarroDAtInfinity;
 end
 
 % If an A value is specified, search to set a D value that provides the
@@ -78,7 +95,7 @@ if ~isempty(A)
     bootstrapEye = eye;
     bootstrapEye.meta.accommodation = [];
     if isempty(D)
-        bootstrapEye.meta.navarroD = 0;
+        bootstrapEye.meta.navarroD = eye.derivedParams.navarroDAtInfinity;
     else
         bootstrapEye.meta.navarroD = D;
     end
@@ -91,6 +108,9 @@ if ~isempty(A)
     % Done with the bootstrap
     clear bootstrapEye
 end
+
+
+%% Prepare lens parameters
 
 % Obtain the age of the modeled subject
 age = eye.meta.ageYears;
@@ -118,7 +138,7 @@ nPosition = @(n) (nCore - n).^(1/2)./(nCore - nEdge).^(1/2);
 % Positioned so that when the eye is accommodated to focus on a point 200
 % mm away (i.e., 5 diopters) the front surface of the lens is at the level
 % of the aperture stop of the iris.
-lens.center = [-5.6 0 0];
+lens.center = [-5.2 0 0];
 
 % The thickness of the back and front of the lens, taken from Navarro 2014,
 % table 2.
@@ -161,8 +181,16 @@ numShells = 21;
     solution.a
     solution.b
 %}
-R = 1./( -(1/(5.9 - 0.013*age)) - 0.0043*D  );
-Q = -3;
+% Rconst is 5.9 if derived from the Navarro 2014 parameters, but is
+% modified here to a value of 4.0 to provide appropriate peripheral retinal
+% accommodation in the emmetropic eye.
+Rconst = 4.0;
+R = 1./( -(1/(Rconst - 0.013*age)) - 0.0043*D  );
+
+% The asphericity (Q) value is given as -3 in Navarro 2014, but is adjusted
+% here to be -2.5 to provide appropriate peripheral retinal accommodation
+% in the emmetropic eye.
+Q = -2.5;
 a = R * sqrt(abs( 1 / (Q - 1 ) )) * sign(Q);
 b = R / (Q - 1 );
 lensBackRadii(1) = abs(b); lensBackRadii(2:3) = abs(a);

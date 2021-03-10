@@ -1,4 +1,4 @@
-function [eyePose,errors] = calcFixationPose(eye,fieldAngularPosition,targetDistance,addPseudoTorsionFlag,stopRadius,cameraMedium)
+function [eyePose,errors] = calcFixationPose(eye,fieldAngularPosition,targetDistance,stopRadius,addPseudoTorsionFlag,cameraMedium)
 % Returns the oculomotor pose of the eye to fixate a target
 %
 % Syntax:
@@ -43,6 +43,7 @@ function [eyePose,errors] = calcFixationPose(eye,fieldAngularPosition,targetDist
 %   targetDistance        - Scalar. The distance (in mm) of the origin of
 %                           the target from the incident node. Assumed to
 %                           be 1500 mm if not defined.
+%   stopRadius            - Scalar. Radius of the aperture stop, in mm.
 %   addPseudoTorsionFlag  - Logical. Defaults to "true" controls if pseudo-
 %                           torsion is added to the eyePose to conform to
 %                           Listing's Law. The primary position of the eye
@@ -51,7 +52,6 @@ function [eyePose,errors] = calcFixationPose(eye,fieldAngularPosition,targetDist
 %                               eye.rotationCenters.primaryPosition
 %                           For more details see:
 %                               /project/stages/addPseudoTorsion.m
-%   stopRadius            - Scalar. Radius of the aperture stop, in mm.
 %   cameraMedium          - The medium in which the eye is located.
 %                           Defaults to 'air'.
 %
@@ -79,8 +79,8 @@ arguments
     eye (1,1) {isstruct}
     fieldAngularPosition (1,2) {mustBeNumeric} = [0, 0]
     targetDistance (1,1) {mustBeNumeric} = 1500
-    addPseudoTorsionFlag (1,1) {islogical} = true
     stopRadius (1,1) {mustBeNumeric} = 1.53
+    addPseudoTorsionFlag (1,1) {islogical} = true
     cameraMedium = 'air'
 end
 

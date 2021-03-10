@@ -38,7 +38,8 @@ end
 % to reflect these circumstances for this calculation.
 eye.meta.spectralDomain = 'vis';
 eye.meta.ageYears = 18;
-eye.meta.accommodationDiopters = 0;
+eye.meta.navarroD = eye.derivedParams.navarroDAtInfinity;
+eye.meta.accommodation = [];
 
 % Update the lens field for these values
 eye.lens = human.lens(eye);

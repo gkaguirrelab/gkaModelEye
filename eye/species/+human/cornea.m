@@ -163,10 +163,12 @@ cornea.frontSurfaceRadii = frontSurfaceRadii;
 
 %% Cornea ellipsoid rotation
 % The cornea can be rotated out of alignment with the optical axis of the
-% eye. If not otherwise specified, we follow Navarro 2006 and rotate the
-% apex of the corneal ellipsoid towards the visual axis of the eye, but not
-% completely. We adopt 2.5 degrees of "tip" rotation about the vertical
-% axis towards the nose as a default.
+% eye, although the default value is to maintain the cornea centered on the
+% longitudinal axis. If rotation were to be added, one option is to follow
+% Navarro 2006 and rotate the apex of the corneal ellipsoid towards the
+% visual axis of the eye, but not completely. About 2.5 degrees of "tip"
+% rotation about the vertical axis towards the nose would be a reasonable
+% choice.
 %
 % Note the order of listing of angles. In the kvals vector, the rotations
 % are listed in the order:
@@ -178,7 +180,7 @@ cornea.frontSurfaceRadii = frontSurfaceRadii;
 %
 %   [torsion, tilt (rotation about vertical), tip (rotation about the horizontal axis) ]
 %
-cornea.kvals(3:5) = [0 2.5 0];
+cornea.kvals(3:5) = [0 0 0];
 if ~isempty(eye.meta.kvals)
     nkvals = length(eye.meta.kvals);
     if nkvals > 2

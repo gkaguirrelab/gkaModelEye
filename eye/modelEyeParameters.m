@@ -221,7 +221,7 @@ switch eye.meta.species
         end
 
         % Refractive indices
-        eye.index.vitreous = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );
+        [eye.index.vitreous,eye.index.wavelength] = returnRefractiveIndex( 'vitreous', p.Results.spectralDomain );
         eye.index.aqueous = returnRefractiveIndex( 'aqueous', p.Results.spectralDomain );
 
         % Eye anatomy

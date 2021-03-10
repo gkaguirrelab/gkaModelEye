@@ -7,18 +7,17 @@ function accommodation = calcAccommodation(eye,fieldAngularPosition,angleReferen
 % Description
 %   The accommodative state of the eye is specified in units of diopters,
 %   where the reciprocal of this value gives the distance from the
-%   principal point of the optical system to the focal point.
+%   object focal point to the first principal point of the optical system.
 %
-%   By default, the calculation is performed with respect to a field
-%   position point on the longitudinal axis of the optical system. An
-%   alternative (more complicated) choice is to select a
-%   fieldAngularPosition and angleReferenceCoord corresponding to the
-%   location of the fovea w.r.t. the incidentNode of the eye. A further
-%   wrinkle is that the approximation to the incident nodal point shifts
-%   with changes in lens properties. Therefore, one convention is to
-%   estimate the incident nodal point for an eye accommodated at infinity,
-%   and then retain this as the landmark for which visual angle is
-%   calculated.
+%   By default, the calculation is performed for an object space location
+%   on the longitudinal axis of the optical system. An alternative is to
+%   select a fieldAngularPosition and angleReferenceCoord corresponding to
+%   the location of (e.g.) the fovea w.r.t. the approximate incident node
+%   of the eye. This would be a specification of a field location in visual
+%   angle. Note that visual field angle is defined w.r.t. a fixed value for
+%   the approximate indcident node, which is calculated and stored for the
+%   model eye with a lens accommodation setting that would place an
+%   emmetropic eye focused at infinity.
 
 %
 % Inputs:

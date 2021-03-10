@@ -170,7 +170,7 @@ fieldRay = calcFieldRay(fieldAngularPosition,rayOriginDistance,[0;0;0],distanceR
 rayOrigin = fieldRay(:,1);
 
 % Find the nodal ray from this point
-[rayPath,angleError] = findNodeHandle(rayOrigin',opticalSystem);
+[rayPath,~,angleError] = findNodeHandle(rayOrigin',opticalSystem);
 
 % Find the Euclidean distance between the retinal target coordinate and the
 % intersection of the ray upon the retina.

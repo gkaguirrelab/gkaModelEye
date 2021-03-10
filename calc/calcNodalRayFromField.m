@@ -93,7 +93,7 @@ arguments
     fieldAngularPosition (1,2) {mustBeNumeric} = [0,0]
     rayOriginDistance (1,1) {mustBeNumeric} = 1500
     angleReferenceCoord (3,1) {mustBeNumeric} = [0;0;0]
-    distanceReferenceCoord (3,1) double = [0;0;0]
+    distanceReferenceCoord (3,1) {mustBeNumeric} = [0;0;0]
     cameraMedium = 'air'
 end
 
@@ -115,12 +115,18 @@ if isstruct(opticalSystem)
     end
 end
 
+% Ensure that the opticalSystem has 100 rows to make the MEX file
+% happy
+osRowLength = size(opticalSystem,2);
+opticalSystem = [opticalSystem; ...
+    nan(100-size(opticalSystem,1),osRowLength)];
+
 % Define the rayOrigin
 fieldRay = calcFieldRay(fieldAngularPosition,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord);
 rayOrigin = fieldRay(:,1);
 
 % Find the nodal ray
-[rayPath,angleError] = findNodeHandle(rayOrigin',opticalSystem);
+[rayPath,~,angleError] = findNodeHandle(rayOrigin',opticalSystem);
 
 
 end

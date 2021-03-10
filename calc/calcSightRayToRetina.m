@@ -141,20 +141,15 @@ end
 function [fVal,rayPath] = objective(p,sceneGeometry,rayDestination,rayOriginDistance,stopRadius)
 
 % The passed p vector is interpreted as the angles of a coordinate point
-% w.r.t. the incident node. We find the coordinate at this point, at the
-% rayOriginDistance
+% w.r.t. the incident node. We find the object coord (at the
+% rayOriginDistance) and entrance window for this point.
 referenceCoord = sceneGeometry.eye.landmarks.incidentNode.coords';
-R = quadric.anglesToRay(referenceCoord,p(1),p(2));
-rayOrigin = R(:,1)+R(:,2).*rayOriginDistance;
+[entranceWindowCenter,objectCoord] = ...
+    calcEntranceWindow(sceneGeometry.eye,p,stopRadius,rayOriginDistance,referenceCoord,referenceCoord);
 
-% Obtain the center of the entrance pupil as seen from the rayOrigin
-sceneGeometry.cameraPosition.translation = rayOrigin([2 3 1]);
-[~, ~, ~, ~, ~, eyePoints, pointLabels] = projectModelEye([0 0 0 stopRadius], sceneGeometry, 'nStopPerimPoints', 16);
-entrancePupilCenter = mean(eyePoints(strcmp(pointLabels,'pupilPerimeter'),:))';
-
-% Trace a ray from rayOrigin, intersecting the entrancePupilCenter, and
+% Trace a ray from objectCoord, intersecting the entranceWindowCenter, and
 % follow it to the retina
-R = quadric.normalizeRay([rayOrigin,entrancePupilCenter-rayOrigin]);
+R = quadric.coordsToRay([objectCoord,entranceWindowCenter]);
 [outputRay, rayPath] = rayTraceQuadrics(R, sceneGeometry.refraction.mediumToRetina.opticalSystem);
 
 % The fVal is the Euclidean distance between the retinal target coordinate

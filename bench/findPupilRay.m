@@ -63,7 +63,7 @@ function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyeCoord
         sceneGeometry.refraction.mediumToCamera.opticalSystem};
     outputRay = findPupilRay( sceneGeometry.eye.stop.center, [-5 10 0 2], args{:} );
     % Test output against cached value
-    outputRayCached = [ -0.026736870329769   0.283011692696515  -0.625511761260528;  0.978122806344984   0.095375188765096  -0.184876577953606 ];
+    outputRayCached = [ -0.027365339254198   0.320630761081699  -0.625739056740334;  0.978152533979250   0.095064502933833  -0.184879313477513 ];
     assert(max(max(abs(outputRay - outputRayCached))) < 1e-6)
 %}
 %{
@@ -251,6 +251,8 @@ outputRay = twoSystemTrace(initialRay, eyePose, rotationCenters, opticalSystemRo
 % space of the eye prior to rotation
 outputRay = rotateEyeRay(outputRay, eyePose, rotationCenters, 'inverse');
 
+% Transpose the initialRay to return
+initialRay = initialRay';
 
 end % findPupilRay -- MAIN
 

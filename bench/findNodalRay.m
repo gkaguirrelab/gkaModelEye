@@ -1,8 +1,8 @@
-function [rayPath,angleError] = findNodalRay(rayOrigin,opticalSystem,incidentNodeX0)
+function [rayPath,outputRay,angleError] = findNodalRay(rayOrigin,opticalSystem,incidentNodeX0)
 % Returns the path of the nodal ray from the starting coordinate
 %
 % Syntax:
-%  [rayPath,errors] = findNodalRay(rayOrigin,opticalSystem,incidentNodeX0)
+%  [rayPath,outputRay,angleError] = findNodalRay(rayOrigin,opticalSystem,incidentNodeX0)
 %
 % Description
 %   Given an opticalSystem and a coordinate in eye coordinate space, the
@@ -33,6 +33,12 @@ function [rayPath,angleError] = findNodalRay(rayOrigin,opticalSystem,incidentNod
 %                           is equal to initial position. If a surface is
 %                           missed, then the coordinates for that surface
 %                           will be nan.
+%   outputRay             - 2x3 matrix that specifies the ray as a unit 
+%                           vector of the form [p; d], corresponding to
+%                               R = p + t*u
+%                           where p is vector origin, d is the direction
+%                           expressed as a unit step, and t is unity.
+%                           Dimensions p1, p2, p3.
 %   angleError            - Scalar. The departure from parallel of the 
 %                           incident and emergent rays (deg)
 %
@@ -45,7 +51,7 @@ function [rayPath,angleError] = findNodalRay(rayOrigin,opticalSystem,incidentNod
     % Define a point in eye-world coordinate space
     X = [150, 20, 10];
     % Find the nodal ray
-    [rayPath,angleError] = findNodalRay(X,opticalSystem);
+    rayPath = findNodalRay(X,opticalSystem);
 %}
 
 if nargin==2
@@ -67,14 +73,14 @@ myObj = @(p) objective(p,rayOrigin,opticalSystem);
 p = fminsearch(myObj,p0);
 
 % Evaluate the objective function once more, using the found values
-[angleError,rayPath] = objective(p,rayOrigin,opticalSystem);
+[angleError,rayPath,outputRay] = objective(p,rayOrigin,opticalSystem);
 
 end
 
 
 %% Local function
 
-function [fVal,rayPath] = objective(p,rayOrigin,opticalSystem)
+function [fVal,rayPath,outputRay] = objective(p,rayOrigin,opticalSystem)
 
 % Trace from rayOrigin at p angles.
 R = quadric.anglesToRay(rayOrigin,p(1),p(2));
