@@ -1,12 +1,12 @@
 function airyDiskRadius = calcAiryDiskRadius(eye,stopRadius)
-% Returns the radius of the Airy Disk for an eye and stop radius
+% Returns the radius of the Airy disk for an eye and stop radius
 %
 % Syntax:
 %  airyDiskRadius = calcAiryDiskRadius(eye,stopRadius)
 %
 % Description
 %   The diffraction limit of an optical system can be characterized by the
-%   size of the Airy Disk, which is influenced by the wavelength of light
+%   size of the Airy disk, which is influenced by the wavelength of light
 %   and the size of the aperture stop.
 %
 % Inputs:
