@@ -1,4 +1,4 @@
-function [entranceWindowCenter,objectCoord,entranceWindowPerimeter] = calcEntranceWindow(eye,fieldAngularPosition,stopRadius,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,nStopPerimPoints,paraxialThresh,cameraMedium)
+function [entranceWindowCenter,objectCoord,entranceWindowPerimeter,radiusEntranceWindow] = calcEntranceWindow(eye,fieldAngularPosition,stopRadius,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,nStopPerimPoints,paraxialThresh,cameraMedium)
 % Returns the coordinates of the entrance window of an eye
 %
 % Syntax:
@@ -6,7 +6,7 @@ function [entranceWindowCenter,objectCoord,entranceWindowPerimeter] = calcEntran
 %
 % Description
 %   The entrance window is the image of the field stop of an optical system
-%   as viewd from an off-axis location. The field stop is the limiting
+%   as viewed from an off-axis location. The field stop is the limiting
 %   aperture for rays traveling from the object to the image. For the eye,
 %   the aperture of the iris is the field stop. This routine returns the
 %   center (and perimeter) of the entrance window of the eye as viewed from
@@ -53,6 +53,7 @@ function [entranceWindowCenter,objectCoord,entranceWindowPerimeter] = calcEntran
 %                           calculated
 %   entranceWindowPerimeter - 3xnStopPerimPoints. The set of points on the
 %                           entrance window perimeter
+%   radiusEntranceWindow  - Scalar. The radius of the entrance window.
 %
 % Examples:
 %{
@@ -153,5 +154,6 @@ t = fminunc(myObj,0,options);
 % These are our return variables
 entranceWindowPerimeter = shifted(t);
 entranceWindowCenter = mean(entranceWindowPerimeter,2);
+radiusEntranceWindow = mean(vecnorm(entranceWindowPerimeter-entranceWindowCenter));
 
 end
