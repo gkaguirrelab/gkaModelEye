@@ -5,7 +5,9 @@ function [retinaPoints,rayPaths] = calcRayBundleFromField(eye,fieldAngularPositi
 %  [retinaPoints,rayPaths] = calcRayBundleFromField(eye,fieldAngularPosition,stopRadius,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,nStopPerimPoints,paraxialThresh,cameraMedium)
 %
 % Description
-%
+%   Given a position in object space and the radius of the aperture stop,
+%   this routine defines and traces a set of rays that intersect around the
+%   perimeter of the entrance window of the eye.
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
