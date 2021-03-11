@@ -67,7 +67,7 @@ function [navarroD,internalFocalPoint,errors,opticalSystem,rayPath1,rayPath2] = 
     angleReferenceCoord = eye.landmarks.incidentNode.coords';
     [navarroD,internalFocalPoint,errors,opticalSystem,rayPath1,rayPath2] = calcNavarroD(eye,desiredAccommodation,fieldAngularPosition,angleReferenceCoord);
     % Show the eye and the converging rays
-    plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'surfaceAlpha',0.05);
+    plotOpticalSystem(opticalSystem,'surfaceAlpha',0.05);
     plotOpticalSystem('newFigure',false,'rayPath',rayPath1);
     plotOpticalSystem('newFigure',false,'rayPath',rayPath2);
 %}

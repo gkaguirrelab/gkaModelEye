@@ -127,9 +127,8 @@ else
     findNodeHandle = @findNodalRay;
 end
 
-% Obtain the optical system for this eye
-opticalSystem = assembleOpticalSystem(eye,...
-    'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
+% Create the optical system
+opticalSystem = parseOpticalSystemArgument(eye,'mediumToRetina',cameraMedium);
 
 % Initialize an anonymous function for the objective.
 myObj = @(p) objective(p,opticalSystem,rayDestination,rayOriginDistance,distanceReferenceCoord,findNodeHandle);

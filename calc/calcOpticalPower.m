@@ -80,21 +80,14 @@ function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayOriginD
 %}
 
 arguments
-    opticalSystem
+    opticalSystem {mustBeOpticalSystemCapable}
     rayOriginDistance (1,1) {mustBeNumeric} = 1500
     rayIntersectionHeight (1,1) {mustBeNumeric} = 0.5
     cameraMedium = 'air'
 end
 
-% Check if we were passed an eye model. If so, create the optical system
-if isstruct(opticalSystem)
-    if isfield(opticalSystem,'cornea')
-        eye = opticalSystem;
-        clear opticalSystem;
-        opticalSystem = assembleOpticalSystem(eye,...
-            'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
-    end
-end
+% Create the optical system
+opticalSystem = parseOpticalSystemArgument(opticalSystem,'mediumToRetina',cameraMedium);
 
 % Strip the optical system of any rows which are all nans
 opticalSystem = opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);

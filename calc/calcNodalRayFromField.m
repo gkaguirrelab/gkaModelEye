@@ -89,7 +89,7 @@ function [rayPath,angleError] = calcNodalRayFromField(opticalSystem,fieldAngular
 
 
 arguments
-    opticalSystem
+    opticalSystem {mustBeOpticalSystemCapable}
     fieldAngularPosition (1,2) {mustBeNumeric} = [0,0]
     rayOriginDistance (1,1) {mustBeNumeric} = 1500
     angleReferenceCoord (3,1) {mustBeNumeric} = [0;0;0]
@@ -105,15 +105,8 @@ else
     findNodeHandle = @findNodalRay;
 end
 
-% Check if we were passed an eye model. If so, create the optical system
-if isstruct(opticalSystem)
-    if isfield(opticalSystem,'cornea')
-        eye = opticalSystem;
-        clear opticalSystem;
-        opticalSystem = assembleOpticalSystem(eye,...
-            'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
-    end
-end
+% Create the optical system
+opticalSystem = parseOpticalSystemArgument(opticalSystem,'mediumToRetina',cameraMedium);
 
 % Ensure that the opticalSystem has 100 rows to make the MEX file
 % happy

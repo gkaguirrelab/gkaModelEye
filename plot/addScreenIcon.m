@@ -18,8 +18,8 @@ function plotHandles = addScreenIcon(sceneGeometry,aziEle, gazeTargets)
 % Examples:
 %{
     sceneGeometry = createSceneGeometry();
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
-    addCameraIcon(sceneGeometry);
+    plotOpticalSystem(sceneGeometry);
+    addScreenIcon(sceneGeometry);
 %}
 
 if nargin==1

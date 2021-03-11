@@ -86,7 +86,7 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
     % Reverse the optical system so we can trace from the cameraToEye
     opticalSystem = reverseSystemDirection(opticalSystem);
     % Plot this
-    plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true);
+    plotOpticalSystem(opticalSystem);
     % Trace parallel rays from right (the world) to left (the eye)
     R1 = quadric.normalizeRay([50,-1;-3,0;0,0]);
     R2 = quadric.normalizeRay([50,-1;3,0;0,0]);

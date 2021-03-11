@@ -18,7 +18,7 @@ function plotHandles = addCameraIcon(sceneGeometry,aziEle)
 % Examples:
 %{
     sceneGeometry = createSceneGeometry();
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
+    plotOpticalSystem(sceneGeometry);
     addCameraIcon(sceneGeometry);
 %}
 

@@ -82,7 +82,7 @@ function [internalFocalPoint,raySeparationAtFocalPoint,rayPath1,rayPath2] = calc
 
 
 arguments
-    opticalSystem
+    opticalSystem {mustBeOpticalSystemCapable}
     fieldAngularPosition (2,1) {mustBeNumeric} = [0; 0]
     rayOriginDistance {isscalar,mustBeNumeric} = Inf
     angleReferenceCoord (3,1) {mustBeNumeric} = [0; 0; 0]
@@ -92,16 +92,8 @@ arguments
     cameraMedium = 'air'
 end
 
-% Check if we were passed an eye model. If so, create the optical system
-if isstruct(opticalSystem)
-    if isfield(opticalSystem,'cornea')
-        eye = opticalSystem;
-        clear opticalSystem;
-        opticalSystem = assembleOpticalSystem(eye,...
-            'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium,...
-            'opticalSystemNumRows',[]);
-    end
-end
+% Create the optical system
+opticalSystem = parseOpticalSystemArgument(opticalSystem,'mediumToRetina',cameraMedium);
 
 % Obtain the field ray
 fieldRay = ...

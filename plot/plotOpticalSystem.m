@@ -1,11 +1,11 @@
-function [figHandle, plotHandles] = plotOpticalSystem(varargin)
-% Create a 3D rendered plot of the specified optical system 
+function [figHandle, plotHandles] = plotOpticalSystem(opticalSystem,options)
+% Create a 3D rendered plot of the specified optical system
 %
 % Syntax:
 %  figHandle = plotOpticalSystem(varargin)
 %
 % Description:
-%   Create a 3D rendered plot of the specified optical system 
+%   Create a 3D rendered plot of the specified optical system
 %
 % Inputs:
 %   none
@@ -13,7 +13,7 @@ function [figHandle, plotHandles] = plotOpticalSystem(varargin)
 % Optional key/value pairs:
 %  'newFigure'            - Logical. Determines if we create a new figure,
 %                           or plot in the currently active figure.
-%  'visible'              - Logical. If we are crearing a new figure, 
+%  'visible'              - Logical. If we are crearing a new figure,
 %                           dertermines if that figure is made visible or
 %                           not.
 %  'surfaceSet'           - Struct or numeric. This is the specification of
@@ -48,14 +48,14 @@ function [figHandle, plotHandles] = plotOpticalSystem(varargin)
 %                           will be nan. This rayPath could be obtained
 %                           using the function:
 %                               quadric/rayTraceQuadrics.m
-%  'rayColor'             - Char vector or 1x3 vector that specifies the 
+%  'rayColor'             - Char vector or 1x3 vector that specifies the
 %                           line color for the ray.
-%  'outputRay'            - 3x2 matrix that specifies the ray as a unit 
+%  'outputRay'            - 3x2 matrix that specifies the ray as a unit
 %                           vector of the form [p; d], corresponding to
 %                               R = p + t*u
 %                           where p is vector origin, d is the direction
 %                           expressed as a unit step, and t is unity.
-%  'outputRayColor'       - Char vector or 1x3 vector that specifies the 
+%  'outputRayColor'       - Char vector or 1x3 vector that specifies the
 %                           line color for the outputRay.
 %  'addLighting'          - Logical. Adds gouraud lighting to the plot.
 %  'viewAngle'            - 1x2 vector. The view angle for the plot
@@ -67,61 +67,44 @@ function [figHandle, plotHandles] = plotOpticalSystem(varargin)
 %
 % Examples:
 %{
-    % Plot an entire surface set
+    % Plot a selected surface set
     sceneGeometry = createSceneGeometry();
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
-%}
-%{
-    % Plot just the opticalSystem with default color and transparency
-    sceneGeometry = createSceneGeometry();
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera.opticalSystem,'addLighting',true);
+    plotOpticalSystem(sceneGeometry,'surfaceSet','retinaToCamera');
 %}
 %{
     %% Rays from the retina through the eye and a spectacle lens
     sceneGeometry = createSceneGeometry('sphericalAmetropia',-2,'spectacleLens',-2);
     % Plot the optical system
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
-    % Define an initial ray arising at the fovea
-    p = sceneGeometry.eye.landmarks.fovea.coords';
-    % Loop over horizontal angles relative to the visual axis
-    for ii = -2:1:2
-        % Assemble the ray
-        R = quadric.normalizeRay( ...
-            quadric.anglesToRay(p, ...
-                sceneGeometry.eye.landmarks.fovea.degField(1)+ii, ...
-                sceneGeometry.eye.landmarks.fovea.degField(2)));
-        % Perform the ray trace
-        [outputRay, rayPath] = rayTraceQuadrics(R, sceneGeometry.refraction.retinaToCamera.opticalSystem);
-        % Add this ray to the optical system plot
-        plotOpticalSystem('newFigure',false,'outputRay',outputRay,'rayPath',rayPath);
-    end
+    plotOpticalSystem(sceneGeometry,'surfaceSet','retinaToCamera');
+    % Obtain the line-of-sight ray
+    rayPath = calcSightRayToRetina(sceneGeometry.eye);
+    % Add this ray to the optical system plot
+    plotOpticalSystem('newFigure',false,'rayPath',rayPath);
+    xlim([-30 30]);
 %}
 
 
-%% input parser
-p = inputParser; p.KeepUnmatched = true;
+arguments
+    opticalSystem {mustBeOpticalSystemCapable} = []
+    options.newFigure (1,1) logical = true
+    options.visible (1,1) logical = true
+    options.surfaceSet char = 'mediumToRetina'
+    options.surfaceAlpha (1,1) {mustBeNumeric} = 0.2;
+    options.retinaGeodetics (1,1) logical = false
+    options.rayPath {mustBeNumeric} = [];
+    options.rayColor = 'red';
+    options.outputRay {mustBeNumeric} = [];
+    options.outputRayColor = 'red';
+    options.outputRayScale (1,1) {mustBeNumeric} = 3;
+    options.addLighting (1,1) logical = true
+    options.viewAngle (1,2) {mustBeNumeric} = [40 40];
+end
 
-% Optional
-p.addParameter('newFigure',true,@islogical);
-p.addParameter('visible',true,@islogical);
-p.addParameter('surfaceSet',[], @(x)(isempty(x) | isstruct(x) | isnumeric(x)));
-p.addParameter('surfaceAlpha', 0.2,@isnumeric);
-p.addParameter('retinaGeodetics', false,@islogical);
-p.addParameter('rayPath',[], @(x)(isempty(x) | isnumeric(x)));
-p.addParameter('rayColor','red',@(x)(ischar(x) | isnumeric(x)));
-p.addParameter('outputRay',[], @(x)(isempty(x) | isnumeric(x)));
-p.addParameter('outputRayColor','red',@(x)(ischar(x) | isnumeric(x)));
-p.addParameter('outputRayScale',3,@isnumeric);
-p.addParameter('addLighting',false, @islogical);
-p.addParameter('viewAngle',[40 40],@isnumeric);
-
-% parse
-p.parse(varargin{:})
 
 
 % Open a figure
-if p.Results.newFigure
-    if p.Results.visible
+if options.newFigure
+    if options.visible
         figHandle = figure('Visible', 'on');
     else
         figHandle = figure('Visible', 'off');
@@ -135,42 +118,29 @@ hold on
 plotHandles = gobjects(0);
 
 % Plot the surfaceSet if provided
-if ~isempty(p.Results.surfaceSet)
-
-    % Assemble surfaceSet components
-    if isstruct(p.Results.surfaceSet)
-        % If we have a whole surface set, extract the optical system and
-        % plot information
-        opticalSystem=p.Results.surfaceSet.opticalSystem;
-        
-        % Strip any nan rows from the optical system.
-        opticalSystem=opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
-        
-        % Determine the number of surfaces
-        nSurfaces = size(opticalSystem,1);
-        
-        % Obtain the surface Labels and colors
-        surfaceColors=p.Results.surfaceSet.surfaceColors;
-        surfaceLabels=p.Results.surfaceSet.surfaceLabels;
-        
-    else
-        % We just have an optical system matrix.
-        opticalSystem=p.Results.surfaceSet;
-
-        % Strip any nan rows from the optical system.
-        opticalSystem=opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
-
-        % Determine the number of surfaces
-        nSurfaces = size(opticalSystem,1);
-
-        % The surfaces are gray and the labels are unknown
+if ~isempty(opticalSystem)
+    
+    % Parse the opticalSystem
+    [opticalSystem,surfaceLabels,surfaceColors] = ...
+        parseOpticalSystemArgument(opticalSystem,options.surfaceSet);
+    
+    % Strip any nan rows from the optical system.
+    opticalSystem=opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
+    
+    % Determine the number of surfaces
+    nSurfaces = size(opticalSystem,1);
+    
+    % If the surfaceLabels or surfaceColors are unknown, fill them in
+    % with unknown gray
+    if isempty(surfaceColors)
         surfaceColors=cell(nSurfaces,1);
         surfaceColors(:) = {[0.5 0.5 0.5]};
+    end
+    if isempty(surfaceLabels)
         surfaceLabels=cell(nSurfaces,1);
         surfaceLabels(:) = {'unknown'};
-        
     end
-    
+        
     % Loop over the surfaces
     for ii=1:nSurfaces
         % Obtain the quadric, proceed if there are no nans
@@ -183,15 +153,15 @@ if ~isempty(p.Results.surfaceSet)
             % If there is a 4th value in the surface color, use this to
             % over-ride the overall surface alpha
             if size(surfaceColor,2) == 4
-                surfaceAlpha = surfaceColor(4) .* p.Results.surfaceAlpha;
+                surfaceAlpha = surfaceColor(4) .* options.surfaceAlpha;
                 surfaceColor = surfaceColor(1:3);
             else
-                surfaceAlpha = 0.5 .* p.Results.surfaceAlpha;
+                surfaceAlpha = 0.5 .* options.surfaceAlpha;
             end
             % Plot the surface. If it is the retinal surface, and geodetic
             % lines have been requested, include these.
-            if strcmp(surfaceLabels{ii},'retina') && p.Results.retinaGeodetics
-                plotHandles(end+1) = quadric.plotGridSurface(S,boundingBox,surfaceColor,surfaceAlpha,'g','b',p.Results.surfaceAlpha);
+            if strcmp(surfaceLabels{ii},'retina') && options.retinaGeodetics
+                plotHandles(end+1) = quadric.plotGridSurface(S,boundingBox,surfaceColor,surfaceAlpha,'g','b',options.surfaceAlpha);
             else
                 plotHandles(end+1) = quadric.plotGridSurface(S,boundingBox,surfaceColor,surfaceAlpha);
             end
@@ -200,27 +170,30 @@ if ~isempty(p.Results.surfaceSet)
 end
 
 % Plot the rayPath if provided
-if ~isempty(p.Results.rayPath)
-    plotHandles(end+1) = plot3(p.Results.rayPath(1,:),p.Results.rayPath(2,:),p.Results.rayPath(3,:),'-','Color',p.Results.rayColor);
+if ~isempty(options.rayPath)
+    plotHandles(end+1) = plot3(options.rayPath(1,:),options.rayPath(2,:),options.rayPath(3,:),'-','Color',options.rayColor);
 end
 
 % Add the outputRay if provided
-if ~isempty(p.Results.outputRay)
-    outputRay = p.Results.outputRay;
+if ~isempty(options.outputRay)
+    outputRay = options.outputRay;
     p1=outputRay(:,1);
-    p2=p1+outputRay(:,2).*p.Results.outputRayScale;
+    p2=p1+outputRay(:,2).*options.outputRayScale;
     r = [p1 p2];
-    plotHandles(end+1) = plot3(r(1,:),r(2,:),r(3,:),'-','Color',p.Results.outputRayColor);
+    plotHandles(end+1) = plot3(r(1,:),r(2,:),r(3,:),'-','Color',options.outputRayColor);
 end
 
-% Add a lighting source if requested
-if p.Results.addLighting
-    camlight
-    lighting gouraud
+% Add a lighting source if requested and if lighting is not already present
+if options.addLighting
+    tmpHandle = gca;
+    if ~any(isgraphics(tmpHandle.Children,'Light'))
+        lightHandle = camlight;
+        lighting gouraud
+    end
 end
 
 % Set the viewing angle
-view(p.Results.viewAngle);
+view(options.viewAngle);
 
 end % plotOpticalSystem
 

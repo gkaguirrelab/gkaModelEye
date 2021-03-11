@@ -56,8 +56,7 @@ function [retinaPoints,rayPaths] = calcRayBundleFromField(eye,fieldAngularPositi
     % Trace the bundle
     [retinaPoints,rayPaths] = calcRayBundleFromField(eye,fieldAngularPosition,stopRadius,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord);
     % Plot the optical system
-    opticalSystem = assembleOpticalSystem(eye,'surfaceSetName','mediumToRetina');
-    plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'surfaceAlpha', 0.05);
+    plotOpticalSystem(eye,'surfaceAlpha', 0.05);
     % Add the rays to the plot
     for ii=1:length(rayPaths)
         plotOpticalSystem('newFigure',false,'rayPath',rayPaths{ii});
@@ -67,7 +66,7 @@ function [retinaPoints,rayPaths] = calcRayBundleFromField(eye,fieldAngularPositi
 
 
 arguments
-    eye (1,1) {isstruct}
+    eye {mustBeOpticalSystemCapable}
     fieldAngularPosition (1,2) {mustBeNumeric} = [0,0]
     stopRadius (1,1) {mustBeNumeric} = 2
     rayOriginDistance (1,1) {mustBeNumeric} = 1500
@@ -80,8 +79,7 @@ end
 
 
 % Create the optical system
-opticalSystem = assembleOpticalSystem(eye,...
-    'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
+opticalSystem = parseOpticalSystemArgument(eye,'mediumToRetina',cameraMedium);
 
 % Find the entrance window
 [~,objectCoord,entranceWindowPerimeter] = ...
