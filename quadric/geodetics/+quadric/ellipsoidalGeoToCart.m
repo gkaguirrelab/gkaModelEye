@@ -46,14 +46,6 @@ function X = ellipsoidalGeoToCart( geodetic, S )
 %
 % Examples:
 %{
-    % Show an ellipsoidal surface with lines of constant beta and omega
-    S = quadric.scale(quadric.unitSphere,[1 1.5 0.5]);
-    figure
-    quadric.plotGridSurface(S,[-2,2,-2,2,-2,2],[.9 .9 .9],0.8,'b','g');
-    camlight
-    lighting gouraud
-    fprintf('Lines of constant beta in blue\n');
-    fprintf('Lines of constant omega in green\n');
 %}
 
 
