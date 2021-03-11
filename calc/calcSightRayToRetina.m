@@ -62,10 +62,8 @@ function [rayPath,retinaDistanceError] = calcSightRayToRetina(eye,rayDestination
 %{
     % Define a default model eye
     eye = modelEyeParameters();
-    % Obtain the coordinates of the fovea
-    rayDestination = eye.landmarks.fovea.coords;
     % Find the sight ray to the fovea (i.e., the line of sight axis)
-    [rayPath,retinaDistanceError] = calcSightRayToRetina(eye,rayDestination);
+    [rayPath,retinaDistanceError] = calcSightRayToRetina(eye);
     % Confirm that the elements of the error vector are within tolerance
     assert(retinaDistanceError(1)<1e-3)
 %}
@@ -73,7 +71,7 @@ function [rayPath,retinaDistanceError] = calcSightRayToRetina(eye,rayDestination
 
 arguments
     eye (1,1) {isstruct}
-    rayDestination (3,1) {mustBeNumeric}
+    rayDestination (3,1) {mustBeNumeric} = eye.landmarks.fovea.coords
     rayOriginDistance (1,1)  {mustBeNumeric} = 1500
     stopRadius (1,1) {mustBeNumeric} = 1.53
     cameraMedium = 'air'

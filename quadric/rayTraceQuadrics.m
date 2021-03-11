@@ -118,7 +118,7 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
     assert(max(abs(recoveredThetas - elaghaThetasDeg))<1e-6);
 
     % Display the optical system and ray
-    plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'rayPath',rayPath,'outputRay',outputRay,'outputRayColor','green');
+    plotOpticalSystem(opticalSystem,'rayPath',rayPath,'outputRay',outputRay,'outputRayColor','green');
 %}
 %{
     %% Pupil point through cornea
@@ -131,9 +131,8 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
     % Perform the ray trace
     [outputRay, rayPath] = rayTraceQuadrics(inputRay, sceneGeometry.refraction.stopToMedium.opticalSystem);
     % Plot the optical system
-    plotOpticalSystem('surfaceSet',sceneGeometry.refraction.stopToMedium,...
-        'outputRay',outputRay,'rayPath',rayPath, ...
-        'addLighting',true);
+    plotOpticalSystem(sceneGeometry.refraction.stopToMedium,...
+        'outputRay',outputRay,'rayPath',rayPath);
 %}
 
 

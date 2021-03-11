@@ -66,8 +66,7 @@ function [entranceWindowCenter,objectCoord,entranceWindowPerimeter,radiusEntranc
     % Plot the location of the entrance window in an optical system
     eye = modelEyeParameters();
     [~,~,perimeter] = calcEntranceWindow(eye,[30 0]);
-    opticalSystem = assembleOpticalSystem(eye,'surfaceSetName','mediumToRetina');
-    plotOpticalSystem('surfaceSet',opticalSystem);
+    plotOpticalSystem(eye);
     plot3(perimeter(1,:),perimeter(2,:),perimeter(3,:),'*k');
 %}
 

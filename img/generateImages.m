@@ -47,9 +47,7 @@ R = quadric.normalizeRay( ...
     sceneGeometry.eye.landmarks.fovea.degField(2)));
 
 % Add this ray to the optical system plot
-plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera, ...
-    'newFigure',false,'addLighting',true, ...
-    'rayPath',rayPathLoS);
+plotOpticalSystem(sceneGeometry,'surfaceSet','retinaToCamera','newFigure',false,'rayPath',rayPathLoS);
 xlim([-25 5]);
 
 % Save this image

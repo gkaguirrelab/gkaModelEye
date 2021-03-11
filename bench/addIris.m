@@ -32,7 +32,7 @@ function opticalSystemOut = addIris(opticalSystemIn, stopRadius, irisColor)
     sceneGeometry = createSceneGeometry();
     opticalSystemStruct = sceneGeometry.refraction.retinaToCamera;
     opticalSystemStruct = addIris(opticalSystemStruct);
-    plotOpticalSystem('surfaceSet',opticalSystemStruct,'addLighting',true,'viewAngle',[0 90]);
+    plotOpticalSystem(opticalSystemStruct,'viewAngle',[90 0]);
 %}
 
 

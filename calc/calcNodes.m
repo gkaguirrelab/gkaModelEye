@@ -81,8 +81,7 @@ function [incidentNode,emergentNode,incidentRays,emergentRays] = calcNodes(optic
     % Scale up the incidentRays
     extendedRays = cellfun(@(x) [x(:,1),x(:,1)+x(:,2)*1520],incidentRays,'UniformOutput',false);
     % Plot the optical system
-    opticalSystem = assembleOpticalSystem(eye,'surfaceSetName','mediumToRetina');
-    plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'surfaceAlpha', 0.05);
+    plotOpticalSystem(eye,'surfaceAlpha', 0.05);
     % Add the rays to the plot
     for ii=1:length(incidentRays)
         plotOpticalSystem('newFigure',false,'rayPath',extendedRays{ii});
@@ -93,23 +92,15 @@ function [incidentNode,emergentNode,incidentRays,emergentRays] = calcNodes(optic
 
 
 arguments
-    opticalSystem
+    opticalSystem {mustBeOpticalSystemCapable}
     longitudinalFieldAngle (1,1) {mustBeNumeric} = 14.3; % Following Harris Example 3
     rayOriginDistance (1,1)  {mustBeNumeric} = 1500
     bundleCount (1,1)  {mustBeNumeric} = 16
     cameraMedium = 'air'
 end
 
-
-% Check if we were passed an eye model. If so, create the optical system
-if isstruct(opticalSystem)
-    if isfield(opticalSystem,'cornea')
-        eye = opticalSystem;
-        clear opticalSystem;
-        opticalSystem = assembleOpticalSystem(eye,...
-            'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium);
-    end
-end
+% Create the optical system
+opticalSystem = parseOpticalSystemArgument(opticalSystem,'mediumToRetina',cameraMedium);
 
 % Find the optical axis for this system
 opticalAxisRay = calcOpticalAxis(opticalSystem, rayOriginDistance);

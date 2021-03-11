@@ -76,10 +76,8 @@ arguments
     cameraMedium = 'air'
 end
 
-% Generate the optical system
-opticalSystem = assembleOpticalSystem(eye,...
-    'surfaceSetName','mediumToRetina','cameraMedium',cameraMedium,...
-    'opticalSystemNumRows',[]);
+% Create the optical system
+opticalSystem = parseOpticalSystemArgument(eye,'mediumToRetina',cameraMedium);
 
 % Anonymous function to return the internalFocalPoint based upon the
 % rayOriginDistance from the principal point
