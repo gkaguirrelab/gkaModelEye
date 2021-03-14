@@ -57,24 +57,6 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
     camlight
     lighting gouraud
     hold on
-    % Plot lines of varying beta
-    for beta = -90:10:90
-        coords =[];
-        for omega = -180:3:180
-            coords(end+1,:)=quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
-        end
-        plot3(coords(:,1),coords(:,2),coords(:,3),'-b');
-    end
-    fprintf('Lines of constant beta in blue\n');
-    % Plot lines of varying omega
-    for omega = -180:10:180
-        coords =[];
-        for beta = -90:3:90
-            coords(end+1,:)=quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
-        end
-        plot3(coords(:,1),coords(:,2),coords(:,3),'-g');
-    end
-    fprintf('Lines of constant omega in green\n');
     plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'-r');
     plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'*r');
     plot3(geodeticPathCoords(1,1),geodeticPathCoords(1,2),geodeticPathCoords(1,3),'om');
@@ -87,7 +69,7 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
     G0 = eye.landmarks.fovea.geodetic;
     G1 = eye.landmarks.opticDisc.geodetic;
     odf_distance = quadric.panouGeodesicDistance(S,G0,G1);
-    outline = sprintf('Geodetic distance from the fovea to the optic disc: %2.2f mm\n',odf_distance);
+    outline = sprintf('Geodetic distance (Panou) from the fovea to the optic disc: %2.2f mm\n',odf_distance);
     fprintf(outline);
 %}
 
