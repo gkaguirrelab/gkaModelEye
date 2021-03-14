@@ -41,7 +41,7 @@ function opticalSystemOut = addStopAfter(opticalSystemIn, stopRadius, stopCenter
     sceneGeometry = createSceneGeometry('spectralDomain','vis');
     opticalSystemStruct = sceneGeometry.refraction.retinaToCamera;
     opticalSystemStruct = addStopAfter(opticalSystemStruct);
-    plotOpticalSystem('surfaceSet',opticalSystemStruct,'addLighting',true,'viewAngle',[0 90]);
+    plotOpticalSystem(opticalSystemStruct,'viewAngle',[90 0]);
 %}
 
 
