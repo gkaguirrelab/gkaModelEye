@@ -49,8 +49,8 @@ function [distance,geodeticPathCoords] = geodesic(S,G0,G1,X0,X1,pathResolution)
     G0 = eye.landmarks.fovea.geodetic';
     G1 = eye.landmarks.opticDisc.geodetic';
     [distance,geodeticPathCoords] = quadric.geodesic(S,G0,G1);
-    panouDistance = quadric.panouGeodesicDistance(S,G0,G1);
-    assert( abs(distance-panouDistance)/panouDistance < 1e-3);
+    distancePanou = quadric.geodesicPanou(S,G0,G1);
+    assert( abs(distance-distancePanou)/distancePanou < 1e-3);
     outline = sprintf('Geodetic distance (ellipse approximation) from the fovea to the optic disc: %2.2f mm\n',distance);
     fprintf(outline);
     % Plot the geodesic
