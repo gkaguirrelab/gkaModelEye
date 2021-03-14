@@ -69,8 +69,8 @@ function [distance,geodeticPathCoords] = geodesic(S,G0,G1,X0,X1,pathResolution)
 
 arguments
     S {mustBeNumeric}
-    G0 (3,1) {mustBeNumeric}
-    G1 (3,1) {mustBeNumeric}
+    G0 = []
+    G1 = []
     X0 (3,1) {mustBeNumeric} = quadric.ellipsoidalGeoToCart( G0, S )
     X1 (3,1) {mustBeNumeric} = quadric.ellipsoidalGeoToCart( G1, S )
     pathResolution (1,1) {mustBeNumeric} = 50
