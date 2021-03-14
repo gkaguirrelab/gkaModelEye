@@ -27,13 +27,15 @@ function fovea = fovea( eye )
     hold on
 
     % Add the retinal landmarks
+    
     plot3(eye.landmarks.vertex.coords(1),eye.landmarks.vertex.coords(2),eye.landmarks.vertex.coords(3),'+m','MarkerSize',10);
     plot3(eye.landmarks.fovea.coords(1),eye.landmarks.fovea.coords(2),eye.landmarks.fovea.coords(3),'+r','MarkerSize',10);
     plot3(eye.landmarks.opticDisc.coords(1),eye.landmarks.opticDisc.coords(2),eye.landmarks.opticDisc.coords(3),'+k','MarkerSize',10);
 
     % Add the geodetic path
-    [geoDistance,~,~,geodeticPathCoords] = quadric.panouGeodesicDistance(S,eye.landmarks.fovea.geodetic,eye.landmarks.opticDisc.geodetic);
-    plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'-y','MarkerSize',10);
+    [~,geodeticPathCoords] = quadric.geodesic(S,eye.landmarks.fovea.geodetic,eye.landmarks.opticDisc.geodetic);
+    plot3(geodeticPathCoords(1,:),geodeticPathCoords(2,:),geodeticPathCoords(3,:),'.y','MarkerSize',10);
+    view(90,0)
 %}
 
 

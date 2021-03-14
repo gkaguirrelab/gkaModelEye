@@ -1,8 +1,8 @@
-function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistance(S,G0,G1,X0,X1,maxIterations)
+function [distance,startAngle,endAngle,geodeticPathCoords] = geodesicPanou(S,G0,G1,X0,X1,maxIterations)
 % Find the geodesic distance between two points on a tri-axial ellipsoid
 %
 % Syntax:
-%  [distance,startAngle,endAngle,geodeticPathCoords] = quadric.panouGeodesicDistance(S,G0,G1,X0,X1,maxIterations)
+%  [distance,startAngle,endAngle,geodeticPathCoords] = quadric.geodesicPanou(S,G0,G1,X0,X1,maxIterations)
 %
 % Description:
 %   Returns the geodesic distance between two points on the tri-axial
@@ -48,7 +48,7 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
     boundingBox = [-0.02,0.02,-0.02,0.02,-0.02,0.02];
     G0 = [5; 5; 0];
     G1 = [60; 120; 0];
-    [distance,startAngle,endAngle,geodeticPathCoords] = quadric.panouGeodesicDistance(S,G0,G1);
+    [distance,startAngle,endAngle,geodeticPathCoords] = quadric.geodesicPanou(S,G0,G1);
     % Check the result against Panou's value
     assert( max(abs(distance - 0.0259)) < 1e-3 );
     % Plot the result
@@ -57,38 +57,10 @@ function [distance,startAngle,endAngle,geodeticPathCoords] = panouGeodesicDistan
     camlight
     lighting gouraud
     hold on
-    % Plot lines of varying beta
-    for beta = -90:10:90
-        coords =[];
-        for omega = -180:3:180
-            coords(end+1,:)=quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
-        end
-        plot3(coords(:,1),coords(:,2),coords(:,3),'-b');
-    end
-    fprintf('Lines of constant beta in blue\n');
-    % Plot lines of varying omega
-    for omega = -180:10:180
-        coords =[];
-        for beta = -90:3:90
-            coords(end+1,:)=quadric.ellipsoidalGeoToCart( [beta, omega, 0], S );
-        end
-        plot3(coords(:,1),coords(:,2),coords(:,3),'-g');
-    end
-    fprintf('Lines of constant omega in green\n');
     plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'-r');
     plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'*r');
     plot3(geodeticPathCoords(1,1),geodeticPathCoords(1,2),geodeticPathCoords(1,3),'om');
     plot3(geodeticPathCoords(end,1),geodeticPathCoords(end,2),geodeticPathCoords(end,3),'+m');
-%}
-%{
-    % Distance from the fovea to the optic disc
-    eye = modelEyeParameters();
-    S = eye.retina.S;
-    G0 = eye.landmarks.fovea.geodetic;
-    G1 = eye.landmarks.opticDisc.geodetic;
-    odf_distance = quadric.panouGeodesicDistance(S,G0,G1);
-    outline = sprintf('Geodetic distance from the fovea to the optic disc: %2.2f mm\n',odf_distance);
-    fprintf(outline);
 %}
 
 
@@ -169,7 +141,7 @@ end
 origCenter = quadric.center(S);
 geodeticPathCoords = geodeticPathCoords+origCenter';
 
-end % panouGeodesicDistance
+end % geodesicPanou
 
 
 

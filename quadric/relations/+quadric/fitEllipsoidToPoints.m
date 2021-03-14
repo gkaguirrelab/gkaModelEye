@@ -5,8 +5,18 @@ function [S,fVal] = fitEllipsoidToPoints(pp,s0,sB)
 %  [s,fVal] = quadric.fitEllipsoidToPoints(pp,s0,sB)
 %
 % Description:
-%   Returns the coordinates of the points of intersection of a ray with a
-%   quadric surface.
+%   Performs a brute force search over the scaling of a non-rotated
+%   ellipsoid to fit a set of points. This is ugly and hacky. A much better
+%   solution would be to use the direct or indirect fitting approaches of G
+%   Panou, described here:
+%
+%       Panou, G., and A-M. Agatza-Balodimou. "Direct and Indirect
+%       Estimation of the Variance–Covariance Matrix of the Parameters of a
+%       Fitted Ellipse and a Triaxial Ellipsoid." Journal of Surveying
+%       Engineering 147.1 (2021): 04020026.
+%
+%   A link to Georgios' Matlab code is here:
+%       https://www.researchgate.net/publication/342523137_Panou_Agatza_V-C_Matrix
 %
 % Inputs:
 %   pp                    - 3xn matrix of points to be fit 

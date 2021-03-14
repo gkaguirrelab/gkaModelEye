@@ -1,8 +1,8 @@
-function distance = heatGeodesicDistance(S,X0,X1,subdivisions)
-% Find the geodesic distance between two points on a tri-axial ellipsoid
+function distance = geodesicHeat(S,X0,X1,subdivisions)
+% Find geodesic distance by the "Geodesics in Heat" method
 %
 % Syntax:
-%  [distance,startAngle,endAngle,geodeticPathCoords] = quadric.heatGeodesicDistance(S,G0,G1,X0,X1,subdivisions)
+%  [distance,startAngle,endAngle,geodeticPathCoords] = quadric.geodesicHeat(S,G0,G1,X0,X1,subdivisions)
 %
 % Description:
 %   Returns an estmiate of the geodesic distance between two points on an
@@ -40,7 +40,7 @@ function distance = heatGeodesicDistance(S,X0,X1,subdivisions)
     S = quadric.scale(quadric.unitSphere,[0.015, 0.010, 0.009]);
     X0 = quadric.ellipsoidalGeoToCart([5; 5; 0],S);
     X1 = quadric.ellipsoidalGeoToCart([60; 120; 0],S);
-    distance = quadric.heatGeodesicDistance(S,X0,X1);
+    distance = quadric.geodesicHeat(S,X0,X1);
     % Report that the result against Panou's value
     fprintf('Distance by heat geodetic method: %2.4f, Panou method: 0.0259\n',distance);
 %}

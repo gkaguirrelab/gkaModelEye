@@ -59,7 +59,6 @@ end
 origCenter = quadric.center(S);
 S = quadric.translate(S,-origCenter);
 
-
 % Rotate the quadric so that it is aligned with the cardinal axes.
 % Store the rotation matrix to be applied to the Cartesian coordinate later
 [S, rotMat] = quadric.alignAxes(S);
