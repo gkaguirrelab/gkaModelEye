@@ -10,10 +10,10 @@ function [distance,geodeticPathCoords] = geodesic(S,G0,G1,X0,X1,pathResolution)
 %   treatments of this problem, which vary in their accuracy and robustness
 %   to the special conditions that occur in the vicinity of the umbilical
 %   points of the ellipsoid. I am unaware of any general, exact solution
-%   that is able to solve the inverse problem for any arbitrary pairs of
+%   that is able to solve the inverse problem for any arbitrary pair of
 %   points. A particular difficulty in the present application is that the
-%   fovea lies close to the pole of the elliopsoidal surface, making many
-%   it challenging to calculate the exact geodesic around this location.
+%   fovea lies close to the pole of the elliopsoidal surface, making it
+%   challenging to calculate the exact geodesic around this location.
 %
 %   This routine provides an approximation to the solution by identifying a
 %   plane that intersects the ellipsoid, passes through the two points, and
