@@ -9,7 +9,7 @@ function [opticalSystem,surfaceLabels,surfaceColors] = parseOpticalSystemArgumen
 %
 
 arguments
-    a {mustBeOpticalSystem}
+    a {mustBeOpticalSystemCapable}
     surfaceSet char = 'mediumToRetina'
     cameraMedium = 'air'
 end
