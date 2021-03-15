@@ -55,7 +55,7 @@ arguments
     rayOriginDistance {isscalar,mustBeNumeric} = 1500
     angleReferenceCoord (3,1) {mustBeNumeric} = [0;0;0]
     distanceReferenceCoord (3,1) double = [0;0;0]
-    deltaDegEuclidean {isscalar,mustBeNumeric} = 1e-2
+    deltaDegEuclidean {isscalar,mustBeNumeric} = 1
     cameraMedium = 'air'
 end
 
@@ -67,8 +67,11 @@ deltaAngles = [sqrt(deltaDegEuclidean/2) sqrt(deltaDegEuclidean/2)];
 rayPath0 = calcNodalRayFromField(eye,fieldAngularPosition-deltaAngles./2,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,cameraMedium);
 rayPath1 = calcNodalRayFromField(eye,fieldAngularPosition+deltaAngles./2,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,cameraMedium);
 
+% Find the geodetic distance between the points on the retina
+geodesic = quadric.geodesic(eye.retina.S,[],[],rayPath0(:,end),rayPath1(:,end));
+
 % Calculate the mm per deg
-mmPerDeg = norm(rayPath0(:,end)-rayPath1(:,end)) / norm(deltaAngles);
+mmPerDeg = geodesic / norm(deltaAngles);
 
 
 end
