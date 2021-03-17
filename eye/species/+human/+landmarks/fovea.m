@@ -21,20 +21,19 @@ function fovea = fovea( eye )
     S = eye.retina.S;
     boundingBox = eye.retina.boundingBox;
     figure
-    quadric.plotGridSurface(S,boundingBox,[0.9 0.9 0.9],0.8,'b','g');
+    quadric.plotGridSurface(S,boundingBox,[0.9 0.9 0.9],0.25,'b','g');
     camlight
     lighting gouraud
     hold on
 
     % Add the retinal landmarks
     
-    plot3(eye.landmarks.vertex.coords(1),eye.landmarks.vertex.coords(2),eye.landmarks.vertex.coords(3),'+m','MarkerSize',10);
     plot3(eye.landmarks.fovea.coords(1),eye.landmarks.fovea.coords(2),eye.landmarks.fovea.coords(3),'+r','MarkerSize',10);
     plot3(eye.landmarks.opticDisc.coords(1),eye.landmarks.opticDisc.coords(2),eye.landmarks.opticDisc.coords(3),'+k','MarkerSize',10);
 
     % Add the geodetic path
-    [~,geodeticPathCoords] = quadric.geodesic(S,eye.landmarks.fovea.geodetic,eye.landmarks.opticDisc.geodetic);
-    plot3(geodeticPathCoords(1,:),geodeticPathCoords(2,:),geodeticPathCoords(3,:),'.y','MarkerSize',10);
+    [~,geodeticPathCoords] = quadric.geodesic(S,[eye.landmarks.fovea.geodetic',eye.landmarks.opticDisc.geodetic']);
+    plot3(geodeticPathCoords(1,:),geodeticPathCoords(2,:),geodeticPathCoords(3,:),'-r','LineWidth',4);
     view(90,0)
 %}
 

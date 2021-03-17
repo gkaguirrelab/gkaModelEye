@@ -2,7 +2,7 @@ function [distance,geodesicPathCoords,startAngle,endAngle] = geodesicPanou(S,P,p
 % Find the geodesic distance between two points on a tri-axial ellipsoid
 %
 % Syntax:
-%  [distance,startAngle,endAngle,geodeticPathCoords] = quadric.geodesicPanou(S,G0,G1,X0,X1,maxIterations)
+%  [distance,startAngle,endAngle,geodesicPathCoords] = quadric.geodesicPanou(S,G0,G1,X0,X1,maxIterations)
 %
 % Description:
 %   Returns the geodesic distance between two points on the tri-axial
@@ -35,7 +35,7 @@ function [distance,geodesicPathCoords,startAngle,endAngle] = geodesicPanou(S,P,p
 %                           surface. The routine will attempt to determine
 %                           which type of coordinate set has been provided.
 %   pathResolution        - Scalar. The number of points for the 
-%                           geodeticPathCoords
+%                           geodesicPathCoords
 %   surfaceTol            - Scalar. When interpreting if the values in p
 %                           are Cartesian or geodetic coordinates, this is
 %                           the tolerance within which a candidate
@@ -59,7 +59,7 @@ function [distance,geodesicPathCoords,startAngle,endAngle] = geodesicPanou(S,P,p
     boundingBox = [-0.02,0.02,-0.02,0.02,-0.02,0.02];
     G0 = [5; 5; 0];
     G1 = [60; 120; 0];
-    [distance,geodeticPathCoords] = quadric.geodesicPanou(S,[G0,G1]);
+    [distance,geodesicPathCoords] = quadric.geodesicPanou(S,[G0,G1]);
     % Check the result against Panou's value
     assert( max(abs(distance - 0.0259)) < 1e-3 );
     % Plot the result
@@ -68,10 +68,10 @@ function [distance,geodesicPathCoords,startAngle,endAngle] = geodesicPanou(S,P,p
     camlight
     lighting gouraud
     hold on
-    plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'-r');
-    plot3(geodeticPathCoords(:,1),geodeticPathCoords(:,2),geodeticPathCoords(:,3),'*r');
-    plot3(geodeticPathCoords(1,1),geodeticPathCoords(1,2),geodeticPathCoords(1,3),'om');
-    plot3(geodeticPathCoords(end,1),geodeticPathCoords(end,2),geodeticPathCoords(end,3),'+m');
+    plot3(geodesicPathCoords(1,:),geodesicPathCoords(2,:),geodesicPathCoords(3,:),'-r');
+    plot3(geodesicPathCoords(1,:),geodesicPathCoords(2,:),geodesicPathCoords(3,:),'*r');
+    plot3(geodesicPathCoords(1,1),geodesicPathCoords(2,1),geodesicPathCoords(3,1),'om');
+    plot3(geodesicPathCoords(1,end),geodesicPathCoords(2,end),geodesicPathCoords(3,end),'+m');
 %}
 
 arguments
@@ -137,11 +137,11 @@ else
         Geodesics(a,b,c,G0(1),G0(2),G1(1),G1(2),nSubspaces,epsilonAccuracy,maxIterations);
 end
 
-% Prepare a subset of the geodeticPathCoords to return
+% Prepare a subset of the geodesicPathCoords to return
 sampleBase = round(linspace(1,size(geodesicPathCoords,1),pathResolution));
 geodesicPathCoords=geodesicPathCoords(sampleBase',:);
 
-% Re-arrange the order of the dimensions of the geodeticPathCoords so that
+% Re-arrange the order of the dimensions of the geodesicPathCoords so that
 % they reflect the axis order of the passed quadric surface
 geodesicPathCoords = geodesicPathCoords(:,[3 2 1]);
 
@@ -160,7 +160,7 @@ end % geodesicPanou
 
 
 
-function [n,c,a0,a1,s,geodeticPathCoords] = Geodesics_dbeta(ax,ay,b,beta0,lambda0,beta1,lambda1,Sub,epsilon,maxIterations)
+function [n,c,a0,a1,s,geodesicPathCoords] = Geodesics_dbeta(ax,ay,b,beta0,lambda0,beta1,lambda1,Sub,epsilon,maxIterations)
 
 %----- Ellipsoid -----
 hx = sqrt(ax^2-b^2);
@@ -215,7 +215,7 @@ x = ax.*sqrt(cos(beta).^2+((he/hx)^2).*sin(beta).^2).*cos(lambda);
 y = ay.*cos(beta).*sin(lambda);
 z = b.*sin(beta).*sqrt(1-((he/hx)^2).*cos(lambda).^2);
 
-geodeticPathCoords = [x y z];
+geodesicPathCoords = [x y z];
 
 % plot3(x,y,z)
 
@@ -263,7 +263,7 @@ s = (h/3)*sum(S*Fv);
 end
 
 
-function [n,c,a0,a1,s,geodeticPathCoords] = Geodesics(ax,ay,b,beta0,lambda0,beta1,lambda1,Sub,epsilon,maxIterations)
+function [n,c,a0,a1,s,geodesicPathCoords] = Geodesics(ax,ay,b,beta0,lambda0,beta1,lambda1,Sub,epsilon,maxIterations)
 
 %----- Ellipsoid -----
 hx = sqrt(ax^2-b^2);
@@ -318,7 +318,7 @@ x = ax.*sqrt(cos(beta).^2+((he/hx)^2).*sin(beta).^2).*cos(lambda);
 y = ay.*cos(beta).*sin(lambda);
 z = b.*sin(beta).*sqrt(1-((he/hx)^2).*cos(lambda).^2);
 
-geodeticPathCoords = [x y z];
+geodesicPathCoords = [x y z];
 % plot3(x,y,z)
 
 
