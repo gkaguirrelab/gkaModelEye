@@ -55,20 +55,23 @@ arguments
     rayOriginDistance {isscalar,mustBeNumeric} = 1500
     angleReferenceCoord (3,1) {mustBeNumeric} = [0;0;0]
     distanceReferenceCoord (3,1) double = [0;0;0]
-    deltaDegEuclidean {isscalar,mustBeNumeric} = 1
+    deltaDegEuclidean {isscalar,mustBeNumeric} = 2
     cameraMedium = 'air'
 end
 
 
 % Set up the jitter in angles around the specified field location
-deltaAngles = [sqrt(deltaDegEuclidean/2) sqrt(deltaDegEuclidean/2)];
+deltaAngles = [deltaDegEuclidean 0];
 
 % Trace the nodal rays from this field position
-rayPath0 = calcNodalRayFromField(eye,fieldAngularPosition-deltaAngles./2,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,cameraMedium);
-rayPath1 = calcNodalRayFromField(eye,fieldAngularPosition+deltaAngles./2,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,cameraMedium);
+rayPath0 = calcNodalRayFromField(eye,fieldAngularPosition-deltaAngles/2,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,cameraMedium);
+rayPath1 = calcNodalRayFromField(eye,fieldAngularPosition+deltaAngles/2,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord,cameraMedium);
+
+% Assemble the points
+P = [rayPath0(:,end),rayPath1(:,end)];
 
 % Find the geodetic distance between the points on the retina
-geodesic = quadric.geodesic(eye.retina.S,[],[],rayPath0(:,end),rayPath1(:,end));
+geodesic = quadric.geodesic(eye.retina.S,P);
 
 % Calculate the mm per deg
 mmPerDeg = geodesic / norm(deltaAngles);
