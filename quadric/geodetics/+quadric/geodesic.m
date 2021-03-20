@@ -30,7 +30,7 @@ function [distance,geodesicPathCoords] = geodesic(S,P,pathResolution,surfaceTol)
 %                           surface.
 %   P                     - 3x2 or 3x3 matrix that specifies the points 
 %                           through which the geodesic will pass. The
-%                           values can be given in Cartesian or geodetic
+%                           values can be given in Cartesian or geodesic
 %                           coordinates. For the latter, the values are
 %                           beta, omega, and elevation in units of degrees.
 %                           Beta is defined over the range -90:90, and
@@ -40,9 +40,9 @@ function [distance,geodesicPathCoords] = geodesic(S,P,pathResolution,surfaceTol)
 %                           attempt to determine which type of coordinate
 %                           set has been provided.
 %   pathResolution        - Scalar. The number of points for the 
-%                           geodeticPathCoords
+%                           geodesicPathCoords
 %   surfaceTol            - Scalar. When interpreting if the values in p
-%                           are Cartesian or geodetic coordinates, this is
+%                           are Cartesian or geodesic coordinates, this is
 %                           the tolerance within which a candidate
 %                           Cartesian coordinate must be on the quadric
 %                           surface.
@@ -60,8 +60,6 @@ function [distance,geodesicPathCoords] = geodesic(S,P,pathResolution,surfaceTol)
     S = eye.retina.S;
     P = [eye.landmarks.fovea.coords',eye.landmarks.opticDisc.coords'];
     [distance,geodesicPathCoords] = quadric.geodesic(S,P);
-    [distancePanou,geodesicPanau] = quadric.geodesicPanou(S,P);
-    assert( abs(distance-distancePanou)/distancePanou < 5e-4);
     outline = sprintf('Geodesic distance (ellipse approximation) from the fovea to the optic disc: %2.2f mm\n',distance);
     fprintf(outline);
     % Plot the geodesic
@@ -71,11 +69,8 @@ function [distance,geodesicPathCoords] = geodesic(S,P,pathResolution,surfaceTol)
     camlight
     hold on
     plot3(geodesicPathCoords(1,:),geodesicPathCoords(2,:),geodesicPathCoords(3,:),'.k');
-    plot3(geodesicPanau(1,:),geodesicPanau(2,:),geodesicPanau(3,:),'-r');
-    X0 = eye.landmarks.fovea.coords;
-    X1 = eye.landmarks.opticDisc.coords;
-    plot3(X0(1),X0(2),X0(3),'*r');
-    plot3(X1(1),X1(2),X1(3),'*b');
+    plot3(P(1,1),P(2,1),P(3,1),'*r');
+    plot3(P(1,2),P(2,2),P(3,2),'*b');
 %}
 
 
@@ -101,43 +96,38 @@ Sfunc = quadric.vecToFunc(S);
 if Sfunc(P(1,1),P(2,1),P(3,1)) > surfaceTol
     
     % If the last value of the coordinate is not zero, then this can't be a
-    % geodetic coordinate either
+    % geodesic coordinate either
     if P(3,1) > surfaceTol
-        error('geodesic:invalidCoordinate','Supply a Cartesian or geodetic coordinate that is on the surface of S.')
+        error('geodesic:invalidCoordinate','Supply a Cartesian or geodesic coordinate that is on the surface of S.')
     end
     
     % Check that the candidate beta and omega values are in range
     if any(abs(P(1,:))>90) || any(abs(P(2,:))>180)
-        error('geodesic:invalidCoordinate','Supply a Cartesian or geodetic coordinate that is on the surface of S.')
+        error('geodesic:invalidCoordinate','Supply a Cartesian or geodesic coordinate that is on the surface of S.')
     end
     
-    % Looks like valid geodetic coordinates. Convert to Cartesian
+    % Looks like valid geodesic coordinates. Convert to Cartesian
     for ii=1:size(P,2)
         P(:,ii) = quadric.ellipsoidalGeoToCart( P(:,ii), S );
     end
 end
 
-% Bounds
-bound = max(quadric.radii(S));
-
 % Objective
 myObj = @(x) objective(x,P,S,pathResolution);
 
-% Options
-options = optimoptions('fmincon');
-options.Display = 'off';
-
 % Search
-[x1,fval1]=fminbnd(myObj,-bound,bound);
-[x2,fval2]=fmincon(myObj,0,[],[],[],[],-bound,bound,[],options);
+[x,distance] = fminsearch(myObj,0);
 
-if fval1<fval2
-    x = x1;
-else
-    x = x2;
+% For very short distances, the non-linear result can be shorter than the
+% Euclidean distance between the points, which is not possible. If we
+% encounter this situation, set x to 0, whicih corresponds to the great
+% ellipse (the path defined by a plane passing through the points and the
+% center of the ellipsoid). This value will be very close to the geodesic
+if distance < norm(P(:,1)-P(:,2))
+    x=0;
 end
 
-% Call again to obtain geodeticPathCoords
+% Call again to obtain geodesicPathCoords
 [distance,geodesicPathCoords] = objective(x,P,S,pathResolution);
 
 end
@@ -145,7 +135,7 @@ end
 
 %% LOCAL FUNCTIONS
 
-function [d,geodeticPathCoords] = objective(x,P,S,pathResolution)
+function [d,geodesicPathCoords] = objective(x,P,S,pathResolution)
 % Returns the arc distance along an ellipse on the ellipsoid surface
 %
 % Description:
@@ -165,16 +155,20 @@ Sc = quadric.translate(S,-quadricCenter);
 % Adjust the points for the center translation
 Pc = P-quadricCenter;
 
+% If we have not been provided with a third point, then use the passed x
+% value to define a point and thus a plane.
 if size(Pc,2)==2
     % Define a plane with the reflection of the initial points.
     % Find the normal to this initial plane, and then adjust by x units
     P3 = -mean(Pc,2);
     u = cross(Pc(:,1)-Pc(:,2),Pc(:,1)-P3);
+    u = u/norm(u);
     Pc(:,3) = P3+x.*u;
 end
 
 % Parameters of the plane equation
 planeNormal=cross(Pc(:,1)-Pc(:,2),Pc(:,1)-Pc(:,3));
+planeNormal = planeNormal/norm(planeNormal);
 A=planeNormal(1);B=planeNormal(2);C=planeNormal(3);
 D = -dot(planeNormal,Pc(:,1));
 
@@ -187,23 +181,38 @@ a=r(1);b=r(2);c=r(3);
 Ec = [q1;q2;q3];
 
 % The ellipse lies in the plane identifed by Pc. For the calculations that
-% follow, it is easier if the ellipse is parallel to the xy plane. To do
-% so, we rotate the points PC, and the ellipse center, eC, so that these
-% are all parallel to the xy plane.
-w = planeNormal/norm(planeNormal);
-R = [null(w'),w];
-if det(R)<0, R(:,1:2) = R(:,2:-1:1); end
-PcR = (Pc'*R)';
-EcR = (Ec'*R)';
+% follow, it is easier if the ellipse is parallel to one of the cardinal
+% axes. To do so, we rotate the points PC, and the ellipse center, eC, so
+% that these are all parallel to the xy, xz, or yz plane.
+ssc = @(v) [0 -v(3) v(2); v(3) 0 -v(1); -v(2) v(1) 0];
+RU = @(a,b) eye(3) + ssc(cross(a,b)) + ...
+     ssc(cross(a,b))^2*(1-dot(a,b))/(norm(cross(a,b))^2);
+axisVector = [0; 0; 0];
+axisIdx = find(abs(planeNormal)==max(abs(planeNormal)),1);
+axisVector(axisIdx) = 1*sign(planeNormal(axisIdx));
+R = RU(planeNormal,axisVector);
+ 
+% Apply the rotation matrix
+PcR = R*Pc;
+EcR = R*Ec;
 
-% p1 and p2 are the X0 and X1 coordinates, now with reference to the
-% ellipse plane
+% Adjust for the ellipse center
 PcRc = PcR - EcR;
 
 % Find the angle of each of these points with respect to the ellipse
 % center.
-t1 = atan2(PcRc(2,1),PcRc(1,1));
-t2 = atan2(PcRc(2,2),PcRc(1,2));
+tanIdx = [1 2 3];
+tanIdx = tanIdx(tanIdx ~= axisIdx);
+t1 = atan2(PcRc(tanIdx(2),1),PcRc(tanIdx(1),1));
+t2 = atan2(PcRc(tanIdx(2),2),PcRc(tanIdx(1),2));
+
+% If both thetas are closer to pi than to zero, flip them
+piFlipFlag = false;
+if all(abs([t1 t2])>pi/2)
+    t1 = t1+(-sign(t1)*pi);
+    t2 = t2+(-sign(t2)*pi);
+    piFlipFlag = true;
+end
 
 % Obtain the arc lengths around the ellipse to each of these points using
 % elliptic integration of the second kind
@@ -217,26 +226,33 @@ d = abs(arc1-arc2);
 
 % If requested, generate points on the geodesic
 if nargout == 2
+    
+    % generate thetas
     thetas = linspace(t1,t2,pathResolution);
-    tmp = mod(thetas+pi/2,pi);
-    thetas = tmp+pi*(thetas>0&tmp==0)-pi/2;
+    
+    % flip them back to the other side of the ellipse if needed
+    if piFlipFlag
+        thetas = thetas-sign(thetas)*pi;
+    end
     
     % Figure out the orientation of Aye and Bye with respect to the x and y
     % dimensions
-    if abs(mean(PcRc(1,:).^2/(Bye^2) +  PcRc(2,:).^2/(Aye^2) - 1)) > 5e-2
-        Xf = @(theta) (Aye.*Bye)./(Aye.^2*tan(theta).^2 + Bye.^2).^(1/2);
-        Yf = @(theta) (Aye.*Bye.*tan(theta))./(Aye.^2*tan(theta).^2 + Bye.^2).^(1/2);
+    if abs(mean(PcRc(tanIdx(1),:).^2/(Bye^2) +  PcRc(tanIdx(2),:).^2/(Aye^2) - 1)) > 5e-2
+        Xf = @(theta) -(Aye.*Bye)./(Aye.^2*tan(theta).^2 + Bye.^2).^(1/2);
+        Yf = @(theta) -(Aye.*Bye.*tan(theta))./(Aye.^2*tan(theta).^2 + Bye.^2).^(1/2);
     else
-        Xf = @(theta) (Aye.*Bye)./(Bye.^2*tan(theta).^2 + Aye.^2).^(1/2);
-        Yf = @(theta) (Aye.*Bye.*tan(theta))./(Bye.^2*tan(theta).^2 + Aye.^2).^(1/2);
+        Xf = @(theta) -(Aye.*Bye)./(Bye.^2*tan(theta).^2 + Aye.^2).^(1/2);
+        Yf = @(theta) -(Aye.*Bye.*tan(theta))./(Bye.^2*tan(theta).^2 + Aye.^2).^(1/2);
     end
 
-    % Get the points from the thetas
-    Xp = Xf(thetas);
-    Yp = Yf(thetas);
-
+    % Assemble the coords from the thetas
+    coords = nan(3,pathResolution);
+    coords(tanIdx(1),:) = Xf(thetas);
+    coords(tanIdx(2),:) = Yf(thetas);
+    coords(axisIdx,:) = zeros(1,pathResolution);
+    
     % Convert back to the space of S
-    geodeticPathCoords = (([Xp; Yp; zeros(size(Xp))] + EcR)'*R')' + quadricCenter;    
+    geodesicPathCoords =  R'*(coords + EcR) + quadricCenter;    
     
 end
 
