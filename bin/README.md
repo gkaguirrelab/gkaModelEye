@@ -1,6 +1,6 @@
 ## bin
 
-This directory holds compiled MEX function versions of `findPupilRay` and `findGlintRay`.
+This directory holds compiled MEX function versions of `findPupilRay`, `findGlintRay` and `findNodalRay`.
 
 If you need to compile the MEX function for your system, issue the command `compileInverseRayTrace` in the MATLAB console.
 

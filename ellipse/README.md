@@ -4,7 +4,7 @@ Routines for fitting ellipses. Several of these functions are taken from the "qu
 
 > Levente Hunyadi, "Estimation methods in the errors-in-variables context", PhD dissertation, submitted in 2013 to the Budapest University of Technology and Economics. 
 
-The original routines can be found here:
+The original routines may be found here:
 
 https://www.mathworks.com/matlabcentral/fileexchange/45356-fitting-quadratic-curves-and-surfaces
 

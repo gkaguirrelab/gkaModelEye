@@ -5,9 +5,9 @@ function compileInverseRayTrace( varargin )
 %  compileInverseRayTrace
 %
 % Description:
-%   This routine produces compiled MEX files for findPupilRay and
-%   findGlintRay, saves the files at the specified disk location, and
-%   places the functions on the MATLAB path.
+%   This routine produces compiled MEX ray-tracing functions, saves the
+%   files at the specified disk location, and places the functions on the
+%   MATLAB path.
 %
 %   The default save location is the directory that contains this function.
 %
