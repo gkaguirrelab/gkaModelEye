@@ -2,15 +2,15 @@ function [distance,geodesicPathCoords] = geodesic(S,P,pathResolution,surfaceTol)
 % Find the geodesic distance between points on a tri-axial ellipsoid
 %
 % Syntax:
-%  distance = quadric.geodesic(S,p,pathResolution)
+%  [distance,geodesicPathCoords] = geodesic(S,P,pathResolution,surfaceTol)
 %
 % Description:
 %   The "inverse" geodesic problem identifies the minimum distance between
 %   two points on the tri-axial ellipsoidal surface. There have been many
 %   treatments of this problem, which vary in their accuracy and robustness
 %   to the special conditions that occur in the vicinity of the umbilical
-%   points of the ellipsoid. I am unaware of any general, exact solution
-%   that is able to solve the inverse problem for any arbitrary pair of
+%   points of the ellipsoid. I am unaware of a general implementation for
+%   the exact solution for the inverse problem for an arbitrary pair of
 %   points. A particular difficulty in the present application is that the
 %   fovea lies close to the pole of the elliopsoidal surface, making it
 %   challenging to calculate the exact geodesic around this location.
@@ -20,10 +20,15 @@ function [distance,geodesicPathCoords] = geodesic(S,P,pathResolution,surfaceTol)
 %   provides the minimum arc length between the points along the ellipse.
 %   This plane will be similar to the "normal section curve" which closely
 %   approximates the geodesic on an ellipsoid with rotational symmetry. For
-%   pairs of points, the result appears to be accurate to within ~ 1 /
-%   5,000 of the value provided by the Panou 2013 boundary solution (see:
-%   geodesicPanou). If a third, intermediate point is provided, then the
-%   geodesic will be constrained to pass through that point as well.
+%   pairs of points, the result appears to be accurate to within 0.5% of
+%   the value provided by the Panou 2013 boundary solution (see:
+%   quadric.geodesicPanou and v001_geodesics.mlx).
+%
+%   If a third point on the ellipsoidal surface is provided, then the
+%   routine will return the arc length between the first two points for an
+%   ellipse that lies on a plane that minimizes the distance of the points
+%   from the plane. This functionality may be used to construct a set of
+%   points that are constrained to be on the same arc.
 %
 % Inputs:
 %   S                     - 1x10 vector or 4x4 matrix of the quadric
@@ -41,17 +46,16 @@ function [distance,geodesicPathCoords] = geodesic(S,P,pathResolution,surfaceTol)
 %                           set has been provided.
 %   pathResolution        - Scalar. The number of points for the 
 %                           geodesicPathCoords
-%   surfaceTol            - Scalar. When interpreting if the values in p
-%                           are Cartesian or geodesic coordinates, this is
-%                           the tolerance within which a candidate
-%                           Cartesian coordinate must be on the quadric
-%                           surface.
+%   surfaceTol            - Scalar. When interpreting if the values in P
+%                           are Cartesian or geodesic, this is the
+%                           tolerance within which a candidate Cartesian
+%                           coordinate must be on the quadric surface.
 %
 % Outputs:
-%   distance              - 1x(n-1) vector. Geodesic distance from the 
-%                           first point in p to each subsequent point.
+%   distance              - Scalar. Approximation to the geodesic distance   
+%                           between the first two points in P.
 %   geodesicPathCoords    - 3xpathResolution matrix of locations along the
-%                           geodesic
+%                           geodesic.
 %
 % Examples:
 %{
@@ -86,12 +90,17 @@ if isequal(size(S),[1 10])
     S = quadric.vecToMatrix(S);
 end
 
-% p should be either size (3:2) or (3:3)
+% Test here that the passed quadric is an ellipsoid
+if ~strcmp(quadric.classify( S ),'ellipsoid')
+    error('quadric:geodesic','Can only find the geodesic on an ellipsoid');
+end
+
+% P should be either size (3:2) or (3:3)
 if size(P,2)<2 || size(P,3)>3
         error('geodesic:invalidCoordinate','Supply either 2 or 3 surface points in p.')
 end
 
-% Interpret p and convert to Cartesian coordinates if needed.
+% Interpret P and convert to Cartesian coordinates if needed.
 Sfunc = quadric.vecToFunc(S);
 if Sfunc(P(1,1),P(2,1),P(3,1)) > surfaceTol
     
@@ -119,7 +128,7 @@ myObj = @(x) objective(x,P,S,pathResolution);
 [x,distance] = fminsearch(myObj,0);
 
 % For very short distances, the non-linear result can be shorter than the
-% Euclidean distance between the points, which is not possible. If we
+% Euclidean distance between the points due to numerical errors. If we
 % encounter this situation, set x to 0, whicih corresponds to the great
 % ellipse (the path defined by a plane passing through the points and the
 % center of the ellipsoid). This value will be very close to the geodesic
@@ -139,14 +148,18 @@ function [d,geodesicPathCoords] = objective(x,P,S,pathResolution)
 % Returns the arc distance along an ellipse on the ellipsoid surface
 %
 % Description:
-%   We have two points (X0, X1). We define a plane by reflecting the
-%   midpoint of X0, X1 across the center of the ellipsoid, and then
-%   translating this point along the normal of this initial plane by x
-%   units. The intersection of this plane with the ellipsoid is obtained,
-%   and the arc length along the intersection ellipse between X0 and X1 is
-%   calculated and returned. This routine allows us to search over values
-%   of x that minimize the returned value of d, and thus identify the
-%   approximate geodesic.
+%   P will specify two points on the ellipsoidal surface. We define a plane
+%   by reflecting the midpoint of these points across the center of the
+%   ellipsoid, and then translating the reflected point along the normal of
+%   the initial plane by x units. The intersection of the  plane with the
+%   ellipsoid is obtained, and the arc length along the intersection
+%   ellipse between P1 and P2 is calculated and returned. This routine
+%   allows us to search over values of x that minimize the returned value
+%   of d, and thus identify the approximate geodesic.
+%
+%   If a third point is provided in P, then this third point is used to
+%   defined the plane, and x is ignored.
+%
 
 % Center the quadric
 quadricCenter = quadric.center(S);
@@ -181,18 +194,29 @@ a=r(1);b=r(2);c=r(3);
 Ec = [q1;q2;q3];
 
 % The ellipse lies in the plane identifed by Pc. For the calculations that
-% follow, it is easier if the ellipse is parallel to one of the cardinal
-% axes. To do so, we rotate the points PC, and the ellipse center, eC, so
-% that these are all parallel to the xy, xz, or yz plane.
+% follow, we rotate to plane to place it (and the ellipse) parallel to one
+% of the cardinal coordinate axes. To do so, we rotate the points Pc, and
+% the ellipse center, Ec, so that these are all parallel to the xy, xz, or
+% yz plane.
+
+% Anonymous functions that, given vectors a and b, returns a rotation
+% matrix which can be used to rotate a to be parallel to b.
 ssc = @(v) [0 -v(3) v(2); v(3) 0 -v(1); -v(2) v(1) 0];
 RU = @(a,b) eye(3) + ssc(cross(a,b)) + ...
      ssc(cross(a,b))^2*(1-dot(a,b))/(norm(cross(a,b))^2);
+ 
+ % Define a vector that is the cardinal axis that is closest to being
+ % aligned with the planeNormal, and match the sign of the direction of
+ % this axis vector with the planeNormal.
 axisVector = [0; 0; 0];
 axisIdx = find(abs(planeNormal)==max(abs(planeNormal)),1);
 axisVector(axisIdx) = 1*sign(planeNormal(axisIdx));
+
+% Obtain the rotation matrix that would bring make the planeNormal parallel
+% to the axisVector.
 R = RU(planeNormal,axisVector);
  
-% Apply the rotation matrix
+% Apply the rotation matrix to Pc and Ec.
 PcR = R*Pc;
 EcR = R*Ec;
 
@@ -200,7 +224,8 @@ EcR = R*Ec;
 PcRc = PcR - EcR;
 
 % Find the angle of each of these points with respect to the ellipse
-% center.
+% center. There is some machinery here to figure out which dimension may be
+% dropped.
 tanIdx = [1 2 3];
 tanIdx = tanIdx(tanIdx ~= axisIdx);
 t1 = atan2(PcRc(tanIdx(2),1),PcRc(tanIdx(1),1));
@@ -221,13 +246,13 @@ fun2=@(angle) sqrt(1-k2^2*(sin(angle)).^2);
 arc1=Bye*integral(fun2,0,t1);
 arc2=Bye*integral(fun2,0,t2);
 
-% This is the objective.
+% This is arc length between P1 and P2, and thus the the objective.
 d = abs(arc1-arc2);
 
 % If requested, generate points on the geodesic
 if nargout == 2
     
-    % generate thetas
+    % Interpolate thetas between t1 and t2
     thetas = linspace(t1,t2,pathResolution);
     
     % flip them back to the other side of the ellipse if needed
