@@ -78,7 +78,7 @@ plotModelEyeSchematic(sceneGeometry);
 
 Also as a set of 3D quadric surfaces:
 ```
-plotOpticalSystem('surfaceSet',sceneGeometry.refraction.retinaToCamera,'addLighting',true);
+plotOpticalSystem(sceneGeometry);
 ```
 
 ## Demos and unit tests
