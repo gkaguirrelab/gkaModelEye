@@ -187,9 +187,9 @@ end
 % Open a figure
 if p.Results.newFigure
     if p.Results.visible
-        figHandle = figure('Visible', 'on');
+        figHandle = figure('Visible', 'on', 'PaperPosition', [0 0 imageSizeY imageSizeX]);
     else
-        figHandle = figure('Visible', 'off');
+        figHandle = figure('Visible', 'off', 'PaperPosition', [0 0 imageSizeY imageSizeX]);
     end
     imshow(backgroundImage,[], 'Border', 'tight');
     % Prepare the figure
