@@ -13,14 +13,16 @@ wavelength = 555;
 sphericalAmetropia = -5;
 eye = modelEyeParameters('spectralDomain',wavelength,'sphericalAmetropia',sphericalAmetropia);
 
+% Obtain the field position of the fovea w.r.t. the longitudinal axis
+fieldPosFovea = eye.landmarks.fovea.degField;
+
 % Some landmarks needed for the calculation
 rayOriginDistance = 1000/calcAccommodation(eye);
 angleReferenceCoord = eye.landmarks.incidentNode.coords;
 distanceReferenceCoord = calcPrincipalPoint(eye);
 
 % Perform the calculation
-rayPath = calcNodalRayFromField(eye,fieldPos+eye.landmarks.fovea.degField,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord);
-distance = quadric.geodesic(eye.retina.S,[eye.landmarks.fovea.coords',rayPath(:,end)]);
+distance = calcRetinalDistanceFromField(eye,fieldPosFovea,fieldPosFovea+fieldPos,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord);
 
 % Report the result
 fprintf('The retinal location corresponding to visual field position [%d, %d] is %2.2f mm from the fovea\n',fieldPos,distance);
