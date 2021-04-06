@@ -2,7 +2,7 @@ function X = intersectRayPlane(n,p,R)
 % Find the coordinates of intersection of a ray with a plane
 %
 % Syntax:
-%  X = quadric.intersectRay(S,R,side,boundingBox,bbTol)
+%  X = intersectRayPlane(n,p,R)
 %
 % Description:
 %   Returns the coordinates of the point of intersection of a ray with a

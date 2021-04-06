@@ -6,8 +6,8 @@ function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayOriginD
 %
 % Description
 %   Calculates the refractive power of an optical system in units of
-%	diopters. A negative value specifies the power of a lens that would be
-%	worn by someone with myopia to correct their vision.
+%   diopters. A negative value specifies the power of a lens that would be
+%   worn by someone with myopia to correct their vision.
 %
 %   Some optical systems end in a medium with a refractive index other than
 %   unity. In this case the optical power is given by:

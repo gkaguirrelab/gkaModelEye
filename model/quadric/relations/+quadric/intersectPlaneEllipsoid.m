@@ -7,7 +7,7 @@ function [Aye,Bye,q1,q2,q3] = intersectPlaneEllipsoid(A,B,C,D,a,b,c)
 % Description:
 %
 %   Author: Sebahattin Bektas,Ondokuz Mayis University,2015
-
+%
 %   This function computes the intersection an ellipsoid and a plane, based
 %   upon the algorithms described in
 %
