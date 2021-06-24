@@ -43,7 +43,7 @@ The function `eyePoseEllipseFit` implements a search over eyePose parameters and
 
 To configure the repository, first install [toolboxToolbox (tBtB)](https://github.com/ToolboxHub/ToolboxToolbox), which provides for declarative dependency management for Matlab. Once tBtB is installed, the code will be installed and readied for use with the command `tbUse('gkaModelEye');`. Alternatively, you can simply add the repository (and its subdirectories) to the Matlab path using `addpath(genpath('myLocalPath/gkaModelEye'))`
 
-This repository requires several of the MATLAB toolboxes. The code has no required dependencies external to Matlab, although demos that create animated gifs require the gif function (https://www.mathworks.com/matlabcentral/fileexchange/63239-gif), and automated testing of all examples uses the ExampleTest toolbox (https://github.com/isetbio/ExampleTestToolbox.git). These external repositories are installed by the tbUse command.
+This repository requires several of the MATLAB toolboxes. The code has no required dependencies external to Matlab, although demos that create animated gifs require the [gif function](https://www.mathworks.com/matlabcentral/fileexchange/63239-gif), and automated testing of all examples uses the [ExampleTest toolbox](https://github.com/isetbio/ExampleTestToolbox.git). These external repositories are installed by the tbUse command.
 
 If you do not use `toolboxToolbox` to configure the repository, you can test for the availability of the necessary MATLAB toolboxes by running the script `gkaModelEyeLocalHookTemplate.m` that is located within the `config` directory.
 
