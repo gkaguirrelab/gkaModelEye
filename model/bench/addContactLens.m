@@ -90,6 +90,7 @@ p.addParameter('minimumLensThickness',0.05,@isnumeric);
 p.addParameter('backSurfaceRadii',[],@isnumeric);
 p.addParameter('tearThickness',[],@isnumeric);
 p.addParameter('contactLensDepth',2,@isnumeric);
+p.addParameter('contactLensViewAngle',63,@isnumeric);
 p.addParameter('cornealRotation',[0, 0, 0],@isnumeric);
 
 % parse
@@ -186,7 +187,7 @@ myObj = @(x) ...
 % Specify a non-linear constraint that requires that the lens has a
 % positive radial thickness for a field of view that extends 63 degrees
 % on either side of fixation. This is relevant only for plus lenses
-myConstraint = @(x) checkLensShape(mySystem(x));
+myConstraint = @(x) checkLensShape(mySystem(x),p.Results.contactLensViewAngle);
 
 % Obtain an initial guess for the radius of curvature of the front
 % surface using the thin lens approximation
@@ -234,7 +235,7 @@ warning(warningState);
 % In some cases overwrite the anonymous functions with the solution values
 frontCurvature = x(1);
 frontCenter = frontCenter(x);
-[~,~,intersectHeight] = checkLensShape(mySystem(x));
+[~,~,intersectHeight] = checkLensShape(mySystem(x),p.Results.contactLensViewAngle);
 
 
 %% Add the lens
@@ -278,7 +279,7 @@ end
 end
 
 
-function [c,ceq, intersectHeight] = checkLensShape(opticalSystem)
+function [c,ceq, intersectHeight] = checkLensShape(opticalSystem,contactLensViewAngle)
 
 % Obtain the systemDirection
 systemDirection = calcSystemDirection(opticalSystem);
@@ -305,11 +306,11 @@ switch systemDirection
 end
 
 % Calculate the distance from the corneal vertex to the back and front
-% surface of the lens along a 63 degree viewing angle from the iris center.
+% surface of the lens along the passed viewing angle from the iris center.
 % We make this calculation in four different directions
 thicknessAtEdge = [];
 Xfront = [];
-horiz = [-63 63]; vert = [-63 63];
+horiz = [-contactLensViewAngle contactLensViewAngle]; vert = [-contactLensViewAngle contactLensViewAngle];
 for hh = 1:length(horiz)
     for vv = 1:length(vert)
         R = quadric.normalizeRay(quadric.anglesToRay([-3.9;0;0], horiz(hh), vert(hh) ));
