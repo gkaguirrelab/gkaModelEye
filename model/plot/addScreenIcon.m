@@ -32,7 +32,7 @@ if nargin==2
 end
 
 
-%% Grab the nodal point of the camera
+%% Get the location of the screen from the sceneGeometry
 screenCenter = [sceneGeometry.screenPosition.screenDistance, 0, 0];
 
 
