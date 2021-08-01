@@ -90,6 +90,9 @@ p.addParameter('targetDistance',1500,@isnumeric);
 % parse
 p.parse(eye, varargin{:})
 
+% Obtain the unmatched varargin
+vararginUnmatched = namedargs2cell(p.Unmatched);
+
 
 %% Create the initial optical systems
 opticalSystemRotInitial = assembleOpticalSystem(eye, 'surfaceSetName', 'stopToMedium', 'cameraMedium', p.Results.cameraMedium, 'opticalSystemNumRows', []);
@@ -104,9 +107,9 @@ if ~isempty(p.Results.contactLens)
     switch length(p.Results.contactLens)
         case 1
             lensRefractiveIndex=returnRefractiveIndex( 'hydrogel', eye.meta.spectralDomain );
-            opticalSystemRot = addContactLens(opticalSystemRotInitial, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex,'cornealRotation',eye.cornea.rotation);
+            opticalSystemRot = addContactLens(opticalSystemRotInitial, p.Results.contactLens, 'lensRefractiveIndex', lensRefractiveIndex,'cornealRotation',eye.cornea.rotation,vararginUnmatched{:});
         case 2
-            opticalSystemRot = addContactLens(opticalSystemRotInitial, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2),'cornealRotation',eye.cornea.rotation);
+            opticalSystemRot = addContactLens(opticalSystemRotInitial, p.Results.contactLens(1), 'lensRefractiveIndex', p.Results.contactLens(2),'cornealRotation',eye.cornea.rotation,vararginUnmatched{:});
         otherwise
             error('The key-value pair contactLens is limited to two elements: [refractionDiopters, refractionIndex]');
     end
@@ -120,13 +123,13 @@ if ~isempty(p.Results.spectacleLens)
     switch length(p.Results.spectacleLens)
         case 1
             lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
-            opticalSystemFix = addSpectacleLens(opticalSystemFixInitial, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex);
+            opticalSystemFix = addSpectacleLens(opticalSystemFixInitial, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex,vararginUnmatched{:});
         case 2
-            opticalSystemFix = addSpectacleLens(opticalSystemFixInitial, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2));
+            opticalSystemFix = addSpectacleLens(opticalSystemFixInitial, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),vararginUnmatched{:});
         case 3
-            opticalSystemFix = addSpectacleLens(opticalSystemFixInitial, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3));
+            opticalSystemFix = addSpectacleLens(opticalSystemFixInitial, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3),vararginUnmatched{:});
         case 4
-            opticalSystemFix = addSpectacleLens(opticalSystemFixInitial, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4));
+            opticalSystemFix = addSpectacleLens(opticalSystemFixInitial, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4),vararginUnmatched{:});
         otherwise
             error('The key-value pair spectacleLens is limited to four elements: [refractionDiopters, refractionIndex, vertexDistance, baseCurve]');
     end
