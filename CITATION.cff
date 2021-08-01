@@ -1,0 +1,16 @@
+# YAML 1.2
+---
+authors: 
+  -
+    affiliation: "University of Pennsylvania"
+    family-names: Aguirre
+    given-names: Geoffrey
+    name-particle: K
+    orcid: "https://orcid.org/0000-0002-4028-3100"
+cff-version: "1.1.0"
+message: |
+    "Please cite these papers:
+    • GK Aguirre (2019) A Model of the Entrance Pupil of the Human Eye. Scientific Reports, volume 9, Article number: 9360 (2019)
+    • GK Aguirre (2021) A Model of the Appearance of the Moving Human Eye. bioRxiv"
+title: "GKA Model Eye"
+...
