@@ -4,8 +4,7 @@ authors:
   -
     affiliation: "University of Pennsylvania"
     family-names: Aguirre
-    given-names: Geoffrey
-    name-particle: K
+    given-names: Geoffrey Karl
     orcid: "https://orcid.org/0000-0002-4028-3100"
 cff-version: "1.1.0"
 message: |
