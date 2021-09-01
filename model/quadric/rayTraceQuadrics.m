@@ -163,7 +163,7 @@ for ii=2:nSurfaces
     boundingBox = opticalSystem(ii,12:17);
     mustIntersectFlag = opticalSystem(ii,18);
     
-    % The relative index of refractrion is subject to an absolute value
+    % The relative index of refraction is subject to an absolute value
     % operation to handle the use of negative refractive indices as the
     % manner in which a reflective surface is indicated
     nRel = abs(opticalSystem(ii-1,19)/opticalSystem(ii,19));
