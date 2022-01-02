@@ -1,5 +1,5 @@
 function [distance,geodesicPathCoords] = geodesic(S,P,pathResolution,surfaceTol)
-% Find the geodesic distance between points on a tri-axial ellipsoid
+% Geodesic distance between points on a tri-axial ellipsoid
 %
 % Syntax:
 %  [distance,geodesicPathCoords] = geodesic(S,P,pathResolution,surfaceTol)
@@ -128,10 +128,10 @@ myObj = @(x) objective(x,P,S,pathResolution);
 [x,distance] = fminsearch(myObj,0);
 
 % For very short distances, the non-linear result can be shorter than the
-% Euclidean distance between the points due to numerical errors. If we
-% encounter this situation, set x to 0, whicih corresponds to the great
+% Euclidean distance between the points due to numerical error. If we
+% encounter this situation, set x to 0, which corresponds to the great
 % ellipse (the path defined by a plane passing through the points and the
-% center of the ellipsoid). This value will be very close to the geodesic
+% center of the ellipsoid). This value will be very close to the geodesic.
 if distance < norm(P(:,1)-P(:,2))
     x=0;
 end
@@ -151,14 +151,14 @@ function [d,geodesicPathCoords] = objective(x,P,S,pathResolution)
 %   P will specify two points on the ellipsoidal surface. We define a plane
 %   by reflecting the midpoint of these points across the center of the
 %   ellipsoid, and then translating the reflected point along the normal of
-%   the initial plane by x units. The intersection of the  plane with the
+%   the initial plane by x units. The intersection of the plane with the
 %   ellipsoid is obtained, and the arc length along the intersection
 %   ellipse between P1 and P2 is calculated and returned. This routine
-%   allows us to search over values of x that minimize the returned value
-%   of d, and thus identify the approximate geodesic.
+%   allows us to search over values of x to minimize the returned value of
+%   d, and thus identify the approximate geodesic.
 %
 %   If a third point is provided in P, then this third point is used to
-%   defined the plane, and x is ignored.
+%   define the plane, and x is ignored.
 %
 
 % Center the quadric
@@ -168,8 +168,8 @@ Sc = quadric.translate(S,-quadricCenter);
 % Adjust the points for the center translation
 Pc = P-quadricCenter;
 
-% If we have not been provided with a third point, then use the passed x
-% value to define a point and thus a plane.
+% If we have not been provided with a third point, use the passed x value
+% to define a point and thus a plane.
 if size(Pc,2)==2
     % Define a plane with the reflection of the initial points.
     % Find the normal to this initial plane, and then adjust by x units
@@ -205,15 +205,15 @@ ssc = @(v) [0 -v(3) v(2); v(3) 0 -v(1); -v(2) v(1) 0];
 RU = @(a,b) eye(3) + ssc(cross(a,b)) + ...
      ssc(cross(a,b))^2*(1-dot(a,b))/(norm(cross(a,b))^2);
  
- % Define a vector that is the cardinal axis that is closest to being
- % aligned with the planeNormal, and match the sign of the direction of
- % this axis vector with the planeNormal.
+% Define a vector that is the cardinal axis that is closest to being
+% aligned with the planeNormal, and match the sign of the direction of this
+% axis vector with the planeNormal.
 axisVector = [0; 0; 0];
 axisIdx = find(abs(planeNormal)==max(abs(planeNormal)),1);
 axisVector(axisIdx) = 1*sign(planeNormal(axisIdx));
 
-% Obtain the rotation matrix that would bring make the planeNormal parallel
-% to the axisVector.
+% Obtain the rotation matrix that would make the planeNormal parallel to
+% the axisVector.
 R = RU(planeNormal,axisVector);
  
 % Apply the rotation matrix to Pc and Ec.
@@ -255,7 +255,7 @@ if nargout == 2
     % Interpolate thetas between t1 and t2
     thetas = linspace(t1,t2,pathResolution);
     
-    % flip them back to the other side of the ellipse if needed
+    % Flip them back to the other side of the ellipse if needed
     if piFlipFlag
         thetas = thetas-sign(thetas)*pi;
     end
