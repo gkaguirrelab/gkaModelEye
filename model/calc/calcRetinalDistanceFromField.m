@@ -45,7 +45,7 @@ function [distance, geodesicPathCoords] = calcRetinalDistanceFromField(opticalSy
     % Distance from the fovea to the optic disc on the retina
     eye = modelEyeParameters();
     F1 = eye.landmarks.fovea.degField;
-    F2 = eye.landmarks.opticDisc.degField
+    F2 = eye.landmarks.opticDisc.degField;
     d = calcRetinalDistanceFromField(eye,F1,F2);
 %}
 
