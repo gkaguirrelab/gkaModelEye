@@ -230,13 +230,14 @@ switch eye.meta.species
         eye.stop = human.stop(eye);
         eye.retina = human.retina(eye);
         eye.lens = human.lens(eye);
-        
-        % If the axial length was not passed, calculate and store the value
-        if isempty(eye.meta.axialLength)
-            retinaRadii = quadric.radii(eye.retina.S);
-            retinaCenter = quadric.center(eye.retina.S);
-            eye.meta.axialLength = retinaRadii(1)-retinaCenter(1);
-        end
+
+        % Calculate and store the realized axial length
+        retinaRadii = quadric.radii(eye.retina.S);
+        retinaCenter = quadric.center(eye.retina.S);
+        eye.meta.axialLength = retinaRadii(1)-retinaCenter(1);
+
+        % Calculate and store the realized accommodation
+        eye.meta.accommodation = calcAccommodation(eye);
         
         % Rotation centers
         eye.rotationCenters = human.rotationCenters(eye);
