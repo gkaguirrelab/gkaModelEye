@@ -12,12 +12,14 @@ function X = calcRetina2DPolToCart(eye,theta,eccentricity,P)
 %       270 - inferior retinal meridian
 %   and eccentricity in geodesic mm. By default, the origin of this space
 %   is the fovea. This accomplishes a 2D embedding of the 3D retinal
-%   surface. This function returns the 3D, Cartesian point on the retinal
+%   surface.
+%
+%   This function returns the 3D, Cartesian point on the retinal
 %   surface corresponding to a 2D, polar retinal point.
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters
-%   theta                 - Scalar, in degrees.
+%   theta                 - Scalar, in degrees, in the domain 0-360.
 %   eccentricity          - Scalar, in mm.
 %   P                     - 3x1 vector that provides a coordinate on the
 %                           retinal surface that is the origin of the 2D
@@ -40,10 +42,7 @@ function X = calcRetina2DPolToCart(eye,theta,eccentricity,P)
     eye = modelEyeParameters();
     plotOpticalSystem(eye);
     view([-50,10])
-    cmap = colormap('hsv');
-    for dd=1:3
-        c(:,dd) = interp1(1:256,cmap(:,dd),linspace(1,255,360));
-    end
+    c=colormap(hsv(360));
     for theta = 0:15:345
         X = calcRetina2DPolToCart(eye,theta,5);
         plot3(X(1),X(2),X(3),'*','Color',c(theta+1,:));
@@ -55,7 +54,7 @@ arguments
     eye (1,1) {isstruct}
     theta (1,1) {mustBeNumeric}
     eccentricity (1,1) {mustBeNumeric}
-    P (3,1) {mustBeNumeric} = eye.landmarks.fovea.coords';
+    P (3,1) {mustBeNumeric} = eye.landmarks.fovea.coords'
 end
 
 % Extract the quadric vector for the retinal surface
