@@ -2,7 +2,7 @@ function X = calcRetina2DPolToCart(eye,theta,eccentricity,P)
 % Returns the 3D coordinate of a retinal point defined in 2D polar space
 %
 % Syntax:
-%  X = calcRetina2DPolToCart(eye,polarAngle,eccentricity,P)
+%  X = calcRetina2DPolToCart(eye,theta,eccentricity,P)
 %
 % Description
 %   We define a retinal polar coordinate space with angle theta as:
