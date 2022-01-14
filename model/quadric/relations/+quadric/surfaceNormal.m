@@ -55,6 +55,11 @@ if nargin==3
     surfaceTolerance=1e-10;
 end
 
+% If the quadric surface was passed in vector form, convert to matrix
+if isequal(size(S),[1 10])
+    S = quadric.vecToMatrix(S);
+end
+
 % Pre-allocate the output variables
 N = nan(3,2);
 
