@@ -1,8 +1,8 @@
-function [ fitTotalRGCDensityCurcioMm, curcioRawRGCDensity ] = cellTotalRGCCurcio(  )
+function [ fitTotalRGCDensityCurcioMm, curcioRawRGCDensity ] = cellTotalRGCDensityCurcio(  )
 % Brief one line description of the function
 %
 % Syntax:
-%   [ fitTotalRGCDensityCurcioMm, curcioRawRGCDensity ] = cellTotalRGCCurcio(  )
+%   [ fitTotalRGCDensityCurcioMm, curcioRawRGCDensity ] = cellTotalRGCDensityCurcio(  )
 %
 % Description:
 %   This routine returns a function variable that provides total RGC
@@ -38,7 +38,7 @@ function [ fitTotalRGCDensityCurcioMm, curcioRawRGCDensity ] = cellTotalRGCCurci
 %{
     cardinalMeridianAngles = [0, 90, 180, 270];
     cardinalMeridianNames = {'nasal','superior','temporal','inferior'};
-    [ fitTotalRGCDensityCurcioMm, curcioRawRGCDensity ] = cellTotalRGCCurcio(  );
+    [ fitTotalRGCDensityCurcioMm, curcioRawRGCDensity ] = cellTotalRGCDensityCurcio(  );
     fitSupport = 0:0.1:ceil(max(curcioRawRGCDensity.support));
     figure
     for mm = 1:length(cardinalMeridianNames);
@@ -165,18 +165,18 @@ end
 
 %%%% LOCAL FUNCTIONS
 
-function rgcDensityVector = handleZerosAndNans(rgcDensityVector)
-zeroIdx = find(rgcDensityVector(1:10)==0);
+function densityVector = handleZerosAndNans(densityVector)
+zeroIdx = find(densityVector(1:10)==0);
 if ~isempty(zeroIdx)
-    replacementVals = rgcDensityVector(zeroIdx(end)+1) ./ ((max(zeroIdx)-zeroIdx+1).^10.*10);
+    replacementVals = densityVector(zeroIdx(end)+1) ./ ((max(zeroIdx)-zeroIdx+1).^10.*10);
     if length(replacementVals)==1
         replacementVals = replacementVals./1e12;
     end
-    rgcDensityVector(zeroIdx)=replacementVals;
+    densityVector(zeroIdx)=replacementVals;
 end
-nanIdx = find(isnan(rgcDensityVector(end-10:end)));
+nanIdx = find(isnan(densityVector(end-10:end)));
 if ~isempty(nanIdx)
-    rgcDensityVector(nanIdx+end-11)=1./(10.^(nanIdx-min(nanIdx)));
+    densityVector(nanIdx+end-11)=1./(10.^(nanIdx-min(nanIdx)));
 end
 end
 
