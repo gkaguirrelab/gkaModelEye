@@ -1,8 +1,8 @@
-function [ fitTotalConeDensityCurcioMm, curcioRawConeDensity ] = cellConeDensityCurcio(  )
+function [ fitConeDensityCurcioMm, rawCellDensity ] = cellConeDensityCurcio( dataFileName )
 % Brief one line description of the function
 %
 % Syntax:
-%   [ fitTotalConeDensityCurcioMm, curcioRawConeDensity ] = cellConeDensityCurcio(  )
+%   [ fitTotalConeDensityCurcioMm, rawCellDensity ] = cellConeDensityCurcio( dataFileName )
 %
 % Description:
 %   This routine returns a function variable that provides total RGC
@@ -29,31 +29,59 @@ function [ fitTotalConeDensityCurcioMm, curcioRawConeDensity ] = cellConeDensity
 %  'makePlots'            - Do we make a figure?
 %
 % Outputs:
-%   fitTotalConeDensityCurcioMm - Anonymous function of theta and
+%   fitConeDensityCurcioMm - Anonymous function of theta and
 %                           eccentricity (in degrees and mm)
-%   curcioRawConeDensity  - Structure that contains the original Curcio
+%   rawCellDensity        - Structure that contains the original Curcio
 %                           data that was the basis of the fit.
 %
 % Examples:
 %{
     cardinalMeridianAngles = [0, 90, 180, 270];
     cardinalMeridianNames = {'nasal','superior','temporal','inferior'};
-    [ fitTotalConeDensityCurcioMm, curcioRawConeDensity ] = cellConeDensityCurcio(  );
+    [ fitConeDensityCurcioMm, curcioRawConeDensity ] = cellConeDensityCurcio( );
     fitSupport = 0:0.1:20;
     figure
     for mm = 1:length(cardinalMeridianNames);
         subplot(2,2,mm);
         semilogy(curcioRawConeDensity.support,curcioRawConeDensity.(cardinalMeridianNames{mm}),'xk');
         hold on    
-        semilogy(fitSupport,fitTotalConeDensityCurcioMm(cardinalMeridianAngles(mm),fitSupport),'-r');
+        semilogy(fitSupport,fitConeDensityCurcioMm(cardinalMeridianAngles(mm),fitSupport),'-r');
         xlabel('Eccentricity [mm]'); ylabel('Total cone density per sq mm');
         title(cardinalMeridianNames{mm});
     end
 %}
+%{
+    % Plot the ratio of RGC to cone density across eccentricity
+    cardinalMeridianAngles = [0, 90, 180, 270];
+    cardinalMeridianNames = {'nasal','superior','temporal','inferior'};
+    fitConeDensityCurcioMm = cellConeDensityCurcio( );
+    fitTotalRGCDensityCurcioMm = cellTotalRGCDensityCurcio( );
+    support = 2:0.1:15;
+    figure
+    for mm = 1:length(cardinalMeridianNames)
+        semilogy(support,fitTotalRGCDensityCurcioMm(cardinalMeridianAngles(mm),support)./fitConeDensityCurcioMm(cardinalMeridianAngles(mm),support),'-');
+        hold on
+    end
+    legend(cardinalMeridianNames);
+    xlabel('Eccentricity [mm]'); ylabel('RGC:cone ratio');
+%}
 
 
-rgcDensityDataFileName = fullfile(fileparts(mfilename('fullpath')),'Curcio_1990_JCompNeurol_HumanPhotoreceptorTopography','curcioRawConeDensity_computedAverage.mat');
-load(rgcDensityDataFileName,'curcioRawConeDensity');
+arguments
+    dataFileName {mustBeTextScalar} = 'curcioRawConeDensity_reportedAverage.mat'
+end
+
+% Define the data file to load
+fullDataFilePath = fullfile(fileparts(mfilename('fullpath')),'Curcio_1990_JCompNeurol_HumanPhotoreceptorTopography',dataFileName);
+
+% Load and sanity check
+tmpLoader = load(fullDataFilePath);
+fieldNames = fields(tmpLoader);
+if length(fieldNames) ~= 1
+    error('Please specify a raw datafile that contains a single structure variable');
+end
+rawCellDensity = tmpLoader.(fieldNames{1});
+
 cardinalMeridianAngles = [0, 90, 180, 270];
 cardinalMeridianNames = {'nasal','superior','temporal','inferior'};
 splineKnots = 15;
@@ -69,10 +97,10 @@ for mm=1:length(cardinalMeridianAngles)
     mName = cardinalMeridianNames{mm};
 
     % Grab the density for this meridian
-    coneDensitySqMm.(mName) = curcioRawConeDensity.(mName);
+    coneDensitySqMm.(mName) = rawCellDensity.(mName);
 
     % Grab a copy of the support
-    supportMm.(mName) = curcioRawConeDensity.support;
+    supportMm.(mName) = rawCellDensity.support;
 
     % handle leading zeros and trailing nans in the density vector
     coneDensitySqMm.(mName) = handleZerosAndNans(coneDensitySqMm.(mName));
@@ -153,8 +181,7 @@ mySpline = @(theta) setfield(ppFormSplineFits{1},'coefs',myCoefs(theta));
 % to the fovea to zero, as there is some weirdness in the spline at very
 % low levels.
 threhsoldY = @(y) y.*(y>1);
-fitTotalConeDensityCurcioMm = @(thetaDeg,eccentricityMM) threhsoldY(fnval(mySpline(thetaDeg),eccentricityMM')');
-
+fitConeDensityCurcioMm = @(thetaDeg,eccentricityMM) threhsoldY(fnval(mySpline(thetaDeg),eccentricityMM')');
 
 end
 

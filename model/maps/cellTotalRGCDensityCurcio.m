@@ -1,4 +1,4 @@
-function [ fitTotalRGCDensityCurcioMm, curcioRawRGCDensity ] = cellTotalRGCDensityCurcio(  )
+function [ fitTotalRGCDensityCurcioMm, rawCellDensity ] = cellTotalRGCDensityCurcio( dataFileName )
 % Brief one line description of the function
 %
 % Syntax:
@@ -31,7 +31,7 @@ function [ fitTotalRGCDensityCurcioMm, curcioRawRGCDensity ] = cellTotalRGCDensi
 % Outputs:
 %   fitTotalRGCDensityCurcioMm - Anonymous function of theta and
 %                           eccentricity (in degrees and mm)
-%   curcioRawRGCDensity   - Structure that contains the original Curcio
+%   rawCellDensity        - Structure that contains the original Curcio
 %                           data that was the basis of the fit.
 %
 % Examples:
@@ -51,9 +51,21 @@ function [ fitTotalRGCDensityCurcioMm, curcioRawRGCDensity ] = cellTotalRGCDensi
     end
 %}
 
+arguments
+    dataFileName {mustBeTextScalar} = 'curcioRawRGCDensity_reportedAverage.mat'
+end
 
-rgcDensityDataFileName = fullfile(fileparts(mfilename('fullpath')),'Curcio_1990_JCompNeurol_GanglionCellTopography','curcioRawRGCDensity_computedAverage.mat');
-load(rgcDensityDataFileName,'curcioRawRGCDensity');
+% Define the data file to load
+fullDataFilePath = fullfile(fileparts(mfilename('fullpath')),'Curcio_1990_JCompNeurol_GanglionCellTopography',dataFileName);
+
+% Load and sanity check
+tmpLoader = load(fullDataFilePath);
+fieldNames = fields(tmpLoader);
+if length(fieldNames) ~= 1
+    error('Please specify a raw datafile that contains a single structure variable');
+end
+rawCellDensity = tmpLoader.(fieldNames{1});
+
 cardinalMeridianAngles = [0, 90, 180, 270];
 cardinalMeridianNames = {'nasal','superior','temporal','inferior'};
 splineKnots = 22;
@@ -69,10 +81,10 @@ for mm=1:length(cardinalMeridianAngles)
     mName = cardinalMeridianNames{mm};
 
     % Grab the density for this meridian
-    rgcDensitySqMm.(mName) = curcioRawRGCDensity.(mName);
+    rgcDensitySqMm.(mName) = rawCellDensity.(mName);
 
     % Grab a copy of the support
-    supportMm.(mName) = curcioRawRGCDensity.support;
+    supportMm.(mName) = rawCellDensity.support;
 
     % handle leading zeros and trailing nans in the density vector
     rgcDensitySqMm.(mName) = handleZerosAndNans(rgcDensitySqMm.(mName));
