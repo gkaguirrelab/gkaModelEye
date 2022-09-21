@@ -5,18 +5,13 @@ function retina = retina(eye)
 %  retina = human.retina( eye )
 %
 % Description:
-%   The retinal surface (i.e., the vitreous chamber / posterior segment) is
-%   modeled as an ellipsoidal quadric surface, with adjustments in size for
-%   the spherical ametropia of the eye. Atchison 2006 provides the semi-
-%   radii of a triaxial ellipsoid model of the retinal surface, with these
-%   values varying by spherical ametropia:
+% 
+% Unless othewise stated, values taken from:
+%   Mutti, Donald O., Karla Zadnik, and Christopher J. Murphy. "Naturally
+%   occurring vitreous chamber-based myopia in the Labrador retriever."
+%   Investigative ophthalmology & visual science 40.7 (1999): 1577-1584.
 %
-%       Atchison, David A. "Optical models for human myopic eyes." Vision
-%       research 46.14 (2006): 2236-2250.
-%
-%   The Atchison model is arranged around the visual axis, with the
-%   vitreous chamber tilted and shifted. In the current model, the retinal
-%   ellipsoid is aligned with and centered on the optical axis.
+% Values are given for an emmetropic canine eye.
 %
 % Inputs:
 %   eye                   - Structure.
@@ -35,7 +30,7 @@ radii = [ 9.7 9.701 9.702];
 % Create the quadric
 S = quadric.scale(quadric.unitSphere,radii);
 
-% Shift so that the posterior apex of the sphere is 23.01 mm posterior to
+% Shift so that the posterior apex of the sphere is 21.5 mm posterior to
 % the corneal apex
 S = quadric.translate(S,[radii(1)-21.5 0 0]);
 

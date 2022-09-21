@@ -27,13 +27,6 @@ bbfront = [-9 anteriorLensPosition -5 5 -5 5];
 
 
 %% Lens back surface
-%{
-    R = -6.520;
-    Q = -2;
-    a = R * sqrt(abs( 1 / (Q - 1 ) )) * sign(Q);
-    b = R / (Q - 1 );
-    radii = [a b b]
-%}
 radii = [5.2 5.2 5.2];
 
 % Create the quadric

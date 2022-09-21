@@ -5,7 +5,13 @@ function cornea = cornea( eye )
 %  cornea = human.cornea( eye )
 %
 % Description:
-%   
+% 
+% Unless othewise stated, values taken from:
+%   Mutti, Donald O., Karla Zadnik, and Christopher J. Murphy. "Naturally
+%   occurring vitreous chamber-based myopia in the Labrador retriever."
+%   Investigative ophthalmology & visual science 40.7 (1999): 1577-1584.
+%
+% Values are given for an emmetropic canine eye.
 %
 % Inputs:
 %   eye                   - Structure.
@@ -15,28 +21,7 @@ function cornea = cornea( eye )
 %
 
 
-% Unless othewise stated, values taken from:
-%	Coile, D. C., and L. P. O'Keefe. "Schematic eyes for domestic animals."
-%	Ophthalmic and Physiological Optics 8.2 (1988): 215-219.
-%
-% and
-%   Mutti, Donald O., Karla Zadnik, and Christopher J. Murphy. "Naturally
-%   occurring vitreous chamber-based myopia in the Labrador retriever."
-%   Investigative ophthalmology & visual science 40.7 (1999): 1577-1584.
-%
-% Values are given for an emmetropic canine eye.
-
-
 %% Front corneal surface 
-% Corneal radii - I don't have a value for asphericity / eccentricity, so
-% using the human value
-%{
-    corneaFrontR = 9.13;
-    corneaFrontQ = 0;        
-    a = corneaFrontR / ( corneaFrontQ + 1 );
-    b = corneaFrontR * sqrt(1/(corneaFrontQ+1)) ;
-    radii = [a, b, b]
-%}
 radii = [7.1 7.1 7.1];
 
 % Create the quadric
@@ -45,6 +30,30 @@ S = quadric.scale(quadric.unitSphere,radii);
 % We set the center of the cornea front surface ellipsoid so that the axial
 % apex (prior to rotation) is at position [0, 0, 0]
 S = quadric.translate(S,[-radii(1) 0 0]);
+
+% Find the moster anterior point of this quadric surface
+X = quadric.mostAnteriorPoint( S );
+
+% Store these values
+cornea.front.S = quadric.matrixToVec(S);
+cornea.front.side = 1;
+cornea.front.boundingBox=[-4.84 X(1) -9 9 -9 9];
+cornea.front.center=[-radii(1) 0 0];
+
+%% Back corneal surface 
+% Model this as the same as the front. Given that the index of refraction
+% of the cornea and the aqueous is the same in this reduced eye, this has
+% no effect upon the optical properties
+radii = [7.1 7.1 7.1];
+
+% Create the quadric
+S = quadric.scale(quadric.unitSphere,radii);
+
+corneaThickness = 0.01;
+
+% We set the center of the cornea front surface ellipsoid so that the axial
+% apex (prior to rotation) is at position [0, 0, 0]
+S = quadric.translate(S,[-radii(1)-corneaThickness 0 0]);
 
 % Find the moster anterior point of this quadric surface
 X = quadric.mostAnteriorPoint( S );
