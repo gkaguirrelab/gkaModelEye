@@ -186,10 +186,12 @@ if isfield(eye,'landmarks')
     end
 end
 
+
 %% Plot a passed rayPath
 if ~isempty(p.Results.rayPath)
     plot(p.Results.rayPath(PdimA,:),p.Results.rayPath(PdimB,:),['-' p.Results.plotColor]);
 end
+
 
 %% Plot a passed outputRay
 if ~isempty(p.Results.outputRay)

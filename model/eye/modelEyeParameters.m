@@ -271,8 +271,20 @@ switch eye.meta.species
         
     %% Canine
     case {'dog','Dog','canine','Canine'}
-        error('Geoff needs to implement the canine model here');
+        % Eye anatomy
+        eye.cornea = canine.cornea(eye);
+        eye.stop = canine.stop(eye);
+        eye.lens = canine.lens(eye);
+        eye.retina = canine.retina(eye);
         
+        % Index of refraction for the vitreous and aqueous
+        eye.index.vitreous = 1.333;
+        eye.index.aqueous = 1.333;
+
+        % Landmarks
+        eye.landmarks.vertex = canine.landmarks.vertex(eye);
+        eye.landmarks.fovea = canine.landmarks.fovea(eye);
+
     otherwise
         error('Please specify a valid species for the eye model');
 end
