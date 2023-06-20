@@ -42,11 +42,6 @@ function mmPerDeg = calcMmRetinaPerDeg(eye,fieldAngularPosition,deltaAngles,rayO
 %
 % Examples:
 %{
-    % Simple example for the Drasdo model eye
-    eye = modelEyeParameters('species','Drasdo');
-    mmPerDeg = calcMmRetinaPerDeg(eye);
-%}
-%{
     % mm of retina / deg at the fovea
     eye = modelEyeParameters();
     fieldAngularPosition = eye.landmarks.fovea.degField;
