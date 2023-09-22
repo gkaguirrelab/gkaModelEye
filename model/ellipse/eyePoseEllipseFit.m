@@ -94,12 +94,12 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput, x
 % Examples:
 %{
     % Basic example of recovering a simulated eyePose
-    eyePose = [10 -5 0 2.5];
+    eyePose = [12.5 -4 0 2.5];
     sceneGeometry=createSceneGeometry();
     [ targetEllipse, glintCoord ] = projectModelEye(eyePose,sceneGeometry);
     [ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 10 );
     eyePoseRecovered = eyePoseEllipseFit(Xp, Yp, glintCoord, sceneGeometry);
-    assert(max(abs(eyePose-eyePoseRecovered)) < 5e-1);
+    assert(max(abs(eyePose - eyePoseRecovered)) < 5e-1);
 %}
 %{
     % Eye pose in the setting of relative camera motion
