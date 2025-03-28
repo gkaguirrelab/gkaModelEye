@@ -1,8 +1,8 @@
-function [eyePoints, pointLabels, targetIntersectError] = refractEyePoints(eyePoints,pointLabels,sceneGeometry,p,eyePose)
+function [eyePoints, pointLabels, targetIntersectError] = refractEyePoints(eyePoints,pointLabels,sceneGeometry,eyePose,options)
 % Subject eyeWorld points to refraction by the cornea and artificial lenses
 %
 % Syntax:
-%  [eyePoints, pointLabels, targetIntersectError] = refractEyePoints(eyePoints,pointLabels,sceneGeometry,p,eyePose)
+%  [eyePoints, pointLabels, targetIntersectError] = refractEyePoints(eyePoints,pointLabels,sceneGeometry,eyePose,options)
 %
 % Description:
 %   This step accounts for the effect of corneal and corrective lens
@@ -33,11 +33,10 @@ function [eyePoints, pointLabels, targetIntersectError] = refractEyePoints(eyePo
 
 
 % Extract some values for clarity in the code that follows
-pupilRayFunc = p.Results.pupilRayFunc;
-replaceReflectedPoints = p.Results.replaceReflectedPoints;
-rayTraceErrorThreshold = p.Results.rayTraceErrorThreshold;
-borderSearchPrecision = p.Results.borderSearchPrecision;
-
+pupilRayFunc = options.pupilRayFunc;
+replaceReflectedPoints = options.replaceReflectedPoints;
+rayTraceErrorThreshold = options.rayTraceErrorThreshold;
+borderSearchPrecision = options.borderSearchPrecision;
 
 % Create a nan vector for the ray trace errors
 targetIntersectError = nan(size(eyePoints,1),1);

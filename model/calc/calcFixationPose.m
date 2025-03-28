@@ -143,9 +143,9 @@ eyePose = [p(1), p(2), 0, nan];
 % If the addPseudoTorsionFlag is set, then a torsional component is added
 % so that the eye movement conforms to Listing's Law.
 if addPseudoTorsionFlag
-    params.Results.addPseudoTorsion = addPseudoTorsionFlag;
+    opts.addPseudoTorsion = addPseudoTorsionFlag;
     sg.eye = eye;
-    eyePose = addPseudoTorsion(sg,params,eyePose);
+    eyePose = addPseudoTorsion(sg,eyePose,opts);
 end
 
 % Apply the eye rotation to the lineOfSightRay

@@ -1,8 +1,8 @@
-function [eyePoints, pointLabels] = addGlint(eyePoints,pointLabels,sceneGeometry,p,eyePose)
+function [eyePoints, pointLabels] = addGlint(eyePoints,pointLabels,sceneGeometry,eyePose,options)
 % Add glint(s) to the eye model
 %
 % Syntax:
-%  [eyePoints, pointLabels] = addGlint(eyePoints,pointLabels,sceneGeometry,p,eyePose)
+%  [eyePoints, pointLabels] = addGlint(eyePoints,pointLabels,sceneGeometry,eyePose,options)
 %
 % Description:
 %	Find the location of the glint in the eye world coordinate frame. The
@@ -29,8 +29,8 @@ function [eyePoints, pointLabels] = addGlint(eyePoints,pointLabels,sceneGeometry
 
 
 % Extract some values for clarity in the code that follows
-glintRayFunc = p.Results.glintRayFunc;
-rayTraceErrorThreshold = p.Results.rayTraceErrorThreshold;
+glintRayFunc = options.glintRayFunc;
+rayTraceErrorThreshold = options.rayTraceErrorThreshold;
 
 % If we do not have the sceneGeometry components needed for the
 % calculation, return.

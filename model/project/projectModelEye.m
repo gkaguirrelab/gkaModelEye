@@ -1,8 +1,8 @@
-function [pupilEllipse, glintCoord, imagePoints, worldPoints, headPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = projectModelEye(eyePose, sceneGeometry, varargin)
+function [pupilEllipse, glintCoord, imagePoints, worldPoints, headPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = projectModelEye(eyePose, sceneGeometry, options)
 % Obtain the parameters of the entrance pupil ellipse on the image plane
 %
 % Syntax:
-%  [pupilEllipse, glintCoord, imagePoints, worldPoints, headPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = projectModelEye(eyePose, sceneGeometry)
+%  [pupilEllipse, glintCoord, imagePoints, worldPoints, headPoints, eyePoints, pointLabels, targetIntersectError, pupilFitError] = projectModelEye(eyePose, sceneGeometry, options)
 %
 % Description:
 %   Given the sceneGeometry, this routine simulates the aperture stop in a
@@ -41,7 +41,7 @@ function [pupilEllipse, glintCoord, imagePoints, worldPoints, headPoints, eyePoi
 %   sceneGeometry         - Structure. SEE: createSceneGeometry
 %
 % Optional key/value pairs:
-%   cameraTrans           - A 3x1 vector with values for [horizontal;
+%   'cameraTrans'         - A 3x1 vector with values for [horizontal;
 %                           vertical; depth] in units of mm. The values are
 %                           relative to:
 %                               sceneGeometry.cameraPosition.translation
@@ -203,31 +203,24 @@ function [pupilEllipse, glintCoord, imagePoints, worldPoints, headPoints, eyePoi
     fprintf('\tUsing MATLAB ray tracing: %4.2f msecs.\n',msecPerModel);
 %}
 
-
-%% input parser
-p = inputParser; p.KeepUnmatched = true; p.PartialMatching = false;
-
-% Required
-p.addRequired('eyePose',@(x)(isnumeric(x) && all(size(x)==[1 4])));
-p.addRequired('sceneGeometry',@isstruct);
-
-% Optional
-p.addParameter('cameraTrans',[0;0;0],@isvector);
-p.addParameter('addPseudoTorsion',true,@islogical);
-p.addParameter('fullEyeModelFlag',false,@islogical);
-p.addParameter('nStopPerimPoints',6,@(x)(isscalar(x) && x>4));
-p.addParameter('stopPerimPhase',0,@isscalar);
-p.addParameter('replaceReflectedPoints',false,@islogical);
-p.addParameter('borderSearchPrecision',0.01,@isscalar);
-p.addParameter('rayTraceErrorThreshold',0.01,@isscalar);
-p.addParameter('nIrisPerimPoints',5,@isscalar);
-p.addParameter('corneaMeshDensity',23,@isscalar);
-p.addParameter('retinaMeshDensity',30,@isscalar);
-p.addParameter('pupilRayFunc',@findPupilRayMex,@(x)(isa(x,'function_handle') || isempty(x)));
-p.addParameter('glintRayFunc',@findGlintRayMex,@(x)(isa(x,'function_handle') || isempty(x)));
-
-% parse
-p.parse(eyePose, sceneGeometry, varargin{:})
+%% argument block
+arguments
+    eyePose (1, 4) double {mustBeNumeric}
+    sceneGeometry struct
+    options.cameraTrans (3, 1) double = [0; 0; 0]
+    options.addPseudoTorsion logical = true
+    options.fullEyeModelFlag logical = false
+    options.nStopPerimPoints double {mustBeScalarOrEmpty, mustBeGreaterThan(options.nStopPerimPoints,4)} = 6
+    options.stopPerimPhase double {mustBeScalarOrEmpty} = 0
+    options.replaceReflectedPoints logical = false
+    options.borderSearchPrecision double {mustBeScalarOrEmpty} = 0.01
+    options.rayTraceErrorThreshold double {mustBeScalarOrEmpty} = 0.01
+    options.nIrisPerimPoints double {mustBeScalarOrEmpty} = 5
+    options.corneaMeshDensity double {mustBeScalarOrEmpty} = 23
+    options.retinaMeshDensity double {mustBeScalarOrEmpty} = 30
+    options.pupilRayFunc {isFuncHandleOrEmpty(options.pupilRayFunc)} = @findPupilRayMex
+    options.glintRayFunc {isFuncHandleOrEmpty(options.glintRayFunc)} = @findGlintRayMex
+end
 
 
 %% Define some variables
@@ -240,37 +233,37 @@ glintCoord = [];
 
 %% Update camera translation
 sceneGeometry.cameraPosition.translation = ...
-        sceneGeometry.cameraPosition.translation + p.Results.cameraTrans;
+        sceneGeometry.cameraPosition.translation + options.cameraTrans;
 
 
 %% Apply pseudoTorsion
 eyePose = ...
-    addPseudoTorsion(sceneGeometry,p,eyePose);
+    addPseudoTorsion(sceneGeometry,eyePose,options);
 
 
 %% Define the aperture stop perimeter
 [eyePoints, pointLabels] = ...
-    addStopPerimeter(sceneGeometry,p,eyePose);
+    addStopPerimeter(sceneGeometry,eyePose,options);
 
 
 %% Add the rest of the eye
 [eyePoints, pointLabels] = ...
-    addFullEyeModel(eyePoints,pointLabels,sceneGeometry,p);
+    addFullEyeModel(eyePoints,pointLabels,sceneGeometry,options);
 
 
 %% Subject the eye points to refraction
 [eyePoints, pointLabels, targetIntersectError] = ...
-    refractEyePoints(eyePoints,pointLabels,sceneGeometry,p,eyePose);
+    refractEyePoints(eyePoints,pointLabels,sceneGeometry,eyePose,options);
 
 
 %% Add glint(s)
 [eyePoints, pointLabels] = ...
-    addGlint(eyePoints,pointLabels,sceneGeometry,p,eyePose);
+    addGlint(eyePoints,pointLabels,sceneGeometry,eyePose,options);
 
 
 %% Apply eye rotation
 [headPoints, pointLabels] = ...
-    applyEyeRotation(eyePoints,pointLabels,sceneGeometry,p,eyePose);
+    applyEyeRotation(eyePoints,pointLabels,sceneGeometry,eyePose,options);
 
 
 %% Switch to world coordinates.
@@ -296,7 +289,7 @@ imagePoints = ...
 
 %% Obtain the pupilEllipse
 [pupilEllipse,pupilFitError,pointLabels] = ...
-    obtainImagePlaneEllipse(imagePoints,pointLabels,sceneGeometry,p,eyePose);
+    obtainImagePlaneEllipse(imagePoints,pointLabels,sceneGeometry,eyePose,options);
 
 
 %% Obtain the glintCoord

@@ -1,4 +1,4 @@
-function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput, xHist] = eyePoseEllipseFit(Xp, Yp, glintCoord, sceneGeometry, varargin)
+function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput, xHist] = eyePoseEllipseFit(Xp, Yp, glintCoord, sceneGeometry, options)
 % Return the eye pose that best fits an ellipse to the pupil perimeter
 %
 % Syntax:
@@ -149,33 +149,24 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput, x
     title('Performance of eyePoseEllipseFit across max fun evals');
 %}
 
+arguments
+    Xp double
+    Yp double
+    glintCoord double
+    sceneGeometry struct
+    options.eyePoseX0 double = []
+    options.eyePoseLB double = [-89, -89, 0, 0.1]
+    options.eyePoseUB double = [89, 89, 0, 4]
+    options.cameraTransX0 double = []
+    options.cameraTransBounds double = [5; 5; 0]
+    options.eyePoseEllipseFitFunEvals double {mustBeScalarOrEmpty} = 200
+    options.eyePoseTol double {mustBeScalarOrEmpty} = 1e-3
+    options.glintTol double {mustBeScalarOrEmpty} = 1
+    options.boundTol double {mustBeVector} = [0.1 0.1 0.1 0.05 0.1 0.1 0.1]
+end
 
 
-%% Parse input
-p = inputParser; p.KeepUnmatched = false; p.PartialMatching = false;
-
-% Required
-p.addRequired('Xp',@isnumeric);
-p.addRequired('Yp',@isnumeric);
-p.addRequired('glintCoord',@isnumeric);
-p.addRequired('sceneGeometry',@isstruct);
-
-% Optional
-p.addParameter('eyePoseX0',[],@(x)(isempty(x) | isnumeric(x)));
-p.addParameter('eyePoseLB',[-89,-89,0,0.1],@isnumeric);
-p.addParameter('eyePoseUB',[89,89,0,4],@isnumeric);
-p.addParameter('cameraTransX0',[],@isnumeric);
-p.addParameter('cameraTransBounds',[5; 5; 0],@isnumeric);
-p.addParameter('eyePoseEllipseFitFunEvals',250,@isscalar);
-p.addParameter('eyePoseTol',1e-3,@isscalar);
-p.addParameter('glintTol',1,@isscalar);
-p.addParameter('boundTol',[0.1 0.1 0.1 0.05 0.1 0.1 0.1],@isscalar);
-
-% Parse and check the parameters
-p.parse(Xp, Yp, glintCoord, sceneGeometry, varargin{:});
-
-
-%% Check inputs and issue warnings
+%% Prepare return variables and check inputs
 
 % Initialize the return variables
 eyePose = [nan nan nan nan];
@@ -188,7 +179,7 @@ fitAtBound = false;
 % the three axis rotations that can bring an eye to a destination.
 % Typically, the torsion will be constrained with upper and lower bounds of
 % zero (SEE: project/stages/addPseudoTorsion.m).
-if sum((p.Results.eyePoseUB(1:3) - p.Results.eyePoseLB(1:3))==0) < 1
+if sum((options.eyePoseUB(1:3) - options.eyePoseLB(1:3))==0) < 1
     warning('eyePoseEllipseFit:underconstrainedSearch','The eye pose search across possible eye rotations is underconstrained');
 end
 
@@ -205,11 +196,11 @@ if ~isempty(glintCoord)
 end
 
 % Clear the case of nans in the input
-if any(isnan(p.Results.eyePoseLB)) || ...
-        any(isnan(p.Results.eyePoseUB)) || ...
-        any(any(isnan(p.Results.eyePoseX0))) || ...
-        any(isnan(p.Results.cameraTransBounds)) || ...
-        any(any(isnan(p.Results.cameraTransX0)))
+if any(isnan(options.eyePoseLB)) || ...
+        any(isnan(options.eyePoseUB)) || ...
+        any(any(isnan(options.eyePoseX0))) || ...
+        any(isnan(options.cameraTransBounds)) || ...
+        any(any(isnan(options.cameraTransX0)))
     return
 end
 
@@ -221,33 +212,33 @@ end
 % Issue a warning if there are non-zero bounds on camera translation, but
 % there is no glint. Without a glint, we don't have much traction on
 % translation.
-if isempty(glintCoord) && any(abs(p.Results.cameraTransBounds) > 0)
+if isempty(glintCoord) && any(abs(options.cameraTransBounds) > 0)
     warning('eyePoseEllipseFit:underconstrainedSearch','No glint provided; cameraTrans search is under-constrained');
 end
 
 % Issue a warning if there are non-zero bounds on camera depth translation,
 % but we only have one glint. Without two or more glints, we don't have
 % much traction on depth.
-if size(glintCoord,1)<2 && abs(p.Results.cameraTransBounds(3)) > 0
+if size(glintCoord,1)<2 && abs(options.cameraTransBounds(3)) > 0
     warning('eyePoseEllipseFit:underconstrainedSearch','Only one glint provided; cameraTrans depth search is under-constrained');
 end
 
 
 %% Define cameraTransX0 and bounds
-if ~isempty(p.Results.cameraTransX0)
-    cameraTransX0 = p.Results.cameraTransX0;
-    cameraTransLB = p.Results.cameraTransX0 - p.Results.cameraTransBounds;
-    cameraTransUB = p.Results.cameraTransX0 + p.Results.cameraTransBounds;
+if ~isempty(options.cameraTransX0)
+    cameraTransX0 = options.cameraTransX0;
+    cameraTransLB = options.cameraTransX0 - options.cameraTransBounds;
+    cameraTransUB = options.cameraTransX0 + options.cameraTransBounds;
 else
     
     % The bounds will be set about zero
-    cameraTransLB = -p.Results.cameraTransBounds;
-    cameraTransUB = p.Results.cameraTransBounds;
+    cameraTransLB = -options.cameraTransBounds;
+    cameraTransUB = options.cameraTransBounds;
     
     % If we were given an eyePoseX0, use this as the pose of the eye for
     % the calculation. Otherwise, assume the eye is looking at the camera.
-    if ~isempty(p.Results.eyePoseX0)
-        refPose = p.Results.eyePoseX0;
+    if ~isempty(options.eyePoseX0)
+        refPose = options.eyePoseX0;
     else
         refPose = [0 0 0 2];
     end
@@ -291,11 +282,11 @@ end
 %% Define eyePoseX0 and bounds
 
 % bounds
-eyePoseLB = p.Results.eyePoseLB;
-eyePoseUB = p.Results.eyePoseUB;
+eyePoseLB = options.eyePoseLB;
+eyePoseUB = options.eyePoseUB;
 
 % Check if eyePoseX0 was passed
-if isempty(p.Results.eyePoseX0)
+if isempty(options.eyePoseX0)
     
     % Define eyePoseX0
     eyePoseX0 = zeros(1,4);
@@ -370,19 +361,19 @@ if isempty(p.Results.eyePoseX0)
     eyePoseX0(eyePoseLB == eyePoseUB) = eyePoseUB(eyePoseLB == eyePoseUB);
     
 else
-    eyePoseX0 = p.Results.eyePoseX0;
+    eyePoseX0 = options.eyePoseX0;
 end
 
 
 %% Set up variables and functions for the search
 
-% define some search options for fminsearch
-options = optimset('fmincon');
-options.Display = 'off'; % Silencio
-options.FunValCheck = 'off'; % Tolerate nans from the objective
-options.TolX = p.Results.eyePoseTol; % eyePose search precision
-options.TolCon = p.Results.glintTol; % glint match precision
-options.MaxFunEvals = p.Results.eyePoseEllipseFitFunEvals; % This has the largest effect on search time
+% define some search options for fmincon
+opt_fmincon = optimset('fmincon');
+opt_fmincon.Display = 'off'; % Silencio
+opt_fmincon.FunValCheck = 'off'; % Tolerate nans from the objective
+opt_fmincon.TolX = options.eyePoseTol; % eyePose search precision
+opt_fmincon.TolCon = options.glintTol; % glint match precision
+opt_fmincon.MaxFunEvals = options.eyePoseEllipseFitFunEvals; % This has the largest effect on search time
 
 % Turn off warnings that can arise during the search
 warningState = warning;
@@ -410,7 +401,7 @@ ceqFirstFlag = true;
 fullObj = @(x) fullObjective(x,Xp,Yp,glintCoord,sceneGeometry);
 
 % Search with a nested objective function
-[x, RMSE, ~, searchOutput] = fmincon(@objFun, x0,[],[],[],[],lb,ub,@nonlcon, options);
+[x, RMSE, ~, searchOutput] = fmincon(@objFun, x0,[],[],[],[],lb,ub,@nonlcon,opt_fmincon);
 
     % This is the RMSE of the pupil ellipse to the pupil perimeter
     function fVal = objFun(x)
@@ -461,7 +452,7 @@ fittedEllipse = projectModelEye(eyePose, sceneGeometry, 'cameraTrans', cameraTra
 % Check if the fit is within boundTol of a bound for any non-locked
 % parameter.
 notLocked = lb ~= ub;
-fitAtBound = any([any(abs(x(notLocked)-lb(notLocked)) < p.Results.boundTol(notLocked)) any(abs(x(notLocked)-ub(notLocked)) < p.Results.boundTol(notLocked))]);
+fitAtBound = any([any(abs(x(notLocked)-lb(notLocked)) < options.boundTol(notLocked)) any(abs(x(notLocked)-ub(notLocked)) < options.boundTol(notLocked))]);
 
 % Restore the warning state
 warning(warningState);
