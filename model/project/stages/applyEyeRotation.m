@@ -1,8 +1,8 @@
-function [headPoints, pointLabels] = applyEyeRotation(eyePoints,pointLabels,sceneGeometry,p,eyePose)
+function [headPoints, pointLabels] = applyEyeRotation(eyePoints,pointLabels,sceneGeometry,eyePose,options)
 % Subject the eyeWorld points to the effect of eye rotation
 %
 % Syntax:
-%  [headPoints, pointLabels] = applyEyeRotation(eyePoints,pointLabels,sceneGeometry,p,eyePose)
+%  [headPoints, pointLabels] = applyEyeRotation(eyePoints,pointLabels,sceneGeometry,eyePose,options)
 %
 % Description:
 %   Rotate the eyeWorld points so that they are in the position specified
@@ -53,7 +53,7 @@ end
 % If we are projecting a full eye model, label as hidden those posterior
 % segment points that are posterior to the most posterior of the centers of
 % rotation of the eye, and thus would not be visible to the camera.
-if p.Results.fullEyeModelFlag
+if options.fullEyeModelFlag
     seenIdx = strcmp(pointLabels,'retina') .* (headPoints(:,1) >= min([sceneGeometry.eye.rotationCenters.azi(1) sceneGeometry.eye.rotationCenters.ele(1)]));
     seenIdx = logical(seenIdx + ~strcmp(pointLabels,'retina'));
     pointLabels(~seenIdx) = strcat(pointLabels(~seenIdx),'_hidden');

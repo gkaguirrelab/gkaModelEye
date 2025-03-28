@@ -92,10 +92,10 @@ else
 end
 
 % Define a set of points on the perimeter of the stop
-opts.Results.nStopPerimPoints = nStopPerimPoints;
-opts.Results.stopPerimPhase = 0;
+opts.nStopPerimPoints = nStopPerimPoints;
+opts.stopPerimPhase = 0;
 sg.eye = eye;
-stopCoords = addStopPerimeter(sg,opts,[nan nan nan stopRadius]);
+stopCoords = addStopPerimeter(sg,[nan nan nan stopRadius],opts);
 
 % Define the fieldRay for the passed parameters
 fieldRay = calcFieldRay(fieldAngularPosition,rayOriginDistance,angleReferenceCoord,distanceReferenceCoord);

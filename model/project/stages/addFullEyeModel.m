@@ -1,4 +1,4 @@
-function [eyePoints, pointLabels] = addFullEyeModel(eyePoints, pointLabels, sceneGeometry,p)
+function [eyePoints, pointLabels] = addFullEyeModel(eyePoints, pointLabels, sceneGeometry,options)
 % Define eyeWorld points for the retina, cornea, iris, and other landmarks
 %
 % Syntax:
@@ -23,7 +23,7 @@ function [eyePoints, pointLabels] = addFullEyeModel(eyePoints, pointLabels, scen
 
 
 % If this stage is not requested, return
-if ~p.Results.fullEyeModelFlag
+if ~options.fullEyeModelFlag
     return
 end
 
@@ -60,7 +60,7 @@ if isfield(sceneGeometry.eye,'landmarks')
 end
 
 % Define points around the perimeter of the iris
-nIrisPerimPoints = p.Results.nIrisPerimPoints;
+nIrisPerimPoints = options.nIrisPerimPoints;
 perimeterPointAngles = 0:2*pi/nIrisPerimPoints:2*pi-(2*pi/nIrisPerimPoints);
 irisPoints = zeros(nIrisPerimPoints,3);
 irisPoints(1:nIrisPerimPoints,3) = ...
@@ -80,7 +80,7 @@ pointLabels = [pointLabels; tmpLabels];
 corneaPoints = quadric.surfaceGrid(...
     sceneGeometry.eye.cornea.front.S,...
     sceneGeometry.eye.cornea.front.boundingBox,...
-    p.Results.corneaMeshDensity, ...
+    options.corneaMeshDensity, ...
     'parametricPolar');
 
 % Add the corneal apex, which is the point at ellipsoidal geodetic
@@ -111,7 +111,7 @@ pointLabels = [pointLabels; 'cornealApex'];
 retinaPoints = quadric.surfaceGrid(...
     sceneGeometry.eye.retina.S,...
     sceneGeometry.eye.retina.boundingBox,...
-    p.Results.retinaMeshDensity, ...
+    options.retinaMeshDensity, ...
     'ellipsoidalPolar');
 
 % Retain those points that are posterior to the iris plane, and have a

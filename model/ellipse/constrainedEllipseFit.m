@@ -60,18 +60,13 @@ function [transparentEllipseParams, RMSE, constraintError, fitAtBound] = constra
 %}
 
 
-%% Parse input
-p = inputParser; p.KeepUnmatched = false; p.PartialMatching = false;
-
-% Required
-p.addRequired('Xp',@isnumeric);
-p.addRequired('Yp',@isnumeric);
-p.addRequired('ub',@isnumeric);
-p.addRequired('lb',@isnumeric);
-p.addRequired('nonlinconst',@(x) (isempty(x) || isa(x, 'function_handle')) );
-
-% Parse and check the parameters
-p.parse(Xp, Yp, ub, lb, nonlinconst);
+arguments
+    Xp double
+    Yp double
+    lb double
+    ub double
+    nonlinconst {isFuncHandleOrEmpty(nonlinconst)} = []
+end
 
 
 % save the current warning status and silence anticipated warnings
@@ -134,7 +129,7 @@ if ~isempty(nonlinconst)
 end
 
 % define some search options
-options = optimoptions(@fmincon,...
+opt_fmincon = optimoptions(@fmincon,...
     'Algorithm','interior-point',...
     'Diagnostics','off',...
     'Display','off',...
@@ -142,7 +137,7 @@ options = optimoptions(@fmincon,...
 
 % Perform the non-linear search
 [transparentEllipseParams, RMSE, ~, output] = ...
-    fmincon(myFun, pInitTransparent, [], [], [], [], lb, ub, nonlinconst, options);
+    fmincon(myFun, pInitTransparent, [], [], [], [], lb, ub, nonlinconst, opt_fmincon);
 
 % Extract the constraint error from the output structure
 constraintError = output.constrviolation;
@@ -155,7 +150,7 @@ if transparentEllipseParams(4) < 1e-12
     adjustedLB(4) = min([max([lb(4) 0.1]) ub(4)]);
     problem = createOptimProblem('fmincon','x0',pInitTransparent,...
         'objective',myFun,'lb',adjustedLB,'ub',ub,...
-        'nonlcon',nonlinconst,'options',options);
+        'nonlcon',nonlinconst,'options',opt_fmincon);
     ms = MultiStart('Display','off','MaxTime',30,'StartPointsToRun','bounds-ineqs');
     [mstransparentEllipseParams, msRMSE, ~, msOutput] = run(ms,problem,20);
     if msRMSE <= RMSE
@@ -181,7 +176,7 @@ function fval = rmsePerimeterFit(Xp,Yp,p)
 % The ellipse fit distance can occasionally fail. We place it in a
 % try-catch block and return realmax for the error if the fit fails
 try
-    fval = sqrt(nanmean(ellipsefit_distance(Xp,Yp,ellipse_transparent2ex(p)).^2));
+    fval = sqrt(mean(ellipsefit_distance(Xp,Yp,ellipse_transparent2ex(p)).^2,"omitmissing"));
 catch
     fval = realmax;
 end

@@ -1,8 +1,8 @@
-function [pupilEllipse,pupilFitError,pointLabels] = obtainImagePlaneEllipse(imagePoints,pointLabels,sceneGeometry,p,eyePose)
+function [pupilEllipse,pupilFitError,pointLabels] = obtainImagePlaneEllipse(imagePoints,pointLabels,sceneGeometry,eyePose,options)
 % Fit an ellipse to the pupil image
 %
 % Syntax:
-%  [pupilEllipse,pupilFitError,pointLabels] = obtainImagePlaneEllipse(imagePoints,pointLabels,sceneGeometry,p,eyePose)
+%  [pupilEllipse,pupilFitError,pointLabels] = obtainImagePlaneEllipse(imagePoints,pointLabels,sceneGeometry,eyePose,options)
 %
 % Description:
 %   Fit an ellipse to the pupil in the image plane. This routine handles
@@ -90,7 +90,7 @@ else
     pupilPerimIdx = or(backStopVisibleIdx,frontStopVisibleIdx);
 
     % Remove those pupil perimeter points that have had poor ray tracing
-    pupilPerimIdx = and(pupilPerimIdx,targetIntersectError<p.Results.rayTraceErrorThreshold);
+    pupilPerimIdx = and(pupilPerimIdx,targetIntersectError<options.rayTraceErrorThreshold);
 
     % Fit the ellipse
     [pupilEllipse, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:));

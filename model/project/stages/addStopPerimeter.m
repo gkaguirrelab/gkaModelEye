@@ -1,8 +1,8 @@
-function [eyePoints, pointLabels] = addStopPerimeter(sceneGeometry,p,eyePose)
+function [eyePoints, pointLabels] = addStopPerimeter(sceneGeometry,eyePose,options)
 % Initialize the eyePoints with the perimeter of the iris aperture stop
 %
 % Syntax:
-%  [eyePoints, pointLabels] = addStopPerimeter(sceneGeometry,p,eyePose)
+%  [eyePoints, pointLabels] = addStopPerimeter(sceneGeometry,eyePose,options)
 %
 % Description:
 %   Define a set of points in eyeWorld coordinates that describe the
@@ -27,7 +27,7 @@ function [eyePoints, pointLabels] = addStopPerimeter(sceneGeometry,p,eyePose)
 
 % Extract some values for clarity in the code that follows
 stopRadius = eyePose(4);
-nStopPerimPoints = p.Results.nStopPerimPoints;
+nStopPerimPoints = options.nStopPerimPoints;
 
 % The eccentricity of the aperture stop is given by a stored function. The
 % absolute value of this function gives the eccentricity, and the sign is
@@ -54,7 +54,7 @@ stopEllipse = [sceneGeometry.eye.stop.center(2) , ...
     sceneGeometry.eye.stop.thetas(1+(stopEccen>0))];
 
 % Obtain the points on the perimeter of this ellipse
-[p2p, p3p] = ellipsePerimeterPoints( stopEllipse, nStopPerimPoints, p.Results.stopPerimPhase );
+[p2p, p3p] = ellipsePerimeterPoints( stopEllipse, nStopPerimPoints, options.stopPerimPhase );
 
 % Place these points into the eyeWorld coordinates at the depth (p1) of the
 % iris plane. Optionally create separate front and back stop perimeters to

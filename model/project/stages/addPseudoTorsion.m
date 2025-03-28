@@ -1,8 +1,8 @@
-function eyePoseAdjusted = addPseudoTorsion(sceneGeometry,p,eyePose)
+function eyePoseAdjusted = addPseudoTorsion(sceneGeometry,eyePose,options)
 % Add "pseudo" torsion to the eyePose to follow Listing's Law
 %
 % Syntax:
-%  eyePoseAdjusted = addPseudoTorsion(eyePose,primaryPosition)
+%  eyePoseAdjusted = addPseudoTorsion(eyePose,eyePose,options)
 %
 % Description:
 %   Head-fixed eye movements generally obey Listing's Law, which observes
@@ -44,7 +44,7 @@ function eyePoseAdjusted = addPseudoTorsion(sceneGeometry,p,eyePose)
 %
 
 % Return if we aren't making this correction
-if ~p.Results.addPseudoTorsion
+if ~options.addPseudoTorsion
     eyePoseAdjusted = eyePose;
     return
 end
