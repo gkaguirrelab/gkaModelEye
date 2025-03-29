@@ -116,6 +116,23 @@ options = optimset('TolFun',TolFun,'TolX',TolX,'Display','off');
 % saving on execution time.
 Rstruc = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3),'empty',true);
 
+% Pre-covert the optical system surfaces into quadric matrix form
+tensorSFixRL = nan(4,4,100);
+nSurfacesFixRL = sum(~all(isnan(opticalSystemFixRL),2));
+for ii = 1:nSurfacesFixRL
+    tensorSFixRL(:,:,ii) = quadric.vecToMatrix(opticalSystemFixRL(ii,1:10));
+end
+tensorSRot = nan(4,4,100);
+nSurfacesRot = sum(~all(isnan(opticalSystemRot),2));
+for ii = 1:nSurfacesRot
+    tensorSRot(:,:,ii) = quadric.vecToMatrix(opticalSystemRot(ii,1:10));
+end
+tensorSFixLR = nan(4,4,100);
+nSurfacesFixLR = sum(~all(isnan(opticalSystemFixLR),2));
+for ii = 1:nSurfacesFixLR
+    tensorSFixLR(:,:,ii) = quadric.vecToMatrix(opticalSystemFixLR(ii,1:10));
+end
+
 
 %% Calculate initial guess for p1p2 and p1p3 angles
 % Our goal is to find the angles with which a ray that departs worldOrigin
@@ -208,7 +225,13 @@ lb_p1p3 = min(min(boundAngles_p1p3));
 
 
 %% Create an anonymous function for ray tracing
-intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyeCoordOrigin, wrapTo180(p1p2+p1p2Adjust), wrapTo180(p1p3+p1p3Adjust), eyePose, worldTarget, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc);
+intersectErrorFunc = @(p1p2,p1p3) calcTargetIntersectError(eyeCoordOrigin,...
+    wrapTo180(p1p2+p1p2Adjust), wrapTo180(p1p3+p1p3Adjust),...
+    eyePose, worldTarget, rotationCenters, ...
+    opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR,...
+    tensorSFixRL, tensorSRot, tensorSFixLR,...
+    nSurfacesFixRL, nSurfacesRot, nSurfacesFixLR, ...
+    Rstruc);
 
 
 %% Shrink bounds
@@ -304,7 +327,11 @@ angle_p1p3 = wrapTo180(angle_p1p3+p1p3Adjust);
 initialRay = quadric.anglesToRay(eyeCoordOrigin', angle_p1p2, angle_p1p3)';
 
 % Trace the system using the initialRay defined by the solution angles
-outputRay = threeSystemTrace(initialRay', eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc);
+outputRay = threeSystemTrace(initialRay', eyePose, rotationCenters, ...
+    opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, ...
+    tensorSFixRL, tensorSRot, tensorSFixLR,...
+    nSurfacesFixRL, nSurfacesRot, nSurfacesFixLR, ...
+    Rstruc);
 
 % Counter-rotate the output ray to account for eye rotation
 outputRay = rotateEyeRay(outputRay, eyePose, rotationCenters, 'inverse');
@@ -388,7 +415,13 @@ end
 
 
 %% calcTargetIntersectError
-function distance = calcTargetIntersectError(eyeCoordOrigin, angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc)
+function distance = calcTargetIntersectError(eyeCoordOrigin, ...
+    angle_p1p2, angle_p1p3, eyePose, worldTarget, rotationCenters, ...
+    opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, ...
+    tensorSFixRL, tensorSRot, tensorSFixLR,...
+    nSurfacesFixRL, nSurfacesRot, nSurfacesFixLR, ...
+    Rstruc)
+
 % Smallest distance of the exit ray from worldTarget
 %
 % Syntax:
@@ -431,7 +464,11 @@ inputRayEyeCoord = quadric.anglesToRay(eyeCoordOrigin',angle_p1p2,angle_p1p3);
 
 % Conduct the ray trace through the fixed, rotating, and back through the
 % fixed optical systems
-outputRayEyeCoord = threeSystemTrace(inputRayEyeCoord, eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc);
+outputRayEyeCoord = threeSystemTrace(inputRayEyeCoord, eyePose, rotationCenters, ...
+    opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, ...
+    tensorSFixRL, tensorSRot, tensorSFixLR,...
+    nSurfacesFixRL, nSurfacesRot, nSurfacesFixLR, ...
+    Rstruc);
 
 % If any must intersect surfaces were missed, the output ray will contain
 % nans. In this case, return 1e6 for the distance
@@ -451,11 +488,15 @@ end % calcTargetIntersectError
 
 
 
-function outputRayEyeCoord = threeSystemTrace(inputRayEyeCoord, eyePose, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, Rstruc)
+function outputRayEyeCoord = threeSystemTrace(inputRayEyeCoord, eyePose, rotationCenters, ...
+    opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR, ...
+    tensorSFixRL, tensorSRot, tensorSFixLR,...
+    nSurfacesFixRL, nSurfacesRot, nSurfacesFixLR, ...
+    Rstruc)
 
 % Ray trace through the fixed system (typically, camera to the medium
 % adjacent to the eye)
-outputRayEyeCoord = rayTraceQuadrics(inputRayEyeCoord, opticalSystemFixRL)';
+outputRayEyeCoord = rayTraceQuadrics(inputRayEyeCoord, opticalSystemFixRL, tensorSFixRL, nSurfacesFixRL)';
 
 % Counter-rotate the outputRayEyeCoord by the eye pose. This places the
 % outputRayEyeCoord so that the eyeCoordTarget is in a position equivalent
@@ -463,14 +504,14 @@ outputRayEyeCoord = rayTraceQuadrics(inputRayEyeCoord, opticalSystemFixRL)';
 outputRayEyeCoord = rotateEyeRay(outputRayEyeCoord, eyePose, rotationCenters, 'inverse', Rstruc);
 
 % Ray trace through the eye system that is subject to rotation
-outputRayEyeCoord = rayTraceQuadrics(outputRayEyeCoord', opticalSystemRot)';
+outputRayEyeCoord = rayTraceQuadrics(outputRayEyeCoord', opticalSystemRot, tensorSRot, nSurfacesRot)';
 
 % Return the ray to the original eyeWorld coordinate frame, which is
 % aligned with the optical axis of the eye
 outputRayEyeCoord = rotateEyeRay(outputRayEyeCoord, eyePose, rotationCenters, 'forward', Rstruc);
 
 % Ray trace back through the fixed system that is not subject to rotation
-outputRayEyeCoord = rayTraceQuadrics(outputRayEyeCoord', opticalSystemFixLR)';
+outputRayEyeCoord = rayTraceQuadrics(outputRayEyeCoord', opticalSystemFixLR, tensorSFixLR, nSurfacesFixLR)';
 
 
 end

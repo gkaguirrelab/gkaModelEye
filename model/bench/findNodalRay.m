@@ -58,6 +58,14 @@ if nargin==2
     incidentNodeX0 = [-7 0 0];
 end
 
+% Pre-covert the optical system surfaces into quadric matrix form
+tensorS = nan(4,4,100);
+nSurfaces = sum(~all(isnan(opticalSystem),2));
+for ii = 1:nSurfaces
+    tensorS(:,:,ii) = quadric.vecToMatrix(opticalSystem(ii,1:10));
+end
+
+
 % Place the vectors in column orientation
 rayOrigin = rayOrigin';
 incidentNodeX0 = incidentNodeX0';
@@ -67,24 +75,24 @@ p0 = nan(1,2);
 [p0(1),p0(2)] = quadric.rayToAngles(quadric.normalizeRay([rayOrigin,incidentNodeX0-rayOrigin]));
 
 % Initialize an anonymous function for the objective
-myObj = @(p) objective(p,rayOrigin,opticalSystem);
+myObj = @(p) objective(p,rayOrigin,opticalSystem,tensorS,nSurfaces);
 
 % Search
 p = fminsearch(myObj,p0);
 
 % Evaluate the objective function once more, using the found values
-[angleError,rayPath,outputRay] = objective(p,rayOrigin,opticalSystem);
+[angleError,rayPath,outputRay] = myObj(p);
 
 end
 
 
 %% Local function
 
-function [fVal,rayPath,outputRay] = objective(p,rayOrigin,opticalSystem)
+function [fVal,rayPath,outputRay] = objective(p,rayOrigin,opticalSystem,tensorS,nSurfaces)
 
 % Trace from rayOrigin at p angles.
 R = quadric.anglesToRay(rayOrigin,p(1),p(2));
-[outputRay,rayPath] = rayTraceQuadrics(R, opticalSystem);
+[outputRay,rayPath] = rayTraceQuadrics(R, opticalSystem, tensorS, nSurfaces);
 
 % Find the absolute difference in angles between the ray leaving T, and the
 % ray arriving at the retina

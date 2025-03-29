@@ -1,4 +1,4 @@
-function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
+function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem, tensorS, nSurfaces)
 % Returns the position and angle of a resultant ray w.r.t. the optical axis
 %
 % Syntax:
@@ -53,6 +53,15 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
 %                           These are used to define a fixed sized input
 %                           variable for compiled code. They are removed
 %                           from the matrix and have no effect.
+%   tensorS               - An 4x4xm tensor that contains the quadric
+%                           surfaces expressed in matrix form. This is an
+%                           optional input designed to save time performing
+%                           this conversion in repeated calls to the
+%                           function. 
+%   nSurfaces             - Scalar. Optional. Compiled code executes much
+%                           more quickly if we don't need to check the
+%                           optical system to see how many valid surfaces
+%                           are present.
 %
 % Outputs:
 %   outputRay             - 3x2 matrix that specifies a vector of the form 
@@ -135,15 +144,17 @@ function [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem)
         'outputRay',outputRay,'rayPath',rayPath);
 %}
 
+%% Handle nargin
+if nargin == 2
+    tensorS = [];
+    nSurfaces = sum(~all(isnan(opticalSystem),2));
+end
 
+if nargin == 3
+    nSurfaces = sum(~all(isnan(opticalSystem),2));
+end    
 
 %% Initialize variables
-
-% Strip the optical system of any rows which are all nans
-opticalSystem = opticalSystem(sum(isnan(opticalSystem),2)~=size(opticalSystem,2),:);
-
-% Determine the number of surfaces
-nSurfaces = size(opticalSystem,1);
 
 % Define R (the current state of the ray) as the inputRay
 R = inputRay;
@@ -158,7 +169,11 @@ rayPath(:,1) = R(:,1);
 for ii=2:nSurfaces
     
     % Extract components from the optical system row
-    S = quadric.vecToMatrix(opticalSystem(ii,1:10));
+    if isempty(tensorS)
+        S = quadric.vecToMatrix(opticalSystem(ii,1:10));
+    else
+        S = tensorS(:,:,ii);
+    end
     side = opticalSystem(ii,11);
     boundingBox = opticalSystem(ii,12:17);
     mustIntersectFlag = opticalSystem(ii,18);

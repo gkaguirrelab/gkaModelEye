@@ -55,7 +55,7 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput, x
 %                           the fminsearch operation. The example below
 %                           examines the trade-off between execution time
 %                           and function accuracy for this parameter. I
-%                           find that 250 evals takes ~3 second per eyePose
+%                           find that 150 evals takes 330ms per eyePose
 %                           calculation on a laptop, and produces excellent
 %                           accuracy with respect to the precision in
 %                           empirical data.
@@ -159,7 +159,7 @@ arguments
     options.eyePoseUB double = [89, 89, 0, 4]
     options.cameraTransX0 double = []
     options.cameraTransBounds double = [5; 5; 0]
-    options.eyePoseEllipseFitFunEvals double {mustBeScalarOrEmpty} = 200
+    options.eyePoseEllipseFitFunEvals double {mustBeScalarOrEmpty} = 150
     options.eyePoseTol double {mustBeScalarOrEmpty} = 1e-3
     options.glintTol double {mustBeScalarOrEmpty} = 1
     options.boundTol double {mustBeVector} = [0.1 0.1 0.1 0.05 0.1 0.1 0.1]
