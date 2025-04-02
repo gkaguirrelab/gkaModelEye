@@ -220,6 +220,7 @@ arguments
     options.retinaMeshDensity double {mustBeScalarOrEmpty} = 30
     options.pupilRayFunc {isFuncHandleOrEmpty(options.pupilRayFunc)} = @findPupilRayMex
     options.glintRayFunc {isFuncHandleOrEmpty(options.glintRayFunc)} = @findGlintRayMex
+    options.ellipseFitFunc {isFuncHandleOrEmpty(options.ellipseFitFunc)} = @ellipsefit_robustMex
 end
 
 

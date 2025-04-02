@@ -1,4 +1,4 @@
-function outP = ellipsefit_direct(x,y)
+function outP = ellipsefit_direct(x,y,ellipseFitRobustFunc)
 % Direct least squares fitting of ellipses.
 %
 % Input arguments:
@@ -16,11 +16,19 @@ function outP = ellipsefit_direct(x,y)
 
 % Copyright 2011 Levente Hunyadi
 
-narginchk(2,2);
 validateattributes(x, {'numeric'}, {'real','nonempty','vector'});
 validateattributes(y, {'numeric'}, {'real','nonempty','vector'});
 x = x(:);
 y = y(:);
+
+% Determine if we have the compiled robust function available
+if nargin == 2
+    if exist('ellipseFit_robustMex','file') == 3
+        ellipseFitRobustFunc = @ellipsefit_robustMex;
+    else
+        ellipseFitRobustFunc = @ellipsefit_robust;
+    end
+end
 
 % normalize data
 mx = mean(x);
@@ -46,7 +54,8 @@ C(2,2) = 1;
 C(3,1) = -2;
 
 % fit
-p = ellipsefit_robust(S,-C);
+p = ellipseFitRobustFunc(S,-C);
+
 
 % unnormalize
 outP = zeros(6,1);

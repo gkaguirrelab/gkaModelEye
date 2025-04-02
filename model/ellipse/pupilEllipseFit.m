@@ -1,4 +1,4 @@
-function [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints)
+function [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints,ellipseFitRobustFunc)
 % Fit an ellipse to a set of image points
 %
 % Syntax:
@@ -24,6 +24,14 @@ function [pupilEllipseOnImagePlane, pupilFitError] = pupilEllipseFit(imagePoints
 %                           perimeter points to the pupil ellipse.
 %
 
+% Determine if we have the compiled robust function available
+if nargin == 1
+    if exist('ellipseFit_robustMex','file') == 3
+        ellipseFitRobustFunc = @ellipsefit_robustMex;
+    else
+        ellipseFitRobustFunc = @ellipsefit_robust;
+    end
+end
 
 % Set up a variable to hold the pupil fit error
 pupilFitError = nan;
@@ -44,7 +52,7 @@ else
     % when the ellipse is so eccentric that it approaches a line.
     try
         % Ellipse fitting with routine from the quadfit toolbox
-        implicitEllipseParams = real(ellipsefit_direct( imagePoints(validPerimIdx,1), imagePoints(validPerimIdx,2)));
+        implicitEllipseParams = real(ellipsefit_direct( imagePoints(validPerimIdx,1), imagePoints(validPerimIdx,2),ellipseFitRobustFunc));
         % Convert the ellipse from implicit to transparent form
         pupilEllipseOnImagePlane = ellipse_ex2transparent(ellipse_im2ex(implicitEllipseParams));
         % Place theta within the range of 0 to pi

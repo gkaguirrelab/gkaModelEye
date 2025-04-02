@@ -475,8 +475,7 @@ ceq = 0;
 
 % Check for the case in which the transparentEllipse contains nan values,
 % which can arise if there were an insufficient number of pupil border
-% points remaining after refraction to define an
-% ellipse.
+% points remaining after refraction to define an ellipse
 if any(isnan(candidateEllipse))
     return
 end

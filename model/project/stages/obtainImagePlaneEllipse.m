@@ -47,7 +47,7 @@ if sceneGeometry.eye.iris.thickness==0
     % perimeter points.
     pupilPerimIdx = logical(strcmp(pointLabels,'pupilPerimeter'));
     % Fit the ellipse
-    [pupilEllipse, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
+    [pupilEllipse, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:),options.ellipseFitFunc);
     % We are done and can return
     return
 end
@@ -59,8 +59,8 @@ pupilPerimIdxFront = logical(strcmp(pointLabels,'pupilPerimeterFront'));
 pupilPerimIdxBack = logical(strcmp(pointLabels,'pupilPerimeterBack'));
 
 % Obtain the ellipse fit to the front and back
-frontEllipse = pupilEllipseFit(imagePoints(pupilPerimIdxFront,:));
-backEllipse = pupilEllipseFit(imagePoints(pupilPerimIdxBack,:));
+frontEllipse = pupilEllipseFit(imagePoints(pupilPerimIdxFront,:),options.ellipseFitFunc);
+backEllipse = pupilEllipseFit(imagePoints(pupilPerimIdxBack,:),options.ellipseFitFunc);
 
 % If either ellipse fit yielded nans, then the final ellipse is nan
 if any(isnan(frontEllipse)) || any(isnan(backEllipse))
@@ -93,7 +93,7 @@ else
     pupilPerimIdx = and(pupilPerimIdx,targetIntersectError<options.rayTraceErrorThreshold);
 
     % Fit the ellipse
-    [pupilEllipse, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:));
+    [pupilEllipse, pupilFitError] = pupilEllipseFit(imagePoints(pupilPerimIdx,:),options.ellipseFitFunc);
 
     % Update the pointLabels to indicate the hidden points
     pointLabels(and(pupilPerimIdxBack,~backStopVisibleIdx)) = strcat(pointLabels(and(pupilPerimIdxBack,~backStopVisibleIdx)),'_hidden');
