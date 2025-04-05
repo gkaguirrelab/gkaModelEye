@@ -4,5 +4,5 @@ These functions apply rotations to eye coordinates, and convert from eye to worl
 
 A illustration of the coordinate spaces used by the model is found in:
 ```
-demo/DEMO_coordinates.m
+demo/d002_coordinates.mlx
 ```

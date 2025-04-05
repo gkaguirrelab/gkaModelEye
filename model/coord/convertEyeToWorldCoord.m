@@ -19,7 +19,7 @@ function worldCoord = convertEyeToWorldCoord(eyeCoord)
 %    +   `^u^'
 % +Z |
 %    |
-%    |      W <- Camera    (As seen from above)
+%    |    W <- Camera    (As seen from above)
 %    V
 %
 %     <-----+----->
