@@ -2,7 +2,7 @@ function [eyePose,errors] = calcFixationPose(eye,fieldAngularPosition,targetDist
 % Returns the oculomotor pose of the eye to fixate a target
 %
 % Syntax:
-%  eyePose = calcFixationPose(targetWorldCoords,stopRadius,varargin)
+%  eyePose = calcFixationPose(eye,fieldAngularPosition,targetDistance,stopRadius,addPseudoTorsionFlag,cameraMedium)
 %
 % Description
 %   Given a target in the visual field (in horizontal and vertical degrees
