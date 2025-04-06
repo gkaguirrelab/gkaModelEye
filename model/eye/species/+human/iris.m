@@ -12,9 +12,9 @@ function iris = iris( eye )
 %   rotated w.r.t. the camera either the front or back surface of the iris
 %   aperture stop defines the near or far edge of the entrance pupil.
 %
-%   I position the anterior surface of the iris at a depth of 3.9 mm,
-%   which reflects a cycloplegic eye. I model the eye with zero iris angle,
-%   thus making the iris a plane. The iris is centered on the optical axis.
+%   I position the anterior surface of the iris at a depth of 3.9 mm, which
+%   reflects a cycloplegic eye. I model the eye with zero iris angle, thus
+%   making the iris a plane. The iris is centered on the longitudinal axis.
 %
 % Inputs:
 %   eye                   - Structure.

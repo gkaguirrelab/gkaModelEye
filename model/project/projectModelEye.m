@@ -22,11 +22,10 @@ function [pupilEllipse, glintCoord, imagePoints, worldPoints, headPoints, eyePoi
 %   Rotations - Eye rotation is given as azimuth, elevation, and torsion in
 %   degrees. These values correspond to degrees of rotation of the eye in
 %   the Fick coordinate sysem. Azimuth, Elevation of [0,0] corresponds to
-%   the position of the eye when the optical axis of the eye is aligned
-%   with the optical axis of the camera. Positive rotations correspond to
-%   rightward / upward (+x, -y) translation of the pupil center in the
-%   image. Torsion of zero corresponds to the torsion of the eye when it is
-%   in primary position.
+%   the position of the eye when in primary position. Positive rotations
+%   correspond to rightward / upward (+x, -y) translation of the pupil
+%   center in the image. Torsion of zero corresponds to the torsion of the
+%   eye when it is in primary position.
 %
 %   Units - Eye rotations are in units of degrees. However, the units of
 %   theta in the transparent ellipse parameters are radians. This is in
@@ -140,7 +139,7 @@ function [pupilEllipse, glintCoord, imagePoints, worldPoints, headPoints, eyePoi
     % default sceneGeometry
     pupilEllipse = projectModelEye(eyePose,sceneGeometry);
     % Test against cached result
-    pupilEllipseCached = [ 0.027836556248511   0.022389506399564   1.545403286693142   0.000023300752734   0.000192318702774 ].*1e4;
+    pupilEllipseCached = [ 0.026310065091816   0.022389347465014   1.545918596955787   0.000023256879655   0.000192400038974 ].*1e4;
     assert(max(abs(pupilEllipse -  pupilEllipseCached)) < 1e-4)
 %}
 %{
@@ -154,6 +153,9 @@ function [pupilEllipse, glintCoord, imagePoints, worldPoints, headPoints, eyePoi
     end
     figure
     plot(aziVals,pupilFitError,'.r');
+    ylabel('RMSE fit error [pixels]');
+    xlabel('Horizontal eye rotation [deg]');
+    title('Deviation of projected pupil perimeter from elliptical');
 %}
 %{
     %% Show the non-elliptical iris perimeter at extreme viewing angles

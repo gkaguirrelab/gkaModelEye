@@ -7,7 +7,7 @@
 
 
 % Create some default eye features
-eyePose = [10 -5 0 2.5];
+eyePose = [7 -5 0 2.5];
 cameraTrans = [-4; -3; 0];
 sceneGeometry=createSceneGeometry();
 [ targetEllipse, glintCoord ] = projectModelEye(eyePose,sceneGeometry,'cameraTrans',cameraTrans);
@@ -26,7 +26,7 @@ eyePoseX0 = [0 0 0 1];
 [~, ~, ~, ~, ~, ~, xHist] = eyePoseEllipseFit(Xp, Yp, glintCoord, sceneGeometry, 'eyePoseX0', eyePoseX0, 'cameraTransX0', cameraTransX0);
 
 % Save location for the GIF. Sorry for the Mac bias.
-gifSaveName = '~/Desktop/t12_eyePoseSearch.gif';
+gifSaveName = 'demo/t12_eyePoseSearch.gif';
 
 % These are the elements of the model eye that we will render
 modelEyeLabelNames = {'retina' 'pupilEllipse' 'cornea' 'glint_01'};

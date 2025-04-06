@@ -5,9 +5,9 @@ function [eyeRay, R] = rotateEyeRay(eyeRay, eyePose, rotationCenters, directionF
 %  [eyeRay, R] = rotateEyeRay(eyeRay, eyePose, rotationCenters, directionFlag, R)
 %
 % Description
-%   The eye coordinate space is defined along the optical axis of the eye
-%   when the eye is aligned with the optical axis of a camera. This routine
-%   takes an eye ray and applies an eye rotation.
+%   The eye coordinate space is defined along the longitudinal axis of the
+%   eye when the eye is aligned with the optical axis of a camera. This
+%   routine takes an eye ray and applies an eye rotation.
 %
 %   By default, rotation is in the forward direction specified in the
 %   eyePose. If the directionFlag is set to "inverse", then the inverse

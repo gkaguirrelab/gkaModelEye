@@ -6,9 +6,9 @@ function [eyePose,errors] = calcFixationPose(eye,fieldAngularPosition,targetDist
 %
 % Description
 %   Given a target in the visual field (in horizontal and vertical degrees
-%   w.r.t. the longitudinal axis of the eye when it is aligned with the
-%   camera) and the distance of that target in mm from the incident node of
-%   the eye, the routine returns the eye pose parameters of the eye
+%   w.r.t. the longitudinal axis of the eye when the eye is in primary
+%   position) and the distance of that target in mm from the incident node
+%   of the eye, the routine returns the eye pose parameters of the eye
 %   required to place the foveal line-of-sight upon that target.
 %
 %   Notably, the angles of oculomotor rotation needed to bring the line of
@@ -39,7 +39,7 @@ function [eyePose,errors] = calcFixationPose(eye,fieldAngularPosition,targetDist
 %   fieldAngularPosition  - 1x2 vector that provides the coordinates in
 %                           degrees of visual angle of the target
 %                           relative to the longitudinal axis of the eye
-%                           when it is aligned with the camera.
+%                           in primary position.
 %   targetDistance        - Scalar. The distance (in mm) of the origin of
 %                           the target from the incident node. Assumed to
 %                           be 1500 mm if not defined.
@@ -133,11 +133,10 @@ end
 function fVal = objective(p,eye,lineOfSightRay,desiredFixationPoint,addPseudoTorsionFlag)
 
 % The variable "p" holds the candidate horizontal and vertical rotations of
-% the eye (in Fick coordinates) relative to [0 0], in which the optical
-% axis of the eye and the camera are aligned (i.e., relative to the origin
-% of the rotational coordinates). We place these values in an eyePose
-% vector, with the last two positions holding the torsion of the eye, and
-% the radius of the aperture stop (which is unused here).
+% the eye (in Fick coordinates) relative to the primary position of the
+% eye. We place these values in an eyePose vector, with the last two
+% positions holding the torsion of the eye, and the radius of the aperture
+% stop (which is unused here).
 eyePose = [p(1), p(2), 0, nan];
 
 % If the addPseudoTorsionFlag is set, then a torsional component is added

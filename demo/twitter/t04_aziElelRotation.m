@@ -13,7 +13,7 @@ sceneGeometry=createSceneGeometry();
 sceneGeometry.eye.rotationCenters.ele = sceneGeometry.eye.rotationCenters.ele ./ 1.2;
 
 % Save location for the GIF. Sorry for the Mac bias.
-gifSaveName = '~/Desktop/t04_aziEleRotation.gif';
+gifSaveName = 'demo/t04_aziEleRotation.gif';
 
 % The angles across which the eye will rotate
 rotationValues = [0:1:30,30:-1:-30,-30:1:-1];

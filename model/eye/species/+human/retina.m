@@ -16,7 +16,8 @@ function retina = retina(eye)
 %
 %   The Atchison model is arranged around the visual axis, with the
 %   vitreous chamber tilted and shifted. In the current model, the retinal
-%   ellipsoid is aligned with and centered on the optical axis.
+%   ellipsoid defines the longitudinal axis. That is, the p1 axis of the
+%   eye coordinate frame is one of the axes of the vitreous chamber.
 %
 % Inputs:
 %   eye                   - Structure.

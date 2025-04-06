@@ -29,11 +29,11 @@ function lens = lens( eye )
 %   which were in turn derived from Jones et al 2005 Vision Research and
 %   Liou & Brennan 1997 JOSA-A.
 %
-%   The lens is modeled as being center aligned with the optical axis of
-%   the eye, and thus no tilt or shift is needed in the current model.
+%   The lens is modeled as being center aligned with the longitudinal axis
+%   of the eye, and thus no tilt or shift is needed in the current model.
 %
 %   The axial position of the lens center was selected so that the anterior
-%   surface of the lens is at the leve of the aperture stop when an
+%   surface of the lens is at the level of the aperture stop when an
 %   emmetropic eye is accommodated to 5 D.
 %
 %   The values for the radius of curvature and asphericity of the posterior

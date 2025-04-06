@@ -29,9 +29,9 @@ function worldCoord = convertEyeToWorldCoord(eyeCoord)
 % +Y = up
 % +Z = front (towards the camera)
 %
-%   The origin [0,0,0] corresponds to the corneal apex when the optical
-%   axis of the eye and the camera axis are aligned, and when the corneal
-%   front surface is aligned with the optical axis of the eye.
+%   The origin [0,0,0] corresponds to (unrotated) corneal apex (which
+%   therefore lies on the longitudinal axis of the eye), when the eye is in
+%   primary position.
 %
 % Inputs:
 %   eyeCoord              - nx3 vector that gives the coordinates (in mm)

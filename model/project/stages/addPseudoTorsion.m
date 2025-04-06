@@ -7,13 +7,13 @@ function eyePoseAdjusted = addPseudoTorsion(sceneGeometry,eyePose,options)
 % Description:
 %   Head-fixed eye movements generally obey Listing's Law, which observes
 %   that there is no change in the "true" torsion of the eye (with respect
-%   to its optical axis) with a change in position. When eye rotations are
-%   implemented with quaternions, this property is automatically achieved.
-%   In this model eye system, however, we implement eye rotations as a
-%   series of rotations following the "Fick coordinates". (The motivation
-%   for using a series of rotations instead of quaternions is that it
-%   allows us to implement separate rotation centers for each direction of
-%   eye rotation).
+%   to its longitudinal axis) with a change in position. When eye rotations
+%   are implemented with quaternions, this property is automatically
+%   achieved. In this model eye system, however, we implement eye rotations
+%   as a series of rotations following the "Fick coordinates". (The
+%   motivation for using a series of rotations instead of quaternions is
+%   that it allows us to implement separate rotation centers for each
+%   direction of eye rotation).
 %
 %   To create eye movements that obey Listing's Law, we therefore need to
 %   add "pseudo torsion" to the eyePose. This correction, and its
@@ -51,7 +51,8 @@ end
 
 % Obtain the primaryPosition, which is a 1x2 vector that provides the
 % values for [eyeAzimuth, eyeElevation] that defines the eyePose for which
-% the eye is in primary position.
+% the eye is in primary position. This should have an obligatory value of
+% [0, 0].
 primaryPosition = sceneGeometry.eye.rotationCenters.primaryPosition;
 
 % Obtain the horizontal and vertical position of the eye relative to the

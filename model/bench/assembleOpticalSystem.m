@@ -167,10 +167,7 @@ switch p.Results.surfaceSetName
         
         % Assemble the surface plot colors
         surfaceColors = [{[nan nan nan]}; eye.retina.plot.color; eye.lens.plot.color; eye.cornea.plot.color];
-        
-        % Assemble the surface plot colors
-        
-        
+                
         % Add a contact lens if requested
         if ~isempty(p.Results.contactLens)
             switch length(p.Results.contactLens)

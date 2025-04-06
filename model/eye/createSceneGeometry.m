@@ -45,24 +45,27 @@ function sceneGeometry = createSceneGeometry(varargin)
 %           depth] in units of mm. Specifies the location of the nodal
 %           point of the camera relative to the world coordinate system. We
 %           define the origin of the world coordinate system to be x=0, y=0
-%           along the optical axis of the eye with zero rotation, and z=0
-%           to be the apex of the corneal surface.
+%           along the longitudinal axis of the eye in primary position, and
+%           z=0 to be the apex of the (unrotated) corneal surface.
 %
-%      'torsion' - Scalar in units of degrees that specifies the torsional
-%           rotation of the camera relative to the z-axis of the world
-%           coordinate space. Because eye rotations are set have a value of
-%           zero when the camera axis is aligned with the pupil axis of the
-%           eye, the camera rotation around the X and Y axes of the
-%           coordinate system are not used. Rotation about the Z axis
-%           (torsion) is meaningful, as the model eye has different
-%           movement properties in the azimuthal and elevational
-%           directions, and has a non circular exit pupil.
+%      'rotation' - A 3x1 of the form [azi; ele; torsion] in units of
+%           degrees that specifies the rotation of the camera relative to
+%           the axes of the world coordinate space. Generally, it is
+%           assumed that an eye tracking camera will be aimed at the eye,
+%           such that when the eye is looking directly towards the camera,
+%           the image sensor will be normal w.r.t. the longitudinal axis of
+%           the eye. If left unset, rotation values will be calculated so
+%           that the camera is aimed towards the rotation center of the
+%           eye. This includes positioning the camera so that there is no
+%           torsion with respect to the optical axis of the eye when the
+%           eye is directed torwards the camera.
 %
 %       'glintSourceRelative' - A 3xn vector of the form [horizontal;
 %           vertical; depth] in units of mm, with n equal to the number of
 %           light sources. Specifies the relative location of an active
-%           light source of a camera relative to the translation camera
-%           position. This is the source of light for the modeled glint.
+%           light source of a camera relative to the translated and rotated
+%           camera position. This is the source of light for the modeled
+%           glint.
 %
 %  'screenPosition' - A structure that defines the spatial position of a
 %           screen that the eye is fixating upon. Sub-fields:
@@ -139,7 +142,7 @@ function sceneGeometry = createSceneGeometry(varargin)
 %  'intrinsicCameraMatrix' - 3x3 matrix
 %  'radialDistortionVector' - 1x2 vector of radial distortion parameters
 %  'cameraTranslation'    - 3x1 vector
-%  'cameraRotation'       - 1x3 vector
+%  'cameraRotation'       - 3x1 vector
 %  'constraintTolerance'  - Scalar. Range 0-1. Typical value 0.01 - 0.10
 %  'contactLens'          - Scalar or 1x2 vector, with values for the lens
 %                           refraction in diopters, and (optionally) the
@@ -185,8 +188,8 @@ p.addParameter('intrinsicCameraMatrix',[2600 0 320; 0 2600 240; 0 0 1],@isnumeri
 p.addParameter('sensorResolution',[640, 480],@isnumeric);
 p.addParameter('radialDistortionVector',[0, 0],@isnumeric);
 p.addParameter('cameraTranslation',[0; 0; 120],@isnumeric);
+p.addParameter('cameraRotation',[],@isnumeric);
 p.addParameter('cameraGlintSourceRelative',[-14; 0; 0],@isnumeric);
-p.addParameter('cameraTorsion',0,@isnumeric);
 p.addParameter('screenDistance',1065,@isnumeric);
 p.addParameter('screenDimensions',[697.347,392.257],@isnumeric);
 p.addParameter('screenResolutions',[1920,1080],@isnumeric);
@@ -205,16 +208,38 @@ p.parse(varargin{:})
 % Obtain the unmatched varargin
 vararginUnmatched = namedargs2cell(p.Unmatched);
 
+
+%% eye
+if isempty(p.Results.eye)
+    sceneGeometry.eye = modelEyeParameters('spectralDomain',p.Results.spectralDomain,vararginUnmatched{:});
+else
+    sceneGeometry.eye = p.Results.eye;
+end
+
 %% cameraIntrinsic
 sceneGeometry.cameraIntrinsic.matrix = p.Results.intrinsicCameraMatrix;
 sceneGeometry.cameraIntrinsic.radialDistortion = p.Results.radialDistortionVector;
 sceneGeometry.cameraIntrinsic.sensorResolution = p.Results.sensorResolution;
 
 
-%% cameraPosition
+%% cameraTranslation
 sceneGeometry.cameraPosition.translation = p.Results.cameraTranslation;
-sceneGeometry.cameraPosition.torsion = p.Results.cameraTorsion;
 sceneGeometry.cameraPosition.glintSourceRelative = p.Results.cameraGlintSourceRelative;
+
+
+%% cameraRotation
+if isempty(p.Results.cameraRotation)
+    % Calculate the Fick rotation elements needed to direct the camera
+    % towards the center of rotation of the eye. We could have simply
+    % calculated the 3D rotation matrix, but it is helpful to have the Fick
+    % angles to compare to the eye rotation angles.
+    R = [sceneGeometry.cameraPosition.translation, [0;0;-1]];
+    target = convertEyeToWorldCoord(sceneGeometry.eye.rotationCenters.azi);
+    [T, H, V] = calcFickRotation(R, target);
+    sceneGeometry.cameraPosition.rotation = [-H;-V;T];
+else
+    sceneGeometry.cameraPosition.rotation = p.Results.cameraRotation;
+end
 
 
 %% screenPosition
@@ -233,14 +258,6 @@ else
     sceneGeometry.screenPosition.poseRegParams = p.Results.poseRegParams;
 end
 sceneGeometry.screenPosition.vecRegParams = p.Results.vecRegParams;
-
-
-%% eye
-if isempty(p.Results.eye)
-    sceneGeometry.eye = modelEyeParameters('spectralDomain',p.Results.spectralDomain,vararginUnmatched{:});
-else
-    sceneGeometry.eye = p.Results.eye;
-end
 
 %% refraction
 for ii = 1:length(p.Results.surfaceSetName)

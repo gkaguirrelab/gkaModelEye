@@ -7,10 +7,10 @@ function [headPoints, pointLabels] = applyEyeRotation(eyePoints,pointLabels,scen
 % Description:
 %   Rotate the eyeWorld points so that they are in the position specified
 %   by the eyePose. As the eyeWorld coordinate frame is defined with
-%   respect to the optical axis of the eye, the matrix of points that
+%   respect to the longitudinal axis of the eye, the matrix of points that
 %   result from this operation are termed as being in "head world"
 %   coordinates, which is the coordinate frame defined with respect to an
-%   eye that is locked in the [0 0 0] eye pose.
+%   eye that is locked in the [0 0 0] eye pose (primary position).
 %
 % Inputs:
 %   eyePoints             - nx3 vector. Points in eye world coordinates.

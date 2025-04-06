@@ -4,36 +4,90 @@
 % that includes a world camera and an eye camera. An application of such
 % systems is to use the eye camera to estimate the location of gaze within
 % images obtained from the world camera. We simulate here collection of 3D
-% gaze calibration data for a set of targets
+% gaze calibration data for a set of targets. This simulation demonstrates
+% that parallax errors are present in trying to relate eye movements to
+% image collected from a world camera.
 
-% First, create a scene geometry in which the coordinate system is
-% organized around an eye camera that is aligned with the optical axis of
-% the eye in primary position (i.e., straight ahead, The default option)
-eye = modelEyeParameters();
+% House keeping
+close all
+clear
 
-% Calculate the eye rotation that would be needed to fixate upon the
-% actual location of the infrared eye camera
-eyeCameraTranslation = [-10,-15,25];
+% Create the sceneGeometry
+cameraTranslation = [-20;-10;100];
+cameraGlintSourceRelative = [1;0;1];
+eyeCameraGeometry = createSceneGeometry(...
+    'cameraTranslation',cameraTranslation,...
+    'cameraGlintSourceRelative',cameraGlintSourceRelative);
 
-% Define the position in visual angle of the intended IR camera, w.r.t. the primary position of the
-% eye
-[fieldAngularPosition,targetDistance] = calcFieldAngularPosition(eye,eyeCameraTranslation);
-
-% Obtain the eye pose needed to fixate this intended IR camera position
-eyePose = calcFixationPose(eye,fieldAngularPosition,targetDistance);
-
-% Now set up the sceneGeometry for the actual position of the IR camera. We
-% will define the primary position of the eye as the negative of the eye
-% pose calculated earlier.
-primaryPosition = -eyePose(1:2);
-cameraPosition.translation = eyeCameraTranslation;
-cameraPosition.torsion = 0;
-cameraPosition.glintSourceRelative = [1,0,1];
-sceneGeometry = createSceneGeometry('cameraPosition',cameraPosition,'primaryPosition',primaryPosition);
-
-% Define a set of gaze target that is at the 
-gazeTargets = {...
-    [0,0,1000]...
-    };
+% Define a set of gaze targets
+worldPoints = [...
+    0,0,1000;...
+    50,0,1000;...
+    0,50,1000;...
+    -50,0,1000;...
+    0,-50,1000;...
+    50,50,1000;...
+    -50,-50,1000;...
+    -50,50,1000;...
+    50,-50,1000;...
+        0,0,1500;...
+    50,0,1500;...
+    0,50,1500;...
+    -50,0,1500;...
+    0,-50,1500;...
+    50,50,1500;...
+    -50,-50,1500;...
+    -50,50,1500;...
+    50,-50,1500];
 
 % For each gaze target, find the fixation pose of the eye
+for gg = 1:size(worldPoints,1)
+    targetWorldCoordinate = worldPoints(gg,:)';
+    [fieldAngularPosition,targetDistance] = ...
+        calcFieldAngularPosition(eyeCameraGeometry.eye,targetWorldCoordinate);
+    eyePoses(gg,:) = calcFixationPose(eyeCameraGeometry.eye,fieldAngularPosition,targetDistance);
+end
+
+% Create an image of the targets from the perspective of the world camera
+worldCameraTranslation = [-10,10,0];
+worldCameraRotation = [0;0;0];
+worldCameraGeometry = createSceneGeometry(...
+    'cameraTranslation',cameraTranslation,...
+    'cameraRotation',worldCameraRotation);
+imagePoints = projectToImagePlane(worldPoints,worldCameraGeometry);
+imagePoints = applyRadialLensDistortion(imagePoints,worldCameraGeometry);
+
+% Grab the image size
+imageSizeX = worldCameraGeometry.cameraIntrinsic.sensorResolution(1);
+imageSizeY = worldCameraGeometry.cameraIntrinsic.sensorResolution(2);
+
+% A blank frame to initialize the figure
+backgroundImage = zeros(imageSizeY,imageSizeX)+0.5;
+
+% Show the appearance of the targets in the world camera image
+figure
+imshow(backgroundImage,[], 'Border', 'tight');
+axis off
+axis equal
+xlim([0 imageSizeX]);
+ylim([0 imageSizeY]);
+hold on
+for idx = 1:size(imagePoints,1)
+    markerSize = 5e4/worldPoints(idx,3);
+    scatter(imagePoints(idx,1), imagePoints(idx,2), markerSize, 'o', 'filled', 'MarkerFaceColor', 'k', 'MarkerEdgeColor','none');
+    hold on
+end
+title('Targets in world camera image')
+xlabel('horizontal [pixels]');
+ylabel('vertical [pixels]');
+
+% Plot the eye rotations
+figure
+for idx=1:size(eyePoses,1)
+    markerSize = 5e4/worldPoints(idx,3);
+    scatter(eyePoses(idx,1), eyePoses(idx,2), markerSize, 'o', 'filled', 'MarkerFaceColor', 'k', 'MarkerEdgeColor','none');
+    hold on
+end
+title('Eye rotations to targets')
+xlabel('azimuth [deg]');
+ylabel('elevation [deg]');

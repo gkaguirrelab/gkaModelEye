@@ -16,7 +16,7 @@
 sceneGeometry=createSceneGeometry();
 
 % Save location for the GIF. Sorry for the Mac bias.
-gifSaveName = '~/Desktop/t11_glintMoving.gif';
+gifSaveName = 'demo/t11_glintMoving.gif';
 
 % These are the elements of the model eye that we will render
 modelEyeLabelNames = {'retina' 'irisPerimeter' 'pupilEllipse' 'cornea' 'glint_01'};

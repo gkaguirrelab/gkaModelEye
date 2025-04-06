@@ -9,7 +9,7 @@
 %
 
 % Save location for the GIF. Sorry for the Mac bias.
-gifSaveName = '~/Desktop/t09_rotationalAsymmetry.gif';
+gifSaveName = 'demo/t09_rotationalAsymmetry.gif';
 
 % How much do we want to exagerate these non-symmetric features?
 exagerate = 4;
@@ -33,7 +33,7 @@ kvals = [meanCornealPower - k1k2DiffDiopters*exagerate, ...
 % Time to change the eccentricity of the aperture stop. First, we load a
 % file called the "derivedParams" that contains parameter values that
 % define the behavior of the shape of the stop
-filename = fullfile(replace(replace(mfilename('fullpath'),mfilename(),''),'twitter','eye'),'species','+human','derivedParams.mat');
+filename = fullfile(replace(replace(mfilename('fullpath'),mfilename(),''),'demo/twitter','model'),'eye','species','+human','derivedParams.mat');
 load(filename,'derivedParams');
 
 % Exagerate the maximum eccentricity of the stop
