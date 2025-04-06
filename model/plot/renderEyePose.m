@@ -114,7 +114,7 @@ function [figHandle, plotObjectHandles, renderedFrame] = renderEyePose(eyePose, 
     eyePose = [0 0 0 3];
     renderEyePose(eyePose, sceneGeometry,'showPupilTextLabels',true,'nStopPerimPoints',5);
     % Adjust the camera torsion and replot
-    sceneGeometry.cameraPosition.torsion = sceneGeometry.cameraPosition.torsion + 45;
+    sceneGeometry.cameraPosition.rotation(3) = sceneGeometry.cameraPosition.rotation(3) + 45;
     renderEyePose(eyePose, sceneGeometry,'showPupilTextLabels',true,'nStopPerimPoints',5);
 %}
 
@@ -157,7 +157,7 @@ end
 
 % Expand the modelEyeAlpha parameter to the full length of the model
 % components to be labeled
-if length(p.Results.modelEyeAlpha)==1
+if isscalar(p.Results.modelEyeAlpha)
     modelEyeAlpha = zeros(size(p.Results.modelEyeLabelNames));
     modelEyeAlpha(:) = p.Results.modelEyeAlpha;
 else

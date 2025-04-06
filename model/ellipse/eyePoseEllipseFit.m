@@ -25,6 +25,9 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput, x
 %   the rotation model. Tighter, biologically informed constraints may be
 %   passed by the calling function.
 %
+%   The rotation values returned in the eyePose variable are relative to
+%   the primary position of the eye.
+%
 % Inputs:
 %   Xp, Yp                - mx1 vectors of points to be fit. These provide
 %                           the X and Y screen coordinates of the m points
@@ -94,7 +97,7 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput, x
 % Examples:
 %{
     % Basic example of recovering a simulated eyePose
-    eyePose = [12.5 -4 0 2.5];
+    eyePose = [12.5 -5 0 2.5];
     sceneGeometry=createSceneGeometry();
     [ targetEllipse, glintCoord ] = projectModelEye(eyePose,sceneGeometry);
     [ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 10 );
@@ -159,7 +162,7 @@ arguments
     options.eyePoseUB double = [89, 89, 0, 4]
     options.cameraTransX0 double = []
     options.cameraTransBounds double = [5; 5; 0]
-    options.eyePoseEllipseFitFunEvals double {mustBeScalarOrEmpty} = 200
+    options.eyePoseEllipseFitFunEvals double {mustBeScalarOrEmpty} = 250
     options.eyePoseTol double {mustBeScalarOrEmpty} = 1e-3
     options.glintTol double {mustBeScalarOrEmpty} = 1
     options.boundTol double {mustBeVector} = [0.1 0.1 0.1 0.05 0.1 0.1 0.1]

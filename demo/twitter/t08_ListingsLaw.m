@@ -9,7 +9,7 @@
 %
 
 % Save location for the GIF. Sorry for the Mac bias.
-gifSaveName = '~/Desktop/t08_ListingsLaw.gif';
+gifSaveName = 'demo/t08_ListingsLaw.gif';
 
 % Create an eye with a specific measuredCornealCurvature sceneGeometry in which the cornea is aligned with the optical
 % axis of the eye. Forcing this alignment makes the demo a bit clearer.

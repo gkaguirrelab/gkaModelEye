@@ -5,9 +5,9 @@ function stop = stop( eye )
 %  stop = human.stop( eye )
 %
 % Description:
-%   The stop is an aperture in the iris, centered on the optical axis. The
-%   stop is modeled as an ellipse, with the eccentricity and theta varying
-%   with dilation.
+%   The stop is an aperture in the iris, centered on the longitudinal axis.
+%   The stop is modeled as an ellipse, with the eccentricity and theta
+%   varying with dilation.
 %
 % Inputs:
 %   eye                   - Structure.
@@ -16,7 +16,7 @@ function stop = stop( eye )
 %   stop                  - Structure.
 %
 
-% Center the stop on the optical axis within the iris
+% Center the stop on the longitudinal axis within the iris
 stop.center = [eye.iris.center(1) 0 0];
 
 % The aperture stop of the eye is elliptical. The parameters of this 

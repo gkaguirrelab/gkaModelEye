@@ -10,7 +10,7 @@
 sceneGeometry=createSceneGeometry();
 
 % Save location for the GIF. Sorry for the Mac bias.
-gifSaveName = '~/Desktop/t02_pupilWithRotation.gif';
+gifSaveName = 'demo/t02_pupilWithRotation.gif';
 
 % These are the elements of the model eye that we will render
 modelEyeLabelNames = {'retina' 'irisPerimeter' 'pupilEllipse' 'cornea'};

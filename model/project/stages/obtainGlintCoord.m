@@ -5,9 +5,9 @@ function glintCoord = obtainGlintCoord(imagePoints,pointLabels)
 %  glintCoord = obtainGlintCoord(imagePoints,pointLabels)
 %
 % Description:
-%   This little routine finds the imagePoints that have a label that
-%   contains the char vector "glint", and returns their coordinates to the
-%   main function.
+%   This routine finds the imagePoints that have a label that contains the
+%   char vector "glint", and returns their coordinates to the main
+%   function.
 %
 % Inputs:
 %   imagePoints           - nx2 vector. Points in image coordinates.

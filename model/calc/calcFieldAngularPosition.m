@@ -7,8 +7,8 @@ function [fieldAngularPosition,targetDistance] = calcFieldAngularPosition(eye,ta
 % Description
 %   Given a world coordinate target, provides the location in the visual
 %   field in horizontal and vertical degrees w.r.t. the longitudinal axis
-%   of the eye when it is aligned with the camera) and the distance of that
-%   target in mm from the incident node of the eye.
+%   of the eye in primary position, and the distance of that target in mm
+%   from the incident node of the eye.
 %
 % Inputs:
 %   eye                   - Structure. SEE: modelEyeParameters

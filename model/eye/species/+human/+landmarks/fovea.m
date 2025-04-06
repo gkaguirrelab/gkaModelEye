@@ -40,8 +40,8 @@ function fovea = fovea( eye )
 
 
 % The location of the fovea on the retina is determined by first specifying
-% the angle alpha, which is the angle between the optical and visual axes
-% of the eye. The visual axis is defined by the nodal ray that arrives
+% the angle alpha, which is the angle between the longitudinal and visual
+% axes of the eye. The visual axis is defined by the nodal ray that arrives
 % at the fovea.
 %
 % The angle alpha has been proposed to vary with spherical refractive

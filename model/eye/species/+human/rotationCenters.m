@@ -56,11 +56,11 @@ function rotationCenters = rotationCenters( eye )
 %       Physiology--Legacy Content 104.3 (1933): 545-552.
 %
 %   The Park & Park result was due to their assumption that all "sight
-%   lines" (i.e., rotations of the visual axis of the eye) pass through the
-%   same point in space. Fry & Hill report that some subjects (2 of 31)
-%   show translation of the eye with rotation. Also, there is a small,
-%   transient retraction of the eye following a saccade that we do not
-%   attempt to model:
+%   lines" (presumably, rotations of the visual axis of the eye) pass
+%   through the same point in space. Fry & Hill report that some subjects
+%   (2 of 31) show translation of the eye with rotation. Also, there is a
+%   small, transient retraction of the eye following a saccade that we do
+%   not attempt to model:
 %
 %       Enright, J. T. "The aftermath of horizontal saccades: saccadic
 %       retraction and cyclotorsion." Vision research 26.11 (1986):
@@ -120,9 +120,12 @@ x = eye.meta.rotationCenterScalers;
 rotationCenters.azi = rotationCenters.azi .* x(1) .* x(2);
 rotationCenters.ele = rotationCenters.ele .* x(1) ./ x(2);
 
-% Assign the primary position of the eye, which is used for calculation of
-% "pseudo" torsion in creating eye movements that obey Listing's Law
-rotationCenters.primaryPosition = eye.meta.primaryPosition;
+% Rotations of the eye are defined relative to the primary position of the
+% eye. Thus, the azimuth and elevation rotation state of the eye in primary
+% position has an obligatory value of [0 0]. This is defined here for
+% clarity and for compatability with prior versions of this code base.
+rotationCenters.primaryPosition = [0 0];
+
 
 end
 

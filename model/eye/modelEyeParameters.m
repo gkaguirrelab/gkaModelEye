@@ -10,9 +10,10 @@ function eye = modelEyeParameters( varargin )
 %
 %   The parameters returned by this routine correspond to the eyeWorld
 %   coordinate space used in projectModelEye, which is relative to the
-%   optical axis, with the apex of the cornea set as zero in depth. The
-%   space has the dimensions [depth, horizontal, vertical]; negative values
-%   of depth are towards the back of the eye.
+%   longitudinal axis, with the apex of the cornea set as zero in depth
+%   (when the cornea is not rotated). The space has the dimensions [depth,
+%   horizontal, vertical]; negative values of depth are towards the back of
+%   the eye.
 %
 %   Note that not all parameters are applicable to all "species" of model
 %   eye. For example, the Drasdo & Fowler 1974 model has fixed size and
@@ -92,16 +93,6 @@ function eye = modelEyeParameters( varargin )
 %                           and differential multiplicative scaling on
 %                           the positions of the azimuthal and elevational
 %                           rotation centers of the eye.
-%  'primaryPosition'      - 1x2 numeric vector. This is the [azi ele] pose
-%                           of the eye for which torsion is zero, and for
-%                           which every eye movement consistent with
-%                           Listing's Law will result in an eye pose for
-%                           which torsion is also zero. This parameter has
-%                           the odd property that it is not intrinsic to
-%                           the eye, but is defined within the coordinate
-%                           frame in which the alignment of the camera and
-%                           eye optical systems has eyePose values of
-%                           [0, 0].
 %  'spectralDomain'       - String or numerica scalar. This is the
 %                           wavelength domain within which imaging is being
 %                           performed. The refractive indices vary based
@@ -139,7 +130,6 @@ p.addParameter('derivedParams',[],@(x)(isstruct(x) || isempty(x)));
 p.addParameter('kvals',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('corneaAxialRadius',[],@(x)(isempty(x) || isnumeric(x)));
 p.addParameter('rotationCenterScalers',[1 1],@isnumeric);
-p.addParameter('primaryPosition',[0 0],@isnumeric);
 p.addParameter('spectralDomain','nir',@(x)(ischar(x) || isnumeric(x)));
 
 % parse
@@ -200,7 +190,6 @@ eye.meta.ageYears = p.Results.ageYears;
 eye.meta.kvals = p.Results.kvals;
 eye.meta.corneaAxialRadius = p.Results.corneaAxialRadius;
 eye.meta.rotationCenterScalers = p.Results.rotationCenterScalers;
-eye.meta.primaryPosition = p.Results.primaryPosition;
 eye.meta.spectralDomain = p.Results.spectralDomain;
 eye.meta.notes = notes;
 eye.meta.varargin = varargin;

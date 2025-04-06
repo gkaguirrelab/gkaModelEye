@@ -22,8 +22,8 @@ S = eye.retina.S;
 
 % Eye landmarks are specified as rotations (in degrees) within the eye
 % world coordinate frame for azimuth, elevation, and rotation. Axes are
-% defined relative to the optical axis, which itself is set to be aligned
-% with the p1 dimension of the eye world coordinate frame.
+% defined relative to the longitudinal axis, which itself is set to be
+% aligned with the p1 dimension of the eye world coordinate frame.
 vertex.degField = [0 0 0];
 vertex.geodetic = [-90 -90 0];
 vertex.coords = quadric.ellipsoidalGeoToCart(vertex.geodetic,S)';

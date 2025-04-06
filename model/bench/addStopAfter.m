@@ -5,8 +5,8 @@ function opticalSystemOut = addStopAfter(opticalSystemIn, stopRadius, stopCenter
 %   opticalSystemOut = addStopAfter(opticalSystemIn, stopRadius, stopCenter, targetRow, replaceExistingFlag, surfaceLabel, surfaceColor)
 %
 % Description:
-%   Adds a stop to an optical system centered on the optical axis. The stop
-%   is a must-intersect, circular surface of the specified radius and
+%   Adds a stop to an optical system centered on the longitudinal axis. The
+%   stop is a must-intersect, circular surface of the specified radius and
 %   position. The optical system can be provided as a full structure
 %   (including labels and plot colors) or as a matrix. If an opticalSystem
 %   structure is provide with minimal other inputs,the routine will assume

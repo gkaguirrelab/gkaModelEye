@@ -24,11 +24,11 @@ function eyeCoord = convertWorldToEyeCoord(worldCoord)
 %           - <--p2--> +
 %
 %   Coordinate [0,0,0] corresponds to the apex (front surface) of the
-%   cornea (when the apex of the cornea is aligned with the optical axis).
-%   The first dimension is depth, and has a negative value toward the back
-%   of the eye. For the right eye, negative values on the p2 dimension are
-%   more temporal, and positive values are more nasal. Positive values of
-%   p3 are upward, and negative values are downward
+%   cornea (when the apex of the cornea is aligned with the longitudinal
+%   axis). The first dimension is depth, and has a negative value toward
+%   the back of the eye. For the right eye, negative values on the p2
+%   dimension are more temporal, and positive values are more nasal.
+%   Positive values of p3 are upward, and negative values are downward.
 %
 % Inputs:
 %   worldCoord            - 3xn vector that specifies points in world 

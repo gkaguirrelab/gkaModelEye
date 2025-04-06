@@ -12,7 +12,7 @@ modelEyeLabelNames = {'retina' 'irisPerimeter' 'pupilEllipse' 'cornea'};
 modelEyePlotColors = {'.w' 'ob' '-g' '.y'};
 
 % Save location for the GIF. Sorry for the Mac bias.
-gifSaveName = '~/Desktop/t07_torsion.gif';
+gifSaveName = 'demo/t07_torsion.gif';
 
 % The angles across which the eye will rotate
 rotationValues = [0:1:10,10:-1:-10,-10:1:-1];
