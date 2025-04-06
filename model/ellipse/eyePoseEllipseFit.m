@@ -96,13 +96,14 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput, x
 %
 % Examples:
 %{
-    % Basic example of recovering a simulated eyePose
-    eyePose = [12.5 -5 0 2.5];
+    % Basic example of recovering a simulated eyePose under the assumption
+    % of no camera translation
+    eyePose = [10 -5 0 2.5];
     sceneGeometry=createSceneGeometry();
     [ targetEllipse, glintCoord ] = projectModelEye(eyePose,sceneGeometry);
     [ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 10 );
-    eyePoseRecovered = eyePoseEllipseFit(Xp, Yp, glintCoord, sceneGeometry);
-    assert(max(abs(eyePose - eyePoseRecovered)) < 5e-1);
+    eyePoseRecovered = eyePoseEllipseFit(Xp, Yp, glintCoord, sceneGeometry, 'cameraTransBounds', [0; 0; 0]);
+    assert(max(abs(eyePose - eyePoseRecovered)) < 1e-2);
 %}
 %{
     % Eye pose in the setting of relative camera motion
@@ -122,7 +123,7 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput, x
     cameraTrans = [3; -1; 0];
     executionTime = []; errors = [];
     poseCount = 0;
-    evalNum = [100 150 200 250 300];
+    evalNum = 100:50:300;
     for azi = [-10 -.5 0.5 10]; for ele = [-10 -.5 0.5 10]
         eyePose = [azi ele 0 2.5];
         poseCount = poseCount+1;
@@ -213,8 +214,7 @@ if isempty(Xp) || isempty(Yp)
 end
 
 % Issue a warning if there are non-zero bounds on camera translation, but
-% there is no glint. Without a glint, we don't have much traction on
-% translation.
+% there is no glint. Without a glint, we don't have traction on translation
 if isempty(glintCoord) && any(abs(options.cameraTransBounds) > 0)
     warning('eyePoseEllipseFit:underconstrainedSearch','No glint provided; cameraTrans search is under-constrained');
 end
@@ -394,6 +394,8 @@ ub = [eyePoseUB cameraTransUB'];
 
 % Initialize nested variables
 xHist = x0;
+fHist = nan;
+ceqHist = nan;
 xLast = [];
 cLast = [];
 ceqLast = [];
@@ -404,7 +406,7 @@ ceqFirstFlag = true;
 fullObj = @(x) fullObjective(x,Xp,Yp,glintCoord,sceneGeometry);
 
 % Search with a nested objective function
-[x, RMSE, ~, searchOutput] = fmincon(@objFun, x0,[],[],[],[],lb,ub,@nonlcon,opt_fmincon);
+[x, RMSE, exitFlag, searchOutput, lambda] = fmincon(@objFun, x0,[],[],[],[],lb,ub,@nonlcon,opt_fmincon);
 
     % This is the RMSE of the pupil ellipse to the pupil perimeter
     function fVal = objFun(x)
@@ -412,6 +414,8 @@ fullObj = @(x) fullObjective(x,Xp,Yp,glintCoord,sceneGeometry);
             [fValLast,cLast,ceqLast] = fullObj(x);
             xLast = x;
             xHist(end+1,:) = x;
+            fHist(end+1) = fValLast;
+            ceqHist(end+1) = ceqLast;
         end
         fVal = fValLast;
         % This is some business to prevent fmincon from considering as
@@ -431,6 +435,8 @@ fullObj = @(x) fullObjective(x,Xp,Yp,glintCoord,sceneGeometry);
             [fValLast,cLast,ceqLast] = fullObj(x);
             xLast = x;
             xHist(end+1,:) = x;
+            fHist(end+1) = fValLast;
+            ceqHist(end+1) = ceqLast;
         end
         c = cLast;
         % This is some business to prevent fmincon from considering as
@@ -444,6 +450,18 @@ fullObj = @(x) fullObjective(x,Xp,Yp,glintCoord,sceneGeometry);
             end
         end
     end
+
+% If the search hit the max fun evals, look in the search history to find
+% the best solution
+if exitFlag == 0
+    [~,idx] = min(fHist + ceqHist*lambda.eqnonlin);
+    RMSE = fHist(idx);
+    ceq = ceqHist(idx);
+    x = xHist(idx,:);
+    fHist(end+1) = RMSE;
+    ceqHist(end+1) = ceq;
+    xHist(end+1,:) = x;
+end
 
 % Unpack the x parameters into eye and head position
 eyePose = x(1:4);
@@ -496,7 +514,7 @@ if any(isnan(explicitEllipse))
 end
 
 % Obtain the fVal
-fVal = sqrt(nanmean(ellipsefit_distance(Xp,Yp,explicitEllipse).^2));
+fVal = sqrt(mean(ellipsefit_distance(Xp,Yp,explicitEllipse).^2,'omitmissing'));
 
 % Now compute the constraint. If there is no glint, then we do not use the
 % constraint.

@@ -7,7 +7,7 @@
 
 
 % Create some default eye features
-eyePose = [7 -5 0 2.5];
+eyePose = [8 -5 0 2.5];
 cameraTrans = [-4; -3; 0];
 sceneGeometry=createSceneGeometry();
 [ targetEllipse, glintCoord ] = projectModelEye(eyePose,sceneGeometry,'cameraTrans',cameraTrans);
@@ -61,7 +61,7 @@ plotHandles = [];
 poseText = [];
 for ii = 1:size(xHist,1)
 
-    if ii>1 && max(abs(xHist(ii,:)-xHist(ii-1,:)))<0.001
+    if ii ~=size(xHist,1) && ii>1 && max(abs(xHist(ii,:)-xHist(ii-1,:)))<0.001
         continue
     end
     
