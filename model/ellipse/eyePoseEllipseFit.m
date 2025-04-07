@@ -55,10 +55,10 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput, x
 %                           specifying bounds differs from what is used for
 %                           the eyePose.
 %  'eyePoseEllipseFitFunEvals' - Scalar. The maximum number of evals for
-%                           the fminsearch operation. The example below
+%                           the fmincon operation. The example below
 %                           examines the trade-off between execution time
 %                           and function accuracy for this parameter. I
-%                           find that 150 evals takes 330ms per eyePose
+%                           find that 250 evals takes 300ms per eyePose
 %                           calculation on a laptop, and produces excellent
 %                           accuracy with respect to the precision in
 %                           empirical data.
@@ -92,7 +92,11 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput, x
 %                           parameters (eye or camera) are at the upper or
 %                           lower boundary.
 %   searchOutput          - Structure. The output of the fmincon search.
-%   xHist                 - 
+%   xHist                 - A nx7 array, where n is equal to the number of
+%                           objective function evaluations in the fmincon
+%                           search. The values correspond to the eyePose
+%                           and cameraTranslation examined in each search
+%                           iteration.
 %
 % Examples:
 %{
@@ -214,7 +218,7 @@ if isempty(Xp) || isempty(Yp)
 end
 
 % Issue a warning if there are non-zero bounds on camera translation, but
-% there is no glint. Without a glint, we don't have traction on translation
+% there is no glint. Without a glint, we can't estimate camera translation.
 if isempty(glintCoord) && any(abs(options.cameraTransBounds) > 0)
     warning('eyePoseEllipseFit:underconstrainedSearch','No glint provided; cameraTrans search is under-constrained');
 end
@@ -239,7 +243,7 @@ else
     cameraTransUB = options.cameraTransBounds;
     
     % If we were given an eyePoseX0, use this as the pose of the eye for
-    % the calculation. Otherwise, assume the eye is looking at the camera.
+    % the calculation. Otherwise, assume the eye is in primary position.
     if ~isempty(options.eyePoseX0)
         refPose = options.eyePoseX0;
     else
@@ -311,7 +315,7 @@ if isempty(options.eyePoseX0)
     CoP = [rotationCenterEllipse(1),rotationCenterEllipse(2)];
     
     % Now the number of pixels that the pupil center is displaced from the
-    % CoP.
+    % center of projection.
     displacePix = (unconstrainedEllipse(1:2)-CoP);
     
     % If the ratio of the displacePix is extreme, or one or more of the
@@ -408,7 +412,7 @@ fullObj = @(x) fullObjective(x,Xp,Yp,glintCoord,sceneGeometry);
 % Search with a nested objective function
 [x, RMSE, exitFlag, searchOutput, lambda] = fmincon(@objFun, x0,[],[],[],[],lb,ub,@nonlcon,opt_fmincon);
 
-    % This is the RMSE of the pupil ellipse to the pupil perimeter
+    % The fVal is the RMSE of the pupil ellipse to the pupil perimeter
     function fVal = objFun(x)
         if ~isequal(x,xLast)
             [fValLast,cLast,ceqLast] = fullObj(x);
@@ -452,7 +456,8 @@ fullObj = @(x) fullObjective(x,Xp,Yp,glintCoord,sceneGeometry);
     end
 
 % If the search hit the max fun evals, look in the search history to find
-% the best solution
+% the best solution. We use the Lagrange multiplier reported at the end of
+% the search to weight the non-linear constraint.
 if exitFlag == 0
     [~,idx] = min(fHist + ceqHist*lambda.eqnonlin);
     RMSE = fHist(idx);
@@ -463,7 +468,7 @@ if exitFlag == 0
     xHist(end+1,:) = x;
 end
 
-% Unpack the x parameters into eye and head position
+% Unpack the x parameters into the eyePose and cameraTrans
 eyePose = x(1:4);
 cameraTrans = x(5:7)';
 
@@ -502,10 +507,11 @@ if any(isnan(candidateEllipse))
 end
     
 % Calculate the RMSE of the distance values of the boundary points to the
-% ellipse fit.
+% ellipse fit. First cast the ellipse in explicit form.
 explicitEllipse = ellipse_transparent2ex(candidateEllipse);
 
-% Detect failures in the ellipse fit and return
+% Detect failures in the ellipse fit, which will cause the explicit ellipse
+% parameters to be empty or contain nans.
 if isempty(explicitEllipse)
     return
 end
@@ -513,7 +519,8 @@ if any(isnan(explicitEllipse))
     return
 end
 
-% Obtain the fVal
+% Obtain the fVal, which is the RMSE of the ellipse fit to the pupil
+% perimeter points.
 fVal = sqrt(mean(ellipsefit_distance(Xp,Yp,explicitEllipse).^2,'omitmissing'));
 
 % Now compute the constraint. If there is no glint, then we do not use the

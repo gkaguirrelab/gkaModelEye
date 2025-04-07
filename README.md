@@ -85,7 +85,7 @@ plotOpticalSystem(sceneGeometry);
 
 Most functions have associated examples in the header comments. To automatically run all examples, ensure that the [ExampleTest toolbox](https://github.com/isetbio/ExampleTestToolbox.git) is on the path. This command will then test all examples:
 ```
-[names,status] = RunExamples(fullfile(userpath(),'toolboxes','gkaModelEye'))
+[names,status] = RunExamples(fullfile(userpath(),'toolboxes','gkaModelEye'),'closefigs',false)
 ```
 
 Additional demos and examples can be found in the `demos` and `twitter` directories.

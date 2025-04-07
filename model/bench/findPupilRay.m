@@ -7,10 +7,10 @@ function [outputRay, initialRay, targetIntersectError ] = findPupilRay( eyeCoord
 % Description:
 %   This routine returns the outputRay from the last surface of an optical
 %   system for a point that has originated from an eyeWorld coordinate and
-%   has arrived at an observer positioned at the worldTarget location. The
-%   routine accounts for rotation of the eye specified in the eyePose
-%   variable. The outputRay returned by this routine provides the location
-%   of the virtual image of that point.
+%   has arrived at the worldTarget location. The routine accounts for
+%   rotation of the eye specified in the eyePose variable. The outputRay
+%   returned by this routine provides the location of the virtual image of
+%   that point.
 %
 % Inputs:
 %   eyeCoordOrigin        - A 1x3 vector that gives the coordinates (in mm)
@@ -118,7 +118,9 @@ options = optimset('TolFun',TolFun,'TolX',TolX,'Display','off');
 % hopefully saving on execution time.
 Rstruc = struct('azi',nan(3,3),'ele',nan(3,3),'tor',nan(3,3),'empty',true);
 
-% Pre-covert the optical system surfaces into quadric matrix form
+% Pre-covert the optical system surfaces into quadric matrix form. We are
+% able to pass this through to the ray tracing operation, saving
+% computation time.
 tensorSRot = nan(4,4,100);
 nSurfacesRot = sum(~all(isnan(opticalSystemRot),2));
 for ii = 1:nSurfacesRot
@@ -129,6 +131,7 @@ nSurfacesFix = sum(~all(isnan(opticalSystemFix),2));
 for ii = 1:nSurfacesFix
     tensorSFix(:,:,ii) = quadric.vecToMatrix(opticalSystemFix(ii,1:10));
 end
+
 
 %% Calculate initial guess for p1p2 and p1p3 angles
 % Our goal is to find the angles with which a ray departs eyeCoordOrigin
@@ -257,7 +260,7 @@ end % Test x0 guess
 
 % Assemble the input ray. Note that the rayTraceQuadrics routine handles
 % vectors as a 3x2 matrix, as opposed to a 2x3 matrix in this function.
-% Tranpose operations ahead.
+% Transpose operations ahead.
 initialRay = quadric.anglesToRay(eyeCoordOrigin', angle_p1p2, angle_p1p3);
 
 % Trace the system using the initialRay defined by the solution angles
@@ -356,9 +359,10 @@ function distance = calcTargetIntersectError(eyeCoordOrigin, ...
 %
 %   This function is used to find angles in the p1p2 and p1p3 planes that
 %   minimize the distance between the intersection point of the ray in the
-%   camera plane and the pinhole aperture of a camera. At a distance of
-%   zero, the ray would enter the pinhole aperture of the camera and thus
-%   produce a point on the resulting image.
+%   camera plane and the worldTarget. At a distance of zero, the ray would
+%   intersect the worldTarget. In a typical application, the worldTarget is
+%   the pinhole aperture of the camera and thus the ray would produce a
+%   point on the resulting image.
 %
 % Inputs:
 %   eyeCoordOrigin
