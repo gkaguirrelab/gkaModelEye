@@ -31,55 +31,37 @@ function compileEllipseFit( varargin )
 %
 % Examples:
 %{
-    % Confirm that compiled and native findPupilRay yield the same value
-    sceneGeometry = createSceneGeometry();
-    % Assemble the args for the findPupilRay
-    args = {sceneGeometry.cameraPosition.translation, ...
-    	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.stopToMedium.opticalSystem, ...
-        sceneGeometry.refraction.mediumToCamera.opticalSystem};
-    inverseRayNative = findPupilRay( [sceneGeometry.eye.stop.center(1) 2 0], [-5 10 0 2], args{:} );
-    inverseRayCompiled = findPupilRayMex( [sceneGeometry.eye.stop.center(1) 2 0], [-5 10 0 2], args{:} );
+    % Confirm that compiled and native ellipseFit_robust yield the same value
+    eyePose = [10 -5 0 2.5];
+    sceneGeometry=createSceneGeometry();
+    [ targetEllipse, glintCoord ] = projectModelEye(eyePose,sceneGeometry);
+    [ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 10 );
+    ellipseFitNative = pupilEllipseFit([Xp,Yp],@ellipsefit_robust);
+    ellipseFitCompiled = pupilEllipseFit([Xp,Yp],@ellipsefit_robustMex);
     % Test if the outputs agree
-    assert(max(max(abs(inverseRayNative - inverseRayCompiled))) < 1e-6)
-%}
-%{
-    % Confirm that compiled and native findGlintRay yield the same value
-    sceneGeometry = createSceneGeometry();
-    eyePose = [-5, 3, 0, 2];
-    cameraNodalPoint = sceneGeometry.cameraPosition.translation;
-    irSourceLocation = cameraNodalPoint - sceneGeometry.cameraPosition.glintSourceRelative;
-    rotationCenters = sceneGeometry.eye.rotationCenters;
-    opticalSystemFixRL = sceneGeometry.refraction.cameraToMedium.opticalSystem;
-    opticalSystemRot = sceneGeometry.refraction.glint.opticalSystem;
-    opticalSystemFixLR = sceneGeometry.refraction.mediumToCamera.opticalSystem;
-    outputRayNative = findGlintRay( irSourceLocation, eyePose, cameraNodalPoint, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR );
-    outputRayCompiled = findGlintRayMex( irSourceLocation, eyePose, cameraNodalPoint, rotationCenters, opticalSystemFixRL, opticalSystemRot, opticalSystemFixLR );
-    % Test if the outputs agree
-    assert(max(max(abs(outputRayNative - outputRayCompiled))) < 1e-6)
+    assert(max(max(abs(ellipseFitNative - ellipseFitCompiled))) < 1e-6)
 %}
 %{
     % Compare computation time for MATLAB and compiled code
     nComputes = 100;
-    fprintf('Time to execute findPupilRay (average over %d projections):\n',nComputes);
+    fprintf('Time to execute ellipseFit_robust (average over %d executions):\n',nComputes);
+    % Assemble the inputs
+    eyePose = [10 -5 0 2.5];
+    sceneGeometry=createSceneGeometry();
+    [ targetEllipse, glintCoord ] = projectModelEye(eyePose,sceneGeometry);
+    [ Xp, Yp ] = ellipsePerimeterPoints( targetEllipse, 10 );
+    ellipseFitCompiled = pupilEllipseFit([Xp,Yp],@ellipsefit_robustMex);
     % Native function
-    sceneGeometry = createSceneGeometry();
-    % Assemble the args for the findPupilRay
-    args = {sceneGeometry.cameraPosition.translation, ...
-    	sceneGeometry.eye.rotationCenters, ...
-    	sceneGeometry.refraction.stopToMedium.opticalSystem, ...
-        sceneGeometry.refraction.mediumToCamera.opticalSystem};
-    % Native matlab function
     tic
     for ii=1:nComputes
-        findPupilRay( [-3.7 2 0], [0 0 0 2], args{:} );
+        pupilEllipseFit([Xp,Yp],@ellipsefit_robust);
     end
     msecPerComputeNative = toc / nComputes * 1000;
     fprintf('\tUsing the MATLAB function: %4.2f msecs.\n',msecPerComputeNative);
     % Compiled MEX function
     tic
     for ii=1:nComputes
-        findPupilRayMex( [-3.7 2 0], [0 0 0 2], args{:} );
+        pupilEllipseFit([Xp,Yp],@ellipsefit_robustMex);
     end
     msecPerComputeCompile = toc / nComputes * 1000;
     fprintf('\tUsing the compiled function: %4.2f msecs.\n',msecPerComputeCompile);
@@ -103,7 +85,7 @@ functionDirPath = p.Results.functionDirPath;
 % compiled function exists. If so, exit.
 if ~p.Results.replaceExistingFunc
     % Exist returns 3 for 'MEX-file on your MATLAB search path'
-    if exist('ellipsefit_robustMex')==3
+    if exist('ellipsefit_robustMex','file')==3
         warning('compileEllipseFit:functionExists','ellipsefit_robustMex already exists; set replaceExistingFunc to true to over-write.')
         return
     end
