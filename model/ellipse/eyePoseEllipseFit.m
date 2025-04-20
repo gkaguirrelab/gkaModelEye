@@ -148,10 +148,10 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput, x
     left_color = [1 0 0]; right_color = [0 0 0];
     set(figHandle,'defaultAxesColorOrder',[left_color; right_color]);
     yyaxis right
-    plot(evalNum,timeByNumEvals,'-k')
+    plot(evalNum,timeByNumEvals,'-r','lineWidth',2)
     ylabel('Execution time per pose [secs]');
     yyaxis left
-    plot(evalNum,errorByNumEvals,'-r')
+    plot(evalNum,errorByNumEvals,'-b','lineWidth',2)
     ylabel('Eye pose error [deg]');
     xlabel('Number of search evaluations');
     title('Performance of eyePoseEllipseFit across max fun evals');
