@@ -158,8 +158,8 @@ function [eyePose, cameraTrans, RMSE, fittedEllipse, fitAtBound, searchOutput, x
 %}
 
 arguments
-    Xp double
-    Yp double
+    Xp double {mustBeColumn}
+    Yp double {mustBeColumn}
     glintCoord double
     sceneGeometry struct
     options.eyePoseX0 double = []
