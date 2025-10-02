@@ -34,8 +34,12 @@ function [opticalSystem, surfaceLabels, surfaceColors, magnification] = assemble
 %                           index of refraction of the lens material. If
 %                           left empty, no contact lens is added to the
 %                           model.
-%  'spectacleLens'        - Scalar, 1x2, 1x3, 1x4 vector, with values for 
-%                           the lens refraction in diopters, (optionally)
+%  'spectacleLens'        - Scalar, 1x2, 1x3, with values for the
+%                           lens refraction in diopters, (optionally) the
+%                           cylinder in diopters and (optionally) the axis
+%                           in degrees. If left empty, no spectacle is
+%                           added to the model. Additional values in this
+%                           vector beyond the first three are asssigned to
 %                           the index of refraction of the lens material,
 %                           (optinally) the vertex distance in mm, and
 %                           (optionally) the base curve in doiopters.
@@ -190,16 +194,20 @@ switch p.Results.surfaceSetName
         
         % Add a spectacle lens if requested
         if ~isempty(p.Results.spectacleLens)
+            lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
             switch length(p.Results.spectacleLens)
                 case 1
-                    lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex);
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', lensRefractiveIndex);
                 case 2
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2));
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'cylinderDiopters', p.Results.spectacleLens(2), 'lensRefractiveIndex', lensRefractiveIndex);
                 case 3
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3));
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'cylinderDiopters', p.Results.spectacleLens(2), 'axisDegrees', p.Results.spectacleLens(3), 'lensRefractiveIndex', lensRefractiveIndex);
                 case 4
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4));
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'cylinderDiopters', p.Results.spectacleLens(2), 'axisDegrees', p.Results.spectacleLens(3), 'lensRefractiveIndex', p.Results.spectacleLens(4));
+                case 5
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'cylinderDiopters', p.Results.spectacleLens(2), 'axisDegrees', p.Results.spectacleLens(3), 'lensRefractiveIndex', p.Results.spectacleLens(4),'lensVertexDistance', p.Results.spectacleLens(5));
+                case 6
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'cylinderDiopters', p.Results.spectacleLens(2), 'axisDegrees', p.Results.spectacleLens(3), 'lensRefractiveIndex', p.Results.spectacleLens(4),'lensVertexDistance', p.Results.spectacleLens(5), 'baseCurve', p.Results.spectacleLens(6));
                 otherwise
                     error('The key-value pair spectacleLens is limited to four elements: [refractionDiopters, refractionIndex, vertexDistance, baseCurve]');
             end
@@ -399,16 +407,20 @@ switch p.Results.surfaceSetName
 
         % Add a spectacle lens if requested
         if ~isempty(p.Results.spectacleLens)
+            lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
             switch length(p.Results.spectacleLens)
                 case 1
-                    lensRefractiveIndex=returnRefractiveIndex( 'polycarbonate', eye.meta.spectralDomain );
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens, 'lensRefractiveIndex', lensRefractiveIndex);
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', lensRefractiveIndex);
                 case 2
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2));
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'cylinderDiopters', p.Results.spectacleLens(2), 'lensRefractiveIndex', lensRefractiveIndex);
                 case 3
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3));
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'cylinderDiopters', p.Results.spectacleLens(2), 'axisDegrees', p.Results.spectacleLens(3), 'lensRefractiveIndex', lensRefractiveIndex);
                 case 4
-                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'lensRefractiveIndex', p.Results.spectacleLens(2),'lensVertexDistance', p.Results.spectacleLens(3), 'baseCurve', p.Results.spectacleLens(4));
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'cylinderDiopters', p.Results.spectacleLens(2), 'axisDegrees', p.Results.spectacleLens(3), 'lensRefractiveIndex', p.Results.spectacleLens(4));
+                case 5
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'cylinderDiopters', p.Results.spectacleLens(2), 'axisDegrees', p.Results.spectacleLens(3), 'lensRefractiveIndex', p.Results.spectacleLens(4),'lensVertexDistance', p.Results.spectacleLens(5));
+                case 6
+                    opticalSystem = addSpectacleLens(opticalSystem, p.Results.spectacleLens(1), 'cylinderDiopters', p.Results.spectacleLens(2), 'axisDegrees', p.Results.spectacleLens(3), 'lensRefractiveIndex', p.Results.spectacleLens(4),'lensVertexDistance', p.Results.spectacleLens(5), 'baseCurve', p.Results.spectacleLens(6));
                 otherwise
                     error('The key-value pair spectacleLens is limited to four elements: [refractionDiopters, refractionIndex, vertexDistance, baseCurve]');
             end

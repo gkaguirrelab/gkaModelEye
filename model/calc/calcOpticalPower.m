@@ -57,7 +57,11 @@ function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayOriginD
 %                           Defaults to 'air'.
 %
 % Outputs:
-%   opticalPower          - Scalar. The optical power of the system.
+%   opticalPower          - 3x1 matrix corresponding to sphere, cylinder, 
+%                           and axis values for the system, following the
+%                           "Plus Cylinder" convention, and the convention
+%                           that 0/180 degrees for the cylinder corresponds
+%                           to the horizontal meridian.
 %   focalPoint            - 3x1 matrix. The location of the focal point.
 %
 % Examples:
@@ -65,7 +69,7 @@ function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayOriginD
     % Determine the refractive power of the default eye
     eye = modelEyeParameters('accommodation',0);
     opticalPower = calcOpticalPower(eye);
-    outline = sprintf('The refractive power of the unaccommodated model eye is %2.2f diopters.\n',opticalPower);
+    outline = sprintf('The sphere, cylinder of the unaccommodated model eye is %2.2f, %2.2f diopters, and the axis is %2.1f degrees.\n',opticalPower);
     fprintf(outline)
 %}
 %{
@@ -75,7 +79,7 @@ function [opticalPower, focalPoint] = calcOpticalPower(opticalSystem, rayOriginD
     opticalSystem = sceneGeometry.refraction.retinaToStop.opticalSystem;
     opticalSystem = reverseSystemDirection(opticalSystem);
     opticalPower = calcOpticalPower(opticalSystem);
-    outline = sprintf('The refractive power of the unaccommodated crystaline lens is %2.2f diopters.\n',opticalPower);
+    outline = sprintf('The refractive power of the unaccommodated crystaline lens is %2.2f diopters.\n',opticalPower(1));
     fprintf(outline)
 %}
 
@@ -98,32 +102,43 @@ systemDirection = calcSystemDirection(opticalSystem, rayOriginDistance);
 % Obtain the principal point
 P = calcPrincipalPoint(opticalSystem, rayOriginDistance, rayIntersectionHeight);
 
-% Create parallel rays in the valid direction
-switch systemDirection
-    case 'cameraToEye'
-        R1 = quadric.normalizeRay([rayOriginDistance,-1;-rayIntersectionHeight,0;0,0]);
-        R2 = quadric.normalizeRay([rayOriginDistance,-1;rayIntersectionHeight,0;0,0]);
-        signD = 1;
-    case 'eyeToCamera'
-        R1 = quadric.normalizeRay([-rayOriginDistance,1;-rayIntersectionHeight,0;0,0]);
-        R2 = quadric.normalizeRay([-rayOriginDistance,1;rayIntersectionHeight,0;0,0]);
-        signD = -1;
-    otherwise
-        error(['Not a valid system direction: ' systemDirection])
+% Create parallel rays in the valid direction across a variety of
+% orientations. This allows us to measure cylinder and axis
+for pp = 0:179
+    switch systemDirection
+        case 'cameraToEye'
+            R1 = quadric.normalizeRay([rayOriginDistance,-1;sind(pp)*rayIntersectionHeight,0;cosd(pp)*rayIntersectionHeight,0]);
+            R2 = quadric.normalizeRay([rayOriginDistance,-1;sind(pp+180)*rayIntersectionHeight,0;cosd(pp+180)*rayIntersectionHeight,0]);
+            signD = 1;
+        case 'eyeToCamera'
+            R1 = quadric.normalizeRay([-rayOriginDistance,1;sind(pp)*rayIntersectionHeight,0;cosd(pp)*rayIntersectionHeight,0]);
+            R2 = quadric.normalizeRay([-rayOriginDistance,1;sind(pp+180)*rayIntersectionHeight,0;cosd(pp+180)*rayIntersectionHeight,0]);
+            signD = -1;
+        otherwise
+            error(['Not a valid system direction: ' systemDirection])
+    end
+
+    % Trace the rays
+    M1 = rayTraceQuadrics(R1, opticalSystem);
+    M2 = rayTraceQuadrics(R2, opticalSystem);
+
+    % Calculate the focal point from the output rays
+    focalPoint = quadric.distanceRays(M1,M2);
+
+    % Obtain the refractive index of the media in which the ray terminates
+    refractiveIndex = opticalSystem(end,end);
+
+    % Obtain the power of the optical system in diopters
+    opticalPowerByAngle(pp+1) = signD * refractiveIndex / ((P(1) - focalPoint(1))/1000);
 end
 
-% Trace the rays
-M1 = rayTraceQuadrics(R1, opticalSystem);
-M2 = rayTraceQuadrics(R2, opticalSystem);
+% Report optical power, cylinder, and axis using the "Plus Cylinder"
+% convention.
+[sphereDiopters,axisDegrees] = min(opticalPowerByAngle);
+axisDegrees = axisDegrees-1;
+cylinderDiopters = max(opticalPowerByAngle)-min(opticalPowerByAngle);
 
-% Calculate the focal point from the output rays
-focalPoint = quadric.distanceRays(M1,M2);
-
-% Obtain the refractive index of the media in which the ray terminates
-refractiveIndex = opticalSystem(end,end);
-
-% Obtain the power of the optical system in diopters
-opticalPower = signD * refractiveIndex / ((P(1) - focalPoint(1))/1000);
+opticalPower = [sphereDiopters,cylinderDiopters,axisDegrees];
 
 end
 

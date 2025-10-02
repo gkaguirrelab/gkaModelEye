@@ -73,7 +73,7 @@ function [opticalSystemOut, p] = addContactLens(opticalSystemIn, lensRefractionD
     eyePower = calcOpticalPower(opticalSystemIn);
     opticalSystemOut = addContactLens(opticalSystemIn,lensDiopters,'cornealRotation',eye.cornea.rotation);
     eyePowerWithLens = calcOpticalPower(opticalSystemOut);
-    assert(abs(eyePowerWithLens - (eyePower + lensDiopters))<0.01);
+    assert(abs(eyePowerWithLens(1) - (eyePower(1) + lensDiopters))<0.01);
 %}
 
 
@@ -142,8 +142,9 @@ else
 end
 
 % The desired optical system will have its refractive power plus the
-% requested lens refraction.
-targetDiopters = calcOpticalPower(opticalSystemIn) + lensRefractionDiopters;
+% requested lens refraction. There is a maneuver here to discard the
+% cylinder and axis components of the optical power.
+targetDiopters = sum(calcOpticalPower(opticalSystemIn).*[1 0 0]) + lensRefractionDiopters;
 
 
 %% Search for parameters of an ophthalmic lens
@@ -260,7 +261,7 @@ opticalSystem = mySystem(x);
 % the cause (it was due to corneal rotation not being properly modeled) but
 % I have left this code here just in case the problem should return.
 try
-    diopters = calcOpticalPower(opticalSystem);
+    diopters = sum(calcOpticalPower(opticalSystem).*[1 0 0]);
 catch
     % Make the diopters something arbitrarily large, so that fmincon will
     % avoid whatever x parameters produced this error

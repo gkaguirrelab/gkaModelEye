@@ -74,15 +74,16 @@ function [opticalSystemOut, p] = addSpectacleLens(opticalSystemIn, lensRefractio
 % Examples:
 %{
     % Confirm that a spectacle lens has the specified optical power
-    lensDiopters = -15;
-    opticalSystem = addSpectacleLens([],lensDiopters);
-    measuredD = calcOpticalPower(opticalSystem);
-    assert(abs((measuredD - lensDiopters)/lensDiopters) < 0.001);
+    % This is a -3 correction with cylinder of +1 and axis 0.
+    spectacleLens = [-3,1,0];
+    opticalSystem = addSpectacleLens([],spectacleLens(1),'cylinderDiopters',spectacleLens(2),'axisDegrees',spectacleLens(3));
+    opticalPower = calcOpticalPower(opticalSystem);
+    assert(~any(abs(spectacleLens-opticalPower)>0.001));
 %}
 %{
     % Display a spectacle lens and the focal point
-    lensDiopters = -5;
-    opticalSystem = addSpectacleLens([],lensDiopters);
+    spectacleLens = [2.25,2,80];
+    opticalSystem = addSpectacleLens([],spectacleLens(1),'cylinderDiopters',spectacleLens(2),'axisDegrees',spectacleLens(3));
     % Reverse the optical system so we can trace from the cameraToEye
     opticalSystem = reverseSystemDirection(opticalSystem);
     % Plot this
@@ -117,6 +118,8 @@ p.addParameter('lensRefractiveIndex',returnRefractiveIndex( 'polycarbonate', 'NI
 p.addParameter('lensVertexDistance',12,@isnumeric);
 p.addParameter('baseCurve',[],@isnumeric);
 p.addParameter('minimumLensThickness',0.8,@isnumeric);
+p.addParameter('cylinderDiopters',0,@isnumeric);
+p.addParameter('axisDegrees',0,@isnumeric);
 
 % parse
 p.parse(opticalSystemIn, lensRefractionDiopters, varargin{:})
@@ -172,8 +175,26 @@ end
 
 % Obtain the curvature of the front surface using the thin lens
 % approximation
-frontCurvature = (mediumRefractiveIndex-lensRefractiveIndex)/frontDiopters*1000;
+frontCurvatureP1 = (mediumRefractiveIndex-lensRefractiveIndex)/frontDiopters*1000;
 
+% Handle a cylinder correction
+cylinderDiopters = p.Results.cylinderDiopters;
+frontCurvatureP2 = (mediumRefractiveIndex-lensRefractiveIndex)/(frontDiopters-cylinderDiopters)*1000;
+axisDegrees = p.Results.axisDegrees;
+
+% Handles axis quadric messiness. There is a complex relationship between
+% the sign of the lens and thus the curvature of the quadric. We also have
+% to deal with the conversion to the optical convention of having the axis
+% be 0 degrees for horizontal. The adjustments here were derived from some
+% trial-and-error exploration.
+if lensRefractionDiopters > 0
+    if axisDegrees > 89 || axisDegrees<0
+        error('Only axis values between 0 and 89 are valid');
+    end
+    axisDegrees = -axisDegrees;
+else
+    axisDegrees = axisDegrees-90;
+end
 
 %% Search for parameters of an ophthalmic lens
 % This is "convex-concave" lens with two surfaces.
@@ -199,23 +220,26 @@ frontCurvature = (mediumRefractiveIndex-lensRefractiveIndex)/frontDiopters*1000;
 % Centers of the lenses, dependent upon lens thickness and back
 % curvature
 backCenter = @(backCurvature) lensVertexDistance - abs(backCurvature);
-frontCenter = @(thickness) lensVertexDistance + frontCurvature + thickness;
+frontCenter = @(thickness) lensVertexDistance + frontCurvatureP1 + thickness;
 
 % Return the optical system for the candidate lens
 myLens = @(x) ...
     assembleLensSystem(lensSystem, ...
     p.Results.lensRefractiveIndex, mediumRefractiveIndex, ...
     x(1), backCenter(x(1)), ...
-    frontCurvature, frontCenter(x(2)), ...
+    frontCurvatureP1, frontCenter(x(2)), ...
+    x(3), axisDegrees, ...
     [lensVertexDistance/2, lensVertexDistance/2], lensVertexDistance);
 
 % Calculate the power of the lens defined by the x parameters.
-myDiopters = @(x) calcOpticalPower(myLens(x));
+myOpticalPower = @(x) calcOpticalPower(myLens(x));
 
 % Define an objective which is the difference between the desired and
-% measured optical power of the lens
-myObj = @(x) ...
-    abs(lensRefractionDiopters - myDiopters(x));
+% measured optical power of the lens for the sphere and cylinder
+% components.
+myObj = @(x) sum(abs( ...
+    [lensRefractionDiopters, cylinderDiopters, 0] - ...
+    myOpticalPower(x).*[1 1 0]));
 
 % Specify a non-linear constraint that requires that the lens has a
 % positive radial thickness for a field of view that extends 63 degrees
@@ -241,16 +265,16 @@ warning('off','MATLAB:nearlySingularMatrix');
 if sign(lensRefractionDiopters)==1
     % This is a "plus" lens. Apply the shape constraint but do not place an
     % upper bound on thickness.
-    x0 = [backCurvatureX0 max([p.Results.minimumLensThickness 0.5*lensRefractionDiopters])];
-    lb = [-inf,p.Results.minimumLensThickness];
-    ub = [inf,p.Results.minimumLensThickness*5];
+    x0 = [backCurvatureX0 max([p.Results.minimumLensThickness 0.5*lensRefractionDiopters]) frontCurvatureP2];
+    lb = [-inf,p.Results.minimumLensThickness -inf];
+    ub = [inf,p.Results.minimumLensThickness*5 inf];
     [x, fVal] = fmincon(myObj,x0,[],[],[],[],lb,ub,myConstraint,options);
 else
     % This is a "minus" lens. Remove the non-linear shape constraint. Pin
     % the thickness to the minimum specified value.
-    x0 = [backCurvatureX0 p.Results.minimumLensThickness];
-    lb = [-inf,p.Results.minimumLensThickness];
-    ub = [inf,p.Results.minimumLensThickness];
+    x0 = [backCurvatureX0 p.Results.minimumLensThickness frontCurvatureP2];
+    lb = [-inf,p.Results.minimumLensThickness -inf];
+    ub = [inf,p.Results.minimumLensThickness*5 inf];
     [x, fVal] = fmincon(myObj,x0,[],[],[],[],lb,ub,[],options);
 end
 
@@ -269,10 +293,11 @@ backCenter = backCenter(backCurvature);
 thickness = x(2);
 frontCenter = frontCenter(thickness);
 [~,~,intersectHeights] = checkLensShape(myLens(x));
+frontCurvatureP2 = x(3);
 
 
 %% Add the lens
-opticalSystemOut = assembleLensSystem(opticalSystemIn, p.Results.lensRefractiveIndex, mediumRefractiveIndex, backCurvature, backCenter, frontCurvature, frontCenter, intersectHeights, lensVertexDistance);
+opticalSystemOut = assembleLensSystem(opticalSystemIn, p.Results.lensRefractiveIndex, mediumRefractiveIndex, backCurvature, backCenter, frontCurvatureP1, frontCenter, frontCurvatureP2, axisDegrees, intersectHeights, lensVertexDistance);
 
 end % function - addSpectacleLens
 
@@ -321,12 +346,12 @@ intersectHeights = [Xback(1) Xfront(1)];
 end
 
 
-function opticalSystemOut = assembleLensSystem(opticalSystemIn, lensRefractiveIndex, mediumRefractiveIndex, backCurvature, backCenter, frontCurvature, frontCenter, intersectHeights, lensVertexDistance)
+function opticalSystemOut = assembleLensSystem(opticalSystemIn, lensRefractiveIndex, mediumRefractiveIndex, backCurvature, backCenter, frontCurvatureP1, frontCenter, frontCurvatureP2, axisDegrees, intersectHeights, lensVertexDistance)
 % Assembles and returns an optical system matrix given input in the
 % eyeToCamera direction
 
 % Define a bounding box for the back surface
-boundingBoxLens = [intersectHeights(1) frontCenter-frontCurvature -lensVertexDistance*2 lensVertexDistance*2 -lensVertexDistance*2 lensVertexDistance*2];
+boundingBoxLens = [intersectHeights(1) frontCenter-frontCurvatureP1 -lensVertexDistance*2 lensVertexDistance*2 -lensVertexDistance*2 lensVertexDistance*2];
 
 % Add the back spectacle surface to the optical system.
 SlensBack = quadric.scale(quadric.unitSphere,[backCurvature backCurvature backCurvature]);
@@ -340,11 +365,12 @@ lensLine(end) = lensRefractiveIndex;
 opticalSystemOut = [opticalSystemIn; lensLine];
 
 % Define a bounding box for the front surface
-boundingBoxLens = [intersectHeights(2) frontCenter-frontCurvature -lensVertexDistance*2 lensVertexDistance*2 -lensVertexDistance*2 lensVertexDistance*2];
+boundingBoxLens = [intersectHeights(2) frontCenter-frontCurvatureP1 -lensVertexDistance*2 lensVertexDistance*2 -lensVertexDistance*2 lensVertexDistance*2];
 
 % Add the front spectacle surface to the optical system.
-SlensFront = quadric.scale(quadric.unitSphere,[frontCurvature frontCurvature frontCurvature]);
+SlensFront = quadric.scale(quadric.unitSphere,[frontCurvatureP1 frontCurvatureP2 frontCurvatureP1]);
 SlensFront = quadric.translate(SlensFront,[frontCenter 0 0]);
+SlensFront = quadric.rotate(SlensFront,[axisDegrees 0 0]); % Need to counter rotate and convert to horizontal convention
 lensLine = nan(1,19);
 lensLine(1:10) = quadric.matrixToVec(SlensFront);
 lensLine(11) = 1; % rays intersect concave lens surface

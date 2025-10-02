@@ -161,7 +161,9 @@ myConstraint = @(p) checkLensShape(mySystem(p),radius);
 % lenses with a central tendency of the focal length that matches the
 % called-for power. Really, I should be designing aspheric lenses here, but
 % haven't yet implemented this.
-myObj = @(p) norm(diopters-calcOpticalPower(mySystem(p),1000,radius*0.65));
+% There is also some business here to deal with the cylinder and axis
+% returned by calcOpticalPower.
+myObj = @(p) norm(diopters-sum(calcOpticalPower(mySystem(p),1000,radius*0.65).*[1 0 0]));
 
 % Set an x0 that is a 20 mm thickness and a curvature based on the thin
 % lens approximation.
