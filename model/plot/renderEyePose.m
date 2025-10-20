@@ -273,7 +273,7 @@ end % loop over label names
 % camera torsion
 if p.Results.showAzimuthPlane
     [~, ~, imagePoints] = projectModelEye([-50 0 0 1], sceneGeometry, 'cameraTrans',p.Results.cameraTrans);
-    A = nanmean(imagePoints);
+    A = mean(imagePoints,'omitmissing');
     [~, ~, imagePoints] = projectModelEye([50 0 0 1], sceneGeometry, 'cameraTrans',p.Results.cameraTrans);
     B = nanmean(imagePoints);
     plot([A(1) B(1)],[A(2) B(2)],'-r')
