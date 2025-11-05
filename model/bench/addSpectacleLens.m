@@ -137,6 +137,15 @@ if lensRefractionDiopters==0
     return
 end
 
+% Pull out the cylinder, and convert from negative to positive cylinder
+% convention if needed.
+cylinderDiopters = p.Results.cylinderDiopters;
+axisDegrees = p.Results.axisDegrees;
+if cylinderDiopters < 0
+    lensRefractionDiopters = lensRefractionDiopters + cylinderDiopters;
+    cylinderDiopters = -cylinderDiopters;
+    axisDegrees = axisDegrees-90;
+end
 
 %% Setup fixed lens paramters
 % Distribute the parameters into variables
@@ -178,9 +187,7 @@ end
 frontCurvatureP1 = (mediumRefractiveIndex-lensRefractiveIndex)/frontDiopters*1000;
 
 % Handle a cylinder correction
-cylinderDiopters = p.Results.cylinderDiopters;
 frontCurvatureP2 = (mediumRefractiveIndex-lensRefractiveIndex)/(frontDiopters-cylinderDiopters)*1000;
-axisDegrees = p.Results.axisDegrees;
 
 % Handles axis quadric messiness. There is a complex relationship between
 % the sign of the lens and thus the curvature of the quadric. We also have
