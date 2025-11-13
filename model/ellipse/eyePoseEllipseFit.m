@@ -330,6 +330,11 @@ if isempty(options.eyePoseX0)
     
     % Handle the direction of eye rotation
     displaceScaled(2) = -displaceScaled(2);
+
+    % Handle the case of a failure to find the rotationCenterEllipse
+    if any(isnan(displaceScaled))
+        displaceScaled = [0 0];
+    end
         
     % Probe the forward model to determine how many pixels of change in the
     % location of the pupil ellipse correspond to one degree of rotation.
