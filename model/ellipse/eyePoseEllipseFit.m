@@ -178,6 +178,7 @@ end
 
 % Initialize the return variables
 eyePose = [nan nan nan nan];
+cameraTrans = [nan; nan; nan];
 RMSE = nan;
 fittedEllipse = [nan nan nan nan nan];
 fitAtBound = false;
@@ -214,6 +215,13 @@ end
 
 % Clear the case of an empty perimeter
 if isempty(Xp) || isempty(Yp)
+    warning('eyePoseEllipseFit:emptyPerimeter','No perimeter points were passed; returning nans');
+    return
+end
+
+% Clear the case of perimeter with only one point
+if length(Xp)<=1
+    warning('eyePoseEllipseFit:tooFewPerimeterPoints','Unable to fit a single perimeter point; returning nans');
     return
 end
 
@@ -230,12 +238,21 @@ if size(glintCoord,1)<2 && abs(options.cameraTransBounds(3)) > 0
     warning('eyePoseEllipseFit:underconstrainedSearch','Only one glint provided; cameraTrans depth search is under-constrained');
 end
 
+% Pull out the values for cameraTrans from the options
+cameraTransX0 = options.cameraTransX0;
+cameraTransBounds = options.cameraTransBounds;
+
+% If there is no glint, set the cameraTrans values to zeros
+if isempty(glintCoord)
+    cameraTransX0 = [0;0;0];
+    cameraTransBounds = [0;0;0];
+end
+
 
 %% Define cameraTransX0 and bounds
-if ~isempty(options.cameraTransX0)
-    cameraTransX0 = options.cameraTransX0;
-    cameraTransLB = options.cameraTransX0 - options.cameraTransBounds;
-    cameraTransUB = options.cameraTransX0 + options.cameraTransBounds;
+if ~isempty(cameraTransX0)
+    cameraTransLB = cameraTransX0 - cameraTransBounds;
+    cameraTransUB = cameraTransX0 + cameraTransBounds;
 else
     
     % The bounds will be set about zero
